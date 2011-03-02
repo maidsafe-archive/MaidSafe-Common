@@ -128,13 +128,6 @@ ENDIF()
 
 SET(CMAKE_include_directories_BEFORE ON)
 
-GET_FILENAME_COMPONENT(CMAKE_INSTALL_ROOT ${CMAKE_INSTALL_PREFIX} PATH)
-SET(OLD_CMAKE_INSTALL_PREFIX ${CMAKE_INSTALL_ROOT}/maidsafe/common_lib)
-IF(WIN32)
-  STRING(REPLACE "/" "\\" OLD_CMAKE_INSTALL_PREFIX ${OLD_CMAKE_INSTALL_PREFIX})
-ENDIF()
-SET(CMAKE_INSTALL_PREFIX ${${PROJECT_NAME}_ROOT}/build/common_lib)
-
 IF(NOT DEFINED ${KDEV})
   SET(CMAKE_DEBUG_POSTFIX _d)
   SET(CMAKE_RELWITHDEBINFO_POSTFIX _rwdi)
@@ -451,12 +444,34 @@ IF(UNIX)
   SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind --show-reachable=no")
 ENDIF()
 
+
+###################################################################################################
+# Install details                                                                                 #
+###################################################################################################
+
+SET(CMAKE_INSTALL_PREFIX ${${PROJECT_NAME}_ROOT}/build/common_lib)
+SET(DEFAULT_INSTALL_PATH TRUE)
+
 IF(INSTALL_PREFIX)
-  message("\${INSTALL_PREFIX} - ${INSTALL_PREFIX}")
   IF(WIN32)
     STRING(REPLACE "\\" "/" INSTALL_PREFIX ${INSTALL_PREFIX})
   ENDIF()
   SET(CMAKE_INSTALL_PREFIX "${INSTALL_PREFIX}")
+  SET(DEFAULT_INSTALL_PATH FALSE)
+ENDIF()
+
+SET(CMAKE_INSTALL_PREFIX_MESSAGE ${CMAKE_INSTALL_PREFIX})
+IF(WIN32)
+  STRING(REPLACE "/" "\\" CMAKE_INSTALL_PREFIX_MESSAGE ${CMAKE_INSTALL_PREFIX_MESSAGE})
+ENDIF()
+
+IF(DEFAULT_INSTALL_PATH)
+  SET(CMAKE_SOURCE_DIR_MESSAGE ${CMAKE_SOURCE_DIR})
+ELSE()
+  SET(CMAKE_SOURCE_DIR_MESSAGE ${CMAKE_INSTALL_PREFIX})
+ENDIF()
+IF(WIN32)
+  STRING(REPLACE "/" "\\" CMAKE_SOURCE_DIR_MESSAGE ${CMAKE_SOURCE_DIR_MESSAGE})
 ENDIF()
 
 ###################################################################################################
@@ -469,11 +484,13 @@ MESSAGE("    To include behavioural tests,        ${ERROR_MESSAGE_CMAKE_PATH} -D
 MESSAGE("    To include functional tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=FUNC")
 MESSAGE("================================================================================")
 MESSAGE("")
-MESSAGE("Install prefix is set to:\n")
-MESSAGE("        \"${CMAKE_INSTALL_PREFIX}\"")
-MESSAGE("")
-MESSAGE("    To alter this (e.g. to ${OLD_CMAKE_INSTALL_PREFIX}),\n")
-MESSAGE("          ${ERROR_MESSAGE_CMAKE_PATH} -DINSTALL_PREFIX=\"${OLD_CMAKE_INSTALL_PREFIX}\"")
+MESSAGE("The libraries, headers, cmake modules and tools will be installed to:\n")
+MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
+MESSAGE("To include this project in any other MaidSafe project, use:\n")
+MESSAGE("    -DMAIDSAFE_COMMON_ROOT_DIR=\"${CMAKE_SOURCE_DIR_MESSAGE}\"\n\n")
+MESSAGE("To build and install this project now, run:\n")
+MESSAGE("    cmake --build . --target INSTALL --config Release")
+MESSAGE("    cmake --build . --target INSTALL --config Debug\n\n")
 MESSAGE("================================================================================")
 MESSAGE("")
 
