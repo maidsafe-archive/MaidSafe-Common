@@ -290,6 +290,9 @@ SET(ALL_FILES_COMMON_BOOST_TESTS_DIR ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR} ${HE
 SOURCE_GROUP("common boost tests Source Files" FILES ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR})
 SOURCE_GROUP("common boost tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST_TESTS_DIR})
 
+FILE(GLOB MODULE_FILES "${CMAKE_SOURCE_DIR}/../cmake/*")
+FILE(GLOB TOOL_FILES "${CMAKE_SOURCE_DIR}/../tools/*")
+
 ###################################################################################################
 # All Platforms:  Add Test Exes and Create all maidsafe_dht libs                                  #
 ###################################################################################################
@@ -477,4 +480,6 @@ MESSAGE("")
 
 INSTALL(TARGETS maidsafe_common_static EXPORT maidsafe_common ARCHIVE DESTINATION lib)
 INSTALL(FILES ${HEADER_FILES_COMMON_DIR} DESTINATION include/maidsafe/common)
+INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
+INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
 INSTALL(EXPORT maidsafe_common DESTINATION cmake)
