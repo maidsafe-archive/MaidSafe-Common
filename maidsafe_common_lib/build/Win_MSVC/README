@@ -1,0 +1,11 @@
+Windows Build Instructions - Building With Visual Studio
+========================================================
+
+These instructions relate to using Microsoft Visual Studio to build the project.
+
+#  Open a Visual Studio command terminal
+#  cd to build dir for Windows with MSVC (build\Win_MSVC)
+#  Run cmake ..\..
+
+   This will create an MSVC solution in build\Win_MSVC\ which will allow you to
+   make all the targets from within the MSVC IDE.

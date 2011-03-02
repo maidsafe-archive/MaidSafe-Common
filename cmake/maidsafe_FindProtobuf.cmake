@@ -40,12 +40,9 @@
 #  Settable variables to aid with finding protobuf and protoc are:             #
 #    PROTOBUF_LIB_DIR, PROTOBUF_INC_DIR, PROTOC_EXE_DIR and PROTOBUF_ROOT_DIR  #
 #                                                                              #
-#  If PROTOBUF_REQUIRED is set to TRUE, failure of this module will result in  #
-#  a FATAL_ERROR message being generated.                                      #
-#                                                                              #
 #  Variables set and cached by this module are:                                #
-#    Protobuf_INCLUDE_DIR, Protobuf_LIBRARY_DIR, Protobuf_LIBRARY,             #
-#    Protobuf_PROTOC_EXECUTABLE, and Protobuf_FOUND                            #
+#    Protobuf_INCLUDE_DIR, Protobuf_LIBRARY_DIR, Protobuf_LIBRARY, and         #
+#    Protobuf_PROTOC_EXECUTABLE.                                               #
 #                                                                              #
 #  For MSVC, Protobuf_LIBRARY_DIR_DEBUG is also set and cached.                #
 #                                                                              #
@@ -85,7 +82,6 @@ UNSET(Protobuf_LIBRARY_RELEASE CACHE)
 UNSET(Protobuf_PROTOC_EXECUTABLE CACHE)
 UNSET(PROTOBUF_LIBRARY_DEBUG CACHE)
 UNSET(PROTOC_EXE_RELEASE CACHE)
-SET(Protobuf_FOUND FALSE)
 
 IF(PROTOBUF_LIB_DIR)
   SET(PROTOBUF_LIB_DIR ${PROTOBUF_LIB_DIR} CACHE PATH "Path to Google Protocol Buffers libraries directory" FORCE)
@@ -98,26 +94,35 @@ IF(PROTOC_EXE_DIR)
 ENDIF()
 IF(PROTOBUF_ROOT_DIR)
   SET(PROTOBUF_ROOT_DIR ${PROTOBUF_ROOT_DIR} CACHE PATH "Path to Google Protocol Buffers root directory" FORCE)
-  SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROTOBUF_ROOT_DIR})
-ELSE()
-  SET(PROTOBUF_ROOT_DIR ${${PROJECT_NAME}_SOURCE_DIR}/../thirdpartylibs/protobuf)
-  SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROTOBUF_ROOT_DIR})
+ELSEIF(DEFAULT_THIRD_PARTY_ROOT)
+  SET(PROTOBUF_ROOT_DIR ${DEFAULT_THIRD_PARTY_ROOT})
 ENDIF()
 
 IF(MSVC)
-  SET(PROTOBUF_LIBPATH_SUFFIX vsprojects/Release)
+  SET(PROTOBUF_LIBPATH_SUFFIX third_party_libs/src/protobuf/vsprojects/Release)
 ELSE()
-  SET(PROTOBUF_LIBPATH_SUFFIX lib bin)
+  SET(PROTOBUF_LIBPATH_SUFFIX third_party_libs/build_protobuf/lib)
 ENDIF()
 
-FIND_LIBRARY(Protobuf_LIBRARY_RELEASE NAMES libprotobuf.a libprotobuf.lib PATHS ${PROTOBUF_LIB_DIR} ${PROTOBUF_ROOT_DIR} PATH_SUFFIXES ${PROTOBUF_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_LIBRARY(Protobuf_LIBRARY_RELEASE NAMES protobuf PATHS ${PROTOBUF_LIB_DIR} ${PROTOBUF_ROOT_DIR} PATH_SUFFIXES ${PROTOBUF_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+
+IF(NOT MSVC)
+  SET(PROTOBUF_LIBPATH_SUFFIX third_party_libs/build_protobuf/bin)
+ENDIF()
+
 FIND_PROGRAM(PROTOC_EXE_RELEASE NAMES protoc PATHS ${PROTOC_EXE_DIR} ${PROTOBUF_LIB_DIR} ${PROTOBUF_ROOT_DIR} PATH_SUFFIXES ${PROTOBUF_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+
 IF(MSVC)
-  SET(PROTOBUF_LIBPATH_SUFFIX vsprojects/Debug)
-  FIND_LIBRARY(Protobuf_LIBRARY_DEBUG NAMES libprotobuf.lib PATHS ${PROTOBUF_LIB_DIR} ${PROTOBUF_ROOT_DIR} PATH_SUFFIXES ${PROTOBUF_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+  SET(PROTOBUF_LIBPATH_SUFFIX third_party_libs/src/protobuf/vsprojects/Debug)
+  FIND_LIBRARY(Protobuf_LIBRARY_DEBUG NAMES protobuf PATHS ${PROTOBUF_LIB_DIR} ${PROTOBUF_ROOT_DIR} PATH_SUFFIXES ${PROTOBUF_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 ENDIF()
 
-FIND_PATH(Protobuf_INCLUDE_DIR google/protobuf/service.h PATHS ${PROTOBUF_INC_DIR} ${PROTOBUF_ROOT_DIR}/src NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_PATH(Protobuf_INCLUDE_DIR google/protobuf/service.h PATHS
+            ${PROTOBUF_INC_DIR}
+            ${PROTOBUF_ROOT_DIR}/third_party_libs/src/protobuf/vsprojects/include
+            ${PROTOBUF_ROOT_DIR}/third_party_libs/build_protobuf/include
+            NO_SYSTEM_ENVIRONMENT_PATH
+            NO_CMAKE_SYSTEM_PATH)
 
 GET_FILENAME_COMPONENT(PROTOBUF_LIBRARY_DIR ${Protobuf_LIBRARY_RELEASE} PATH)
 SET(Protobuf_LIBRARY_DIR ${PROTOBUF_LIBRARY_DIR} CACHE PATH "Path to Google Protocol Buffers libraries directory" FORCE)
@@ -127,9 +132,6 @@ IF(MSVC)
 ENDIF()
 
 IF(NOT Protobuf_LIBRARY_RELEASE)
-  IF(NOT PROTOBUF_REQUIRED)
-    RETURN()
-  ENDIF()
   SET(ERROR_MESSAGE "\nCould not find Google Protocol Buffers.  NO PROTOBUF LIBRARY - ")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/protobuf\n")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}If protobuf is already installed, run:\n")
@@ -142,9 +144,6 @@ ENDIF()
 
 IF(MSVC)
   IF(NOT Protobuf_LIBRARY_DEBUG)
-    IF(NOT PROTOBUF_REQUIRED)
-      RETURN()
-    ENDIF()
     SET(ERROR_MESSAGE "\nCould not find Google Protocol Buffers.  NO *DEBUG* PROTOBUF LIBRARY - ")
     SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/protobuf\n")
     SET(ERROR_MESSAGE "${ERROR_MESSAGE}If protobuf is already installed, run:\n")
@@ -156,9 +155,6 @@ IF(MSVC)
 ENDIF()
 
 IF(NOT Protobuf_INCLUDE_DIR)
-  IF(NOT PROTOBUF_REQUIRED)
-    RETURN()
-  ENDIF()
   SET(ERROR_MESSAGE "\nCould not find Google Protocol Buffers.  NO HEADER FILE - ")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/protobuf\n")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}If protobuf is already installed, run:\n")
@@ -168,9 +164,6 @@ IF(NOT Protobuf_INCLUDE_DIR)
 ENDIF()
 
 IF(NOT PROTOC_EXE_RELEASE)
-  IF(NOT PROTOBUF_REQUIRED)
-    RETURN()
-  ENDIF()
   SET(ERROR_MESSAGE "\nCould not find Google Protocol Buffers.  NO PROTOC EXE - ")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/protobuf\n")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}If protobuf is already installed, run:\n")
@@ -180,7 +173,6 @@ IF(NOT PROTOC_EXE_RELEASE)
 ELSE()
   SET(Protobuf_PROTOC_EXECUTABLE ${PROTOC_EXE_RELEASE} CACHE PATH "Path to Google Protocol Buffers executable (protoc) directory" FORCE)
 ENDIF()
-SET(Protobuf_FOUND TRUE)
 
 EXECUTE_PROCESS(COMMAND ${Protobuf_PROTOC_EXECUTABLE} "--version" OUTPUT_VARIABLE TMP_CURRENT_PROTOC_VERSION)
 STRING(STRIP ${TMP_CURRENT_PROTOC_VERSION} CURRENT_PROTOC_VERSION)

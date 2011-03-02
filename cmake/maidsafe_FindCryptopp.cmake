@@ -20,95 +20,89 @@
 #                                                                              #
 # ============================================================================ #
 #                                                                              #
-#  Module used to locate GoogleMock libs and headers.                          #
+#  Module used to locate CryptoPP libs and headers.                            #
 #                                                                              #
-#  Settable variables to aid with finding Gmock are:                           #
-#    GMOCK_LIB_DIR, GMOCK_INC_DIR and GMOCK_ROOT_DIR                           #
+#  Settable variables to aid with finding CryptoPP are:                        #
+#    CRYPTOPP_LIB_DIR, CRYPTOPP_INC_DIR and CRYPTOPP_ROOT_DIR                  #
 #                                                                              #
 #  Variables set and cached by this module are:                                #
-#    Gmock_INCLUDE_DIR, Gmock_LIBRARY_DIR, Gmock_LIBRARY                       #
+#    Cryptopp_INCLUDE_DIR, Cryptopp_LIBRARY_DIR, Cryptopp_LIBRARY              #
 #                                                                              #
-#  For MSVC, Gmock_LIBRARY_DIR_DEBUG is also set and cached.                   #
+#  For MSVC, Cryptopp_LIBRARY_DIR_DEBUG is also set and cached.                #
 #                                                                              #
 #==============================================================================#
 
 
-UNSET(Gmock_INCLUDE_DIR CACHE)
-UNSET(Gmock_LIBRARY_DIR CACHE)
-UNSET(Gmock_LIBRARY_DIR_DEBUG CACHE)
-UNSET(Gmock_LIBRARY CACHE)
-UNSET(Gmock_LIBRARY_DEBUG CACHE)
-UNSET(Gmock_LIBRARY_RELEASE CACHE)
+UNSET(Cryptopp_INCLUDE_DIR CACHE)
+UNSET(Cryptopp_LIBRARY_DIR CACHE)
+UNSET(Cryptopp_LIBRARY_DIR_DEBUG CACHE)
+UNSET(Cryptopp_LIBRARY CACHE)
+UNSET(Cryptopp_LIBRARY_DEBUG CACHE)
+UNSET(Cryptopp_LIBRARY_RELEASE CACHE)
 
-IF(GMOCK_LIB_DIR)
-  SET(GMOCK_LIB_DIR ${GMOCK_LIB_DIR} CACHE PATH "Path to GoogleMock libraries directory" FORCE)
+IF(CRYPTOPP_LIB_DIR)
+  SET(CRYPTOPP_LIB_DIR ${CRYPTOPP_LIB_DIR} CACHE PATH "Path to CryptoPP libraries directory" FORCE)
 ENDIF()
-IF(GMOCK_INC_DIR)
-  SET(GMOCK_INC_DIR ${GMOCK_INC_DIR} CACHE PATH "Path to GoogleMock include directory" FORCE)
+IF(CRYPTOPP_INC_DIR)
+  SET(CRYPTOPP_INC_DIR ${CRYPTOPP_INC_DIR} CACHE PATH "Path to CryptoPP include directory" FORCE)
 ENDIF()
-IF(GMOCK_ROOT_DIR)
-  SET(GMOCK_ROOT_DIR ${GMOCK_ROOT_DIR} CACHE PATH "Path to GoogleMock root directory" FORCE)
+IF(CRYPTOPP_ROOT_DIR)
+  SET(CRYPTOPP_ROOT_DIR ${CRYPTOPP_ROOT_DIR} CACHE PATH "Path to CryptoPP root directory" FORCE)
 ELSEIF(DEFAULT_THIRD_PARTY_ROOT)
-  FIND_THIRD_PARTY_PROJECT(GMOCK_ROOT_DIR gmock ${DEFAULT_THIRD_PARTY_ROOT})
-  IF(GMOCK_ROOT_DIR_CACHED)
-    SET(GMOCK_ROOT_DIR ${GMOCK_ROOT_DIR_CACHED})
-  ENDIF()
+  SET(CRYPTOPP_ROOT_DIR ${DEFAULT_THIRD_PARTY_ROOT})
 ENDIF()
 
 IF(MSVC)
-  SET(GMOCK_LIBPATH_SUFFIX msvc/Release)
+  SET(CRYPTOPP_LIBPATH_SUFFIX third_party_libs/build_cryptopp/Release)
 ELSE()
-  SET(GMOCK_LIBPATH_SUFFIX lib)
+  SET(CRYPTOPP_LIBPATH_SUFFIX third_party_libs/build_cryptopp)
 ENDIF()
 
-FIND_LIBRARY(Gmock_LIBRARY_RELEASE NAMES gmock PATHS ${GMOCK_LIB_DIR} ${GMOCK_ROOT_DIR} PATH_SUFFIXES ${GMOCK_LIBPATH_SUFFIX})
+FIND_LIBRARY(Cryptopp_LIBRARY_RELEASE NAMES cryptopp PATHS ${CRYPTOPP_LIB_DIR} ${CRYPTOPP_ROOT_DIR} PATH_SUFFIXES ${CRYPTOPP_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 IF(MSVC)
-  SET(GMOCK_LIBPATH_SUFFIX msvc/Debug)
-  FIND_LIBRARY(Gmock_LIBRARY_DEBUG NAMES gmock PATHS ${GMOCK_LIB_DIR} ${GMOCK_ROOT_DIR} PATH_SUFFIXES ${GMOCK_LIBPATH_SUFFIX})
+  SET(CRYPTOPP_LIBPATH_SUFFIX third_party_libs/build_cryptopp/Debug)
+  FIND_LIBRARY(Cryptopp_LIBRARY_DEBUG NAMES cryptopp_d PATHS ${CRYPTOPP_LIB_DIR} ${CRYPTOPP_ROOT_DIR} PATH_SUFFIXES ${CRYPTOPP_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 ENDIF()
 
-FIND_PATH(Gmock_INCLUDE_DIR gmock/gmock.h PATHS ${GMOCK_INC_DIR} ${GMOCK_ROOT_DIR}/include)
+FIND_PATH(Cryptopp_INCLUDE_DIR cryptopp/config.h PATHS ${CRYPTOPP_INC_DIR} ${CRYPTOPP_ROOT_DIR}/third_party_libs/build_cryptopp/include NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 
-GET_FILENAME_COMPONENT(GMOCK_LIBRARY_DIR ${Gmock_LIBRARY_RELEASE} PATH)
-SET(Gmock_LIBRARY_DIR ${GMOCK_LIBRARY_DIR} CACHE PATH "Path to GoogleMock libraries directory" FORCE)
+GET_FILENAME_COMPONENT(CRYPTOPP_LIBRARY_DIR ${Cryptopp_LIBRARY_RELEASE} PATH)
+SET(Cryptopp_LIBRARY_DIR ${CRYPTOPP_LIBRARY_DIR} CACHE PATH "Path to CryptoPP libraries directory" FORCE)
 IF(MSVC)
-  GET_FILENAME_COMPONENT(GMOCK_LIBRARY_DIR_DEBUG ${Gmock_LIBRARY_DEBUG} PATH)
-  SET(Gmock_LIBRARY_DIR_DEBUG ${GMOCK_LIBRARY_DIR_DEBUG} CACHE PATH "Path to GoogleMock debug libraries directory" FORCE)
+  GET_FILENAME_COMPONENT(CRYPTOPP_LIBRARY_DIR_DEBUG ${Cryptopp_LIBRARY_DEBUG} PATH)
+  SET(Cryptopp_LIBRARY_DIR_DEBUG ${CRYPTOPP_LIBRARY_DIR_DEBUG} CACHE PATH "Path to CryptoPP debug libraries directory" FORCE)
 ENDIF()
 
-IF(NOT Gmock_LIBRARY_RELEASE)
-  SET(ERROR_MESSAGE "\nCould not find Google Mock.  NO GMOCK LIBRARY - ")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/googlemock\n")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}If Google Mock is already installed, run:\n")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DGMOCK_LIB_DIR=<Path to gmock lib directory> and/or")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}\n${ERROR_MESSAGE_CMAKE_PATH} -DGMOCK_ROOT_DIR=<Path to gmock root directory>")
+IF(NOT Cryptopp_LIBRARY_RELEASE)
+  SET(ERROR_MESSAGE "\nCould not find CryptoPP.  NO CRYPTOPP LIBRARY - ")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}If CryptoPP is already installed, run:\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCRYPTOPP_LIB_DIR=<Path to CryptoPP lib directory> and/or")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}\n${ERROR_MESSAGE_CMAKE_PATH} -DCRYPTOPP_ROOT_DIR=<Path to CryptoPP root directory>")
   MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
 ELSE()
-  SET(Gmock_LIBRARY ${Gmock_LIBRARY_RELEASE} CACHE PATH "Path to GoogleMock library" FORCE)
+  SET(Cryptopp_LIBRARY ${Cryptopp_LIBRARY_RELEASE} CACHE PATH "Path to CryptoPP library" FORCE)
 ENDIF()
 
 IF(MSVC)
-  IF(NOT Gmock_LIBRARY_DEBUG)
-    SET(ERROR_MESSAGE "\nCould not find Google Mock.  NO *DEBUG* GMOCK LIBRARY - ")
-    SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/googlemock\n")
-    SET(ERROR_MESSAGE "${ERROR_MESSAGE}If Google Mock is already installed, run:\n")
-    SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DGMOCK_ROOT_DIR=<Path to gmock root directory>")
+  IF(NOT Cryptopp_LIBRARY_DEBUG)
+    SET(ERROR_MESSAGE "\nCould not find CryptoPP.  NO *DEBUG* CRYPTOPP LIBRARY - ")
+    SET(ERROR_MESSAGE "${ERROR_MESSAGE}If CryptoPP is already installed, run:\n")
+    SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCRYPTOPP_ROOT_DIR=<Path to CryptoPP root directory>")
     MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
   ELSE()
-    SET(Gmock_LIBRARY debug ${Gmock_LIBRARY_DEBUG} optimized ${Gmock_LIBRARY} CACHE PATH "Path to GoogleMock libraries" FORCE)
+    SET(Cryptopp_LIBRARY debug ${Cryptopp_LIBRARY_DEBUG} optimized ${Cryptopp_LIBRARY} CACHE PATH "Path to CryptoPP libraries" FORCE)
   ENDIF()
 ENDIF()
 
-IF(NOT Gmock_INCLUDE_DIR)
-  SET(ERROR_MESSAGE "\nCould not find Google Mock.  NO GMOCK.H - ")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}You can download it at http://code.google.com/p/googlemock\n")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}If Google Mock is already installed, run:\n")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DGMOCK_INC_DIR=<Path to gmock include directory> and/or")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}\n${ERROR_MESSAGE_CMAKE_PATH} -DGMOCK_ROOT_DIR=<Path to gmock root directory>")
+IF(NOT Cryptopp_INCLUDE_DIR)
+  SET(ERROR_MESSAGE "\nCould not find CryptoPP.  NO CONFIG.H - ")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}If CryptoPP is already installed, run:\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCRYPTOPP_INC_DIR=<Path to CryptoPP include directory> and/or")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}\n${ERROR_MESSAGE_CMAKE_PATH} -DCRYPTOPP_ROOT_DIR=<Path to CryptoPP root directory>")
   MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
 ENDIF()
 
-MESSAGE("-- Found Google Mock library")
+MESSAGE("-- Found CryptoPP library")
 IF(MSVC)
-  MESSAGE("-- Found Google Mock Debug library")
+  MESSAGE("-- Found CryptoPP Debug library")
 ENDIF()

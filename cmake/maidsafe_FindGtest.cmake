@@ -22,9 +22,6 @@
 #                                                                              #
 #  Module used to locate GoogleTest libs and headers.                          #
 #                                                                              #
-#  If using MSVC, finds only Gtest libs which have been compiled using         #
-#  dynamically-linked C runtime library (i.e. with /MD set rather than /MT)    #
-#                                                                              #
 #  Settable variables to aid with finding Gtest are:                           #
 #    GTEST_LIB_DIR, GTEST_INC_DIR and GTEST_ROOT_DIR                           #
 #                                                                              #
@@ -52,33 +49,22 @@ ENDIF()
 IF(GTEST_ROOT_DIR)
   SET(GTEST_ROOT_DIR ${GTEST_ROOT_DIR} CACHE PATH "Path to GoogleTest root directory" FORCE)
 ELSEIF(DEFAULT_THIRD_PARTY_ROOT)
-  FIND_THIRD_PARTY_PROJECT(GTEST_ROOT_DIR gtest ${DEFAULT_THIRD_PARTY_ROOT})
-  IF(GTEST_ROOT_DIR_CACHED)
-    SET(GTEST_ROOT_DIR ${GTEST_ROOT_DIR_CACHED})
-  ENDIF()
+  SET(GTEST_ROOT_DIR ${DEFAULT_THIRD_PARTY_ROOT})
 ENDIF()
 
 IF(MSVC)
-  IF(CMAKE_CL_64)
-    SET(GTEST_LIBPATH_SUFFIX msvc/x64/Release)
-  ELSE()
-    SET(GTEST_LIBPATH_SUFFIX msvc/gtest-md/Release)
-  ENDIF()
+  SET(GTEST_LIBPATH_SUFFIX third_party_libs/build_googlemock/gtest/Release)
 ELSE()
-  SET(GTEST_LIBPATH_SUFFIX lib lib64)
+  SET(GTEST_LIBPATH_SUFFIX third_party_libs/build_googlemock/gtest)
 ENDIF()
 
-FIND_LIBRARY(Gtest_LIBRARY_RELEASE NAMES gtest gtest-md PATHS ${GTEST_LIB_DIR} ${GTEST_ROOT_DIR} PATH_SUFFIXES ${GTEST_LIBPATH_SUFFIX})
+FIND_LIBRARY(Gtest_LIBRARY_RELEASE NAMES gtest PATHS ${GTEST_LIB_DIR} ${GTEST_ROOT_DIR} PATH_SUFFIXES ${GTEST_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 IF(MSVC)
-  IF(CMAKE_CL_64)
-    SET(GTEST_LIBPATH_SUFFIX msvc/x64/Debug)
-  ELSE()
-    SET(GTEST_LIBPATH_SUFFIX msvc/gtest-md/Debug)
-  ENDIF()
-  FIND_LIBRARY(Gtest_LIBRARY_DEBUG NAMES gtestd gtest-mdd PATHS ${GTEST_LIB_DIR} ${GTEST_ROOT_DIR} PATH_SUFFIXES ${GTEST_LIBPATH_SUFFIX})
+  SET(GTEST_LIBPATH_SUFFIX third_party_libs/build_googlemock/gtest/Debug)
+  FIND_LIBRARY(Gtest_LIBRARY_DEBUG NAMES gtest PATHS ${GTEST_LIB_DIR} ${GTEST_ROOT_DIR} PATH_SUFFIXES ${GTEST_LIBPATH_SUFFIX} NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 ENDIF()
 
-FIND_PATH(Gtest_INCLUDE_DIR gtest/gtest.h PATHS ${GTEST_INC_DIR} ${GTEST_ROOT_DIR}/include)
+FIND_PATH(Gtest_INCLUDE_DIR gtest/gtest.h PATHS ${GTEST_INC_DIR} ${GTEST_ROOT_DIR}/third_party_libs/build_googlemock/include NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 
 GET_FILENAME_COMPONENT(GTEST_LIBRARY_DIR ${Gtest_LIBRARY_RELEASE} PATH)
 SET(Gtest_LIBRARY_DIR ${GTEST_LIBRARY_DIR} CACHE PATH "Path to GoogleTest libraries directory" FORCE)
