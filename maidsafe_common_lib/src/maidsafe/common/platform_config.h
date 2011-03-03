@@ -33,8 +33,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *       it should not be regarded as final until this notice is removed.      *
  ******************************************************************************/
 
-#ifndef MAIDSAFE_COMMON_PLATFORM_CONFIG_H_
-#define MAIDSAFE_COMMON_PLATFORM_CONFIG_H_
+#ifndef MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_PLATFORM_CONFIG_H_
+#define MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_PLATFORM_CONFIG_H_
 
 #if defined(linux) || defined(__linux) || defined(__linux__) || \
   defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || \
@@ -77,4 +77,4 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef GetMessage
 #endif
 
-#endif  // MAIDSAFE_COMMON_PLATFORM_CONFIG_H_
+#endif  // MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_PLATFORM_CONFIG_H_
