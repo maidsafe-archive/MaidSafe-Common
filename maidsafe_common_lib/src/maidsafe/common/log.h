@@ -26,8 +26,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#ifndef MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_LOG_H_
-#define MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_LOG_H_
+#ifndef MAIDSAFE_COMMON_LOG_H_
+#define MAIDSAFE_COMMON_LOG_H_
 
 // For MSVC, we need to include windows.h which in turn includes WinGDI.h
 // which defines ERROR (which conflicts with Glog's ERROR definition)
@@ -37,4 +37,4 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include "glog/logging.h"
 
-#endif  // MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_LOG_H_
+#endif  // MAIDSAFE_COMMON_LOG_H_
