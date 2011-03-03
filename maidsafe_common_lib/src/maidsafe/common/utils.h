@@ -31,8 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *       removed.                                                              *
  ******************************************************************************/
 
-#ifndef MAIDSAFE_COMMON_UTILS_H_
-#define MAIDSAFE_COMMON_UTILS_H_
+#ifndef MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_UTILS_H_
+#define MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_UTILS_H_
 
 #include <string>
 #include "boost/cstdint.hpp"
@@ -150,4 +150,4 @@ boost::posix_time::time_duration GetDurationSinceEpoch();
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_UTILS_H_
+#endif  // MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_UTILS_H_
