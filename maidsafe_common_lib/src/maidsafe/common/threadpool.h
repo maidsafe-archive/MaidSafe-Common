@@ -31,8 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *       removed.                                                              *
  ******************************************************************************/
 
-#ifndef MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_THREADPOOL_H_
-#define MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_THREADPOOL_H_
+#ifndef MAIDSAFE_COMMON_THREADPOOL_H_
+#define MAIDSAFE_COMMON_THREADPOOL_H_
 
 #include <queue>
 #include <vector>
@@ -70,4 +70,4 @@ class Threadpool {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_LIB_MAIDSAFE_COMMON_THREADPOOL_H_
+#endif  // MAIDSAFE_COMMON_THREADPOOL_H_

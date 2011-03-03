@@ -40,7 +40,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(DISABLE_cplusplus, BEH_BASE_static_assert) {
+TEST(cplusplus, DISABLED_BEH_BASE_static_assert) {
 // well enable this to check your compiler fails on a static assert
 // good reason we cannot leave this uncommented.
 
@@ -67,7 +67,7 @@ TEST(cplusplus, BEH_BASE_auto) {
   ASSERT_EQ(v, p);
 }
 // gcc 4.5
-TEST(DISABLE_cplusplus, BEH_BASE_decltype) {
+TEST(cplusplus, DISABLED_BEH_BASE_decltype) {
 //  int i = 7;
 //  static const decltype(i++) j = 4;
 //  ASSERT_EQ(7, i); //decltype has own scope so i unchanged
@@ -91,7 +91,7 @@ TEST(DISABLE_cplusplus, BEH_BASE_decltype) {
 //    ASSERT_EQ(typeid(var2), typeid(const int));
 }
 
-TEST(DISABLE_cplusplus, BEH_BASE_lambda) {
+TEST(cplusplus, DISABLED_BEH_BASE_lambda) {
 //  std::vector<int> v;
 //  v.push_back(50);
 //  v.push_back(-10);
@@ -108,7 +108,7 @@ TEST(DISABLE_cplusplus, BEH_BASE_lambda) {
 
 
 // gcc 4.6
-TEST(DISABLE_cplusplus, BEH_BASE_rangeBasedFor) {
+TEST(cplusplus, DISABLED_BEH_BASE_rangeBasedFor) {
 //  int my_array[5] = {1, 2, 3, 4, 5};
 //  for (int &x: my_array) {
 //    x *= 2;
@@ -116,7 +116,7 @@ TEST(DISABLE_cplusplus, BEH_BASE_rangeBasedFor) {
 //
 }
 
-TEST(DISABLE_cplusplus, BEH_BASE_localAndUnamedTemplteArgs) {
+TEST(cplusplus, DISABLED_BEH_BASE_localAndUnamedTemplteArgs) {
 // template< typename First, typename Second, int third>
 // class SomeType;
 //
