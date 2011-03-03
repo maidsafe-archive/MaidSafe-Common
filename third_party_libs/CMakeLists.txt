@@ -56,6 +56,18 @@ IF(NOT BUILD_TARGET)
   SET(BUILD_TARGET "ALL")
 ENDIF()
 
+IF(${BUILD_TARGET} MATCHES "ALL")
+  SET(MSG "\nBuilding ALL targets.\nTo change this, run cmake with one of the following options:\n")
+ELSE()
+  SET(MSG "\nBuilding target ${BUILD_TARGET} only.\nTo change this, run cmake with one of the following options:\n")
+ENDIF()
+SET(MSG "${MSG}    -DBUILD_TARGET=ALL\n")
+SET(MSG "${MSG}    -DBUILD_TARGET=GMOCK_GTEST\n")
+SET(MSG "${MSG}    -DBUILD_TARGET=CRYPTOPP\n")
+SET(MSG "${MSG}    -DBUILD_TARGET=PROTOBUF\n")
+SET(MSG "${MSG}    -DBUILD_TARGET=GLOG\n")
+MESSAGE("${MSG}")
+
 # Build GoogleMock and GoogleTest
 IF((${BUILD_TARGET} MATCHES "GMOCK_GTEST") OR (${BUILD_TARGET} MATCHES "ALL"))
   MESSAGE("-- Building GoogleMock and GoogleTest")
@@ -189,6 +201,8 @@ IF((${BUILD_TARGET} MATCHES "GLOG") OR (${BUILD_TARGET} MATCHES "ALL"))
   ENDIF()
   MATH(EXPR BUILT_COUNT ${BUILT_COUNT}+1)
 ENDIF()
+
+UNSET(BUILD_TARGET CACHE)
 
 IF(BUILT_COUNT EQUAL 0)
   SET(ERR_MSG "\nNo targets built.  Run cmake with one of the following options\n")
