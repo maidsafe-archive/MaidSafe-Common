@@ -66,7 +66,6 @@ LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/eprecomp.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cryptlib_bds.cpp")
 
 # Set up test
-LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/adhoc.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/bench.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/bench2.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/datatest.cpp")
@@ -78,8 +77,7 @@ LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/validat1.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/validat2.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/validat3.cpp")
 
-SET(cryptopp_TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/adhoc.cpp
-                          ${CMAKE_CURRENT_SOURCE_DIR}/bench.cpp
+SET(cryptopp_TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/bench.cpp
                           ${CMAKE_CURRENT_SOURCE_DIR}/bench2.cpp
                           ${CMAKE_CURRENT_SOURCE_DIR}/datatest.cpp
                           ${CMAKE_CURRENT_SOURCE_DIR}/dlltest.cpp
