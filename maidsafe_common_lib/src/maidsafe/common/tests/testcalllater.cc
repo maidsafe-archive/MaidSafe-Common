@@ -207,6 +207,7 @@ TEST_F(CallLaterTest, BEH_BASE_AddRemoveCallLaters) {
   while (sweethome.count() < 100 - n) {
     boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   }
+    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
   ASSERT_EQ(100 - n, sweethome.count()) << "Count in variable incorrect";
 }
 

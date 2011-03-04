@@ -259,8 +259,8 @@ TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
   std::set<boost::int32_t>random_ints;
   std::set<boost::uint32_t>random_uints;
   const size_t kCount(10000);
-  // look for less than 0.01% duplicates
-  const size_t kMaxDuplicates(kCount * 0.0001);
+  // look for less than 0.05% duplicates
+  const size_t kMaxDuplicates(kCount * 0.0005);
   for (size_t i = 0; i < kCount; ++i) {
     random_ints.insert(RandomInt32());
     random_uints.insert(RandomUint32());
