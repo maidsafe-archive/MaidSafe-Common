@@ -36,10 +36,7 @@
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
 MESSAGE("================================================================================\n")
-SET(CMAKE_CACHEFILE "${CMAKE_CACHEFILE_DIR}/CMakeCache.txt")
-IF(WIN32)
-  STRING(REPLACE "/" "\\" CMAKE_CACHEFILE ${CMAKE_CACHEFILE})
-ENDIF()
+FILE(TO_NATIVE_PATH "${CMAKE_CACHEFILE_DIR}/CMakeCache.txt" CMAKE_CACHEFILE)
 
 SET(ERROR_MESSAGE "No generator previously specified.  Run:\n")
 SET(ERROR_MESSAGE_CMAKE_PATH "cmake ../../..")
@@ -147,6 +144,15 @@ FILE(WRITE ${${PROJECT_NAME}_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COV
 ###################################################################################################
 # Set default directories to be searched for included files and libs                              #
 ###################################################################################################
+FIND_FILE(MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE InstallPrefix.cmake ${${PROJECT_NAME}_ROOT}/../third_party_libs)
+IF(MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE)
+  INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE})
+ENDIF()
+IF(MAIDSAFE_COMMON_INSTALL_PREFIX)
+  INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX}/share/maidsafe/maidsafe_third_party.cmake)
+  SET(INCLUDE_DIRS ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
+ENDIF()
+
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${${PROJECT_NAME}_ROOT}/../cmake)
 SET(TOOLS_PATH ${${PROJECT_NAME}_ROOT}/../tools)
 SET(DEFAULT_THIRD_PARTY_ROOT ${${PROJECT_NAME}_ROOT}/..)
@@ -161,40 +167,14 @@ ENDIF()
 ###################################################################################################
 # Boost libraries search                                                                          #
 ###################################################################################################
-SET(REQUIRED_BOOST_COMPONENTS date_time filesystem program_options regex system thread unit_test_framework)
+SET(REQUIRED_BOOST_COMPONENTS filesystem system thread unit_test_framework)
 INCLUDE(maidsafe_FindBoost)
 SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
-#SET(LIBS_DIRS ${LIBS_DIRS} ${Boost_LIBRARY_DIRS})
-#SET(LIBS_DIRS_DEBUG ${LIBS_DIRS_DEBUG} ${Boost_LIBRARY_DIRS})
-
-###################################################################################################
-# Cryptopp library search                                                                         #
-###################################################################################################
-INCLUDE(maidsafe_FindCryptopp)
-SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Cryptopp_INCLUDE_DIR})
-#SET(LIBS_DIRS ${LIBS_DIRS} ${Cryptopp_LIBRARY_DIR})
-#SET(LIBS_DIRS_DEBUG ${LIBS_DIRS_DEBUG} ${Cryptopp_LIBRARY_DIR_DEBUG})
-
-
-###################################################################################################
-# Google Test library search                                                                      #
-###################################################################################################
-INCLUDE(maidsafe_FindGtest)
-SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Gtest_INCLUDE_DIR})
-#SET(LIBS_DIRS ${LIBS_DIRS} ${Gtest_LIBRARY_DIR})
-#SET(LIBS_DIRS_DEBUG ${LIBS_DIRS_DEBUG} ${Gtest_LIBRARY_DIR_DEBUG})
-IF(NOT WIN32)
-  SET(Gtest_LIBRARY "${Gtest_LIBRARY};pthread")
-ENDIF()
-
-
-###################################################################################################
-# Google Log library search                                                                       #
-###################################################################################################
-INCLUDE(maidsafe_FindGlog)
-SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Glog_INCLUDE_DIR})
-#SET(LIBS_DIRS ${LIBS_DIRS} ${Glog_LIBRARY_DIR})
-#SET(LIBS_DIRS_DEBUG ${LIBS_DIRS_DEBUG} ${Glog_LIBRARY_DIR_DEBUG})
+SET(EXPORT_BOOST_CMAKE ${CMAKE_CACHEFILE_DIR}/boost_libs.cmake)
+FILE(WRITE ${EXPORT_BOOST_CMAKE} "${EXPORT_BOOST}")
+FILE(APPEND ${EXPORT_BOOST_CMAKE} "\nSET(Boost_LIBRARY_DIRS \"${Boost_LIBRARY_DIRS}\")\n")
+FILE(APPEND ${EXPORT_BOOST_CMAKE} "SET(Boost_INCLUDE_DIR \"${Boost_INCLUDE_DIR}\")\n")
+INCLUDE(${EXPORT_BOOST_CMAKE})
 
 ###################################################################################################
 # Python library search                                                                           #
@@ -241,10 +221,6 @@ FOREACH(library ${SYS_LIB})
   ENDIF()
   UNSET(CURRENT_LIB CACHE)
 ENDFOREACH()
-
-#LIST(REMOVE_DUPLICATES LIBS_DIRS)
-#LIST(REMOVE_DUPLICATES LIBS_DIRS_DEBUG)
-#LINK_DIRECTORIES(${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
 
 INCLUDE_DIRECTORIES(BEFORE ${${PROJECT_NAME}_SOURCE_DIR})
 LIST(REMOVE_DUPLICATES INCLUDE_DIRS)
@@ -313,17 +289,9 @@ IF(UNIX)
   ENDIF()
 ENDIF()
 
-TARGET_LINK_LIBRARIES(maidsafe_common_static
-                        ${Cryptopp_LIBRARY}
-                        ${Glog_LIBRARY}
-                        ${Boost_DATE_TIME_LIBRARIES}
-                        ${Boost_FILESYSTEM_LIBRARIES}
-                        ${Boost_THREAD_LIBRARIES}
-                        ${Boost_SYSTEM_LIBRARIES}
-                        ${Boost_REGEX_LIBRARIES}
-                        ${SYS_LIB})
-TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static ${Gtest_LIBRARY})
-TARGET_LINK_LIBRARIES(TESTboost ${Glog_LIBRARY} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARIES} ${Gtest_LIBRARY} ${SYS_LIB})
+TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static glog_static boost_filesystem boost_system boost_thread ${SYS_LIB})
+TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
+TARGET_LINK_LIBRARIES(TESTboost glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
 
 ###################################################################################################
 # Builds                                                                                          #
@@ -444,33 +412,14 @@ ENDIF()
 ###################################################################################################
 # Install details                                                                                 #
 ###################################################################################################
-
-SET(CMAKE_INSTALL_PREFIX ${${PROJECT_NAME}_ROOT}/build/common_lib)
-SET(DEFAULT_INSTALL_PATH TRUE)
-
+GET_FILENAME_COMPONENT(COMMON_ROOT_DIR ${${PROJECT_NAME}_ROOT} PATH)
+SET(CMAKE_INSTALL_PREFIX ${COMMON_ROOT_DIR}/installed)
 IF(INSTALL_PREFIX)
-  IF(WIN32)
-    STRING(REPLACE "\\" "/" INSTALL_PREFIX ${INSTALL_PREFIX})
-  ENDIF()
+  FILE(TO_CMAKE_PATH ${INSTALL_PREFIX} INSTALL_PREFIX)
   SET(CMAKE_INSTALL_PREFIX "${INSTALL_PREFIX}")
-  SET(DEFAULT_INSTALL_PATH FALSE)
 ENDIF()
+FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} CMAKE_INSTALL_PREFIX_MESSAGE)
 
-SET(CMAKE_INSTALL_PREFIX_MESSAGE ${CMAKE_INSTALL_PREFIX})
-IF(WIN32)
-  STRING(REPLACE "/" "\\" CMAKE_INSTALL_PREFIX_MESSAGE ${CMAKE_INSTALL_PREFIX_MESSAGE})
-ENDIF()
-
-IF(DEFAULT_INSTALL_PATH)
-  SET(CMAKE_SOURCE_DIR_MESSAGE ${CMAKE_SOURCE_DIR})
-ELSE()
-  SET(CMAKE_SOURCE_DIR_MESSAGE ${CMAKE_INSTALL_PREFIX})
-ENDIF()
-IF(WIN32)
-  STRING(REPLACE "/" "\\" CMAKE_SOURCE_DIR_MESSAGE ${CMAKE_SOURCE_DIR_MESSAGE})
-ENDIF()
-
-###################################################################################################
 MESSAGE("")
 LIST(LENGTH ALL_GTESTS GTEST_COUNT)
 MESSAGE("${MAIDSAFE_TEST_TYPE_MESSAGE}.   ${GTEST_COUNT} Google Tests.")
@@ -483,7 +432,7 @@ MESSAGE("")
 MESSAGE("The libraries, headers, cmake modules and tools will be installed to:\n")
 MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
 MESSAGE("To include this project in any other MaidSafe project, use:\n")
-MESSAGE("    -DMAIDSAFE_COMMON_ROOT_DIR=\"${CMAKE_SOURCE_DIR_MESSAGE}\"\n\n")
+MESSAGE("    -DMAIDSAFE_COMMON_ROOT_DIR=\"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
 MESSAGE("To build and install this project now, run:\n")
 IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Release")
   MESSAGE("    cmake --build . --target install --config Release")
@@ -496,8 +445,9 @@ MESSAGE("")
 MESSAGE("================================================================================")
 MESSAGE("")
 
-INSTALL(TARGETS maidsafe_common_static EXPORT maidsafe_common ARCHIVE DESTINATION lib)
+INSTALL(TARGETS maidsafe_common_static EXPORT maidsafe_common ARCHIVE DESTINATION lib/\${CMAKE_INSTALL_CONFIG_NAME})
 INSTALL(FILES ${HEADER_FILES_COMMON_DIR} DESTINATION include/maidsafe/common)
 INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
 INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
-INSTALL(EXPORT maidsafe_common DESTINATION cmake)
+INSTALL(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)
+INSTALL(EXPORT maidsafe_common DESTINATION share/maidsafe)
