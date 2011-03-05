@@ -94,10 +94,16 @@ ELSE()
     ENDIF()
   ENDFOREACH()
 ENDIF()
+
 IF(DEFINED BOOST_ROOT_DIR)
   SET(BOOST_ROOT_DIR ${BOOST_ROOT_DIR} CACHE PATH "Path to Boost root directory" FORCE)
   SET(BOOST_ROOT ${BOOST_ROOT_DIR} CACHE PATH "Path to Boost root directory" FORCE)
+ELSEIF(UNIX)
+  SET(BOOST_ROOT_DIR "/usr/local/" CACHE PATH "Path to Boost root directory" FORCE)
+  SET(BOOST_ROOT "/usr/local/" CACHE PATH "Path to Boost root directory" FORCE)
+  
 ENDIF()
+
 SET(Boost_USE_STATIC_LIBS ON)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME ON)
