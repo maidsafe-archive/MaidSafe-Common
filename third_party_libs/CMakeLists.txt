@@ -59,7 +59,7 @@ SET(MSG "${MSG}    -DBUILD_TARGET=CRYPTOPP\n")
 SET(MSG "${MSG}    -DBUILD_TARGET=PROTOBUF\n")
 SET(MSG "${MSG}    -DBUILD_TARGET=GLOG\n")
 MESSAGE("${MSG}")
-SET(SEPARATOR "\n====================================================================================================n\n\n")
+SET(SEPARATOR "\n====================================================================================================\n\n")
 
 GET_FILENAME_COMPONENT(COMMON_ROOT_DIR ${CURRENT_DIR} PATH)
 SET(CMAKE_INSTALL_PREFIX ${COMMON_ROOT_DIR}/installed)
