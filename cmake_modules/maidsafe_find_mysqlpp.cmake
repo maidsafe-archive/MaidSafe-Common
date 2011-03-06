@@ -46,7 +46,7 @@
 #                                                                              #
 #==============================================================================#
 
-INCLUDE(${${PROJECT_NAME}_ROOT}/build/maidsafe_FindMysql.cmake)
+INCLUDE(maidsafe_find_mysql)
 
 IF(Mysql_FOUND)
   UNSET(WARNING_MESSAGE)
