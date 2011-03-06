@@ -437,8 +437,8 @@ ADD_GTESTS(TESTcommon)
 ADD_GTESTS(TESTboost)
 
 IF(UNIX)
-  SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind")
-  SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=100 --verbose --demangle=yes")
+  SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind --trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=100 --verbose --demangle=yes")
+#  SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=100 --verbose --demangle=yes")
 ENDIF()
 
 
