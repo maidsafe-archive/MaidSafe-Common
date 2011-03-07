@@ -8,7 +8,7 @@ findstr /i /v "\boost \cryptopp \libupnp .pb." %temp%\filelist.txt > %temp%\file
 echo Setup>%temp%\code_style_errors.txt
 set count=0
 for /f %%g in (%temp%\filelist2.txt) do (
-  @"cmd /c %rootpath%\..\tools\cpplint.py "%%g" 2>>%temp%\code_style_errors.txt"
+  @"cmd /c %2 "%%g" 2>>%temp%\code_style_errors.txt"
   <nul (set/p z=".")
 )
 findstr /i /v /b "Setup Done Total" %temp%\code_style_errors.txt > %temp%\code_style_errors2.txt
@@ -32,4 +32,4 @@ del %temp%\filelist.txt %temp%\filelist2.txt %temp%\code_style_errors.txt %temp%
 :set_default_rootpath
  cd ..\..\
  set rootpath=%cd%
- cd build\Win
+ cd build\Win_MSVC
