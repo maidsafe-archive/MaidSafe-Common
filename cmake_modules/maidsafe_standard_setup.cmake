@@ -210,12 +210,12 @@ ENDIF()
 ###################################################################################################
 
 # Force renaming of exes to match standard CMake library renaming policy
-FUNCTION(RENAME_TEST_EXECUTABLE TEST_EXE)
+FUNCTION(RENAME_EXECUTABLE EXE)
   IF(NOT MSVC)
-    SET_TARGET_PROPERTIES(${TEST_EXE} PROPERTIES
-                            DEBUG_OUTPUT_NAME ${TEST_EXE}${CMAKE_DEBUG_POSTFIX}
-                            RELWITHDEBINFO_OUTPUT_NAME ${TEST_EXE}${CMAKE_RELWITHDEBINFO_POSTFIX}
-                            MINSIZEREL_OUTPUT_NAME ${TEST_EXE}${CMAKE_MINSIZEREL_POSTFIX})
+    SET_TARGET_PROPERTIES(${EXE} PROPERTIES
+                            DEBUG_OUTPUT_NAME ${EXE}${CMAKE_DEBUG_POSTFIX}
+                            RELWITHDEBINFO_OUTPUT_NAME ${EXE}${CMAKE_RELWITHDEBINFO_POSTFIX}
+                            MINSIZEREL_OUTPUT_NAME ${EXE}${CMAKE_MINSIZEREL_POSTFIX})
   ENDIF()
 ENDFUNCTION()
 
