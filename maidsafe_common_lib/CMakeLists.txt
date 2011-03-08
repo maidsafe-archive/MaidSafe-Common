@@ -147,8 +147,8 @@ SET_TARGET_PROPERTIES(maidsafe_common_static PROPERTIES OUTPUT_NAME maidsafe_com
 
 ADD_EXECUTABLE(TESTcommon ${TEST_MAIN} ${ALL_FILES_COMMON_TESTS_DIR})
 ADD_EXECUTABLE(TESTboost ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
-RENAME_TEST_EXECUTABLE(TESTcommon)
-RENAME_TEST_EXECUTABLE(TESTboost)
+RENAME_EXECUTABLE(TESTcommon)
+RENAME_EXECUTABLE(TESTboost)
 
 TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static glog_static boost_filesystem boost_system boost_thread ${SYS_LIB})
 TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
