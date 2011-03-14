@@ -160,7 +160,7 @@ TEST(CryptoTest, BEH_BASE_Hash) {
     fs::path input_path(kTestDir);
     input_path /= "Input" + boost::lexical_cast<std::string>(i) + ".txt";
     input_files.push_back(input_path);
-    fs::fstream input_file(input_path.string().c_str(),
+    fs::fstream input_file(input_path.c_str(),
                            std::ios::out | std::ios::trunc | std::ios::binary);
     input_file << test_data.at(i).input;
     input_file.close();
@@ -258,6 +258,12 @@ TEST(CryptoTest, BEH_BASE_SymmEncrypt) {
   // Check using empty string
   EXPECT_TRUE(SymmEncrypt("", kKey, kIV).empty());
   EXPECT_TRUE(SymmDecrypt("", kKey, kIV).empty());
+
+  // Check using wrong key and wrong IV
+  EXPECT_TRUE(SymmEncrypt(kUnencrypted, "", kIV).empty());
+  EXPECT_TRUE(SymmEncrypt(kUnencrypted, kKey, "").empty());
+  EXPECT_TRUE(SymmDecrypt(kEncrypted, "", kIV).empty());
+  EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
 }
 
 TEST(CryptoTest, BEH_BASE_AsymEncrypt) {
@@ -329,6 +335,8 @@ TEST(CryptoTest, BEH_BASE_AsymSign) {
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kAnotherPublicKey));
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kBadPublicKey));
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kPrivateKey));
+  EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, ""));
+  EXPECT_FALSE(AsymCheckSig(kTestData, "", kPrivateKey));
 }
 
 TEST(CryptoTest, BEH_BASE_Compress) {

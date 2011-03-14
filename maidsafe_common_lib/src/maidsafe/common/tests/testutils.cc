@@ -120,12 +120,13 @@ TEST(UtilsTest, BEH_BASE_Stats) {
     stats.Add(2);
     stats.Add(4);
     stats.Add(5);
+    stats.Add(0);
 
-    EXPECT_EQ(4, stats.Size());
-    EXPECT_EQ(1, stats.Min());
+    EXPECT_EQ(5, stats.Size());
+    EXPECT_EQ(0, stats.Min());
     EXPECT_EQ(5, stats.Max());
     EXPECT_EQ(12, stats.Sum());
-    EXPECT_EQ(3, stats.Mean());
+    EXPECT_EQ(2, stats.Mean());
   }
   {
     Stats<float> stats;
@@ -139,12 +140,13 @@ TEST(UtilsTest, BEH_BASE_Stats) {
     stats.Add(2.2);
     stats.Add(3.3);
     stats.Add(4.4);
+    stats.Add(0.0);
 
-    EXPECT_EQ(4, stats.Size());
-    EXPECT_FLOAT_EQ(1.1, stats.Min());
+    EXPECT_EQ(5, stats.Size());
+    EXPECT_FLOAT_EQ(0.0, stats.Min());
     EXPECT_FLOAT_EQ(4.4, stats.Max());
     EXPECT_FLOAT_EQ(11.0, stats.Sum());
-    EXPECT_FLOAT_EQ(2.75, stats.Mean());
+    EXPECT_FLOAT_EQ(2.2, stats.Mean());
   }
 }
 
@@ -154,7 +156,6 @@ TEST(UtilsTest, BEH_BASE_IntToString) {
   EXPECT_EQ("0", IntToString(0));
   EXPECT_EQ("0", IntToString(-0));
 }
-
 
 TEST(UtilsTest, BEH_BASE_RandomStringSingleThread) {
   const size_t kStringSize = 4096;
