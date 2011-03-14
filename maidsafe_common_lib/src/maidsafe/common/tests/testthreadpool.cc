@@ -76,6 +76,7 @@ class Work {
     boost::mutex::scoped_lock lock(completed_tasks_mutex_);
     return completed_tasks_;
   }
+
  private:
   Work(const Work&);
   Work& operator=(const Work&);

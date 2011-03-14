@@ -26,12 +26,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <limits>
+
 #include "maidsafe/common/call_later_timer.h"
 #include "maidsafe/common/log.h"
 
 namespace maidsafe {
-
-void dummy_timeout_func() {}
 
 CallLaterTimer::CallLaterTimer()
     : timers_mutex_(),
@@ -89,18 +88,20 @@ boost::uint32_t CallLaterTimer::AddCallLater(const boost::uint64_t &msecs,
   boost::mutex::scoped_lock guard(timers_mutex_);
   if ((msecs == 0) || (!is_started_))
     return std::numeric_limits<boost::uint32_t>::max();
-  call_later_id_ = (call_later_id_ + 1) % 32768;
-  boost::shared_ptr<boost::asio::deadline_timer> timer(
-      new boost::asio::deadline_timer(io_service_,
-      boost::posix_time::milliseconds(msecs)));
-  std::pair<TimersMap::iterator, bool> p =
-      timers_.insert(TimersMap::value_type(call_later_id_, timer));
-  if (p.second) {
-    timer->async_wait(boost::bind(&CallLaterTimer::ExecuteFunctor, this,
-                                  callback, call_later_id_, _1));
-    return call_later_id_;
+
+  std::pair<TimersMap::iterator, bool> p;
+  p.second = false;
+  std::shared_ptr<boost::asio::deadline_timer> timer;
+  while (!p.second) {
+    call_later_id_ = (call_later_id_ + 1) % 32768;
+    timer.reset(new boost::asio::deadline_timer(
+                    io_service_, boost::posix_time::milliseconds(msecs)));
+    p = timers_.insert(TimersMap::value_type(call_later_id_, timer));
+    if (p.second)
+      timer->async_wait(boost::bind(&CallLaterTimer::ExecuteFunctor, this,
+                                    callback, call_later_id_, _1));
   }
-  return std::numeric_limits<boost::uint32_t>::max();
+  return call_later_id_;
 }
 
 bool CallLaterTimer::CancelOne(const boost::uint32_t &call_later_id) {

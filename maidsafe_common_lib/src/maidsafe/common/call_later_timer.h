@@ -29,13 +29,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_CALL_LATER_TIMER_H_
 
 #include <map>
-#include "boost/thread.hpp"
-#include "boost/cstdint.hpp"
-#include "boost/bind.hpp"
-#include "boost/function.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
+
 #include "boost/asio.hpp"
-#include "boost/shared_ptr.hpp"
+#include "boost/bind.hpp"
+#include "boost/cstdint.hpp"
+#include "boost/function.hpp"
+#include "boost/thread.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 namespace maidsafe {
 
@@ -51,7 +51,7 @@ struct CallLaterMap {
 class CallLaterTimer {
  public:
   typedef std::map<boost::uint32_t,
-                   boost::shared_ptr<boost::asio::deadline_timer> > TimersMap;
+                   std::shared_ptr<boost::asio::deadline_timer> > TimersMap;
   CallLaterTimer();
   ~CallLaterTimer();
   inline bool IsStarted() { return is_started_; }
@@ -73,8 +73,8 @@ class CallLaterTimer {
   TimersMap timers_;
   boost::asio::io_service io_service_;
   boost::asio::strand strand_;
-  boost::shared_ptr<boost::asio::io_service::work> work_;
-  boost::shared_ptr<boost::thread> worker_thread_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
+  std::shared_ptr<boost::thread> worker_thread_;
   boost::uint32_t call_later_id_;
 };
 

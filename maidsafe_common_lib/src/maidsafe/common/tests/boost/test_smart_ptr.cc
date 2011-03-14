@@ -75,8 +75,6 @@ class X {
 
 int X::instances = 0;
 
-
-
 TEST(boost, BEH_BOOST_smart_ptr_AtomicCount1) {
   boost::detail::atomic_count n(4);
   ASSERT_EQ(n, 4L);

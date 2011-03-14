@@ -211,6 +211,12 @@ TEST(CryptoTest, BEH_BASE_Hash) {
   }
 
   // Check using invalid filename
+  EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("NonExistent")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("NonExistent")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("NonExistent")).empty());
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("/")).empty());
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("NonExistent")).empty());
 
@@ -317,8 +323,8 @@ TEST(CryptoTest, BEH_BASE_AsymSign) {
   ASSERT_NE(kPrivateKey, kAnotherPrivateKey);
   const std::string kTestData(SRandomString(99999));
   const std::string kBadPublicKey(kPublicKey.substr(0, kPublicKey.size() - 1));
-  const std::string kBadPrivateKey(
-      kPrivateKey.substr(0, kPrivateKey.size() - 1));
+  const std::string kBadPrivateKey(kPrivateKey.substr(0,
+                                                      kPrivateKey.size() - 1));
 
   // Create signatures
   std::string signature_string(AsymSign(kTestData, kPrivateKey));
@@ -335,8 +341,6 @@ TEST(CryptoTest, BEH_BASE_AsymSign) {
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kAnotherPublicKey));
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kBadPublicKey));
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kPrivateKey));
-  EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, ""));
-  EXPECT_FALSE(AsymCheckSig(kTestData, "", kPrivateKey));
 }
 
 TEST(CryptoTest, BEH_BASE_Compress) {
