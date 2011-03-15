@@ -127,10 +127,10 @@ std::string HashFile<SHA1>(const boost::filesystem::path &file_path) {
   std::string result;
   SHA1 hash;
   try {
-    CryptoPP::FileSource(file_path.string().c_str(), true,
+    CryptoPP::FileSource(file_path.c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
-  catch(const CryptoPP::Exception &e) {
+  catch(const std::exception &e) {
     DLOG(ERROR) << e.what() << std::endl;
     result.clear();
   }
@@ -142,7 +142,7 @@ std::string HashFile<SHA256>(const boost::filesystem::path &file_path) {
   std::string result;
   SHA256 hash;
   try {
-    CryptoPP::FileSource(file_path.string().c_str(), true,
+    CryptoPP::FileSource(file_path.c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
   catch(const CryptoPP::Exception &e) {
@@ -157,7 +157,7 @@ std::string HashFile<SHA384>(const boost::filesystem::path &file_path) {
   std::string result;
   SHA384 hash;
   try {
-    CryptoPP::FileSource(file_path.string().c_str(), true,
+    CryptoPP::FileSource(file_path.c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
   catch(const CryptoPP::Exception &e) {
@@ -172,7 +172,7 @@ std::string HashFile<SHA512>(const boost::filesystem::path &file_path) {
   std::string result;
   SHA512 hash;
   try {
-    CryptoPP::FileSource(file_path.string().c_str(), true,
+    CryptoPP::FileSource(file_path.c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
   catch(const CryptoPP::Exception &e) {
@@ -318,7 +318,7 @@ bool AsymCheckSig(const std::string &input_data,
     CryptoPP::StringSource key(public_key, true);
     CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Verifier
         verifier(key);
-    bool result = false;
+    bool result(false);
     CryptoPP::StringSource signature_string(input_signature, true);
     if (signature_string.MaxRetrievable() != verifier.SignatureLength())
       return result;

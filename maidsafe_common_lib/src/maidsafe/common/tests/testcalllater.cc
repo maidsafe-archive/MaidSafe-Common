@@ -26,8 +26,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "gtest/gtest.h"
-#include "boost/scoped_ptr.hpp"
 #include "boost/thread/thread.hpp"
+
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/call_later_timer.h"
 
@@ -41,8 +41,8 @@ class Lynyrd {
       : count_(0),
         mutex_(new boost::mutex),
         cond_var_(new boost::condition_variable) {}
-  Lynyrd(boost::shared_ptr<boost::mutex> mutex,
-         boost::shared_ptr<boost::condition_variable> cond_var)
+  Lynyrd(std::shared_ptr<boost::mutex> mutex,
+         std::shared_ptr<boost::condition_variable> cond_var)
       : count_(0),
         mutex_(mutex),
         cond_var_(cond_var) {}
@@ -68,8 +68,8 @@ class Lynyrd {
   Lynyrd(const Lynyrd&);
   Lynyrd& operator=(const Lynyrd&);
   int count_;
-  boost::shared_ptr<boost::mutex> mutex_;
-  boost::shared_ptr<boost::condition_variable> cond_var_;
+  std::shared_ptr<boost::mutex> mutex_;
+  std::shared_ptr<boost::condition_variable> cond_var_;
 };
 
 class CallLaterTest : public testing::Test {
@@ -96,9 +96,16 @@ TEST_F(CallLaterTest, BEH_BASE_AddSingleCallLater) {
   while (sweethome.count() < 1)
     boost::this_thread::sleep(boost::posix_time::milliseconds(250));
   ASSERT_EQ(1, sweethome.count());
-  ASSERT_EQ(0, clt_.CancelAll()) <<
-      "Some calls were cancelled, list not empty";
+  ASSERT_EQ(0, clt_.CancelAll()) << "Some calls were cancelled, list not empty";
   ASSERT_EQ(0, clt_.TimersMapSize()) << "List not empty";
+
+  // Failure because future span = 0
+  ASSERT_EQ(std::numeric_limits<boost::uint32_t>::max(),
+            clt_.AddCallLater(0, boost::bind(&Lynyrd::Skynyrd, &sweethome)));
+  ASSERT_EQ(0, clt_.CancelAll()) << "Some calls were cancelled, list not empty";
+
+  // Failure trying to cancel inexistant function
+  ASSERT_FALSE(clt_.CancelOne(boost::uint32_t(22)));
 }
 
 TEST_F(CallLaterTest, BEH_BASE_AddManyCallLaters) {
@@ -146,8 +153,8 @@ TEST_F(CallLaterTest, BEH_BASE_AddCallLatersDestroyService) {
 
 TEST_F(CallLaterTest, BEH_BASE_AddRemoveCallLaters) {
   // Set up 100 calls and remove 50 of them before they start
-  boost::shared_ptr<boost::mutex> mutex(new boost::mutex);
-  boost::shared_ptr<boost::condition_variable>
+  std::shared_ptr<boost::mutex> mutex(new boost::mutex);
+  std::shared_ptr<boost::condition_variable>
       cond_var(new boost::condition_variable);
   Lynyrd sweethome(mutex, cond_var);
   std::vector<int> call_ids;
@@ -211,10 +218,9 @@ TEST_F(CallLaterTest, BEH_BASE_AddRemoveCallLaters) {
 // This needs some rethinking !!
 }
 
-
 TEST_F(CallLaterTest, BEH_BASE_AddPtrCallLater) {
   // Basic call later, but this time to method of object created on heap.
-  boost::scoped_ptr<Lynyrd> sweethome(new Lynyrd());
+  std::shared_ptr<Lynyrd> sweethome(new Lynyrd());
   ASSERT_EQ(0, sweethome->count());
   clt_.AddCallLater(20, boost::bind(&Lynyrd::Skynyrd, sweethome.get()));
   boost::this_thread::sleep(boost::posix_time::milliseconds(250));

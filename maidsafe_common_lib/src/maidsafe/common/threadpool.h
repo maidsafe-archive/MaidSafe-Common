@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <queue>
 #include <vector>
+
 #include "boost/asio.hpp"
 #include "boost/concept_check.hpp"
 #include "boost/function.hpp"
@@ -54,6 +55,7 @@ class Threadpool {
   // AddTask (io_service_.post(
   //    boost::bind( &Threadpool::Run<T>, this, function )
   bool EnqueueTask(const VoidFunctor &functor);
+
  private:
   //     template <typename T>
   //     void Run(T function) {
@@ -64,7 +66,7 @@ class Threadpool {
   Threadpool(const Threadpool&);
   Threadpool &operator=(const Threadpool&);
   boost::asio::io_service io_service_;
-  boost::shared_ptr<boost::asio::io_service::work> work_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
   boost::thread_group thread_group_;
 };
 

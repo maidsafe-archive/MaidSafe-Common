@@ -169,7 +169,7 @@ TEST(CryptoTest, BEH_BASE_Hash) {
     fs::path input_path(kTestDir);
     input_path /= "Input" + boost::lexical_cast<std::string>(i) + ".txt";
     input_files.push_back(input_path);
-    fs::fstream input_file(input_path.string().c_str(),
+    fs::fstream input_file(input_path.c_str(),
                            std::ios::out | std::ios::trunc | std::ios::binary);
     input_file << test_data.at(i).input;
     input_file.close();
@@ -230,6 +230,12 @@ TEST(CryptoTest, BEH_BASE_Hash) {
   }
 
   // Check using invalid filename
+  EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("NonExistent")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("NonExistent")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("NonExistent")).empty());
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("/")).empty());
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("NonExistent")).empty());
 
@@ -277,6 +283,12 @@ TEST(CryptoTest, BEH_BASE_SymmEncrypt) {
   // Check using empty string
   EXPECT_TRUE(SymmEncrypt("", kKey, kIV).empty());
   EXPECT_TRUE(SymmDecrypt("", kKey, kIV).empty());
+
+  // Check using wrong key and wrong IV
+  EXPECT_TRUE(SymmEncrypt(kUnencrypted, "", kIV).empty());
+  EXPECT_TRUE(SymmEncrypt(kUnencrypted, kKey, "").empty());
+  EXPECT_TRUE(SymmDecrypt(kEncrypted, "", kIV).empty());
+  EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
 }
 
 TEST(CryptoTest, BEH_BASE_AsymEncrypt) {
@@ -330,8 +342,8 @@ TEST(CryptoTest, BEH_BASE_AsymSign) {
   ASSERT_NE(kPrivateKey, kAnotherPrivateKey);
   const std::string kTestData(SRandomString(99999));
   const std::string kBadPublicKey(kPublicKey.substr(0, kPublicKey.size() - 1));
-  const std::string kBadPrivateKey(
-      kPrivateKey.substr(0, kPrivateKey.size() - 1));
+  const std::string kBadPrivateKey(kPrivateKey.substr(0,
+                                                      kPrivateKey.size() - 1));
 
   // Create signatures
   std::string signature_string(AsymSign(kTestData, kPrivateKey));

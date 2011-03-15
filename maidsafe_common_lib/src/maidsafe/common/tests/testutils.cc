@@ -28,11 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <cstdlib>
 #include <set>
+
 #include "gtest/gtest.h"
 #include "boost/timer.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/progress.hpp"
 #include "boost/thread.hpp"
+
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
@@ -57,9 +59,9 @@ TEST(UtilsTest, FUNC_BASE_RandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
-  std::vector< boost::shared_ptr<boost::thread> > test_threads;
+  std::vector< std::shared_ptr<boost::thread> > test_threads;
   for (int i = 0; i < thread_count; ++i) {
-    test_threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(
+    test_threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(
         &test::GenerateRandomStrings, string_count, string_size)));
   }
   for (int i = 0; i < thread_count; ++i) {
@@ -71,9 +73,9 @@ TEST(UtilsTest, FUNC_BASE_SRandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
-  std::vector< boost::shared_ptr<boost::thread> > test_threads;
+  std::vector< std::shared_ptr<boost::thread> > test_threads;
   for (int i = 0; i < thread_count; ++i) {
-    test_threads.push_back(boost::shared_ptr<boost::thread>(new boost::thread(
+    test_threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(
         &test::GenerateSRandomStrings, string_count, string_size)));
   }
   for (int i = 0; i < thread_count; ++i) {
@@ -120,12 +122,13 @@ TEST(UtilsTest, BEH_BASE_Stats) {
     stats.Add(2);
     stats.Add(4);
     stats.Add(5);
+    stats.Add(0);
 
-    EXPECT_EQ(4, stats.Size());
-    EXPECT_EQ(1, stats.Min());
+    EXPECT_EQ(5, stats.Size());
+    EXPECT_EQ(0, stats.Min());
     EXPECT_EQ(5, stats.Max());
     EXPECT_EQ(12, stats.Sum());
-    EXPECT_EQ(3, stats.Mean());
+    EXPECT_EQ(2, stats.Mean());
   }
   {
     Stats<float> stats;
@@ -139,12 +142,13 @@ TEST(UtilsTest, BEH_BASE_Stats) {
     stats.Add(2.2);
     stats.Add(3.3);
     stats.Add(4.4);
+    stats.Add(0.0);
 
-    EXPECT_EQ(4, stats.Size());
-    EXPECT_FLOAT_EQ(1.1, stats.Min());
+    EXPECT_EQ(5, stats.Size());
+    EXPECT_FLOAT_EQ(0.0, stats.Min());
     EXPECT_FLOAT_EQ(4.4, stats.Max());
     EXPECT_FLOAT_EQ(11.0, stats.Sum());
-    EXPECT_FLOAT_EQ(2.75, stats.Mean());
+    EXPECT_FLOAT_EQ(2.2, stats.Mean());
   }
 }
 
@@ -154,7 +158,6 @@ TEST(UtilsTest, BEH_BASE_IntToString) {
   EXPECT_EQ("0", IntToString(0));
   EXPECT_EQ("0", IntToString(-0));
 }
-
 
 TEST(UtilsTest, BEH_BASE_RandomStringSingleThread) {
   const size_t kStringSize = 4096;
