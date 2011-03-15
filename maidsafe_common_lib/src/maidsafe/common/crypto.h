@@ -37,6 +37,7 @@ class SHA1;
 class SHA256;
 class SHA384;
 class SHA512;
+class Tiger;
 }  // namespace CryptoPP
 
 namespace maidsafe {
@@ -47,6 +48,7 @@ typedef CryptoPP::SHA1 SHA1;
 typedef CryptoPP::SHA256 SHA256;
 typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
+typedef CryptoPP::Tiger Tiger;
 
 const boost::uint16_t AES256_KeySize = 32;  /**< size in bytes. */
 const boost::uint16_t  AES256_IVSize = 16;  /**< size in bytes. */

@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/integer.h"
 #include "cryptopp/pwdbased.h"
 #include "cryptopp/sha.h"
+#include "cryptopp/tiger.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/files.h"
 #include "cryptopp/gzip.h"
@@ -113,6 +114,15 @@ std::string Hash<SHA512>(const std::string &input) {
 }
 
 template <>
+std::string Hash<Tiger>(const std::string &input) {
+  std::string result;
+  Tiger hash;
+  CryptoPP::StringSource(input, true,
+      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+  return result;
+}
+
+template <>
 std::string HashFile<SHA1>(const boost::filesystem::path &file_path) {
   std::string result;
   SHA1 hash;
@@ -161,6 +171,21 @@ template <>
 std::string HashFile<SHA512>(const boost::filesystem::path &file_path) {
   std::string result;
   SHA512 hash;
+  try {
+    CryptoPP::FileSource(file_path.string().c_str(), true,
+        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << e.what() << std::endl;
+    result.clear();
+  }
+  return result;
+}
+
+template <>
+std::string HashFile<Tiger>(const boost::filesystem::path &file_path) {
+  std::string result;
+  Tiger hash;
   try {
     CryptoPP::FileSource(file_path.string().c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
