@@ -238,6 +238,8 @@ TEST(CryptoTest, BEH_BASE_Hash) {
   EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("NonExistent")).empty());
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("/")).empty());
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("NonExistent")).empty());
+  EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("/")).empty());
+  EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("NonExistent")).empty());
 
   try {
     EXPECT_GT(fs::remove_all(kTestDir), 0);

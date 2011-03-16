@@ -57,12 +57,10 @@ CallLaterTimer::~CallLaterTimer() {
 
 void CallLaterTimer::Run() {
   while (true) {
-    try {
-      io_service_.run();
+    boost::system::error_code ec;
+    io_service_.run(ec);
+    if (!ec)
       break;
-    } catch(const std::exception &e) {
-      DLOG(ERROR) << e.what() << std::endl;
-    }
   }
 }
 
@@ -71,16 +69,13 @@ void CallLaterTimer::ExecuteFunctor(
     const boost::uint32_t &call_later_id,
     const boost::system::error_code &error_code) {
   if (error_code) {
-    if (error_code != boost::asio::error::operation_aborted) {
-      DLOG(ERROR) << error_code.message() << std::endl;
-      boost::mutex::scoped_lock guard(timers_mutex_);
-      timers_.erase(call_later_id);
-    }
+    DLOG(ERROR) << "CallLaterTimer::ExecuteFunctor - operation ID:"
+                 << call_later_id << ", " << error_code.message() << std::endl;
   } else {
     strand_.dispatch(callback);
-    boost::mutex::scoped_lock guard(timers_mutex_);
-    timers_.erase(call_later_id);
   }
+  boost::mutex::scoped_lock guard(timers_mutex_);
+  timers_.erase(call_later_id);
 }
 
 boost::uint32_t CallLaterTimer::AddCallLater(const boost::uint64_t &msecs,

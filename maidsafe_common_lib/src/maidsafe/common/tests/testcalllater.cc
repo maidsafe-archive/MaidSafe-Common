@@ -63,6 +63,9 @@ class Lynyrd {
     boost::mutex::scoped_lock guard(*mutex_);
     count_ = 0;
   }
+  void Lame() {
+    throw std::exception();
+  }
 
  private:
   Lynyrd(const Lynyrd&);
@@ -227,6 +230,15 @@ TEST_F(CallLaterTest, BEH_BASE_AddPtrCallLater) {
   ASSERT_EQ(0, clt_.CancelAll()) <<
       "Some calls were cancelled, list not empty";
   ASSERT_EQ(0, clt_.TimersMapSize()) << "List not empty";
+}
+
+TEST_F(CallLaterTest, BEH_BASE_FunctorWithException) {
+  ASSERT_TRUE(clt_.IsStarted());
+  clt_.CancelAll();
+  ASSERT_EQ(0, clt_.TimersMapSize()) << "List not empty";
+  Lynyrd var;
+  boost::uint32_t t(clt_.AddCallLater(10000, boost::bind(&Lynyrd::Lame, &var)));
+  ASSERT_TRUE(clt_.CancelOne(t));
 }
 
 }  // namespace test
