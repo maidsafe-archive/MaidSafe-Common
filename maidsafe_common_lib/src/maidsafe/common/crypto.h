@@ -29,8 +29,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_CRYPTO_H_
 
 #include <string>
+
 #include "boost/cstdint.hpp"
 #include "boost/filesystem/v3/path.hpp"
+#include "boost/scoped_ptr.hpp"
+
+#include "cryptopp/files.h"
+#include "cryptopp/filters.h"
+#include "cryptopp/sha.h"
+#include "cryptopp/tiger.h"
+
+#include "maidsafe/common/log.h"
 
 namespace CryptoPP {
 class SHA1;
@@ -77,16 +86,34 @@ std::string SecurePassword(const std::string &password,
  *  @tparam HashType type of hash function to use (e.g. SHA512)
  *  @param input string that is to be hashed.
  *  @return the result of the hash function. */
-template <typename HashType>
-std::string Hash(const std::string &input);
+template <class HashType>
+std::string Hash(const std::string &input) {
+  std::string result;
+  HashType hash;
+  CryptoPP::StringSource(input, true,
+      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+  return result;
+}
 
 /** Hash function operating on a file.
  *  @tparam HashType type of hash function to use (e.g. SHA512)
  *  @param file_path path to file that is to be hashed.
  *  @return the result of the hash function, or empty string if the file could
  *  not be read. */
-template <typename HashType>
-std::string HashFile(const boost::filesystem::path &file_path);
+template <class HashType>
+std::string HashFile(const boost::filesystem::path &file_path) {
+  std::string result;
+  HashType hash;
+  try {
+    CryptoPP::FileSource(file_path.c_str(), true,
+        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+  }
+  catch(const std::exception &e) {
+    DLOG(ERROR) << e.what() << std::endl;
+    result.clear();
+  }
+  return result;
+}
 
 /** Symmetrically encrypt a string.
  *  Performs symmetric encrytion using AES256. It returns an empty string if the

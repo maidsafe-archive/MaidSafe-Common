@@ -25,23 +25,19 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "boost/scoped_ptr.hpp"
 #include "maidsafe/common/crypto.h"
-#include "cryptopp/integer.h"
-#include "cryptopp/pwdbased.h"
-#include "cryptopp/sha.h"
-#include "cryptopp/tiger.h"
-#include "cryptopp/filters.h"
-#include "cryptopp/files.h"
+
 #include "cryptopp/gzip.h"
 #include "cryptopp/hex.h"
 #include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
 #include "cryptopp/rsa.h"
 #include "cryptopp/osrng.h"
+#include "cryptopp/integer.h"
+#include "cryptopp/pwdbased.h"
+
 #include "maidsafe/common/platform_config.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/log.h"
 
 namespace maidsafe {
 
@@ -75,126 +71,6 @@ std::string SecurePassword(const std::string &password,
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
   return derived_password;
-}
-
-template <>
-std::string Hash<SHA1>(const std::string &input) {
-  std::string result;
-  SHA1 hash;
-  CryptoPP::StringSource(input, true,
-      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  return result;
-}
-
-template <>
-std::string Hash<SHA256>(const std::string &input) {
-  std::string result;
-  SHA256 hash;
-  CryptoPP::StringSource(input, true,
-      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  return result;
-}
-
-template <>
-std::string Hash<SHA384>(const std::string &input) {
-  std::string result;
-  SHA384 hash;
-  CryptoPP::StringSource(input, true,
-      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  return result;
-}
-
-template <>
-std::string Hash<SHA512>(const std::string &input) {
-  std::string result;
-  SHA512 hash;
-  CryptoPP::StringSource(input, true,
-      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  return result;
-}
-
-template <>
-std::string Hash<Tiger>(const std::string &input) {
-  std::string result;
-  Tiger hash;
-  CryptoPP::StringSource(input, true,
-      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  return result;
-}
-
-template <>
-std::string HashFile<SHA1>(const boost::filesystem::path &file_path) {
-  std::string result;
-  SHA1 hash;
-  try {
-    CryptoPP::FileSource(file_path.c_str(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch(const std::exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
-    result.clear();
-  }
-  return result;
-}
-
-template <>
-std::string HashFile<SHA256>(const boost::filesystem::path &file_path) {
-  std::string result;
-  SHA256 hash;
-  try {
-    CryptoPP::FileSource(file_path.c_str(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
-    result.clear();
-  }
-  return result;
-}
-
-template <>
-std::string HashFile<SHA384>(const boost::filesystem::path &file_path) {
-  std::string result;
-  SHA384 hash;
-  try {
-    CryptoPP::FileSource(file_path.c_str(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
-    result.clear();
-  }
-  return result;
-}
-
-template <>
-std::string HashFile<SHA512>(const boost::filesystem::path &file_path) {
-  std::string result;
-  SHA512 hash;
-  try {
-    CryptoPP::FileSource(file_path.c_str(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
-    result.clear();
-  }
-  return result;
-}
-
-template <>
-std::string HashFile<Tiger>(const boost::filesystem::path &file_path) {
-  std::string result;
-  Tiger hash;
-  try {
-    CryptoPP::FileSource(file_path.string().c_str(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
-    result.clear();
-  }
-  return result;
 }
 
 std::string SymmEncrypt(const std::string &input,
