@@ -147,6 +147,13 @@ class FileChunkStore: public ChunkStore {
  private:
   FileChunkStore(const FileChunkStore&);
   FileChunkStore& operator=(const FileChunkStore&);
+
+  /**
+   * Utility function
+   * @param the chunk name in raw format
+   * @return the absolute file path after encoding the chunk name as hex
+   */
+  fs::path ChunkNameToFilePath(const std::string &chunk_name);
   fs::path storage_location_;  ///< the chunk store location on disk
 };
 

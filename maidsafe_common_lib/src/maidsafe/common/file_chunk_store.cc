@@ -26,13 +26,45 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/file_chunk_store.h"
+#include "maidsafe/common/utils.h"
+
+#include "boost/filesystem/fstream.hpp"
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 std::string FileChunkStore::Get(const std::string &name) {
-  std::string chunk_content;
 
-  return chunk_content;
+  fs::path file_path(ChunkNameToFilePath(name));
+
+  boost::system::error_code ec;
+
+  if (fs::exists(file_path, ec)) {
+    if (ec)
+      return "";
+
+    std::uintmax_t file_size(fs::file_size(file_path, ec));
+
+    if (ec || !file_size)
+      return "";
+
+    fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
+
+    if (!file_in.good())
+      return "";
+
+    std::string chunk_content;
+    chunk_content.resize(file_size);
+
+    file_in.read(&((chunk_content)[0]), file_size);
+
+    file_in.close();
+
+    return chunk_content;
+  }
+
+  return "";
 }
 
 bool FileChunkStore::Get(const std::string &name,
@@ -101,6 +133,10 @@ bool FileChunkStore::Empty() {
 }
 
 void FileChunkStore::Clear() {
+}
+
+fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {
+  return fs::path(storage_location_ / EncodeToHex(chunk_name));
 }
 
 }  // namespace maidsafe
