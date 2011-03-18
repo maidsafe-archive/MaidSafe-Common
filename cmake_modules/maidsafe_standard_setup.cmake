@@ -206,6 +206,42 @@ IF(UNIX)
 ENDIF()
 
 ###################################################################################################
+# Cleanup of temporary test folders                                                               #
+###################################################################################################
+IF(WIN32)
+  IF(NOT CLEAN_TEMP)
+    SET(CLEAN_TEMP "OFF" CACHE INTERNAL "Cleanup of temp test folders, options are: ONCE, OFF, ALWAYS" FORCE)
+  ENDIF(NOT CLEAN_TEMP)
+  EXECUTE_PROCESS(COMMAND CMD /C ECHO %TEMP% OUTPUT_VARIABLE temp_path OUTPUT_STRIP_TRAILING_WHITESPACE)
+  STRING(REPLACE "\\" "/" temp_path ${temp_path})
+  FILE(GLOB maidsafe_temp_dirs ${temp_path}/MaidSafe_Test*)
+  FILE(GLOB sigmoid_temp_dirs ${temp_path}/Sigmoid_Test*)
+  SET(temp_dirs ${maidsafe_temp_dirs} ${sigmoid_temp_dirs})
+  LIST(LENGTH temp_dirs temp_dir_count)
+  IF(NOT ${temp_dir_count} EQUAL 0)
+    MESSAGE("")
+    IF(CLEAN_TEMP MATCHES ONCE OR CLEAN_TEMP MATCHES ALWAYS)
+      MESSAGE("Cleaning up temporary test folders.\n")
+      FOREACH(temp_dir ${temp_dirs})
+        FILE(REMOVE_RECURSE ${temp_dir})
+        MESSAGE("-- Removed ${temp_dir}")
+      ENDFOREACH()
+    ELSE()
+      MESSAGE("The following temporary test folders could be cleaned up:\n")
+      FOREACH(temp_dir ${temp_dirs})
+        MESSAGE("-- Found ${temp_dir}")
+      ENDFOREACH()
+      MESSAGE("")
+      MESSAGE("To cleanup, run cmake ../.. -DCLEAN_TEMP=ONCE or cmake ../.. -DCLEAN_TEMP=ALWAYS")
+    ENDIF()
+    MESSAGE("================================================================================")
+  ENDIF()
+  IF(NOT CLEAN_TEMP MATCHES ALWAYS)
+    SET(CLEAN_TEMP "OFF" CACHE INTERNAL "Cleanup of temp test folders, options are: ONCE, OFF, ALWAYS" FORCE)
+  ENDIF()
+ENDIF()
+
+###################################################################################################
 # Helper functions                                                                                #
 ###################################################################################################
 
