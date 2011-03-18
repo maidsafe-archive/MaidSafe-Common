@@ -115,13 +115,6 @@ bool FileChunkStore::Store(const std::string &name,
   return false;
 }
 
-/**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param source_file_name Path to input file
-   * @param delete_source_file True if file can be deleted after storing
-   * @return True if chunk could be stored or already existed
-   */
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
                            bool delete_source_file) {
@@ -155,9 +148,15 @@ bool FileChunkStore::Store(const std::string &name,
 }
 
 bool FileChunkStore::Delete(const std::string &name) {
-  bool success(false);
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  boost::system::error_code ec;
 
-  return success;
+  fs::remove(chunk_file, ec);
+
+  if (ec)
+    return false;
+
+  return true;
 }
 
 bool FileChunkStore::MoveTo(const std::string &name,
@@ -168,9 +167,12 @@ bool FileChunkStore::MoveTo(const std::string &name,
 }
 
 bool FileChunkStore::Has(const std::string &name) {
-  bool found(false);
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  boost::system::error_code ec;
 
-  return found;
+  if (fs::exists(chunk_file, ec))
+    return true;
+  return false;
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) {
