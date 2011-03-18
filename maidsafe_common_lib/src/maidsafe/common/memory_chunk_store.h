@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_MEMORY_CHUNK_STORE_H_
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include "boost/filesystem.hpp"
 
@@ -48,15 +49,16 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  MemoryChunkStore() {}
+  MemoryChunkStore()
+      : chunks_() {}
   ~MemoryChunkStore() {}
 
   /**
    * Retrieves a chunk's content as a string.
    * @param name Chunk name
-   * @return Chunk content, or empty of non-existant
+   * @return Chunk content, or empty if non-existant
    */
-  std::string Get(const std::string &name) { return ""; }
+  std::string Get(const std::string &name);
 
   /**
    * Retrieves a chunk's content as a file, potentially overwriting an existing
@@ -65,9 +67,7 @@ class MemoryChunkStore: public ChunkStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  bool Get(const std::string &name, const fs::path &sink_file_name) {
-    return false;
-  }
+  bool Get(const std::string &name, const fs::path &sink_file_name);
 
   /**
    * Stores chunk content under the given name.
@@ -75,9 +75,7 @@ class MemoryChunkStore: public ChunkStore {
    * @param content The chunk's content
    * @return True if chunk could be stored or already existed
    */
-  bool Store(const std::string &name, const std::string &content) {
-    return false;
-  }
+  bool Store(const std::string &name, const std::string &content);
 
   /**
    * Stores chunk content under the given name.
@@ -87,17 +85,15 @@ class MemoryChunkStore: public ChunkStore {
    * @return True if chunk could be stored or already existed
    */
   bool Store(const std::string &name,
-                     const fs::path &source_file_name,
-                     bool delete_source_file) {
-    return false;
-  }
+             const fs::path &source_file_name,
+             bool delete_source_file);
 
   /**
    * Deletes a stored chunk.
    * @param name Chunk name
    * @return True if chunk deleted or non-existant
    */
-  bool Delete(const std::string &name) { return false; }
+  bool Delete(const std::string &name);
 
   /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
@@ -106,23 +102,21 @@ class MemoryChunkStore: public ChunkStore {
    * @param sink_chunk_store The receiving ChunkStore
    * @return True if operation successful
    */
-  bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store) {
-    return false;
-  }
+  bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
 
   /**
    * Checks if a chunk exists.
    * @param name Chunk name
    * @return True if chunk exists
    */
-  bool Has(const std::string &name) { return false; }
+  bool Has(const std::string &name);
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name) { return 0; }
+  std::uintmax_t Size(const std::string &name);
 
   /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
@@ -131,28 +125,29 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-  bool Validate(const std::string &name) { return false; }
+  bool Validate(const std::string &name);
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  std::uintmax_t Count() { return 0; }
+  std::uintmax_t Count();
 
   /**
    * Checks if any chunks are held by this ChunkStore.
    * @return True if no chunks stored
    */
-  bool Empty() { return true; }
+  bool Empty();
 
   /**
    * Deletes all stored chunks.
    */
-  void Clear() {}
+  void Clear();
 
  private:
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
+  std::map<std::string, std::string> chunks_;
 };
 
 }  //  namespace maidsafe
