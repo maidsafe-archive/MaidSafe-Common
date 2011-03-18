@@ -25,12 +25,6 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*******************************************************************************
- * NOTE: This header is unlikely to have any breaking changes applied.         *
- *       However, it should not be regarded as finalised until this notice is  *
- *       removed.                                                              *
- ******************************************************************************/
-
 #ifndef MAIDSAFE_COMMON_THREADPOOL_H_
 #define MAIDSAFE_COMMON_THREADPOOL_H_
 
@@ -42,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/function.hpp"
 #include "boost/thread/condition_variable.hpp"
 #include "boost/thread/thread.hpp"
+#include "maidsafe/common/version.h"
 
 namespace maidsafe {
 

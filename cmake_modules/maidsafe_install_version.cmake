@@ -33,27 +33,24 @@
 #                                                                              #
 #==============================================================================#
 #                                                                              #
-#  Module used to finalise standard main CMakeLists.txt                        #
+#  Module used to append or amend MaidSafe project version information at      #
+#  install time.                                                               #
 #                                                                              #
 #==============================================================================#
 
 
-FILE(TO_CMAKE_PATH ${MAIDSAFE_COMMON_INSTALL_DIR} CMAKE_INSTALL_PREFIX)
-IF(INSTALL_PREFIX)
-  FILE(TO_CMAKE_PATH ${INSTALL_PREFIX} INSTALL_PREFIX)
-  SET(CMAKE_INSTALL_PREFIX "${INSTALL_PREFIX}")
-ENDIF()
-FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} CMAKE_INSTALL_PREFIX_MESSAGE)
-
-MESSAGE("\nThe library and headers will be installed to:\n")
-MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
-MESSAGE("To include this project in any other MaidSafe project, use:\n")
-MESSAGE("    -DMAIDSAFE_COMMON_INSTALL_DIR:PATH=\"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
-MESSAGE("To build and install this project now, run:\n")
-IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Release")
-  MESSAGE("    cmake --build . --target install --config Release")
-ENDIF()
-IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Debug")
-  MESSAGE("    cmake --build . --target install --config Debug")
-ENDIF()
-MESSAGE("\n\n================================================================================"\n)
+STRING(REPLACE "\"" "" INSTALL_FILE_DIR ${INSTALL_FILE_DIR})
+STRING(REPLACE "\"" "" INSTALL_FILE_BASENAME ${INSTALL_FILE_BASENAME})
+FILE(GLOB VERSION_INFOS RELATIVE ${INSTALL_FILE_DIR} "${INSTALL_FILE_DIR}/VERSION.*")
+FOREACH(VERSION_INFO ${VERSION_INFOS})
+  FILE(REMOVE "${INSTALL_FILE_DIR}/${VERSION_INFO}")
+  STRING(REPLACE "." ";" VERSION_INFO ${VERSION_INFO})
+  LIST(GET VERSION_INFO 1 VERSION_VARIABLE)
+  LIST(GET VERSION_INFO 2 VERSION_VALUE)
+  LIST(GET VERSION_INFO 3 VERSION_BUILD_TYPE)
+  FIND_FILE(INSTALL_FILE ${INSTALL_FILE_BASENAME}-${VERSION_BUILD_TYPE}.cmake PATHS ${INSTALL_FILE_DIR})
+  IF(INSTALL_FILE)
+    FILE(APPEND ${INSTALL_FILE} "\n\n# Definition of this library's version\n")
+    FILE(APPEND ${INSTALL_FILE} "SET(${VERSION_VARIABLE} ${VERSION_VALUE})\n")
+  ENDIF()
+ENDFOREACH()

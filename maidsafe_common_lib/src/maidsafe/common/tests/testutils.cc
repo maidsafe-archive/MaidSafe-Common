@@ -30,14 +30,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <set>
 
 #include "gtest/gtest.h"
-#include "boost/timer.hpp"
+#include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/progress.hpp"
+#include "boost/timer.hpp"
 #include "boost/thread.hpp"
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -271,6 +274,40 @@ TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
   EXPECT_GE(kMaxDuplicates, kCount - random_ints.size());
   EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
 }
+
+TEST(UtilsTest, BEH_ENCRYPT_ReadWriteFile) {
+  fs::path file_path(fs::unique_path(fs::temp_directory_path() /
+      "MaidSafe_TestUtils_%%%%-%%%%-%%%%.dat"));
+  std::string file_content;
+  ASSERT_FALSE(fs::exists(file_path));
+  EXPECT_FALSE(ReadFile(file_path, NULL));
+  EXPECT_FALSE(ReadFile(file_path, &file_content));
+  EXPECT_TRUE(file_content.empty());
+
+  EXPECT_FALSE(WriteFile("", file_content));
+  EXPECT_TRUE(WriteFile(file_path, file_content));
+  EXPECT_TRUE(fs::exists(file_path));
+  EXPECT_EQ(0, fs::file_size(file_path));
+  EXPECT_FALSE(ReadFile(file_path, NULL));
+  EXPECT_TRUE(ReadFile(file_path, &file_content));
+  EXPECT_TRUE(file_content.empty());
+
+  file_content = RandomString(3000 + RandomUint32() % 1000);
+  EXPECT_TRUE(WriteFile(file_path, file_content));
+  EXPECT_EQ(crypto::Hash<crypto::SHA512>(file_content),
+            crypto::HashFile<crypto::SHA512>(file_path));
+
+  std::string file_content_in;
+  EXPECT_TRUE(ReadFile(file_path, &file_content_in));
+  EXPECT_EQ(file_content, file_content_in);
+
+  EXPECT_TRUE(WriteFile(file_path, "moo"));
+  EXPECT_TRUE(ReadFile(file_path, &file_content_in));
+  EXPECT_EQ("moo", file_content_in);
+
+  fs::remove(file_path);
+}
+
 }  // namespace test
 
 }  // namespace maidsafe
