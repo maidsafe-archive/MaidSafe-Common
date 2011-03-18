@@ -90,9 +90,29 @@ bool FileChunkStore::Get(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const std::string &content) {
-  bool success(false);
+  if (content.empty())
+    return false;
 
-  return success;
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  boost::system::error_code ec;
+
+  if (fs::exists(chunk_file, ec))
+    return true;
+
+  //if (ec)
+  //  return false;
+
+  try {
+    fs::ofstream file_out(chunk_file,
+                        std::ios::out | std::ios::trunc | std::ios::binary);
+
+    file_out.write(content.data(), content.size());
+    file_out.close();
+    return true;
+  } catch(...) {
+    return false;
+  }
+  return false;
 }
 
 bool FileChunkStore::Store(const std::string &name,
