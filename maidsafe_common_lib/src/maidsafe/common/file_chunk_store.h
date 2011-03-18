@@ -55,7 +55,7 @@ class FileChunkStore: public ChunkStore {
   /**
    * Retrieves a chunk's content as a string.
    * @param name Chunk name
-   * @return Chunk content, or empty of non-existant
+   * @return Chunk content, or empty if non-existant
    */
   std::string Get(const std::string &name);
 
@@ -112,13 +112,6 @@ class FileChunkStore: public ChunkStore {
   bool Has(const std::string &name);
 
   /**
-   * Retrieves the size of a chunk.
-   * @param name Chunk name
-   * @return Size in bytes
-   */
-  std::uintmax_t Size(const std::string &name);
-
-  /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
@@ -126,6 +119,13 @@ class FileChunkStore: public ChunkStore {
    * @return True if chunk valid
    */
   bool Validate(const std::string &name);
+
+  /**
+   * Retrieves the size of a chunk.
+   * @param name Chunk name
+   * @return Size in bytes
+   */
+  std::uintmax_t Size(const std::string &name);
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.

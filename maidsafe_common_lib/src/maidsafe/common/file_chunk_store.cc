@@ -191,6 +191,12 @@ bool FileChunkStore::Has(const std::string &name) {
   return false;
 }
 
+bool FileChunkStore::Validate(const std::string &name) {
+  bool valid(false);
+
+  return valid;
+}
+
 std::uintmax_t FileChunkStore::Size(const std::string &name) {
   if (name.empty())
     return 0;
@@ -204,12 +210,6 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) {
   }
 }
 
-bool FileChunkStore::Validate(const std::string &name) {
-  bool valid(false);
-
-  return valid;
-}
-
 std::uintmax_t FileChunkStore::Count() {
   return GetChunkCount(storage_location_);
 }
@@ -221,6 +221,8 @@ bool FileChunkStore::Empty() {
 }
 
 void FileChunkStore::Clear() {
+
+  ChunkStore::Clear();
 }
 
 fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {

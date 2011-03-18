@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <string>
 #include "boost/filesystem.hpp"
+#include "maidsafe/common/version.h"
 
 namespace fs = boost::filesystem;
 
@@ -60,7 +61,7 @@ class ChunkStore {
   /**
    * Retrieves a chunk's content as a string.
    * @param name Chunk name
-   * @return Chunk content, or empty of non-existant
+   * @return Chunk content, or empty if non-existant
    */
   virtual std::string Get(const std::string &name) = 0;
 
@@ -136,7 +137,7 @@ class ChunkStore {
    * Retrieves the total size of the stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() {
+  std::uintmax_t Size() const {
     return size_;
   }
 
@@ -146,7 +147,7 @@ class ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t Capacity() {
+  std::uintmax_t Capacity() const {
     return capacity_;
   }
 
@@ -164,6 +165,15 @@ class ChunkStore {
   }
 
   /**
+   * Checks whether the ChunkStore has enough capacity to store a chunk of the
+   * given size.
+   * @return True if required size vacant
+   */
+  bool Vacant(const std::uintmax_t &required_size) const {
+    return capacity_ == 0 || size_ + required_size <= capacity_;
+  }
+
+  /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
@@ -178,7 +188,9 @@ class ChunkStore {
   /**
    * Deletes all stored chunks.
    */
-  virtual void Clear() = 0;
+  virtual void Clear() {
+    size_ = 0;
+  }
 
  protected:
   /**
@@ -198,7 +210,10 @@ class ChunkStore {
    * @param delta Size to subtract from total
    */
   void DecreaseSize(const std::uintmax_t &delta) {
-    size_ -= delta;
+    if (delta <= size_)
+      size_ -= delta;
+    else
+      size_ = 0;
   }
 
  private:
