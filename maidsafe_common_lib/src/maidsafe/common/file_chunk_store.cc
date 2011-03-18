@@ -90,7 +90,7 @@ bool FileChunkStore::Get(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const std::string &content) {
-  if (content.empty() || name.empty())
+  if (name.empty())
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
@@ -99,6 +99,8 @@ bool FileChunkStore::Store(const std::string &name,
   if (fs::exists(chunk_file, ec))
     return true;
 
+  if (content.empty())
+    return false;
   //if (ec)
   //  return false;
 
@@ -108,6 +110,9 @@ bool FileChunkStore::Store(const std::string &name,
 
     file_out.write(content.data(), content.size());
     file_out.close();
+
+    std::uintmax_t file_size = fs::file_size(chunk_file, ec);
+    IncreaseSize(file_size);
     return true;
   } catch(...) {
     return false;
@@ -139,8 +144,10 @@ bool FileChunkStore::Store(const std::string &name,
         fs::copy_file(source_file_name, chunk_file,
                   fs::copy_option::overwrite_if_exists, ec);
 
-      if (!ec)
+      if (!ec) {
+        IncreaseSize(file_size);
         return true;
+      }
     }
   } else {
     if (delete_source_file)
@@ -151,13 +158,19 @@ bool FileChunkStore::Store(const std::string &name,
 }
 
 bool FileChunkStore::Delete(const std::string &name) {
+  if (name.empty())
+    return false;
+
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
 
+  std::uintmax_t file_size(fs::file_size(chunk_file, ec));
   fs::remove(chunk_file, ec);
 
   if (ec)
     return false;
+
+  DecreaseSize(file_size);
 
   return true;
 }
@@ -184,7 +197,8 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) {
 
   try {
     fs::path chunk_file(ChunkNameToFilePath(name));
-    return fs::file_size(chunk_file);
+    std::uintmax_t size = fs::file_size(chunk_file);
+    return size;
   } catch (...) {
     return 0;
   }
