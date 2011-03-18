@@ -117,6 +117,15 @@ class ChunkStore {
   virtual bool Has(const std::string &name) = 0;
 
   /**
+   * Validates a chunk, i.e. confirms if the name matches the content's hash.
+   *
+   * In case a chunk turns out to be invalid, it's advisable to delete it.
+   * @param name Chunk name
+   * @return True if chunk valid
+   */
+  virtual bool Validate(const std::string &name) = 0;
+
+  /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
@@ -144,21 +153,15 @@ class ChunkStore {
   /**
    * Sets the maximum storage capacity available to this ChunkStore.
    *
-   * A capacity of zero (0) equals infinite storage space.
+   * A capacity of zero (0) equals infinite storage space. The capacity must
+   * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
   void SetCapacity(const std::uintmax_t &capacity) {
     capacity_ = capacity;
+    if (capacity_ > 0 && capacity_ < size_)
+      capacity_ = size_;
   }
-
-  /**
-   * Validates a chunk, i.e. confirms if the name matches the content's hash.
-   *
-   * In case a chunk turns out to be invalid, it's advisable to delete it.
-   * @param name Chunk name
-   * @return True if chunk valid
-   */
-  virtual bool Validate(const std::string &name) = 0;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
