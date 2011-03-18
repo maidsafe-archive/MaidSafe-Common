@@ -121,8 +121,8 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Get) {
   ASSERT_FALSE(fs::exists(path));
 
   // non-existant chunk, should fail
-  EXPECT_EQ("", this->chunk_store_->Get(""));
-  EXPECT_EQ("", this->chunk_store_->Get(name));
+  EXPECT_TRUE(this->chunk_store_->Get("").empty());
+  EXPECT_TRUE(this->chunk_store_->Get(name).empty());
   EXPECT_FALSE(this->chunk_store_->Get(name, path));
   EXPECT_FALSE(fs::exists(path));
 
@@ -260,12 +260,12 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
   // Delete existing chunks
   EXPECT_TRUE(this->chunk_store_->Delete(name_file));
   EXPECT_FALSE(this->chunk_store_->Has(name_file));
-  EXPECT_EQ("", this->chunk_store_->Get(name_file));
+  EXPECT_TRUE(this->chunk_store_->Get(name_file).empty());
   EXPECT_EQ(1, this->chunk_store_->Count());
-  EXPECT_EQ(456, this->chunk_store_->Size());
+  EXPECT_EQ(123, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Delete(name_mem));
   EXPECT_FALSE(this->chunk_store_->Has(name_mem));
-  EXPECT_EQ("", this->chunk_store_->Get(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Get(name_mem).empty());
 
   EXPECT_TRUE(this->chunk_store_->Empty());
   EXPECT_EQ(0, this->chunk_store_->Count());

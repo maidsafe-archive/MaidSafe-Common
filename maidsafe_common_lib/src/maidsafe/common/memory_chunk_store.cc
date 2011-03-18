@@ -45,7 +45,7 @@ bool MemoryChunkStore::Get(const std::string &name,
   if (it == chunks_.end())
     return false;
 
-  return false;  // TODO
+  return WriteFile(sink_file_name, it->second);
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
@@ -72,16 +72,25 @@ bool MemoryChunkStore::Store(const std::string &name,
   if (name.empty())
     return false;
 
-  auto it = chunks_.find(name);
-  if (it != chunks_.end())
-    return true;
-
   boost::system::error_code ec;
-  std::uintmax_t chunk_size(fs::file_size(source_file_name, ec));
-  if (ec || chunk_size == 0 || !Vacant(chunk_size))
-    return false;
+  auto it = chunks_.find(name);
+  if (it == chunks_.end()) {
+    std::uintmax_t chunk_size(fs::file_size(source_file_name, ec));
+    if (ec || chunk_size == 0 || !Vacant(chunk_size))
+      return false;
 
-  return false; // TODO
+    std::string content;
+    if (!ReadFile(source_file_name, &content) || content.size() != chunk_size)
+      return false;
+
+    chunks_[name] = content;
+    IncreaseSize(chunk_size);
+  }
+
+  if (delete_source_file)
+    fs::remove(source_file_name, ec);
+
+  return true;
 }
 
 bool MemoryChunkStore::Delete(const std::string &name) {

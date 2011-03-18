@@ -35,36 +35,11 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 std::string FileChunkStore::Get(const std::string &name) {
-
   fs::path file_path(ChunkNameToFilePath(name));
-
-  boost::system::error_code ec;
-
-  if (fs::exists(file_path, ec)) {
-    if (ec)
-      return "";
-
-    std::uintmax_t file_size(fs::file_size(file_path, ec));
-
-    if (!file_size || ec)
-      return "";
-
-    fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
-
-    if (!file_in.good())
-      return "";
-
-    std::string chunk_content;
-    chunk_content.resize(file_size);
-
-    file_in.read(&((chunk_content)[0]), file_size);
-
-    file_in.close();
-
-    return chunk_content;
-  }
-
-  return "";
+  std::string content;
+  if (!ReadFile(file_path, &content))
+    return "";
+  return content;
 }
 
 bool FileChunkStore::Get(const std::string &name,
@@ -95,29 +70,17 @@ bool FileChunkStore::Store(const std::string &name,
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
-
   if (fs::exists(chunk_file, ec))
     return true;
 
-  if (content.empty())
+  if (content.empty() || ec)
     return false;
-  //if (ec)
-  //  return false;
 
-  try {
-    fs::ofstream file_out(chunk_file,
-                        std::ios::out | std::ios::trunc | std::ios::binary);
-
-    file_out.write(content.data(), content.size());
-    file_out.close();
-
-    std::uintmax_t file_size = fs::file_size(chunk_file, ec);
-    IncreaseSize(file_size);
-    return true;
-  } catch(...) {
+  if (!WriteFile(chunk_file, content))
     return false;
-  }
-  return false;
+
+  IncreaseSize(content.size());
+  return true;
 }
 
 bool FileChunkStore::Store(const std::string &name,
