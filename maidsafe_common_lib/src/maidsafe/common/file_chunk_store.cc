@@ -69,9 +69,23 @@ std::string FileChunkStore::Get(const std::string &name) {
 
 bool FileChunkStore::Get(const std::string &name,
                          const fs::path &sink_file_name) {
-  bool success(false);
 
-  return success;
+  fs::path source_file_path(ChunkNameToFilePath(name));
+
+  boost::system::error_code ec;
+
+  if (fs::exists(source_file_path, ec)) {
+    if (ec)
+      return false;
+    fs::copy_file(source_file_path, sink_file_name,
+                  fs::copy_option::overwrite_if_exists, ec);
+    if (ec)
+      return false;
+
+    return true;
+  }
+
+  return false;
 }
 
 bool FileChunkStore::Store(const std::string &name,
