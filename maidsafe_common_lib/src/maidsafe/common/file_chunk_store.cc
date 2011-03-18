@@ -46,7 +46,7 @@ std::string FileChunkStore::Get(const std::string &name) {
 
     std::uintmax_t file_size(fs::file_size(file_path, ec));
 
-    if (ec || !file_size)
+    if (!file_size || ec)
       return "";
 
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
@@ -115,12 +115,43 @@ bool FileChunkStore::Store(const std::string &name,
   return false;
 }
 
+/**
+   * Stores chunk content under the given name.
+   * @param name Chunk name, i.e. hash of the chunk content
+   * @param source_file_name Path to input file
+   * @param delete_source_file True if file can be deleted after storing
+   * @return True if chunk could be stored or already existed
+   */
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
                            bool delete_source_file) {
-  bool success(false);
 
-  return success;
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  boost::system::error_code ec;
+
+  //  does the chunk already exist
+  if (!fs::exists(chunk_file, ec)) {
+
+    std::uintmax_t file_size(fs::file_size(source_file_name, ec));
+
+    //  is source file valid
+    if (file_size && !ec) {
+
+      if (delete_source_file)
+        fs::rename(source_file_name, chunk_file, ec);
+      else
+        fs::copy_file(source_file_name, chunk_file,
+                  fs::copy_option::overwrite_if_exists, ec);
+
+      if (!ec)
+        return true;
+    }
+  } else {
+    if (delete_source_file)
+      fs::remove(source_file_name, ec);
+    return true;
+  }
+  return false;
 }
 
 bool FileChunkStore::Delete(const std::string &name) {
