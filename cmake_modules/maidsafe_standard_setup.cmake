@@ -47,7 +47,7 @@ ELSE()
   ELSEIF(${MAIDSAFE_TEST_TYPE} MATCHES FUNC)
     SET(MAIDSAFE_TEST_TYPE_MESSAGE "Tests included: Functional")
   ELSE()
-    SET(MAIDSAFE_TEST_TYPE "_" CACHE STRING "Choose the type of TEST, options are: ALL BEH FUNC" FORCE)
+    SET(MAIDSAFE_TEST_TYPE "ALL" CACHE STRING "Choose the type of TEST, options are: ALL BEH FUNC" FORCE)
   ENDIF()
 ENDIF()
 
@@ -117,10 +117,10 @@ INCLUDE(maidsafe_run_protoc)
 ###################################################################################################
 # MySQL++ library search                                                                          #
 ###################################################################################################
-INCLUDE(maidsafe_find_mysqlpp)
-IF(Mysqlpp_FOUND)
-  SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Mysqlpp_INCLUDE_DIR} ${Mysql_INCLUDE_DIR})
-ENDIF()
+#INCLUDE(maidsafe_find_mysqlpp)
+#IF(Mysqlpp_FOUND)
+#  SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Mysqlpp_INCLUDE_DIR} ${Mysql_INCLUDE_DIR})
+#ENDIF()
 
 ###################################################################################################
 # Python library search                                                                           #
@@ -226,4 +226,24 @@ FUNCTION(TEST_SUMMARY_OUTPUT)
   MESSAGE("    To include behavioural tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=BEH")
   MESSAGE("    To include functional tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=FUNC")
   MESSAGE("================================================================================")
+ENDFUNCTION()
+
+FUNCTION(CHECK_VERSIONS VERSION_H)
+  FILE(STRINGS ${VERSION_H} VERSIONS REGEX "#define [A-Z_]+VERSION [0-9]+$")
+  FOREACH(VERSN ${VERSIONS})
+    STRING(REGEX REPLACE "#define*[" "]+" ";" VERSN ${VERSN})
+message("\${VERSN} - ${VERSN}")
+  ENDFOREACH()
+
+
+  FILE(STRINGS ${VERSION_H} NEEDS_MAIDSAFE_COMMON_VERSION
+         REGEX "#define THIS_NEEDS_MAIDSAFE_COMMON_VERSION [0-9]+$")
+  STRING(REGEX REPLACE "#define THIS_NEEDS_MAIDSAFE_COMMON_VERSION " "" NEEDS_MAIDSAFE_COMMON_VERSION ${NEEDS_MAIDSAFE_COMMON_VERSION})
+  IF(NOT ${NEEDS_MAIDSAFE_COMMON_VERSION} MATCHES ${MAIDSAFE_COMMON_VERSION})
+    SET(ERROR_MESSAGE "This project needs MaidSafe-Common version ${NEEDS_MAIDSAFE_COMMON_VERSION}\n")
+    SET(ERROR_MESSAGE "${ERROR_MESSAGE}Found MaidSafe-Common version ${MAIDSAFE_COMMON_VERSION}\n")
+    MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
+  ENDIF()
+  MESSAGE("-- Found MaidSafe Common library (version ${MAIDSAFE_COMMON_VERSION})")
+  MESSAGE("-- Found MaidSafe Common Debug library (version ${MAIDSAFE_COMMON_VERSION})")
 ENDFUNCTION()

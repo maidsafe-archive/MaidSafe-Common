@@ -68,7 +68,7 @@ PROJECT(${PROJECT_NAME})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, the build type is set by running cmake from the appropriate build subdirectory e.g. for a Debug build, \"cd build/Linux/Debug && cmake ../../..\"." FORCE)
 
 ###################################################################################################
-# MaidSafe Common search                                                                          #
+# Third party library search                                                                      #
 ###################################################################################################
 UNSET(MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE CACHE)
 UNSET(CRYPTO_TEST_CMAKE CACHE)
@@ -226,9 +226,18 @@ IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Debug")
 ENDIF()
 MESSAGE("\n\n================================================================================"\n)
 
+FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON_VERSION
+       REGEX "VERSION [0-9]+$")
+STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
+
 INSTALL(TARGETS maidsafe_common_static EXPORT maidsafe_common ARCHIVE DESTINATION lib)
 INSTALL(FILES ${HEADER_FILES_COMMON_DIR} DESTINATION include/maidsafe/common)
 INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
 INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
 INSTALL(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)
 INSTALL(EXPORT maidsafe_common DESTINATION share/maidsafe)
+FIND_FILE(MAIDSAFE_COMMON_CMAKE maidsafe_common.cmake PATHS ${CMAKE_INSTALL_PREFIX}/share/maidsafe)
+IF(MAIDSAFE_COMMON_CMAKE)
+  INSTALL(CODE "FILE(APPEND ${MAIDSAFE_COMMON_CMAKE} \"\n\n\# Definition of this library's version\")")
+  INSTALL(CODE "FILE(APPEND ${MAIDSAFE_COMMON_CMAKE} \"\nSET(MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})\")")
+ENDIF()
