@@ -25,18 +25,16 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*******************************************************************************
- * NOTE: This header is unlikely to have any breaking changes applied.         *
- *       However, it should not be regarded as finalised until this notice is  *
- *       removed.                                                              *
- ******************************************************************************/
-
 #ifndef MAIDSAFE_COMMON_UTILS_H_
 #define MAIDSAFE_COMMON_UTILS_H_
 
 #include <string>
 #include "boost/cstdint.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/filesystem/path.hpp"
+#include "maidsafe/common/version.h"
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -147,6 +145,12 @@ std::string DecodeFromBase32(const std::string &base32_input);
 
 // Return the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();
+
+// Reads the given file and returns the contents as a string
+bool ReadFile(const fs::path &file_path, std::string *content);
+
+// Writes the given content string to a file, overwriting if applicable
+bool WriteFile(const fs::path &file_path, const std::string &content);
 
 }  // namespace maidsafe
 
