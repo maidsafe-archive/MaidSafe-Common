@@ -43,39 +43,6 @@ namespace maidsafe {
 
 namespace test {
 
-namespace test_cs {
-
-fs::path CreateRandomFile(const fs::path &file_path,
-                          const std::uint64_t &file_size) {
-  fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
-                              std::ios::trunc);
-  if (file_size != 0) {
-    size_t string_size = (file_size > 100000) ? 100000 :
-                        static_cast<size_t>(file_size);
-    std::uint64_t remaining_size = file_size;
-    std::string rand_str = RandomString(2 * string_size);
-    std::string file_content;
-    std::uint64_t start_pos = 0;
-    while (remaining_size) {
-      srand(17);
-      start_pos = rand() % string_size;  // NOLINT (Fraser)
-      if (remaining_size < string_size) {
-        string_size = static_cast<size_t>(remaining_size);
-        file_content = rand_str.substr(0, string_size);
-      } else {
-        file_content = rand_str.substr(static_cast<size_t>(start_pos),
-                                       string_size);
-      }
-      ofs.write(file_content.c_str(), file_content.size());
-      remaining_size -= string_size;
-    }
-  }
-  ofs.close();
-  return file_path;
-}
-
-}  // namespace test_cs
-
 template <typename T>
 std::shared_ptr<ChunkStore> CreateChunkStore(const fs::path &chunk_dir);
 
@@ -102,6 +69,34 @@ class ChunkStoreTest: public testing::Test {
         fs::remove_all(test_dir_);
     }
     catch(...) {}
+  }
+  fs::path CreateRandomFile(const fs::path &file_path,
+                            const std::uint64_t &file_size) {
+    fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
+                                std::ios::trunc);
+    if (file_size != 0) {
+      size_t string_size = (file_size > 100000) ? 100000 :
+                          static_cast<size_t>(file_size);
+      std::uint64_t remaining_size = file_size;
+      std::string rand_str = RandomString(2 * string_size);
+      std::string file_content;
+      std::uint64_t start_pos = 0;
+      while (remaining_size) {
+        srand(17);
+        start_pos = rand() % string_size;  // NOLINT (Fraser)
+        if (remaining_size < string_size) {
+          string_size = static_cast<size_t>(remaining_size);
+          file_content = rand_str.substr(0, string_size);
+        } else {
+          file_content = rand_str.substr(static_cast<size_t>(start_pos),
+                                        string_size);
+        }
+        ofs.write(file_content.c_str(), file_content.size());
+        remaining_size -= string_size;
+      }
+    }
+    ofs.close();
+    return file_path;
   }
   fs::path test_dir_, chunk_dir_;
   std::shared_ptr<ChunkStore> chunk_store_;
@@ -137,7 +132,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Get) {
   EXPECT_EQ(name, crypto::HashFile<crypto::SHA512>(path));
 
   // existing output file, should overwrite
-  test_cs::CreateRandomFile(path, 99);
+  this->CreateRandomFile(path, 99);
   EXPECT_NE(name, crypto::HashFile<crypto::SHA512>(path));
   EXPECT_TRUE(this->chunk_store_->Get(name, path));
   EXPECT_EQ(name, crypto::HashFile<crypto::SHA512>(path));
@@ -150,7 +145,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
   fs::path path(this->test_dir_ / "chunk.dat");
-  test_cs::CreateRandomFile(path, 456);
+  this->CreateRandomFile(path, 456);
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
 
@@ -196,7 +191,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
             crypto::Hash<crypto::SHA512>(this->chunk_store_->Get(name_file)));
 
   fs::path new_path(this->test_dir_ / "chunk2.dat");
-  test_cs::CreateRandomFile(new_path, 333);
+  this->CreateRandomFile(new_path, 333);
   std::string new_name(crypto::HashFile<crypto::SHA512>(new_path));
 
   // overwrite existing, should be ignored
@@ -240,7 +235,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
   fs::path path(this->test_dir_ / "chunk.dat");
-  test_cs::CreateRandomFile(path, 456);
+  this->CreateRandomFile(path, 456);
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
 
@@ -274,11 +269,31 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
   EXPECT_EQ(0, this->chunk_store_->Size());
 }
 
+TYPED_TEST_P(ChunkStoreTest, DISABLED_BEH_CS_MoveTo) {
+
+}
+
+TYPED_TEST_P(ChunkStoreTest, DISABLED_BEH_CS_Validate) {
+
+}
+
+TYPED_TEST_P(ChunkStoreTest, DISABLED_BEH_CS_Capacity) {
+
+}
+
+TYPED_TEST_P(ChunkStoreTest, DISABLED_BEH_CS_Clear) {
+
+}
+
 REGISTER_TYPED_TEST_CASE_P(ChunkStoreTest,
                            BEH_CS_Init,
                            BEH_CS_Get,
                            BEH_CS_Store,
-                           BEH_CS_Delete);
+                           BEH_CS_Delete,
+                           DISABLED_BEH_CS_MoveTo,
+                           DISABLED_BEH_CS_Validate,
+                           DISABLED_BEH_CS_Capacity,
+                           DISABLED_BEH_CS_Clear);
 
 }  // namespace test
 
