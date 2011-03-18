@@ -25,82 +25,82 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "maidsafe/common/chunk_store_disk.h"
+#include "maidsafe/common/file_chunk_store.h"
 
 namespace maidsafe {
 
-std::string ChunkStoreDisk::Get(const std::string &name) {
+std::string FileChunkStore::Get(const std::string &name) {
   std::string chunk_content;
 
   return chunk_content;
 }
 
-bool ChunkStoreDisk::Get(const std::string &name,
+bool FileChunkStore::Get(const std::string &name,
                          const fs::path &sink_file_name) {
   bool success(false);
 
   return success;
 }
 
-bool ChunkStoreDisk::Store(const std::string &name,
+bool FileChunkStore::Store(const std::string &name,
                            const std::string &content) {
   bool success(false);
 
   return success;
 }
 
-bool ChunkStore::Store(const std::string &name,
-                       const fs::path &source_file_name,
-                       bool delete_source_file) {
+bool FileChunkStore::Store(const std::string &name,
+                           const fs::path &source_file_name,
+                           bool delete_source_file) {
   bool success(false);
 
   return success;
 }
 
-bool ChunkStoreDisk::Delete(const std::string &name) {
+bool FileChunkStore::Delete(const std::string &name) {
   bool success(false);
 
   return success;
 }
 
-bool ChunkStoreDisk::MoveTo(const std::string &name,
+bool FileChunkStore::MoveTo(const std::string &name,
                             ChunkStore *sink_chunk_store) {
   bool success(false);
 
   return success;
 }
 
-bool ChunkStoreDisk::Has(const std::string &name) {
+bool FileChunkStore::Has(const std::string &name) {
   bool found(false);
 
   return found;
 }
 
-std::uintmax_t ChunkStoreDisk::Size(const std::string &name) {
+std::uintmax_t FileChunkStore::Size(const std::string &name) {
   std::uintmax_t size_of_chunk(0);
 
   return size_of_chunk;
 }
 
-bool ChunkStoreDisk::Validate(const std::string &name) {
+bool FileChunkStore::Validate(const std::string &name) {
   bool valid(false);
 
   return valid;
 }
 
-std::uintmax_t ChunkStoreDisk::Count() {
+std::uintmax_t FileChunkStore::Count() {
   std::uintmax_t chunk_count(0);
 
   return chunk_count;
 }
 
-bool ChunkStoreDisk::Empty() {
+bool FileChunkStore::Empty() {
   bool is_empty(false);
 
   return is_empty;
 }
 
-void ChunkStoreDisk::Clear() {
+void FileChunkStore::Clear() {
 }
 
 }  // namespace maidsafe

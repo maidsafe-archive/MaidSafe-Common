@@ -26,12 +26,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
- * @file chunk_store_disk.h
- * @brief Implementation of ChunkStore interface, storage of chunks on disk.
+ * @file file_chunk_store.h
+ * @brief Implementation of FileChunkStore.
  */
 
-#ifndef MAIDSAFE_COMMON_CHUNK_STORE_DISK_H_
-#define MAIDSAFE_COMMON_CHUNK_STORE_DISK_H_
+#ifndef MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
+#define MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
 
 #include <cstdint>
 #include <string>
@@ -43,14 +43,14 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-class ChunkStoreDisk: public ChunkStore {
-
+/**
+ * Manages storage and retrieval of chunks using the file system.
+ */
+class FileChunkStore: public ChunkStore {
  public:
-
-  ChunkStoreDisk(const fs::path &storage_location)
+  explicit FileChunkStore(const fs::path &storage_location)
       : storage_location_(storage_location) {}
-
-  ~ChunkStoreDisk() {}
+  ~FileChunkStore() {}
 
   /**
    * Retrieves a chunk's content as a string.
@@ -145,9 +145,11 @@ class ChunkStoreDisk: public ChunkStore {
   void Clear();
 
  private:
-  fs::path storage_location_;  //  the chunk store location on disk
+  FileChunkStore(const FileChunkStore&);
+  FileChunkStore& operator=(const FileChunkStore&);
+  fs::path storage_location_;  ///< the chunk store location on disk
 };
 
-
 }  //  namespace maidsafe
-#endif
+
+#endif  // MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
