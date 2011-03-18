@@ -90,7 +90,7 @@ bool FileChunkStore::Get(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const std::string &content) {
-  if (content.empty())
+  if (content.empty() || name.empty())
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
@@ -118,6 +118,9 @@ bool FileChunkStore::Store(const std::string &name,
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
                            bool delete_source_file) {
+
+  if (name.empty())
+    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
@@ -176,6 +179,9 @@ bool FileChunkStore::Has(const std::string &name) {
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) {
+  if (name.empty())
+    return 0;
+
   try {
     fs::path chunk_file(ChunkNameToFilePath(name));
     return fs::file_size(chunk_file);
