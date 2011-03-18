@@ -211,6 +211,8 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
 
 bool WriteFile(const fs::path &file_path, const std::string &content) {
   try {
+    if (!file_path.has_filename())
+      return false;
     fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |
                                      std::ios::binary);
     file_out.write(content.data(), content.size());
