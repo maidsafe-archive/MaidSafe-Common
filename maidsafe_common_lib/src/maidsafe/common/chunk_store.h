@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <string>
 #include "boost/filesystem.hpp"
+#include "maidsafe/common/version.h"
 
 namespace fs = boost::filesystem;
 

@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/tiger.h"
 
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/version.h"
 
 namespace CryptoPP {
 class SHA1;

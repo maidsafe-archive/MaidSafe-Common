@@ -29,8 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ctype.h>
 
-#include <algorithm>
 #include <cstdint>
+#include <algorithm>
 #include <limits>
 #include <string>
 

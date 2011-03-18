@@ -36,5 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef ERROR
 #endif
 #include "glog/logging.h"
+#include "maidsafe/common/version.h"
 
 #endif  // MAIDSAFE_COMMON_LOG_H_

@@ -205,6 +205,14 @@ IF(UNIX)
 #  SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=100 --verbose --demangle=yes")
 ENDIF()
 
+FILE(TO_CMAKE_PATH ${MAIDSAFE_COMMON_INSTALL_DIR} CMAKE_INSTALL_PREFIX)
+IF(INSTALL_PREFIX)
+  FILE(TO_CMAKE_PATH ${INSTALL_PREFIX} INSTALL_PREFIX)
+  SET(CMAKE_INSTALL_PREFIX "${INSTALL_PREFIX}")
+ENDIF()
+FILE(TO_NATIVE_PATH ${CMAKE_INSTALL_PREFIX} CMAKE_INSTALL_PREFIX_MESSAGE)
+
+
 ###################################################################################################
 # Cleanup of temporary test folders                                                               #
 ###################################################################################################
@@ -241,6 +249,7 @@ IF(WIN32)
   ENDIF()
 ENDIF()
 
+
 ###################################################################################################
 # Helper functions                                                                                #
 ###################################################################################################
@@ -264,7 +273,7 @@ FUNCTION(TEST_SUMMARY_OUTPUT)
   MESSAGE("================================================================================")
 ENDFUNCTION()
 
-FUNCTION(CHECK_VERSIONS VERSION_H)
+FUNCTION(HANDLE_VERSIONS VERSION_H)
   FILE(STRINGS ${VERSION_H} VERSIONS REGEX "#define [A-Z_]+VERSION [0-9]+$")
   FOREACH(VERSN ${VERSIONS})
     STRING(REPLACE "#define " "" VERSN ${VERSN})
@@ -281,6 +290,46 @@ FUNCTION(CHECK_VERSIONS VERSION_H)
       ENDIF()
     ELSE()
       SET(${VERSION_VARIABLE_NAME} ${VERSION_VARIABLE_VALUE} PARENT_SCOPE)
+      SET(THIS_VERSION ${VERSION_VARIABLE_NAME} PARENT_SCOPE)
     ENDIF()
   ENDFOREACH()
+ENDFUNCTION()
+
+FUNCTION(ADD_VERSION_INFO_TO_INSTALLED_FILE VERSION_INFO)
+  FILE(WRITE ${CMAKE_CACHEFILE_DIR}/VERSION.${VERSION_INFO}.${${VERSION_INFO}} "")
+  INSTALL(FILES ${CMAKE_CACHEFILE_DIR}/VERSION.${VERSION_INFO}.${${VERSION_INFO}}
+            DESTINATION share/maidsafe
+            CONFIGURATIONS Debug
+            RENAME VERSION.${VERSION_INFO}.${${VERSION_INFO}}.debug)
+  INSTALL(FILES ${CMAKE_CACHEFILE_DIR}/VERSION.${VERSION_INFO}.${${VERSION_INFO}}
+            DESTINATION share/maidsafe
+            CONFIGURATIONS MinSizeRel
+            RENAME VERSION.${VERSION_INFO}.${${VERSION_INFO}}.minsizerel)
+  INSTALL(FILES ${CMAKE_CACHEFILE_DIR}/VERSION.${VERSION_INFO}.${${VERSION_INFO}}
+            DESTINATION share/maidsafe
+            CONFIGURATIONS RelWithDebInfo
+            RENAME VERSION.${VERSION_INFO}.${${VERSION_INFO}}.relwithdebinfo)
+  INSTALL(FILES ${CMAKE_CACHEFILE_DIR}/VERSION.${VERSION_INFO}.${${VERSION_INFO}}
+            DESTINATION share/maidsafe
+            CONFIGURATIONS Release
+            RENAME VERSION.${VERSION_INFO}.${${VERSION_INFO}}.release)
+  FIND_FILE(MAIDSAFE_INSTALL_VERSION_CMAKE maidsafe_install_version.cmake PATHS ${CMAKE_MODULE_PATH})
+  IF(MAIDSAFE_INSTALL_VERSION_CMAKE)
+    INSTALL(CODE "EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -DINSTALL_FILE_BASENAME=\"${EXPORT_NAME}\" -DINSTALL_FILE_DIR=\"${CMAKE_INSTALL_PREFIX}/share/maidsafe\" -P ${MAIDSAFE_INSTALL_VERSION_CMAKE})")
+  ENDIF()
+ENDFUNCTION()
+
+FUNCTION(FINAL_MESSAGE)
+  MESSAGE("\nThe library and headers will be installed to:\n")
+  MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
+  MESSAGE("To include this project in any other MaidSafe project, use:\n")
+  MESSAGE("    -DMAIDSAFE_COMMON_INSTALL_DIR:PATH=\"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
+  MESSAGE("To build and install this project now, run:\n")
+  IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Release")
+    MESSAGE("    cmake --build . --target install --config Release")
+  ENDIF()
+  IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Debug")
+    MESSAGE("    cmake --build . --target install --config Debug")
+  ENDIF()
+  MESSAGE("\n\n================================================================================"\n)
 ENDFUNCTION()

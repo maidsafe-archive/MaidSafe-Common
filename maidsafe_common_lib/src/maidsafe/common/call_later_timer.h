@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/function.hpp"
 #include "boost/thread.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
+#include "maidsafe/common/version.h"
 
 namespace maidsafe {
 
