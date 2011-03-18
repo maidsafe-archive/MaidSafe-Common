@@ -176,9 +176,12 @@ bool FileChunkStore::Has(const std::string &name) {
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) {
-  std::uintmax_t size_of_chunk(0);
-
-  return size_of_chunk;
+  try {
+    fs::path chunk_file(ChunkNameToFilePath(name));
+    return fs::file_size(chunk_file);
+  } catch (...) {
+    return 0;
+  }
 }
 
 bool FileChunkStore::Validate(const std::string &name) {
@@ -188,15 +191,13 @@ bool FileChunkStore::Validate(const std::string &name) {
 }
 
 std::uintmax_t FileChunkStore::Count() {
-  std::uintmax_t chunk_count(0);
-
-  return chunk_count;
+  return GetChunkCount(storage_location_);
 }
 
 bool FileChunkStore::Empty() {
-  bool is_empty(false);
-
-  return is_empty;
+  if (fs::is_empty(storage_location_))
+    return true;
+  return false;
 }
 
 void FileChunkStore::Clear() {
@@ -204,6 +205,20 @@ void FileChunkStore::Clear() {
 
 fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {
   return fs::path(storage_location_ / EncodeToHex(chunk_name));
+}
+
+std::uintmax_t FileChunkStore::GetChunkCount(const fs::path &location) {
+  boost::uintmax_t count(0);
+
+  for (fs::directory_iterator it(location);
+       it != boost::filesystem::directory_iterator(); ++it) {
+    if (boost::filesystem::is_regular_file(it->status())) {
+      ++count;
+      } else if (fs::is_directory(it->path())) {
+        count += GetChunkCount(it->path());
+      }
+    }
+  return count;
 }
 
 }  // namespace maidsafe

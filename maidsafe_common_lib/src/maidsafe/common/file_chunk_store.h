@@ -154,6 +154,8 @@ class FileChunkStore: public ChunkStore {
    * @return the absolute file path after encoding the chunk name as hex
    */
   fs::path ChunkNameToFilePath(const std::string &chunk_name);
+
+  std::uintmax_t GetChunkCount(const fs::path &location);
   fs::path storage_location_;  ///< the chunk store location on disk
 };
 
