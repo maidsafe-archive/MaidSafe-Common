@@ -48,10 +48,23 @@ namespace maidsafe {
  */
 class FileChunkStore: public ChunkStore {
  public:
-  explicit FileChunkStore(const fs::path &storage_location)
-      : storage_location_(storage_location),
-      chunk_count_(0) {}
+  explicit FileChunkStore()
+      : initialised_(false),
+        storage_location_(),
+        chunk_count_(0) {}
   ~FileChunkStore() {}
+
+  /**
+   * Initialises the chunk storage directory.
+   *
+   * If the given directory does not exist, it will be created.
+   * @param storage_location Path to storage directory
+   * @return True if directory exists or could be created
+   */
+  bool Init(const fs::path &storage_location) {
+    storage_location_ = storage_location;  // TODO
+    initialised_ = true;
+  }
 
   /**
    * Retrieves a chunk's content as a string.
@@ -165,7 +178,8 @@ class FileChunkStore: public ChunkStore {
   void ResetChunkCount() { chunk_count_ = 0; }
 
   std::uintmax_t GetChunkCount(const fs::path &location);
-  fs::path storage_location_;  ///< the chunk store location on disk
+  bool initialised_;
+  fs::path storage_location_;
   std::uintmax_t chunk_count_;
 };
 

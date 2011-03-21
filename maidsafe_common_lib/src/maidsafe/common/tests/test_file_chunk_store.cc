@@ -35,9 +35,9 @@ namespace maidsafe {
 namespace test {
 
 template<>
-std::shared_ptr<ChunkStore> CreateChunkStore<FileChunkStore>(
-    const fs::path &chunk_dir) {
-  return std::shared_ptr<ChunkStore>(new FileChunkStore(chunk_dir));
+void ChunkStoreTest<FileChunkStore>::InitChunkStore(
+    std::shared_ptr<ChunkStore> chunk_store, const fs::path &chunk_dir) {
+  reinterpret_cast<FileChunkStore*>(chunk_store.get())->Init(chunk_dir);
 }
 
 INSTANTIATE_TYPED_TEST_CASE_P(Files, ChunkStoreTest, FileChunkStore);

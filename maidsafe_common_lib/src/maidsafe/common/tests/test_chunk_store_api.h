@@ -44,9 +44,6 @@ namespace maidsafe {
 namespace test {
 
 template <typename T>
-std::shared_ptr<ChunkStore> CreateChunkStore(const fs::path &chunk_dir);
-
-template <typename T>
 class ChunkStoreTest: public testing::Test {
  public:
   ChunkStoreTest()
@@ -54,8 +51,8 @@ class ChunkStoreTest: public testing::Test {
                   "MaidSafe_TestChunkStore_%%%%-%%%%-%%%%")),
         chunk_dir_(test_dir_ / "chunks"),
         alt_chunk_dir_(test_dir_ / "chunks2"),
-        chunk_store_(),
-        alt_chunk_store_() {}
+        chunk_store_(new T),
+        alt_chunk_store_(new T) {}
   ~ChunkStoreTest() {}
  protected:
   void SetUp() {
@@ -63,8 +60,8 @@ class ChunkStoreTest: public testing::Test {
       fs::remove_all(test_dir_);
     fs::create_directories(test_dir_);
     fs::create_directories(chunk_dir_);
-    chunk_store_ = CreateChunkStore<T>(chunk_dir_);
-    alt_chunk_store_ = CreateChunkStore<T>(alt_chunk_dir_);
+    InitChunkStore(chunk_store_, chunk_dir_);
+    InitChunkStore(alt_chunk_store_, alt_chunk_dir_);
   }
   void TearDown() {
     try {
@@ -73,6 +70,8 @@ class ChunkStoreTest: public testing::Test {
     }
     catch(...) {}
   }
+  void InitChunkStore(std::shared_ptr<ChunkStore> chunk_store,
+                      const fs::path &chunk_dir);
   fs::path CreateRandomFile(const fs::path &file_path,
                             const std::uint64_t &file_size) {
     fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
