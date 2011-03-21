@@ -215,6 +215,8 @@ class ChunkStore {
    */
   void IncreaseSize(const std::uintmax_t &delta) {
     size_ += delta;
+    if (capacity_ > 0 && capacity_ < size_)
+      capacity_ = size_;
   }
 
   /**
