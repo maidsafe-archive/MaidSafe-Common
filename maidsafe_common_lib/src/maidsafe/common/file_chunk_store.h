@@ -61,10 +61,7 @@ class FileChunkStore: public ChunkStore {
    * @param storage_location Path to storage directory
    * @return True if directory exists or could be created
    */
-  bool Init(const fs::path &storage_location) {
-    storage_location_ = storage_location;  // TODO
-    initialised_ = true;
-  }
+  bool Init(const fs::path &storage_location);
 
   /**
    * Retrieves a chunk's content as a string.

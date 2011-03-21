@@ -35,6 +35,29 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
+bool FileChunkStore::Init(const fs::path &storage_location) {
+  try {
+    //  empty the dir if it already exists
+    if (fs::exists(storage_location))
+      fs::remove_all(storage_location);
+
+    if (fs::create_directory(storage_location)) {
+      storage_location_ = storage_location;
+
+      ResetChunkCount();
+
+      ChunkStore::Clear();
+      ChunkStore::SetCapacity(0);
+
+      initialised_ = true;
+    } else
+        return false;
+  } catch(...) {
+    return false;
+  }
+  return true;
+}
+
 std::string FileChunkStore::Get(const std::string &name) {
   fs::path file_path(ChunkNameToFilePath(name));
   std::string content;
@@ -102,16 +125,17 @@ bool FileChunkStore::Store(const std::string &name,
 
     //  is source file valid
     if (file_size && !ec) {
+      try {
+        if (delete_source_file)
+          fs::rename(source_file_name, chunk_file);
+        else
+          fs::copy_file(source_file_name, chunk_file,
+                    fs::copy_option::overwrite_if_exists);
 
-      if (delete_source_file)
-        fs::rename(source_file_name, chunk_file, ec);
-      else
-        fs::copy_file(source_file_name, chunk_file,
-                  fs::copy_option::overwrite_if_exists, ec);
-
-      if (!ec) {
         ChunkAdded(file_size);
         return true;
+      } catch(...) {
+        return false;
       }
     }
   } else {
