@@ -127,20 +127,20 @@ bool MemoryChunkStore::Has(const std::string &name) {
   return chunks_.count(name) > 0;
 }
 
-std::uintmax_t MemoryChunkStore::Size(const std::string &name) {
-  auto it = chunks_.find(name);
-  if (it == chunks_.end())
-    return 0;
-
-  return it->second.size();
-}
-
 bool MemoryChunkStore::Validate(const std::string &name) {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
 
   return name == crypto::Hash<crypto::SHA512>(it->second);
+}
+
+std::uintmax_t MemoryChunkStore::Size(const std::string &name) {
+  auto it = chunks_.find(name);
+  if (it == chunks_.end())
+    return 0;
+
+  return it->second.size();
 }
 
 std::uintmax_t MemoryChunkStore::Count() {

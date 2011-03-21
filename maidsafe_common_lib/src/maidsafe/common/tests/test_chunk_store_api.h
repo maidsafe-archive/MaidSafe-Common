@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include <string>
+#include <vector>
 #include "gtest/gtest.h"
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
@@ -51,8 +52,8 @@ class ChunkStoreTest: public testing::Test {
                   "MaidSafe_TestChunkStore_%%%%-%%%%-%%%%")),
         chunk_dir_(test_dir_ / "chunks"),
         alt_chunk_dir_(test_dir_ / "chunks2"),
-        chunk_store_(new T),
-        alt_chunk_store_(new T) {}
+        chunk_store_(new T(false)),
+        alt_chunk_store_(new T(false)) {}
   ~ChunkStoreTest() {}
  protected:
   void SetUp() {

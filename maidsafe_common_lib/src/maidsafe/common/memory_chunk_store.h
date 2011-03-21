@@ -49,8 +49,9 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  MemoryChunkStore()
-      : chunks_() {}
+  explicit MemoryChunkStore(bool reference_counting)
+      : ChunkStore(reference_counting),
+        chunks_() {}
   ~MemoryChunkStore() {}
 
   /**
@@ -112,13 +113,6 @@ class MemoryChunkStore: public ChunkStore {
   bool Has(const std::string &name);
 
   /**
-   * Retrieves the size of a chunk.
-   * @param name Chunk name
-   * @return Size in bytes
-   */
-  std::uintmax_t Size(const std::string &name);
-
-  /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
@@ -126,6 +120,24 @@ class MemoryChunkStore: public ChunkStore {
    * @return True if chunk valid
    */
   bool Validate(const std::string &name);
+
+  /**
+   * Retrieves the size of a chunk.
+   * @param name Chunk name
+   * @return Size in bytes
+   */
+  std::uintmax_t Size(const std::string &name);
+
+  /**
+   * Retrieves the number of references to a chunk.
+   *
+   * If reference counting is enabled, this returns the number of (virtual)
+   * copies of a chunk in the ChunkStore. Otherwise it would return 1 if the
+   * chunks exists, or 0 if it doesn't.
+   * @param name Chunk name
+   * @return Reference count
+   */
+  std::uintmax_t Count(const std::string &name) { return 0; }
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.

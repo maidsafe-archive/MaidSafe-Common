@@ -54,8 +54,8 @@ namespace maidsafe {
  */
 class ChunkStore {
  public:
-  ChunkStore()
-      : capacity_(0), size_(0) {}
+  explicit ChunkStore(bool reference_counting)
+      : kReferenceCounting(reference_counting), capacity_(0), size_(0) {}
   virtual ~ChunkStore() {}
 
   /**
@@ -174,6 +174,17 @@ class ChunkStore {
   }
 
   /**
+   * Retrieves the number of references to a chunk.
+   *
+   * If reference counting is enabled, this returns the number of (virtual)
+   * copies of a chunk in the ChunkStore. Otherwise it would return 1 if the
+   * chunks exists, or 0 if it doesn't.
+   * @param name Chunk name
+   * @return Reference count
+   */
+  virtual std::uintmax_t Count(const std::string &name) = 0;
+
+  /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
@@ -193,6 +204,9 @@ class ChunkStore {
   }
 
  protected:
+  /// Whether reference counting is enabled for this instance.
+  const bool kReferenceCounting;
+
   /**
    * Increases the total size of the stored chunks.
    *
