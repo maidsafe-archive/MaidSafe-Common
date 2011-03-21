@@ -37,21 +37,24 @@ namespace maidsafe {
 
 bool FileChunkStore::Init(const fs::path &storage_location) {
   try {
-    //  empty the dir if it already exists
-    if (fs::exists(storage_location))
-      fs::remove_all(storage_location);
+    if (fs::exists(storage_location)) {
+      //  retrieve the number of chunks and total size
+      RestoredChunkStoreInfo chunk_info = RetrieveChunkInfo(storage_location);
+      ResetChunkCount(chunk_info.first);
+      //  assuming capacity as infinite as it is set to 0 in ChunkStore ctor
+      IncreaseSize(chunk_info.second);
+    } else {
+      if (fs::create_directory(storage_location)) {
+        ResetChunkCount();
 
-    if (fs::create_directory(storage_location)) {
-      storage_location_ = storage_location;
-
-      ResetChunkCount();
-
-      ChunkStore::Clear();
-      ChunkStore::SetCapacity(0);
-
-      initialised_ = true;
-    } else
+        ChunkStore::Clear();
+      } else {
         return false;
+      }
+    }
+    ChunkStore::SetCapacity(0);
+    storage_location_ = storage_location;
+    initialised_ = true;
   } catch(...) {
     return false;
   }
@@ -114,7 +117,6 @@ bool FileChunkStore::Store(const std::string &name,
   if (!WriteFile(chunk_file, content))
     return false;
 
-  //IncreaseSize(content.size());
   ChunkAdded(content.size());
   return true;
 }
@@ -133,7 +135,6 @@ bool FileChunkStore::Store(const std::string &name,
 
   //  does the chunk already exist
   if (!fs::exists(chunk_file, ec)) {
-
     std::uintmax_t file_size(fs::file_size(source_file_name, ec));
 
     //  is source file valid
@@ -170,7 +171,7 @@ bool FileChunkStore::Delete(const std::string &name) {
     return false;
 
   //  check non existant chunk
-  if(!Has(name))
+  if (!Has(name))
     return true;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
@@ -208,7 +209,7 @@ bool FileChunkStore::MoveTo(const std::string &name,
       ChunkRemoved(file_size);
       return true;
     }
-  } catch (...) {
+  } catch(...) {
   }
 
   return false;
@@ -256,7 +257,7 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) {
     fs::path chunk_file(ChunkNameToFilePath(name));
     std::uintmax_t size = fs::file_size(chunk_file);
     return size;
-  } catch (...) {
+  } catch(...) {
     return 0;
   }
 }
@@ -285,28 +286,35 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {
   return fs::path(storage_location_ / EncodeToHex(chunk_name));
 }
 
-std::uintmax_t FileChunkStore::GetChunkCount(const fs::path &location) {
+RestoredChunkStoreInfo FileChunkStore::
+                        RetrieveChunkInfo(const fs::path &location) {
   boost::uintmax_t count(0);
+  RestoredChunkStoreInfo chunk_store_info;
+  chunk_store_info.first = 0;
+  chunk_store_info.second = 0;
+
   try {
-  for (fs::directory_iterator it(location);
-       it != boost::filesystem::directory_iterator(); ++it) {
-         boost::system::error_code ec;
-    if (boost::filesystem::is_regular_file(it->status())) {
-      ++count;
-      } else if (fs::is_directory(it->path(), ec)) {
-        count += GetChunkCount(it->path());
+    for (fs::directory_iterator it(location);
+         it != boost::filesystem::directory_iterator(); ++it) {
+      if (boost::filesystem::is_regular_file(it->status())) {
+        ++chunk_store_info.first;
+        chunk_store_info.second += fs::file_size(*it);
+        } else if (fs::is_directory(it->path())) {
+          RestoredChunkStoreInfo info = RetrieveChunkInfo(it->path());
+          chunk_store_info.first += info.first;
+          chunk_store_info.second += info.second;
+        }
       }
-    }
-  } catch(...){}
-  return count;
+  } catch(...) {}
+  return chunk_store_info;
 }
 
-void FileChunkStore::ChunkAdded(const std::uintmax_t &delta){
+void FileChunkStore::ChunkAdded(const std::uintmax_t &delta) {
   IncreaseSize(delta);
   IncreaseChunkCount();
 }
 
-void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta){
+void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta) {
   DecreaseSize(delta);
   DecreaseChunkCount();
 }

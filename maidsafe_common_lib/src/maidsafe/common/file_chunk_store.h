@@ -35,6 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include "boost/filesystem.hpp"
 
 #include "maidsafe/common/chunk_store.h"
@@ -42,6 +43,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
+
+//  pair of chunk count and total of all chunk sizes in a dir
+typedef std::pair <std::uintmax_t, std::uintmax_t> RestoredChunkStoreInfo;
 
 /**
  * Manages storage and retrieval of chunks using the file system.
@@ -184,9 +188,15 @@ class FileChunkStore: public ChunkStore {
   void ChunkAdded(const std::uintmax_t &delta);
   void ChunkRemoved(const std::uintmax_t &delta);
 
-  void ResetChunkCount() { chunk_count_ = 0; }
+  void ResetChunkCount(std::uintmax_t chunk_count = 0) {
+    chunk_count_ = chunk_count; }
 
-  std::uintmax_t GetChunkCount(const fs::path &location);
+  /**
+   * Tries to read the dir specified and gets
+   * total number of chunks and their collective
+   * size
+   */
+  RestoredChunkStoreInfo RetrieveChunkInfo(const fs::path &location);
 
   bool IsChunkStoreInitialised() { return initialised_; }
 
