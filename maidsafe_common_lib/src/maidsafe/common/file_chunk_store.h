@@ -49,7 +49,8 @@ namespace maidsafe {
 class FileChunkStore: public ChunkStore {
  public:
   explicit FileChunkStore(const fs::path &storage_location)
-      : storage_location_(storage_location) {}
+      : storage_location_(storage_location),
+      chunk_count_(0) {}
   ~FileChunkStore() {}
 
   /**
@@ -155,8 +156,17 @@ class FileChunkStore: public ChunkStore {
    */
   fs::path ChunkNameToFilePath(const std::string &chunk_name);
 
+  void IncreaseChunkCount() { ++chunk_count_; }
+  void DecreaseChunkCount() { --chunk_count_; }
+
+  void ChunkAdded(const std::uintmax_t &delta);
+  void ChunkRemoved(const std::uintmax_t &delta);
+
+  void ResetChunkCount() { chunk_count_ = 0; }
+
   std::uintmax_t GetChunkCount(const fs::path &location);
   fs::path storage_location_;  ///< the chunk store location on disk
+  std::uintmax_t chunk_count_;
 };
 
 }  //  namespace maidsafe

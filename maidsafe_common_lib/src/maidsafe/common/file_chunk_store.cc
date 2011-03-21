@@ -69,18 +69,19 @@ bool FileChunkStore::Store(const std::string &name,
   if (name.empty())
     return false;
 
-  fs::path chunk_file(ChunkNameToFilePath(name));
-  boost::system::error_code ec;
-  if (fs::exists(chunk_file, ec))
+  if (Has(name))
     return true;
 
-  if (content.empty() || ec)
+  fs::path chunk_file(ChunkNameToFilePath(name));
+
+  if (content.empty())
     return false;
 
   if (!WriteFile(chunk_file, content))
     return false;
 
-  IncreaseSize(content.size());
+  //IncreaseSize(content.size());
+  ChunkAdded(content.size());
   return true;
 }
 
@@ -109,7 +110,7 @@ bool FileChunkStore::Store(const std::string &name,
                   fs::copy_option::overwrite_if_exists, ec);
 
       if (!ec) {
-        IncreaseSize(file_size);
+        ChunkAdded(file_size);
         return true;
       }
     }
@@ -125,6 +126,10 @@ bool FileChunkStore::Delete(const std::string &name) {
   if (name.empty())
     return false;
 
+  //  check non existant chunk
+  if(!Has(name))
+    return true;
+
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
 
@@ -134,7 +139,7 @@ bool FileChunkStore::Delete(const std::string &name) {
   if (ec)
     return false;
 
-  DecreaseSize(file_size);
+  ChunkRemoved(file_size);
 
   return true;
 }
@@ -144,21 +149,29 @@ bool FileChunkStore::MoveTo(const std::string &name,
   if (name.empty() || !sink_chunk_store)
     return false;
 
+  if (!Has(name))
+    return false;
+
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
 
-  std::uintmax_t file_size(fs::file_size(chunk_file, ec));
+  try {
+    std::uintmax_t file_size(Size(name));
 
-  if (!ec) {
     if (sink_chunk_store->Store(name, chunk_file, 1)) {
-      DecreaseSize(file_size);
+      ChunkRemoved(file_size);
       return true;
     }
+  } catch (...) {
   }
+
   return false;
 }
 
 bool FileChunkStore::Has(const std::string &name) {
+  if (name.empty())
+    return false;
+
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
 
@@ -175,7 +188,7 @@ bool FileChunkStore::Validate(const std::string &name) {
     return true;
 
   //  invalid! delete it
-  DecreaseSize(Size(name));
+  ChunkRemoved(Size(name));
   Delete(name);
   return false;
 }
@@ -194,15 +207,16 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) {
 }
 
 std::uintmax_t FileChunkStore::Count() {
-  return GetChunkCount(storage_location_);
+  return chunk_count_;
 }
 
 bool FileChunkStore::Empty() {
-  return (Count()? false : true);
+  return ((chunk_count_)? false : true);
 }
 
 void FileChunkStore::Clear() {
   ChunkStore::Clear();
+  ResetChunkCount();
   fs::remove_all(storage_location_);
 }
 
@@ -212,16 +226,28 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {
 
 std::uintmax_t FileChunkStore::GetChunkCount(const fs::path &location) {
   boost::uintmax_t count(0);
-
+  try {
   for (fs::directory_iterator it(location);
        it != boost::filesystem::directory_iterator(); ++it) {
+         boost::system::error_code ec;
     if (boost::filesystem::is_regular_file(it->status())) {
       ++count;
-      } else if (fs::is_directory(it->path())) {
+      } else if (fs::is_directory(it->path(), ec)) {
         count += GetChunkCount(it->path());
       }
     }
+  } catch(...){}
   return count;
+}
+
+void FileChunkStore::ChunkAdded(const std::uintmax_t &delta){
+  IncreaseSize(delta);
+  IncreaseChunkCount();
+}
+
+void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta){
+  DecreaseSize(delta);
+  DecreaseChunkCount();
 }
 
 }  // namespace maidsafe
