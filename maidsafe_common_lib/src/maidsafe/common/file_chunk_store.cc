@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/file_chunk_store.h"
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/utils.h"
 
 #include "boost/filesystem/fstream.hpp"
@@ -140,9 +141,21 @@ bool FileChunkStore::Delete(const std::string &name) {
 
 bool FileChunkStore::MoveTo(const std::string &name,
                             ChunkStore *sink_chunk_store) {
-  bool success(false);
+  if (name.empty() || !sink_chunk_store)
+    return false;
 
-  return success;
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  boost::system::error_code ec;
+
+  std::uintmax_t file_size(fs::file_size(chunk_file, ec));
+
+  if (!ec) {
+    if (sink_chunk_store->Store(name, chunk_file, 1)) {
+      DecreaseSize(file_size);
+      return true;
+    }
+  }
+  return false;
 }
 
 bool FileChunkStore::Has(const std::string &name) {
@@ -155,9 +168,16 @@ bool FileChunkStore::Has(const std::string &name) {
 }
 
 bool FileChunkStore::Validate(const std::string &name) {
-  bool valid(false);
+  if (name.empty())
+    return false;
 
-  return valid;
+  if (name == crypto::Hash<crypto::SHA512>(Get(name)))
+    return true;
+
+  //  invalid! delete it
+  DecreaseSize(Size(name));
+  Delete(name);
+  return false;
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) {
@@ -178,14 +198,12 @@ std::uintmax_t FileChunkStore::Count() {
 }
 
 bool FileChunkStore::Empty() {
-  if (fs::is_empty(storage_location_))
-    return true;
-  return false;
+  return (Count()? false : true);
 }
 
 void FileChunkStore::Clear() {
-
   ChunkStore::Clear();
+  fs::remove_all(storage_location_);
 }
 
 fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {
