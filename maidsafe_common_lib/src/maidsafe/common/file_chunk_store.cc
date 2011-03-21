@@ -59,6 +59,9 @@ bool FileChunkStore::Init(const fs::path &storage_location) {
 }
 
 std::string FileChunkStore::Get(const std::string &name) {
+  if (!IsChunkStoreInitialised())
+    return "";
+
   fs::path file_path(ChunkNameToFilePath(name));
   std::string content;
   if (!ReadFile(file_path, &content))
@@ -68,6 +71,8 @@ std::string FileChunkStore::Get(const std::string &name) {
 
 bool FileChunkStore::Get(const std::string &name,
                          const fs::path &sink_file_name) {
+  if (!IsChunkStoreInitialised())
+    return "";
 
   fs::path source_file_path(ChunkNameToFilePath(name));
 
@@ -89,6 +94,9 @@ bool FileChunkStore::Get(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const std::string &content) {
+  if (!IsChunkStoreInitialised())
+    return false;
+
   if (name.empty())
     return false;
 
@@ -98,6 +106,9 @@ bool FileChunkStore::Store(const std::string &name,
   fs::path chunk_file(ChunkNameToFilePath(name));
 
   if (content.empty())
+    return false;
+
+  if (!Vacant(content.size()))
     return false;
 
   if (!WriteFile(chunk_file, content))
@@ -111,6 +122,8 @@ bool FileChunkStore::Store(const std::string &name,
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
                            bool delete_source_file) {
+  if (!IsChunkStoreInitialised())
+    return false;
 
   if (name.empty())
     return false;
@@ -125,6 +138,9 @@ bool FileChunkStore::Store(const std::string &name,
 
     //  is source file valid
     if (file_size && !ec) {
+      if (!Vacant(file_size))
+        return false;
+
       try {
         if (delete_source_file)
           fs::rename(source_file_name, chunk_file);
@@ -147,6 +163,9 @@ bool FileChunkStore::Store(const std::string &name,
 }
 
 bool FileChunkStore::Delete(const std::string &name) {
+  if (!IsChunkStoreInitialised())
+    return false;
+
   if (name.empty())
     return false;
 
@@ -170,6 +189,9 @@ bool FileChunkStore::Delete(const std::string &name) {
 
 bool FileChunkStore::MoveTo(const std::string &name,
                             ChunkStore *sink_chunk_store) {
+  if (!IsChunkStoreInitialised())
+    return false;
+
   if (name.empty() || !sink_chunk_store)
     return false;
 
@@ -193,6 +215,9 @@ bool FileChunkStore::MoveTo(const std::string &name,
 }
 
 bool FileChunkStore::Has(const std::string &name) {
+  if (!IsChunkStoreInitialised())
+    return false;
+
   if (name.empty())
     return false;
 
@@ -205,6 +230,9 @@ bool FileChunkStore::Has(const std::string &name) {
 }
 
 bool FileChunkStore::Validate(const std::string &name) {
+  if (!IsChunkStoreInitialised())
+    return false;
+
   if (name.empty())
     return false;
 
@@ -218,6 +246,9 @@ bool FileChunkStore::Validate(const std::string &name) {
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) {
+  if (!IsChunkStoreInitialised())
+    return 0;
+
   if (name.empty())
     return 0;
 
@@ -231,11 +262,17 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) {
 }
 
 std::uintmax_t FileChunkStore::Count() {
+  if (!IsChunkStoreInitialised())
+    return 0;
+
   return chunk_count_;
 }
 
 bool FileChunkStore::Empty() {
-  return ((chunk_count_)? false : true);
+  if (!IsChunkStoreInitialised() || chunk_count_ == 0)
+    return true;
+
+  return false;
 }
 
 void FileChunkStore::Clear() {

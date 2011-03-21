@@ -175,6 +175,9 @@ class FileChunkStore: public ChunkStore {
   void ResetChunkCount() { chunk_count_ = 0; }
 
   std::uintmax_t GetChunkCount(const fs::path &location);
+
+  bool IsChunkStoreInitialised() { return initialised_; }
+
   bool initialised_;
   fs::path storage_location_;
   std::uintmax_t chunk_count_;
