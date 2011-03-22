@@ -64,9 +64,10 @@ class FileChunkStore: public ChunkStore {
    *
    * If the given directory does not exist, it will be created.
    * @param storage_location Path to storage directory
+   * @param directory depth
    * @return True if directory exists or could be created
    */
-  bool Init(const fs::path &storage_location);
+  bool Init(const fs::path &storage_location, int dir_depth = 5);
 
   /**
    * Retrieves a chunk's content as a string.
@@ -177,10 +178,13 @@ class FileChunkStore: public ChunkStore {
 
   /**
    * Utility function
+   * Generates sub-dirs based on chunk-name and dir_depth_ specified
    * @param the chunk name in raw format
+   * @param option used while storing a chunk - creates dir hierarchy
    * @return the absolute file path after encoding the chunk name as hex
    */
-  fs::path ChunkNameToFilePath(const std::string &chunk_name);
+  fs::path ChunkNameToFilePath(const std::string &chunk_name,
+                               bool generate_dirs = false);
 
   void IncreaseChunkCount() { ++chunk_count_; }
   void DecreaseChunkCount() { --chunk_count_; }
@@ -203,6 +207,7 @@ class FileChunkStore: public ChunkStore {
   bool initialised_;
   fs::path storage_location_;
   std::uintmax_t chunk_count_;
+  unsigned int dir_depth_;
 };
 
 }  //  namespace maidsafe

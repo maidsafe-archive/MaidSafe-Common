@@ -35,7 +35,8 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-bool FileChunkStore::Init(const fs::path &storage_location) {
+bool FileChunkStore::Init(const fs::path &storage_location,
+                          int dir_depth /*= 5*/) {
   try {
     if (fs::exists(storage_location)) {
       //  retrieve the number of chunks and total size
@@ -54,6 +55,7 @@ bool FileChunkStore::Init(const fs::path &storage_location) {
     }
     ChunkStore::SetCapacity(0);
     storage_location_ = storage_location;
+    dir_depth_ = dir_depth;
     initialised_ = true;
   } catch(...) {
     return false;
@@ -106,7 +108,7 @@ bool FileChunkStore::Store(const std::string &name,
   if (Has(name))
     return true;
 
-  fs::path chunk_file(ChunkNameToFilePath(name));
+  fs::path chunk_file(ChunkNameToFilePath(name, true));
 
   if (content.empty())
     return false;
@@ -130,7 +132,7 @@ bool FileChunkStore::Store(const std::string &name,
   if (name.empty())
     return false;
 
-  fs::path chunk_file(ChunkNameToFilePath(name));
+  fs::path chunk_file(ChunkNameToFilePath(name, true));
   boost::system::error_code ec;
 
   //  does the chunk already exist
@@ -282,8 +284,30 @@ void FileChunkStore::Clear() {
   fs::remove_all(storage_location_);
 }
 
-fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name) {
-  return fs::path(storage_location_ / EncodeToHex(chunk_name));
+fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
+                                             bool generate_dirs /*= false*/) {
+  std::string encoded_file_name = EncodeToHex(chunk_name);
+  std::string dir_names;
+  for (int i = 0; i < dir_depth_; ++i) {
+    dir_names.push_back('/');
+    dir_names.push_back(encoded_file_name[i]);
+  }
+
+  dir_names.push_back('/');
+
+  encoded_file_name = encoded_file_name.erase(0, dir_depth_);
+
+  boost::system::error_code ec;
+
+  if (generate_dirs) {
+    fs::create_directories(fs::path(storage_location_.string() + dir_names),
+                           ec);
+  }
+
+  //  create the absolute file path
+  dir_names += encoded_file_name;
+
+  return fs::path(storage_location_.string() + dir_names);
 }
 
 RestoredChunkStoreInfo FileChunkStore::
