@@ -574,4 +574,5 @@ std::string FileChunkStore::GetExtensionWithReferenceCount(
                               const std::uintmax_t & ref_count) {
   return std::string("." + GetStringFromNum(ref_count));
 }
+
 }  // namespace maidsafe
