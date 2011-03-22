@@ -153,7 +153,7 @@ class FileChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) { return 0; }
+  std::uintmax_t Count(const std::string &name);
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
@@ -203,6 +203,19 @@ class FileChunkStore: public ChunkStore {
   RestoredChunkStoreInfo RetrieveChunkInfo(const fs::path &location);
 
   bool IsChunkStoreInitialised() { return initialised_; }
+
+  /**
+   * Utility function
+   * Returns reference count of a chunk
+   * @param the absolute path of the chunk
+   * @return the reference count for the chunk
+   */
+  std::uintmax_t GetChunkReferenceCount(const fs::path &);
+
+  std::uintmax_t GetNumFromString(const std::string &);
+  std::string GetStringFromNum(const std::uintmax_t &);
+
+  std::string GetExtensionWithReferenceCount(const std::uintmax_t &);
 
   bool initialised_;
   fs::path storage_location_;
