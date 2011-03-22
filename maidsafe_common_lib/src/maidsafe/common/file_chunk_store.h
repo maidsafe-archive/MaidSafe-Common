@@ -74,7 +74,7 @@ class FileChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Chunk content, or empty if non-existant
    */
-  std::string Get(const std::string &name);
+  std::string Get(const std::string &name) const;
 
   /**
    * Retrieves a chunk's content as a file, potentially overwriting an existing
@@ -83,7 +83,7 @@ class FileChunkStore: public ChunkStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  bool Get(const std::string &name, const fs::path &sink_file_name);
+  bool Get(const std::string &name, const fs::path &sink_file_name) const;
 
   /**
    * Stores chunk content under the given name.
@@ -126,7 +126,7 @@ class FileChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk exists
    */
-  bool Has(const std::string &name);
+  bool Has(const std::string &name) const;
 
   /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
@@ -135,14 +135,14 @@ class FileChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-  bool Validate(const std::string &name);
+  bool Validate(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name);
+  std::uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -153,19 +153,19 @@ class FileChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name);
+  std::uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  std::uintmax_t Count();
+  std::uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
    * @return True if no chunks stored
    */
-  bool Empty();
+  bool Empty() const;
 
   /**
    * Deletes all stored chunks.
@@ -184,7 +184,7 @@ class FileChunkStore: public ChunkStore {
    * @return the absolute file path after encoding the chunk name as hex
    */
   fs::path ChunkNameToFilePath(const std::string &chunk_name,
-                               bool generate_dirs = false);
+                               bool generate_dirs = false) const;
 
   void IncreaseChunkCount() { ++chunk_count_; }
   void DecreaseChunkCount() { --chunk_count_; }
@@ -193,16 +193,17 @@ class FileChunkStore: public ChunkStore {
   void ChunkRemoved(const std::uintmax_t &delta);
 
   void ResetChunkCount(std::uintmax_t chunk_count = 0) {
-    chunk_count_ = chunk_count; }
+    chunk_count_ = chunk_count;
+  }
 
   /**
    * Tries to read the dir specified and gets
    * total number of chunks and their collective
    * size
    */
-  RestoredChunkStoreInfo RetrieveChunkInfo(const fs::path &location);
+  RestoredChunkStoreInfo RetrieveChunkInfo(const fs::path &location) const;
 
-  bool IsChunkStoreInitialised() { return initialised_; }
+  bool IsChunkStoreInitialised() const { return initialised_; }
 
   /**
    * Utility function
@@ -210,12 +211,12 @@ class FileChunkStore: public ChunkStore {
    * @param the absolute path of the chunk
    * @return the reference count for the chunk
    */
-  std::uintmax_t GetChunkReferenceCount(const fs::path &);
+  std::uintmax_t GetChunkReferenceCount(const fs::path &) const;
 
-  std::uintmax_t GetNumFromString(const std::string &);
-  std::string GetStringFromNum(const std::uintmax_t &);
+  std::uintmax_t GetNumFromString(const std::string &) const;
+  std::string GetStringFromNum(const std::uintmax_t &) const;
 
-  std::string GetExtensionWithReferenceCount(const std::uintmax_t &);
+  std::string GetExtensionWithReferenceCount(const std::uintmax_t &) const;
 
   bool initialised_;
   fs::path storage_location_;

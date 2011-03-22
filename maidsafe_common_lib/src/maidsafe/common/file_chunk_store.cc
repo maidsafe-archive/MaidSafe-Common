@@ -66,7 +66,7 @@ bool FileChunkStore::Init(const fs::path &storage_location,
   return true;
 }
 
-std::string FileChunkStore::Get(const std::string &name) {
+std::string FileChunkStore::Get(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return "";
 
@@ -78,7 +78,7 @@ std::string FileChunkStore::Get(const std::string &name) {
 }
 
 bool FileChunkStore::Get(const std::string &name,
-                         const fs::path &sink_file_name) {
+                         const fs::path &sink_file_name) const {
   if (!IsChunkStoreInitialised())
     return "";
 
@@ -383,7 +383,7 @@ bool FileChunkStore::MoveTo(const std::string &name,
   return false;
 }
 
-bool FileChunkStore::Has(const std::string &name) {
+bool FileChunkStore::Has(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -403,23 +403,17 @@ bool FileChunkStore::Has(const std::string &name) {
   return false;
 }
 
-bool FileChunkStore::Validate(const std::string &name) {
+bool FileChunkStore::Validate(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return false;
 
   if (name.empty())
     return false;
 
-  if (name == crypto::Hash<crypto::SHA512>(Get(name)))
-    return true;
-
-  //  invalid! delete it
-  ChunkRemoved(Size(name));
-  Delete(name);
-  return false;
+  return name == crypto::HashFile<crypto::SHA512>(ChunkNameToFilePath(name));
 }
 
-std::uintmax_t FileChunkStore::Size(const std::string &name) {
+std::uintmax_t FileChunkStore::Size(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return 0;
 
@@ -435,14 +429,14 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) {
   }
 }
 
-std::uintmax_t FileChunkStore::Count() {
+std::uintmax_t FileChunkStore::Count() const {
   if (!IsChunkStoreInitialised())
     return 0;
 
   return chunk_count_;
 }
 
-std::uintmax_t FileChunkStore::Count(const std::string &name) {
+std::uintmax_t FileChunkStore::Count(const std::string &name) const {
   if (!IsChunkStoreInitialised() || name.empty())
     return 0;
 
@@ -456,7 +450,7 @@ std::uintmax_t FileChunkStore::Count(const std::string &name) {
   return Count();
 }
 
-bool FileChunkStore::Empty() {
+bool FileChunkStore::Empty() const {
   if (!IsChunkStoreInitialised() || chunk_count_ == 0)
     return true;
 
@@ -464,13 +458,13 @@ bool FileChunkStore::Empty() {
 }
 
 void FileChunkStore::Clear() {
-  ChunkStore::Clear();
   ResetChunkCount();
   fs::remove_all(storage_location_);
+  ChunkStore::Clear();
 }
 
 fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
-                                             bool generate_dirs /*= false*/) {
+                                             bool generate_dirs) const {
   std::string encoded_file_name = EncodeToHex(chunk_name);
   std::string dir_names;
   for (int i = 0; i < dir_depth_; ++i) {
@@ -495,8 +489,8 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
   return fs::path(storage_location_.string() + dir_names);
 }
 
-RestoredChunkStoreInfo FileChunkStore::
-                        RetrieveChunkInfo(const fs::path &location) {
+RestoredChunkStoreInfo FileChunkStore::RetrieveChunkInfo(
+    const fs::path &location) const {
   boost::uintmax_t count(0);
   RestoredChunkStoreInfo chunk_store_info;
   chunk_store_info.first = 0;
@@ -529,7 +523,7 @@ void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta) {
 }
 
 std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
-                                                     chunk_path) {
+                                                      chunk_path) const {
   fs::path location(chunk_path.parent_path());
   std::string chunk_name(chunk_path.filename().string());
 
@@ -554,7 +548,7 @@ std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
   return 0;
 }
 
-std::uintmax_t FileChunkStore::GetNumFromString(const std::string &str) {
+std::uintmax_t FileChunkStore::GetNumFromString(const std::string &str) const {
   try {
     return boost::lexical_cast<uintmax_t>(str);
   } catch(boost::bad_lexical_cast &) {
@@ -562,7 +556,8 @@ std::uintmax_t FileChunkStore::GetNumFromString(const std::string &str) {
   }
 }
 
-std::string FileChunkStore::GetStringFromNum(const std::uintmax_t &count) {
+std::string FileChunkStore::GetStringFromNum(
+    const std::uintmax_t &count) const {
   try {
     return boost::lexical_cast<std::string>(count);
   } catch(boost::bad_lexical_cast &) {
@@ -571,7 +566,7 @@ std::string FileChunkStore::GetStringFromNum(const std::uintmax_t &count) {
 }
 
 std::string FileChunkStore::GetExtensionWithReferenceCount(
-                              const std::uintmax_t & ref_count) {
+    const std::uintmax_t &ref_count) const {
   return std::string("." + GetStringFromNum(ref_count));
 }
 

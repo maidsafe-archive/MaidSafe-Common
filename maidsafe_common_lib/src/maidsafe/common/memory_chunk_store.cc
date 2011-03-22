@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-std::string MemoryChunkStore::Get(const std::string &name) {
+std::string MemoryChunkStore::Get(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return "";
@@ -40,7 +40,7 @@ std::string MemoryChunkStore::Get(const std::string &name) {
 }
 
 bool MemoryChunkStore::Get(const std::string &name,
-                           const fs::path &sink_file_name) {
+                           const fs::path &sink_file_name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
@@ -132,11 +132,11 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
   return true;
 }
 
-bool MemoryChunkStore::Has(const std::string &name) {
+bool MemoryChunkStore::Has(const std::string &name) const {
   return chunks_.count(name) > 0;
 }
 
-bool MemoryChunkStore::Validate(const std::string &name) {
+bool MemoryChunkStore::Validate(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
@@ -144,7 +144,7 @@ bool MemoryChunkStore::Validate(const std::string &name) {
   return name == crypto::Hash<crypto::SHA512>(it->second.second);
 }
 
-std::uintmax_t MemoryChunkStore::Size(const std::string &name) {
+std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return 0;
@@ -152,7 +152,7 @@ std::uintmax_t MemoryChunkStore::Size(const std::string &name) {
   return it->second.second.size();
 }
 
-std::uintmax_t MemoryChunkStore::Count(const std::string &name) {
+std::uintmax_t MemoryChunkStore::Count(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return 0;
@@ -160,11 +160,11 @@ std::uintmax_t MemoryChunkStore::Count(const std::string &name) {
   return it->second.first;
 }
 
-std::uintmax_t MemoryChunkStore::Count() {
+std::uintmax_t MemoryChunkStore::Count() const {
   return chunks_.size();
 }
 
-bool MemoryChunkStore::Empty() {
+bool MemoryChunkStore::Empty() const {
   return chunks_.empty();
 }
 

@@ -59,7 +59,7 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Chunk content, or empty if non-existant
    */
-  std::string Get(const std::string &name);
+  std::string Get(const std::string &name) const;
 
   /**
    * Retrieves a chunk's content as a file, potentially overwriting an existing
@@ -68,7 +68,7 @@ class MemoryChunkStore: public ChunkStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  bool Get(const std::string &name, const fs::path &sink_file_name);
+  bool Get(const std::string &name, const fs::path &sink_file_name) const;
 
   /**
    * Stores chunk content under the given name.
@@ -110,7 +110,7 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk exists
    */
-  bool Has(const std::string &name);
+  bool Has(const std::string &name) const;
 
   /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
@@ -119,14 +119,14 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-  bool Validate(const std::string &name);
+  bool Validate(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name);
+  std::uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -137,19 +137,19 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name);
+  std::uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  std::uintmax_t Count();
+  std::uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
    * @return True if no chunks stored
    */
-  bool Empty();
+  bool Empty() const;
 
   /**
    * Deletes all stored chunks.

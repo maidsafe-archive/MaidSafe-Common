@@ -342,6 +342,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Validate) {
   ASSERT_TRUE(this->chunk_store_->Delete(name));
   ASSERT_TRUE(this->chunk_store_->Store(name, "this won't validate"));
   EXPECT_FALSE(this->chunk_store_->Validate(name));
+  EXPECT_TRUE(this->chunk_store_->Has(name));
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Capacity) {

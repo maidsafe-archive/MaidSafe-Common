@@ -63,7 +63,7 @@ class ChunkStore {
    * @param name Chunk name
    * @return Chunk content, or empty if non-existant
    */
-  virtual std::string Get(const std::string &name) = 0;
+  virtual std::string Get(const std::string &name) const = 0;
 
   /**
    * Retrieves a chunk's content as a file, potentially overwriting an existing
@@ -72,7 +72,8 @@ class ChunkStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  virtual bool Get(const std::string &name, const fs::path &sink_file_name) = 0;
+  virtual bool Get(const std::string &name,
+                   const fs::path &sink_file_name) const = 0;
 
   /**
    * Stores chunk content under the given name.
@@ -115,7 +116,7 @@ class ChunkStore {
    * @param name Chunk name
    * @return True if chunk exists
    */
-  virtual bool Has(const std::string &name) = 0;
+  virtual bool Has(const std::string &name) const = 0;
 
   /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
@@ -124,14 +125,14 @@ class ChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-  virtual bool Validate(const std::string &name) = 0;
+  virtual bool Validate(const std::string &name) const = 0;
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  virtual std::uintmax_t Size(const std::string &name) = 0;
+  virtual std::uintmax_t Size(const std::string &name) const = 0;
 
   /**
    * Retrieves the total size of the stored chunks.
@@ -182,19 +183,19 @@ class ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  virtual std::uintmax_t Count(const std::string &name) = 0;
+  virtual std::uintmax_t Count(const std::string &name) const = 0;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  virtual std::uintmax_t Count() = 0;
+  virtual std::uintmax_t Count() const = 0;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
    * @return True if no chunks stored
    */
-  virtual bool Empty() = 0;
+  virtual bool Empty() const = 0;
 
   /**
    * Deletes all stored chunks.
