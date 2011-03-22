@@ -137,7 +137,7 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) { return 0; }
+  std::uintmax_t Count(const std::string &name);
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
@@ -157,9 +157,10 @@ class MemoryChunkStore: public ChunkStore {
   void Clear();
 
  private:
+  typedef std::pair<std::uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
-  std::map<std::string, std::string> chunks_;
+  std::map<std::string, ChunkEntry> chunks_;
 };
 
 }  //  namespace maidsafe

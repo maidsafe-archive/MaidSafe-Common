@@ -490,9 +490,8 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   EXPECT_EQ(2, this->ref_chunk_store_->Count(name3));
   EXPECT_TRUE(this->ref_chunk_store_->Store(name3, content1));
   EXPECT_EQ(3, this->ref_chunk_store_->Count(name3));
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name3));
-  EXPECT_EQ(0, this->ref_chunk_store_->Count(name3));
-  EXPECT_TRUE(this->ref_chunk_store_->Empty());
+
+  this->ref_chunk_store_->Clear();
 
   // adding via move
   EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
@@ -504,6 +503,12 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->ref_chunk_store_.get()));
   EXPECT_FALSE(this->chunk_store_->Has(name2));
   EXPECT_EQ(2, this->ref_chunk_store_->Count(name2));
+  this->chunk_store_->SetCapacity(10);
+  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name2));
+  this->chunk_store_->SetCapacity(0);
   EXPECT_TRUE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
   EXPECT_TRUE(this->chunk_store_->Has(name2));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name2));

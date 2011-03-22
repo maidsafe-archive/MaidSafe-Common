@@ -36,7 +36,7 @@ std::string MemoryChunkStore::Get(const std::string &name) {
   if (it == chunks_.end())
     return "";
 
-  return it->second;
+  return it->second.second;
 }
 
 bool MemoryChunkStore::Get(const std::string &name,
@@ -45,7 +45,7 @@ bool MemoryChunkStore::Get(const std::string &name,
   if (it == chunks_.end())
     return false;
 
-  return WriteFile(sink_file_name, it->second);
+  return WriteFile(sink_file_name, it->second.second);
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
@@ -54,14 +54,17 @@ bool MemoryChunkStore::Store(const std::string &name,
     return false;
 
   auto it = chunks_.find(name);
-  if (it != chunks_.end())
+  if (it != chunks_.end()) {
+    if (kReferenceCounting)
+      ++(it->second.first);
     return true;
+  }
 
   std::uintmax_t chunk_size(content.size());
   if (chunk_size == 0 || !Vacant(chunk_size))
     return false;
 
-  chunks_[name] = content;
+  chunks_[name] = ChunkEntry(1, content);
   IncreaseSize(chunk_size);
   return true;
 }
@@ -83,8 +86,10 @@ bool MemoryChunkStore::Store(const std::string &name,
     if (!ReadFile(source_file_name, &content) || content.size() != chunk_size)
       return false;
 
-    chunks_[name] = content;
+    chunks_[name] = ChunkEntry(1, content);
     IncreaseSize(chunk_size);
+  } else if (kReferenceCounting) {
+    ++(it->second.first);
   }
 
   if (delete_source_file)
@@ -101,8 +106,10 @@ bool MemoryChunkStore::Delete(const std::string &name) {
   if (it == chunks_.end())
     return true;
 
-  DecreaseSize(it->second.size());
-  chunks_.erase(it);
+  if (!kReferenceCounting || --(it->second.first) == 0) {
+    DecreaseSize(it->second.second.size());
+    chunks_.erase(it);
+  }
   return true;
 }
 
@@ -115,11 +122,13 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
   if (it == chunks_.end())
     return false;
 
-  if (!sink_chunk_store->Store(name, it->second))
+  if (!sink_chunk_store->Store(name, it->second.second))
     return false;
 
-  DecreaseSize(it->second.size());
-  chunks_.erase(it);
+  if (!kReferenceCounting || --(it->second.first) == 0) {
+    DecreaseSize(it->second.second.size());
+    chunks_.erase(it);
+  }
   return true;
 }
 
@@ -132,7 +141,7 @@ bool MemoryChunkStore::Validate(const std::string &name) {
   if (it == chunks_.end())
     return false;
 
-  return name == crypto::Hash<crypto::SHA512>(it->second);
+  return name == crypto::Hash<crypto::SHA512>(it->second.second);
 }
 
 std::uintmax_t MemoryChunkStore::Size(const std::string &name) {
@@ -140,7 +149,15 @@ std::uintmax_t MemoryChunkStore::Size(const std::string &name) {
   if (it == chunks_.end())
     return 0;
 
-  return it->second.size();
+  return it->second.second.size();
+}
+
+std::uintmax_t MemoryChunkStore::Count(const std::string &name) {
+  auto it = chunks_.find(name);
+  if (it == chunks_.end())
+    return 0;
+
+  return it->second.first;
 }
 
 std::uintmax_t MemoryChunkStore::Count() {
