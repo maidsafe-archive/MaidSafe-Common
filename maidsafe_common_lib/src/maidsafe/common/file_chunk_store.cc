@@ -55,6 +55,8 @@ bool FileChunkStore::Init(const fs::path &storage_location,
     }
     ChunkStore::SetCapacity(0);
     storage_location_ = storage_location;
+    if (dir_depth > 63)
+      dir_depth = 63;
     dir_depth_ = dir_depth;
     initialised_ = true;
   } catch(...) {
