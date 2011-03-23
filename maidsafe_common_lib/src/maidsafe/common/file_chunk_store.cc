@@ -465,7 +465,8 @@ void FileChunkStore::Clear() {
 
 fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
                                              bool generate_dirs) const {
-  std::string encoded_file_name = EncodeToHex(chunk_name);
+  //  std::string encoded_file_name = EncodeToHex(chunk_name);
+  std::string encoded_file_name = EncodeToBase32(chunk_name);
   std::string dir_names;
   for (int i = 0; i < dir_depth_; ++i) {
     dir_names.push_back('/');
