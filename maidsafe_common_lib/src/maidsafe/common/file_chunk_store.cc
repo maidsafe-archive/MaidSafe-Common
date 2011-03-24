@@ -86,6 +86,9 @@ std::string FileChunkStore::Get(const std::string &name) const {
                                 GetExtensionWithReferenceCount(ref_count));
     file_path = existing_file;
   }
+  if (!fs::exists(file_path))
+    return false;
+
   if (!ReadFile(file_path, &content))
     return "";
 
@@ -95,7 +98,10 @@ std::string FileChunkStore::Get(const std::string &name) const {
 bool FileChunkStore::Get(const std::string &name,
                          const fs::path &sink_file_name) const {
   if (!IsChunkStoreInitialised())
-    return "";
+    return false;
+
+  if (name.empty())
+    return false;
 
   fs::path source_file_path(ChunkNameToFilePath(name));
 
@@ -505,6 +511,13 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
                                              bool generate_dirs) const {
   //  std::string encoded_file_name = EncodeToHex(chunk_name);
   std::string encoded_file_name = EncodeToBase32(chunk_name);
+
+  size_t length_encoded(encoded_file_name.length());
+
+  if (dir_depth_ > length_encoded) {
+    UpdateDirDepth(--length_encoded);
+  }
+
   std::string dir_names;
   for (int i = 0; i < dir_depth_; ++i) {
     dir_names.push_back('/');
