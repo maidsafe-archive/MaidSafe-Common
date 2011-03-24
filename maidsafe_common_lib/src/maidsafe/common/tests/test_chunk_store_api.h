@@ -544,6 +544,20 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
 }
 
+TYPED_TEST_P(ChunkStoreTest, BEH_CS_SmallName) {
+  EXPECT_FALSE(this->chunk_store_->Has("x"));
+  EXPECT_EQ(0, this->chunk_store_->Count("x"));
+  EXPECT_TRUE(this->chunk_store_->Get("x").empty());
+  EXPECT_TRUE(this->chunk_store_->Store("x", "dummy"));
+  EXPECT_TRUE(this->chunk_store_->Has("x"));
+  EXPECT_EQ(1, this->chunk_store_->Count("x"));
+  EXPECT_EQ("dummy", this->chunk_store_->Get("x"));
+  EXPECT_TRUE(this->chunk_store_->MoveTo("x", this->alt_chunk_store_.get()));
+  EXPECT_FALSE(this->chunk_store_->Has("x"));
+  EXPECT_TRUE(this->alt_chunk_store_->Has("x"));
+  EXPECT_FALSE(this->alt_chunk_store_->Validate("x"));
+}
+
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Clear) {
   std::vector<std::string> chunks;
   for (int i = 0; i < 20; ++i) {
@@ -575,6 +589,7 @@ REGISTER_TYPED_TEST_CASE_P(ChunkStoreTest,
                            BEH_CS_Validate,
                            BEH_CS_Capacity,
                            BEH_CS_References,
+                           BEH_CS_SmallName,
                            BEH_CS_Clear);
 
 }  // namespace test

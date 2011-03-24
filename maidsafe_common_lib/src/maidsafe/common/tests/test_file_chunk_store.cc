@@ -42,6 +42,33 @@ void ChunkStoreTest<FileChunkStore>::InitChunkStore(
 
 INSTANTIATE_TYPED_TEST_CASE_P(Files, ChunkStoreTest, FileChunkStore);
 
+class FileChunkStoreTest: public testing::Test {
+ public:
+  FileChunkStoreTest()
+      : test_dir_(fs::unique_path(fs::temp_directory_path() /
+                  "MaidSafe_TestFileChunkStore_%%%%-%%%%-%%%%")),
+        chunk_dir_(test_dir_ / "chunks") {}
+  ~FileChunkStoreTest() {}
+ protected:
+  void SetUp() {
+    if (fs::exists(test_dir_))
+      fs::remove_all(test_dir_);
+    fs::create_directories(chunk_dir_);
+  }
+  void TearDown() {
+    try {
+      if (fs::exists(test_dir_))
+        fs::remove_all(test_dir_);
+    }
+    catch(...) {}
+  }
+  fs::path test_dir_, chunk_dir_;
+};
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
+  FAIL() << "Not implemented.";
+}
+
 }  // namespace test
 
 }  // namespace maidsafe
