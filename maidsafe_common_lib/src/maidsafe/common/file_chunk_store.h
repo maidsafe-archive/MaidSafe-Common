@@ -218,12 +218,10 @@ class FileChunkStore: public ChunkStore {
 
   std::string GetExtensionWithReferenceCount(const std::uintmax_t &) const;
 
-  void UpdateDirDepth(size_t depth) const { dir_depth_ = depth; }
-
   bool initialised_;
   fs::path storage_location_;
   std::uintmax_t chunk_count_;
-  mutable unsigned int dir_depth_;
+  unsigned int dir_depth_;
 };
 
 }  //  namespace maidsafe

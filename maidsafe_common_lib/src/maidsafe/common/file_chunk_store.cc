@@ -512,12 +512,6 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
   //  std::string encoded_file_name = EncodeToHex(chunk_name);
   std::string encoded_file_name = EncodeToBase32(chunk_name);
 
-  size_t length_encoded(encoded_file_name.length());
-
-  if (dir_depth_ > length_encoded) {
-    UpdateDirDepth(--length_encoded);
-  }
-
   std::string dir_names;
   for (int i = 0; i < dir_depth_; ++i) {
     dir_names.push_back('/');
