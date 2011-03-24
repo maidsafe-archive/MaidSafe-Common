@@ -27,6 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include "boost/filesystem.hpp"
+#include "boost/shared_ptr.hpp"
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/file_chunk_store.h"
 
@@ -66,6 +67,58 @@ class FileChunkStoreTest: public testing::Test {
 };
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
+  //  File chunk store without reference counting
+  boost::shared_ptr<FileChunkStore> fcs_first(new FileChunkStore(false));
+
+  fs::path test_dir(fs::unique_path(fs::temp_directory_path() /
+                  "MaidSafe_TestFileChunkStore_%%%%-%%%%-%%%%"));
+
+  fs::path chunk_dir_first(test_dir_ / "chunks_first");
+  EXPECT_EQ(true, fcs_first->Init(chunk_dir_first, 10));
+  EXPECT_EQ(0, fcs_first->Count());
+  EXPECT_TRUE(fcs_first->Empty());
+  EXPECT_FALSE(fcs_first->Has(""));
+  EXPECT_FALSE(fcs_first->Has("something"));
+
+  boost::shared_ptr<FileChunkStore> fcs_second(new FileChunkStore(false));
+
+  //  Reuse existing chunk directory
+  EXPECT_EQ(true, fcs_second->Init(chunk_dir_first, 10));
+  EXPECT_EQ(0, fcs_second->Count());
+  EXPECT_TRUE(fcs_second->Empty());
+  EXPECT_FALSE(fcs_second->Has(""));
+  EXPECT_FALSE(fcs_second->Has("something"));
+
+  //  Test by passing nothing for Dir name
+  boost::shared_ptr<FileChunkStore> fcs_third(new FileChunkStore(false));
+  EXPECT_EQ(false, fcs_third->Init("", 10));
+  EXPECT_EQ(0, fcs_third->Count());
+  EXPECT_TRUE(fcs_third->Empty());
+  EXPECT_FALSE(fcs_third->Has(""));
+  EXPECT_FALSE(fcs_third->Has("something"));
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Get) {
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Store) {
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Delete) {
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_MoveTo) {
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Validate) {
+  FAIL() << "Not implemented.";
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Capacity) {
   FAIL() << "Not implemented.";
 }
 

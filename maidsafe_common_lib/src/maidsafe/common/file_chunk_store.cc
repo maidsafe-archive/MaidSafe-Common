@@ -39,6 +39,9 @@ namespace maidsafe {
 bool FileChunkStore::Init(const fs::path &storage_location,
                           int dir_depth /*= 5*/) {
   try {
+    if (storage_location.string().empty())
+      return false;
+
     if (fs::exists(storage_location)) {
       //  retrieve the number of chunks and total size
       RestoredChunkStoreInfo chunk_info = RetrieveChunkInfo(storage_location);
