@@ -70,10 +70,25 @@ std::string FileChunkStore::Get(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return "";
 
+  if (name.empty())
+    return "";
+
   fs::path file_path(ChunkNameToFilePath(name));
   std::string content;
+
+  if (kReferenceCounting) {
+    std::uintmax_t ref_count(GetChunkReferenceCount(file_path));
+
+    if (ref_count == 0)
+      return "";
+
+    std::string existing_file(file_path.string() +
+                                GetExtensionWithReferenceCount(ref_count));
+    file_path = existing_file;
+  }
   if (!ReadFile(file_path, &content))
     return "";
+
   return content;
 }
 
@@ -86,6 +101,17 @@ bool FileChunkStore::Get(const std::string &name,
 
   boost::system::error_code ec;
 
+  if (kReferenceCounting) {
+    std::uintmax_t ref_count(GetChunkReferenceCount(source_file_path));
+
+    if (ref_count == 0)
+      return false;
+
+    std::string existing_file(source_file_path.string() +
+                                GetExtensionWithReferenceCount(ref_count));
+    source_file_path = existing_file;
+  }
+
   if (fs::exists(source_file_path, ec)) {
     if (ec)
       return false;
@@ -96,6 +122,7 @@ bool FileChunkStore::Get(const std::string &name,
 
     return true;
   }
+
 
   return false;
 }
@@ -109,9 +136,6 @@ bool FileChunkStore::Store(const std::string &name,
     return false;
 
   if (kReferenceCounting) {
-    if (content.empty())
-      return false;
-
     fs::path chunk_file(ChunkNameToFilePath(name, true));
 
     //  retrieve the ref count based on extension
@@ -119,8 +143,11 @@ bool FileChunkStore::Store(const std::string &name,
 
     if (ref_count == 0) {
       //  new chunk!
+      if (content.empty())
+        return false;
+
       if (!Vacant(content.size()))
-          return false;
+        return false;
 
       //  this is the first entry of this chunk
       std::string file_to_write_str(chunk_file.string() +
@@ -410,7 +437,18 @@ bool FileChunkStore::Validate(const std::string &name) const {
   if (name.empty())
     return false;
 
-  return name == crypto::HashFile<crypto::SHA512>(ChunkNameToFilePath(name));
+  if (kReferenceCounting) {
+    fs::path chunk_file(ChunkNameToFilePath(name));
+    std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
+
+    std::string existing_file(chunk_file.string() +
+                                GetExtensionWithReferenceCount(ref_count));
+
+    return name == crypto::HashFile<crypto::SHA512>(fs::path(existing_file));
+
+  } else {
+    return name == crypto::HashFile<crypto::SHA512>(ChunkNameToFilePath(name));
+  }
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) const {
@@ -509,7 +547,9 @@ RestoredChunkStoreInfo FileChunkStore::RetrieveChunkInfo(
           chunk_store_info.second += info.second;
         }
       }
-  } catch(...) {}
+  } catch(...) {
+
+  }
   return chunk_store_info;
 }
 
@@ -528,23 +568,27 @@ std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
   fs::path location(chunk_path.parent_path());
   std::string chunk_name(chunk_path.filename().string());
 
-  for (fs::directory_iterator it(location);
-        it != fs::directory_iterator(); ++it) {
-    if (fs::is_regular_file(it->status())) {
-      std::string ext = it->path().extension().string();
+  try {
+    for (fs::directory_iterator it(location);
+          it != fs::directory_iterator(); ++it) {
+      if (fs::is_regular_file(it->status())) {
+        std::string ext = it->path().extension().string();
 
-      //  check if file was stored without ref count, ignore it
-      if (ext.length() == 0)
-        continue;
+        //  check if file was stored without ref count, ignore it
+        if (ext.length() == 0)
+          continue;
 
-      //  the chunk_name should be the file name minus the ext
-      if (it->path().filename().string().find(chunk_name) !=
-          std::string::npos) {
-        //  remove the dot from the extension
-        ext.erase(0, 1);
-        return GetNumFromString(ext);
+        //  the chunk_name should be the file name minus the ext
+        if (it->path().filename().string().find(chunk_name) !=
+            std::string::npos) {
+          //  remove the dot from the extension
+          ext.erase(0, 1);
+          return GetNumFromString(ext);
+        }
       }
     }
+  } catch(...) {
+    return 0;
   }
   return 0;
 }
