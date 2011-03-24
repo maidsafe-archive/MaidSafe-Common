@@ -56,8 +56,6 @@ bool FileChunkStore::Init(const fs::path &storage_location,
     }
     ChunkStore::SetCapacity(0);
     storage_location_ = storage_location;
-    if (dir_depth > 63)
-      dir_depth = 63;
     dir_depth_ = dir_depth;
     initialised_ = true;
   } catch(...) {
@@ -86,7 +84,8 @@ std::string FileChunkStore::Get(const std::string &name) const {
                                 GetExtensionWithReferenceCount(ref_count));
     file_path = existing_file;
   }
-  if (!fs::exists(file_path))
+  boost::system::error_code ec;
+  if (!fs::exists(file_path), ec)
     return false;
 
   if (!ReadFile(file_path, &content))
@@ -513,14 +512,20 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
   std::string encoded_file_name = EncodeToBase32(chunk_name);
 
   std::string dir_names;
-  for (int i = 0; i < dir_depth_; ++i) {
+  unsigned int dir_depth_for_chunk = dir_depth_;
+
+  if (encoded_file_name.length() < dir_depth_for_chunk) {
+    dir_depth_for_chunk = encoded_file_name.length() - 1;
+  }
+
+  for (int i = 0; i < dir_depth_for_chunk; ++i) {
     dir_names.push_back('/');
     dir_names.push_back(encoded_file_name[i]);
   }
 
   dir_names.push_back('/');
 
-  encoded_file_name = encoded_file_name.erase(0, dir_depth_);
+  encoded_file_name = encoded_file_name.erase(0, dir_depth_for_chunk);
 
   boost::system::error_code ec;
 
@@ -554,9 +559,7 @@ RestoredChunkStoreInfo FileChunkStore::RetrieveChunkInfo(
           chunk_store_info.second += info.second;
         }
       }
-  } catch(...) {
-
-  }
+  } catch(...) {}
   return chunk_store_info;
 }
 
