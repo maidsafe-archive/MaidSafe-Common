@@ -27,6 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include "boost/filesystem.hpp"
+#include "boost/filesystem/fstream.hpp"
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/file_chunk_store.h"
 
@@ -123,8 +124,6 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Get) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
-
-
 
   std::string content(RandomString(100));
   std::string name(crypto::Hash<crypto::SHA512>(content));
@@ -240,20 +239,77 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Capacity) {
   EXPECT_TRUE(fcs_cap->Get(name, path));
   EXPECT_FALSE(fcs_cap->Store(extra_content_chunk_name, path, true));
 }
-/*
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Misc) {
+  //  create a chunk store without reference counting
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+
+  EXPECT_TRUE(fcs->Init(chunk_dir_, 5));
+  int count = 10;
+  //  store chunks iteratively
+  for (int i = 0; i < count; ++i) {
+    std::string content(RandomString(500));
+    std::string name(crypto::Hash<crypto::SHA512>(content));
+
+    EXPECT_TRUE(fcs->Store(name, content));
+  }
+
+  std::string content("mycontent");
+  std::string name(crypto::Hash<crypto::SHA512>(content));
+  EXPECT_TRUE(fcs->Store(name, content));
+
+  //  create a ref counted chunk store
+  std::shared_ptr<FileChunkStore> ref_fcs(new FileChunkStore(true));
+  EXPECT_TRUE(ref_fcs->Init(chunk_dir_, 5));
+
+  fs::path path(test_dir_ / "chunk.dat");
+
+  //  try to retrieve a chunk stored without reference count
+  EXPECT_TRUE(ref_fcs->Get(name).empty());
+
+}
+
 TEST_F(FileChunkStoreTest, BEH_FCS_Delete) {
-  FAIL() << "Not implemented.";
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+  EXPECT_FALSE(fcs->Delete("somechunk"));
+
+  std::shared_ptr<FileChunkStore> ref_fcs(new FileChunkStore(true));
+  EXPECT_TRUE(ref_fcs->Init(ref_chunk_dir_, 4));
+
+  std::string content("mycontent");
+  std::string name(crypto::Hash<crypto::SHA512>(content));
+  EXPECT_TRUE(ref_fcs->Store(name, content));
+
+  //  try deleting non existant chunk
+  EXPECT_TRUE(ref_fcs->Delete("unknownchunk"));
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_MoveTo) {
-  FAIL() << "Not implemented.";
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+  std::shared_ptr<FileChunkStore> sink_fcs(new FileChunkStore(false));
+
+  EXPECT_FALSE(fcs->MoveTo("somechunk", sink_fcs.get()));
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Validate) {
-  FAIL() << "Not implemented.";
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+  EXPECT_FALSE(fcs->Validate("somechunk"));
 }
 
-*/
+TEST_F(FileChunkStoreTest, BEH_FCS_Size) {
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+  EXPECT_EQ(0, fcs->Size("somechunk"));
+
+  EXPECT_TRUE(fcs->Init(chunk_dir_, 5));
+
+  EXPECT_EQ(0, fcs->Size("somechunk"));
+}
+
+TEST_F(FileChunkStoreTest, BEH_FCS_Count) {
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+  EXPECT_EQ(0, fcs->Count("somechunk"));
+}
+
 }  // namespace test
 
 }  // namespace maidsafe
