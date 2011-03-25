@@ -75,7 +75,6 @@ std::string FileChunkStore::Get(const std::string &name) const {
     return "";
 
   fs::path file_path(ChunkNameToFilePath(name));
-  std::string content;
 
   if (kReferenceCounting) {
     std::uintmax_t ref_count(GetChunkReferenceCount(file_path));
@@ -87,14 +86,15 @@ std::string FileChunkStore::Get(const std::string &name) const {
                                 GetExtensionWithReferenceCount(ref_count));
     file_path = existing_file;
   }
-  boost::system::error_code ec;
-  if (!fs::exists(file_path), ec)
-    return false;
-
-  if (!ReadFile(file_path, &content))
-    return "";
-
-  return content;
+  try {
+    if (fs::exists(file_path)) {
+      std::string content;
+      if (!ReadFile(file_path, &content))
+        return "";
+      return content;
+    }
+  } catch(...) {}
+  return "";
 }
 
 bool FileChunkStore::Get(const std::string &name,
@@ -102,7 +102,7 @@ bool FileChunkStore::Get(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (name.empty())
+  if (name.empty() || sink_file_name.string().empty())
     return false;
 
   fs::path source_file_path(ChunkNameToFilePath(name));
