@@ -226,30 +226,29 @@ bool FileChunkStore::Store(const std::string &name,
 
     if (ref_count == 0) {
       //  new chunk!
-      boost::system::error_code ec;
-      std::uintmax_t file_size(fs::file_size(source_file_name, ec));
-
-      if (!Vacant(file_size))
-          return false;
-
-      //  this is the first entry of this chunk
-      std::string file_to_write_str(chunk_file.string() +
-                                    GetExtensionWithReferenceCount(1));
-
-      chunk_file = file_to_write_str;
-
       try {
-          if (delete_source_file)
-            fs::rename(source_file_name, chunk_file);
-          else
-            fs::copy_file(source_file_name, chunk_file,
-                      fs::copy_option::overwrite_if_exists);
+        std::uintmax_t file_size(fs::file_size(source_file_name));
 
-          ChunkAdded(file_size);
-          return true;
-        } catch(...) {
+        if (!Vacant(file_size))
+            return false;
+
+        //  this is the first entry of this chunk
+        std::string file_to_write_str(chunk_file.string() +
+                                      GetExtensionWithReferenceCount(1));
+
+        chunk_file = file_to_write_str;
+
+        if (delete_source_file)
+          fs::rename(source_file_name, chunk_file);
+        else
+          fs::copy_file(source_file_name, chunk_file,
+                        fs::copy_option::overwrite_if_exists);
+
+        ChunkAdded(file_size);
+        return true;
+      } catch(...) {
           return false;
-        }
+      }
     } else {
       //  chunk already exists
       std::string existing_file(chunk_file.string() +
