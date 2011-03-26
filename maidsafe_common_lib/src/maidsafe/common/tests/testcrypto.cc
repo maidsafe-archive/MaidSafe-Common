@@ -397,7 +397,7 @@ TEST(CryptoTest, BEH_BASE_Compress) {
 
 TEST(CryptoTest, BEH_BASE_Compress_Deterministic) {
   // FIXME TESTME on windows
-  // if the algorithm changes this test will start failing as it si a bot of a sledgehammer approach
+  // if the algorithm changes this test will start failing as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
   std::string answer = "d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b8\
 dd4c44e6d01a88526647df8c7555330f3d347e1ac3735e1a73c79c258e9fa7094f9ab07e33";
