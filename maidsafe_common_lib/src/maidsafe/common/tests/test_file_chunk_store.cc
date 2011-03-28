@@ -316,6 +316,39 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Count) {
   EXPECT_EQ(0, fcs->Count("somechunk"));
 }
 
+TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
+  std::string str = "12345";
+  std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
+  EXPECT_EQ(12345, fcs->GetNumFromString(str));
+
+  int num = 9822;
+  EXPECT_EQ("9822", fcs->GetStringFromNum(num));
+
+  str = "not_a_num123";
+  EXPECT_EQ(0, fcs->GetNumFromString(str));
+
+  EXPECT_TRUE(fcs->Init(chunk_dir_, 10));
+
+  std::string content(RandomString(100));
+  std::string chunk_name(crypto::Hash<crypto::SHA512>(content));
+
+  fs::path chunk_path = fcs->ChunkNameToFilePath(chunk_name);
+  EXPECT_FALSE(fs::exists(chunk_path));
+  chunk_path = fcs->ChunkNameToFilePath(chunk_name, true);
+  EXPECT_TRUE(fs::exists(chunk_path.parent_path()));
+  EXPECT_TRUE(fcs->Store(chunk_name, content));
+  EXPECT_TRUE(fs::exists(chunk_path));
+
+  std::string small_cc(RandomString(1));
+  std::string small_cn(crypto::Hash<crypto::SHA512>(small_cc));
+  fs::path small_cp = fcs->ChunkNameToFilePath(small_cn);
+  EXPECT_FALSE(fs::exists(small_cp));
+  small_cp  = fcs->ChunkNameToFilePath(small_cn, true);
+  EXPECT_TRUE(fs::exists(small_cp.parent_path()));
+  EXPECT_TRUE(fcs->Store(small_cn, small_cc));
+  EXPECT_TRUE(fs::exists(small_cp));
+}
+
 }  // namespace test
 
 }  // namespace maidsafe

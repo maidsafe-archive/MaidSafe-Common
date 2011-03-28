@@ -44,6 +44,10 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
+namespace test {
+  class FileChunkStoreTest_BEH_FCS_Methods_Test;
+}
+
 //  pair of chunk count and total of all chunk sizes in a dir
 typedef std::pair <std::uintmax_t, std::uintmax_t> RestoredChunkStoreInfo;
 
@@ -171,6 +175,8 @@ class FileChunkStore: public ChunkStore {
    * Deletes all stored chunks.
    */
   void Clear();
+
+  friend class test::FileChunkStoreTest_BEH_FCS_Methods_Test;
 
  private:
   FileChunkStore(const FileChunkStore&);
