@@ -86,14 +86,16 @@ std::string FileChunkStore::Get(const std::string &name) const {
                                 GetExtensionWithReferenceCount(ref_count));
     file_path = existing_file;
   }
-  try {
-    if (fs::exists(file_path)) {
+
+  boost::system::error_code ec;
+  fs::file_status file_stat = fs::status(file_path, ec);
+  if (!ec) {
+    if (file_stat != fs::file_status(fs::file_not_found)) {
       std::string content;
-      if (!ReadFile(file_path, &content))
-        return "";
-      return content;
+      if (ReadFile(file_path, &content))
+        return content;
     }
-  } catch(...) {}
+  }
   return "";
 }
 
@@ -268,7 +270,6 @@ bool FileChunkStore::Store(const std::string &name,
           fs::remove(source_file_name, ec);
       return true;
       }
-      return false;
     }
   } else {
     //  not using reference counting
@@ -332,11 +333,10 @@ bool FileChunkStore::Delete(const std::string &name) {
       std::uintmax_t file_size(fs::file_size(chunk_file, ec));
       fs::remove(chunk_file, ec);
 
-      if (ec)
-        return false;
-
-      ChunkRemoved(file_size);
-      return true;
+      if (!ec) {
+        ChunkRemoved(file_size);
+        return true;
+      }
     } else {
       //  reduce the reference counter, but retain the file
       --ref_count;
@@ -347,9 +347,8 @@ bool FileChunkStore::Delete(const std::string &name) {
       //  do a rename
       boost::system::error_code ec;
       fs::rename(fs::path(existing_file), fs::path(file_to_write), ec);
-      if (!ec) {
+      if (!ec)
         return true;
-      }
     }
   } else {
     //  non reference counting chunk store
@@ -363,12 +362,10 @@ bool FileChunkStore::Delete(const std::string &name) {
     std::uintmax_t file_size(fs::file_size(chunk_file, ec));
     fs::remove(chunk_file, ec);
 
-    if (ec)
-      return false;
-
-    ChunkRemoved(file_size);
-
-    return true;
+    if (!ec) {
+      ChunkRemoved(file_size);
+      return true;
+    }
   }
   return false;
 }
@@ -404,14 +401,13 @@ bool FileChunkStore::MoveTo(const std::string &name,
     fs::path chunk_file(ChunkNameToFilePath(name));
     boost::system::error_code ec;
 
-    try {
-      std::uintmax_t file_size(Size(name));
+    std::uintmax_t file_size(Size(name));
 
+    if (file_size) {
       if (sink_chunk_store->Store(name, chunk_file, 1)) {
         ChunkRemoved(file_size);
         return true;
       }
-    } catch(...) {
     }
   }
   return false;
@@ -465,13 +461,13 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) const {
   if (name.empty())
     return 0;
 
-  try {
-    fs::path chunk_file(ChunkNameToFilePath(name));
-    std::uintmax_t size = fs::file_size(chunk_file);
+  boost::system::error_code ec;
+
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  std::uintmax_t size = fs::file_size(chunk_file, ec);
+  if (!ec)
     return size;
-  } catch(...) {
-    return 0;
-  }
+  return 0;
 }
 
 std::uintmax_t FileChunkStore::Count() const {

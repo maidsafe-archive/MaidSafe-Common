@@ -215,6 +215,9 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Store) {
   //  reuse ref_fcs chunk store
   std::shared_ptr<FileChunkStore> reused_fcs(new FileChunkStore(true));
   EXPECT_TRUE(reused_fcs->Init(ref_chunk_dir_, 3));
+
+  std::shared_ptr<FileChunkStore> chunk_store_(new FileChunkStore(false));
+  EXPECT_TRUE(chunk_store_->Init(ref_chunk_dir_, 3));
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Capacity) {
@@ -266,7 +269,6 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Misc) {
 
   //  try to retrieve a chunk stored without reference count
   EXPECT_TRUE(ref_fcs->Get(name).empty());
-
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Delete) {
@@ -303,6 +305,10 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Size) {
   EXPECT_TRUE(fcs->Init(chunk_dir_, 5));
 
   EXPECT_EQ(0, fcs->Size("somechunk"));
+
+  //  init
+  EXPECT_TRUE(fcs->Init(chunk_dir_));
+  EXPECT_EQ(0, fcs->Size(""));
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Count) {
