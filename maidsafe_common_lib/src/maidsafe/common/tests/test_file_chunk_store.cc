@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
+#include "boost/scoped_ptr.hpp"
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/file_chunk_store.h"
 
@@ -347,6 +348,48 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
   EXPECT_TRUE(fs::exists(small_cp.parent_path()));
   EXPECT_TRUE(fcs->Store(small_cn, small_cc));
   EXPECT_TRUE(fs::exists(small_cp));
+
+  fcs->Clear();
+
+  content = RandomString(50);
+  chunk_name = crypto::Hash<crypto::SHA512>(content);
+
+  EXPECT_TRUE(fcs->Init(chunk_dir_, 4));
+  chunk_path = fcs->ChunkNameToFilePath(chunk_name);
+  EXPECT_TRUE(fcs->Store(chunk_name, content));
+  std::uintmax_t store_size = fcs->Size(chunk_name);
+
+  //  use the same location in another store
+  std::shared_ptr<FileChunkStore> sec_cs(new FileChunkStore(false));
+  EXPECT_TRUE(sec_cs->Init(chunk_dir_, 4));
+  EXPECT_EQ(store_size,
+              sec_cs->RetrieveChunkInfo(chunk_path.parent_path()).second);
+
+  //  store more chunks
+  for (int i = 0; i < 5; ++i) {
+    content = RandomString(50);
+    chunk_name = crypto::Hash<crypto::SHA512>(content);
+
+    chunk_path = fcs->ChunkNameToFilePath(chunk_name);
+    EXPECT_TRUE(fcs->Store(chunk_name, content));
+
+    store_size += fcs->Size(chunk_name);
+
+    {
+      boost::scoped_ptr<FileChunkStore> temp_cs(new FileChunkStore(false));
+      EXPECT_TRUE(temp_cs->Init(chunk_dir_, 4));
+      EXPECT_EQ(store_size,
+              temp_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
+
+      //  test a ref counted chunk store on non ref counted storage
+      boost::scoped_ptr<FileChunkStore> temp_ref_cs(new FileChunkStore(true));
+      EXPECT_TRUE(temp_ref_cs->Init(chunk_dir_, 4));
+      //  ref counted chunk store should not include chunks created
+      //  without ref counting
+      EXPECT_EQ(0,
+            temp_ref_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
+    }
+  }
 }
 
 }  // namespace test

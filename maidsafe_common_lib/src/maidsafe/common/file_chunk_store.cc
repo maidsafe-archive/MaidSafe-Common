@@ -549,8 +549,17 @@ RestoredChunkStoreInfo FileChunkStore::RetrieveChunkInfo(
     for (fs::directory_iterator it(location);
          it != boost::filesystem::directory_iterator(); ++it) {
       if (boost::filesystem::is_regular_file(it->status())) {
-        ++chunk_store_info.first;
-        chunk_store_info.second += fs::file_size(*it);
+        bool include_size(false);
+        std::uintmax_t ref_count(GetChunkReferenceCount(it->path()));
+
+        if ( (kReferenceCounting && ref_count > 0) ||
+              (!kReferenceCounting && ref_count == 0) )
+          include_size = true;
+
+        if (include_size) {
+          ++chunk_store_info.first;
+          chunk_store_info.second += fs::file_size(*it);
+        }
         } else if (fs::is_directory(it->path())) {
           RestoredChunkStoreInfo info = RetrieveChunkInfo(it->path());
           chunk_store_info.first += info.first;
@@ -571,6 +580,12 @@ void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta) {
   DecreaseChunkCount();
 }
 
+/**
+ * Directory Iteration is required
+ * The function receives a chunk name without extension
+ * To get the file's ref count (extension), each file in the
+ * dir needs to be checked for match after removing its extension
+ */
 std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
                                                       chunk_path) const {
   fs::path location(chunk_path.parent_path());
