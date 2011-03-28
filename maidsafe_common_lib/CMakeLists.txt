@@ -91,7 +91,7 @@ ENDIF()
 INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE})
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/build ${PROJECT_SOURCE_DIR}/../cmake_modules)
 INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX}/share/maidsafe/maidsafe_third_party.cmake)
-SET(INCLUDE_DIRS ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
+include_directories (SYSTEM ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
 
 ###################################################################################################
 # Standard setup                                                                                  #
@@ -105,7 +105,7 @@ SET(MaidSafeCommon_TOOLS_DIR ${PROJECT_SOURCE_DIR}/../tools)
 ###################################################################################################
 SET(REQUIRED_BOOST_COMPONENTS filesystem system thread unit_test_framework)
 INCLUDE(maidsafe_find_boost)
-SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
+include_directories(SYSTEM  ${Boost_INCLUDE_DIR})
 SET(EXPORT_BOOST_CMAKE ${CMAKE_BINARY_DIR}/boost_libs.cmake)
 FILE(WRITE ${EXPORT_BOOST_CMAKE} "${EXPORT_BOOST}")
 FILE(APPEND ${EXPORT_BOOST_CMAKE} "\nSET(Boost_LIBRARY_DIRS \"${Boost_LIBRARY_DIRS}\")\n")
@@ -167,10 +167,10 @@ IF(MSVC)
                           LINK_FLAGS_DEBUG "${LINKER_LIBS_DIRS_DEBUG}"
                           LINK_FLAGS_RELWITHDEBINFO "${LINKER_LIBS_DIRS_DEBUG}"
                           LINK_FLAGS_MINSIZEREL "${LINKER_LIBS_DIRS_DEBUG}")
-ELSEIF(UNIX)
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/crypto.cc
-                              ${PROJECT_SOURCE_DIR}/src/maidsafe/common/utils.cc
-                                PROPERTIES COMPILE_FLAGS "-w")
+#ELSEIF(UNIX)
+ # SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/crypto.cc
+ #                             ${PROJECT_SOURCE_DIR}/src/maidsafe/common/utils.cc
+ #                               PROPERTIES COMPILE_FLAGS "-w -isystem")
 ENDIF()
 
 
