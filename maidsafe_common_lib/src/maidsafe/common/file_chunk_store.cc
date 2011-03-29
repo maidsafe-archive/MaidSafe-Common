@@ -510,7 +510,7 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
     dir_depth_for_chunk = encoded_file_name.length() - 1;
   }
 
-  for (int i = 0; i < dir_depth_for_chunk; ++i) {
+  for (unsigned int i = 0; i < dir_depth_for_chunk; ++i) {
     dir_names.push_back('/');
     dir_names.push_back(encoded_file_name[i]);
   }

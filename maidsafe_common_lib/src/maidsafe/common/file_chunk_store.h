@@ -60,7 +60,8 @@ class FileChunkStore: public ChunkStore {
       : ChunkStore(reference_counting),
         initialised_(false),
         storage_location_(),
-        chunk_count_(0) {}
+        chunk_count_(0),
+        dir_depth_(0) {}
   ~FileChunkStore() {}
 
   /**
