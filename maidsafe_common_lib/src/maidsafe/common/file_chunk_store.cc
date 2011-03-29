@@ -123,17 +123,14 @@ bool FileChunkStore::Get(const std::string &name,
   }
 
   if (fs::exists(source_file_path, ec)) {
-    if (ec)
-      return false;
-    fs::copy_file(source_file_path, sink_file_name,
-                  fs::copy_option::overwrite_if_exists, ec);
-    if (ec)
-      return false;
-
-    return true;
+    if (!ec) {
+      ec.clear();
+      fs::copy_file(source_file_path, sink_file_name,
+                    fs::copy_option::overwrite_if_exists, ec);
+      if (!ec)
+        return true;
+    }
   }
-
-
   return false;
 }
 
@@ -184,9 +181,8 @@ bool FileChunkStore::Store(const std::string &name,
       //  do a rename
       boost::system::error_code ec;
       fs::rename(fs::path(existing_file), fs::path(file_to_write), ec);
-      if (!ec) {
+      if (!ec)
         return true;
-      }
     }
   } else {
     //  Not using reference counting
@@ -283,17 +279,15 @@ bool FileChunkStore::Store(const std::string &name,
         if (!Vacant(file_size))
           return false;
 
-        try {
-          if (delete_source_file)
-            fs::rename(source_file_name, chunk_file);
-          else
-            fs::copy_file(source_file_name, chunk_file,
-                      fs::copy_option::overwrite_if_exists);
-
+        boost::system::error_code ec;
+        if (delete_source_file)
+          fs::rename(source_file_name, chunk_file, ec);
+        else
+          fs::copy_file(source_file_name, chunk_file,
+                    fs::copy_option::overwrite_if_exists, ec);
+        if (!ec) {
           ChunkAdded(file_size);
           return true;
-        } catch(...) {
-          return false;
         }
       }
     } else {
@@ -589,30 +583,34 @@ void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta) {
 std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
                                                       chunk_path) const {
   fs::path location(chunk_path.parent_path());
+
+  boost::system::error_code ec;
+  fs::file_status file_stat = fs::status(location, ec);
+  if (file_stat == fs::file_status(fs::file_not_found))
+    return 0;
+
   std::string chunk_name(chunk_path.filename().string());
 
-  try {
-    for (fs::directory_iterator it(location);
-          it != fs::directory_iterator(); ++it) {
-      if (fs::is_regular_file(it->status())) {
-        std::string ext = it->path().extension().string();
+  for (fs::directory_iterator it(location);
+        it != fs::directory_iterator(); ++it) {
+    ec.clear();
+    if (fs::is_regular_file(it->status())) {
+      std::string ext = it->path().extension().string();
 
-        //  check if file was stored without ref count, ignore it
-        if (ext.length() == 0)
-          continue;
+      //  check if file was stored without ref count, ignore it
+      if (ext.length() == 0)
+        continue;
 
-        //  the chunk_name should be the file name minus the ext
-        if (it->path().filename().string().find(chunk_name) !=
-            std::string::npos) {
-          //  remove the dot from the extension
-          ext.erase(0, 1);
-          return GetNumFromString(ext);
-        }
+      //  the chunk_name should be the file name minus the ext
+      if (it->path().filename().string().find(chunk_name) !=
+          std::string::npos) {
+        //  remove the dot from the extension
+        ext.erase(0, 1);
+        return GetNumFromString(ext);
       }
     }
-  } catch(...) {
-    return 0;
   }
+
   return 0;
 }
 

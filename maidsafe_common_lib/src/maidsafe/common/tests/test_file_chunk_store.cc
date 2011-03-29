@@ -390,6 +390,16 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
             temp_ref_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
     }
   }
+
+  //  cause exception in RetrieveChunkInfo
+  std::shared_ptr<FileChunkStore> excep_chunk_store(new FileChunkStore(false));
+  fs::path ch_folder(test_dir_ / "no_chunks");
+  EXPECT_TRUE(excep_chunk_store->Init(ch_folder));
+  RestoredChunkStoreInfo chunk_info = excep_chunk_store->
+                                        RetrieveChunkInfo(
+                                          fs::path("non existant"));
+  EXPECT_EQ(0, chunk_info.first);
+  EXPECT_EQ(0, chunk_info.second);
 }
 
 }  // namespace test
