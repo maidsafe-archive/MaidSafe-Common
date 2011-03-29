@@ -399,8 +399,8 @@ TEST(CryptoTest, BEH_BASE_Gzip_SHA512_Deterministic) {
   // if the algorithm changes this test will start failing
   // as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
-  std::string answer = "d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b8";
-  answer += "dd4c44e6d01a88526647df8c7555330f3d347e1ac37";
+  std::string answer = "d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b";
+  answer += "8dd4c44e6d01a88526647df8c7555330f3d347e1ac37";
   answer += "35e1a73c79c258e9fa7094f9ab07e33";
   EXPECT_EQ(EncodeToHex(Hash<crypto::SHA512>(
                   (crypto::Compress(test_data, 9)))), answer);
@@ -411,7 +411,7 @@ TEST(CryptoTest, BEH_BASE_Gzip_SHA512_Deterministic) {
   answer2 += "3ecdf7908c2a493c4defdce4109d9e715e767890cef558f6b7ae02";
   answer2 += "4f6e8561be2ef0d483872f";
   EXPECT_EQ(EncodeToHex(Hash<crypto::SHA512>(
-    (crypto::Compress(test_data, 9)))), answer2);  
+    (crypto::Compress(test_data, 9)))), answer2);
 }
 
 TEST(CryptoTest, BEH_BASE_AES_TIGER_Deterministic) {
