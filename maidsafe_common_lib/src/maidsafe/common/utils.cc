@@ -199,6 +199,10 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
     if (!file_in.good())
       return false;
+    if (file_size == 0U) {
+      content->clear();
+      return true;
+    }
     content->resize(file_size);
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
