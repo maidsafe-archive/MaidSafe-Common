@@ -217,8 +217,15 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Store) {
   std::shared_ptr<FileChunkStore> reused_fcs(new FileChunkStore(true));
   EXPECT_TRUE(reused_fcs->Init(ref_chunk_dir_, 3));
 
-  std::shared_ptr<FileChunkStore> chunk_store_(new FileChunkStore(false));
-  EXPECT_TRUE(chunk_store_->Init(ref_chunk_dir_, 3));
+  std::shared_ptr<FileChunkStore> chunk_store(new FileChunkStore(false));
+  EXPECT_TRUE(chunk_store->Init(ref_chunk_dir_, 3));
+
+  content = RandomString(500);
+  name = crypto::Hash<crypto::SHA512>(content);
+  EXPECT_TRUE(chunk_store->Store(name, content));
+
+  //  chunk store does not validate content & name
+  EXPECT_TRUE(chunk_store->Store(content, name));
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Capacity) {
