@@ -166,15 +166,16 @@ TEST_F(ThreadpoolTest, BEH_BASE_MultipleTasks) {
                          completed_tasks.begin()));
 }
 
-class AnException: public std::exception
-{
-  virtual const char* what() const throw()
-  {
+class AnException: public std::exception {
+  virtual const char* what() const throw() {
     return "Test exception";
   }
 };
 
-void ThrowMe() { AnException MyException; throw MyException; }
+void ThrowMe() {
+  AnException MyException;
+  throw MyException;
+}
 
 TEST_F(ThreadpoolTest, BEH_BASE_ThrowingTask) {
   boost::function<void()> functor(boost::bind(&Work::DoTask, &work_, 999));
