@@ -37,7 +37,7 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 bool FileChunkStore::Init(const fs::path &storage_location,
-                          int dir_depth /*= 5*/) {
+                          int dir_depth) {
   try {
     if (storage_location.string().empty())
       return false;
@@ -61,7 +61,8 @@ bool FileChunkStore::Init(const fs::path &storage_location,
     storage_location_ = storage_location;
     dir_depth_ = dir_depth;
     initialised_ = true;
-  } catch(...) {
+  } catch(const std::exception &e) {
+    DLOG(ERROR) << "FileChunkStore::Init - " << e.what() << std::endl;
     return false;
   }
   return true;
@@ -78,19 +79,15 @@ std::string FileChunkStore::Get(const std::string &name) const {
 
   if (kReferenceCounting) {
     std::uintmax_t ref_count(GetChunkReferenceCount(file_path));
-
     if (ref_count == 0)
       return "";
 
-    std::string existing_file(file_path.string() +
-                                GetExtensionWithReferenceCount(ref_count));
-    file_path = existing_file;
+    file_path = file_path.string() + GetExtensionWithReferenceCount(ref_count);
   }
 
   boost::system::error_code ec;
-  fs::file_status file_stat = fs::status(file_path, ec);
-  if (!ec) {
-    if (file_stat != fs::file_status(fs::file_not_found)) {
+  if (fs::exists(file_path, ec)) {
+    if (!ec) {
       std::string content;
       if (ReadFile(file_path, &content))
         return content;
@@ -108,20 +105,16 @@ bool FileChunkStore::Get(const std::string &name,
     return false;
 
   fs::path source_file_path(ChunkNameToFilePath(name));
-
-  boost::system::error_code ec;
-
   if (kReferenceCounting) {
     std::uintmax_t ref_count(GetChunkReferenceCount(source_file_path));
-
     if (ref_count == 0)
       return false;
 
-    std::string existing_file(source_file_path.string() +
-                                GetExtensionWithReferenceCount(ref_count));
-    source_file_path = existing_file;
+    source_file_path = source_file_path.string() +
+                       GetExtensionWithReferenceCount(ref_count);
   }
 
+  boost::system::error_code ec;
   if (fs::exists(source_file_path, ec)) {
     if (!ec) {
       ec.clear();
@@ -157,10 +150,7 @@ bool FileChunkStore::Store(const std::string &name,
         return false;
 
       //  this is the first entry of this chunk
-      std::string file_to_write_str(chunk_file.string() +
-                                    GetExtensionWithReferenceCount(1));
-
-      chunk_file = file_to_write_str;
+      chunk_file = chunk_file.string() + GetExtensionWithReferenceCount(1);
 
       if (!WriteFile(chunk_file, content))
         return false;
@@ -318,7 +308,7 @@ bool FileChunkStore::Delete(const std::string &name) {
 
     //  chunk already exists
     std::string existing_file(chunk_file.string() +
-                                  GetExtensionWithReferenceCount(ref_count));
+                              GetExtensionWithReferenceCount(ref_count));
 
     //  check if last reference
     if (ref_count == 1) {
@@ -336,7 +326,7 @@ bool FileChunkStore::Delete(const std::string &name) {
       --ref_count;
 
       std::string file_to_write(chunk_file.string() +
-                                    GetExtensionWithReferenceCount(ref_count));
+                                GetExtensionWithReferenceCount(ref_count));
 
       //  do a rename
       boost::system::error_code ec;
@@ -381,8 +371,8 @@ bool FileChunkStore::MoveTo(const std::string &name,
     if (ref_count == 0)
       return false;
 
-    fs::path existing_file(std::string((chunk_file.string() +
-                                  GetExtensionWithReferenceCount(ref_count))));
+    fs::path existing_file(chunk_file.string() +
+                           GetExtensionWithReferenceCount(ref_count));
 
     if (sink_chunk_store->Store(name, existing_file, 0)) {
       Delete(name);
@@ -417,12 +407,13 @@ bool FileChunkStore::Has(const std::string &name) const {
   fs::path chunk_file(ChunkNameToFilePath(name));
   boost::system::error_code ec;
 
-  if (fs::exists(chunk_file, ec))
+  if (kReferenceCounting) {
+    if (GetChunkReferenceCount(chunk_file) != 0) {
+      return true;
+    }
+  } else if (fs::exists(chunk_file, ec)) {
     return true;
-
-  //  Do search based on ref counting
-  if (kReferenceCounting && GetChunkReferenceCount(chunk_file) != 0)
-    return true;
+  }
 
   return false;
 }
@@ -437,12 +428,10 @@ bool FileChunkStore::Validate(const std::string &name) const {
   if (kReferenceCounting) {
     fs::path chunk_file(ChunkNameToFilePath(name));
     std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-
     std::string existing_file(chunk_file.string() +
-                                GetExtensionWithReferenceCount(ref_count));
+                              GetExtensionWithReferenceCount(ref_count));
 
     return name == crypto::HashFile<crypto::SHA512>(fs::path(existing_file));
-
   } else {
     return name == crypto::HashFile<crypto::SHA512>(ChunkNameToFilePath(name));
   }
@@ -520,7 +509,6 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
   encoded_file_name = encoded_file_name.erase(0, dir_depth_for_chunk);
 
   boost::system::error_code ec;
-
   if (generate_dirs) {
     fs::create_directories(fs::path(storage_location_.string() + dir_names),
                            ec);
@@ -546,20 +534,17 @@ RestoredChunkStoreInfo FileChunkStore::RetrieveChunkInfo(
         bool include_size(false);
         std::uintmax_t ref_count(GetChunkReferenceCount(it->path()));
 
-        if ( (kReferenceCounting && ref_count > 0) ||
-              (!kReferenceCounting && ref_count == 0) )
-          include_size = true;
-
-        if (include_size) {
+        if ((kReferenceCounting && ref_count > 0) ||
+            (!kReferenceCounting && ref_count == 0)) {
           ++chunk_store_info.first;
           chunk_store_info.second += fs::file_size(*it);
         }
-        } else if (fs::is_directory(it->path())) {
-          RestoredChunkStoreInfo info = RetrieveChunkInfo(it->path());
-          chunk_store_info.first += info.first;
-          chunk_store_info.second += info.second;
-        }
+      } else if (fs::is_directory(it->path())) {
+        RestoredChunkStoreInfo info = RetrieveChunkInfo(it->path());
+        chunk_store_info.first += info.first;
+        chunk_store_info.second += info.second;
       }
+    }
   } catch(...) {}
   return chunk_store_info;
 }
@@ -580,8 +565,8 @@ void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta) {
  * To get the file's ref count (extension), each file in the
  * dir needs to be checked for match after removing its extension
  */
-std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
-                                                      chunk_path) const {
+std::uintmax_t FileChunkStore::GetChunkReferenceCount(
+    const fs::path &chunk_path) const {
   fs::path location(chunk_path.parent_path());
 
   boost::system::error_code ec;
@@ -592,11 +577,10 @@ std::uintmax_t FileChunkStore::GetChunkReferenceCount(const fs::path &
   std::string chunk_name(chunk_path.filename().string());
 
   for (fs::directory_iterator it(location);
-        it != fs::directory_iterator(); ++it) {
+       it != fs::directory_iterator(); ++it) {
     ec.clear();
     if (fs::is_regular_file(it->status())) {
-      std::string ext = it->path().extension().string();
-
+      std::string ext(it->path().extension().string());
       //  check if file was stored without ref count, ignore it
       if (ext.length() == 0)
         continue;
@@ -626,7 +610,7 @@ std::string FileChunkStore::GetStringFromNum(
     const std::uintmax_t &count) const {
   try {
     return boost::lexical_cast<std::string>(count);
-  } catch(boost::bad_lexical_cast &) {
+  } catch(const boost::bad_lexical_cast&) {
     return "";
   }
 }

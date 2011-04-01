@@ -200,9 +200,7 @@ class ChunkStore {
   /**
    * Deletes all stored chunks.
    */
-  virtual void Clear() {
-    size_ = 0;
-  }
+  virtual void Clear() { size_ = 0; }
 
  protected:
   /// Whether reference counting is enabled for this instance.

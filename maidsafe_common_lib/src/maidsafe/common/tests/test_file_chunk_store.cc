@@ -47,8 +47,9 @@ INSTANTIATE_TYPED_TEST_CASE_P(Files, ChunkStoreTest, FileChunkStore);
 class FileChunkStoreTest: public testing::Test {
  public:
   FileChunkStoreTest()
-      : test_dir_(fs::unique_path(fs::temp_directory_path() /
-                  "MaidSafe_TestFileChunkStore_%%%%-%%%%-%%%%")),
+      : test_dir_(fs::unique_path(
+                      fs::temp_directory_path() /
+                      "MaidSafe_TestFileChunkStore_%%%%-%%%%-%%%%")),
         chunk_dir_(test_dir_ / "chunks"),
         ref_chunk_dir_(test_dir_ / "ref_chunks") {}
   ~FileChunkStoreTest() {}
@@ -82,7 +83,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
 
   //  Reuse existing chunk directory
   std::shared_ptr<FileChunkStore> fcs_second(new FileChunkStore(false));
-  EXPECT_EQ(true, fcs_second->Init(chunk_dir_first, 10));
+  EXPECT_TRUE(fcs_second->Init(chunk_dir_first, 10));
   EXPECT_EQ(0, fcs_second->Count());
   EXPECT_TRUE(fcs_second->Empty());
   EXPECT_FALSE(fcs_second->Has(""));
@@ -90,7 +91,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
 
   //  Test by passing nothing for Dir name
   std::shared_ptr<FileChunkStore> fcs_third(new FileChunkStore(false));
-  EXPECT_EQ(false, fcs_third->Init("", 10));
+  EXPECT_FALSE(fcs_third->Init("", 10));
   EXPECT_EQ(0, fcs_third->Count());
   EXPECT_TRUE(fcs_third->Empty());
   EXPECT_FALSE(fcs_third->Has(""));
@@ -98,9 +99,8 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
 
   //  Test initialiation of reference counted file chunk store
   std::shared_ptr<FileChunkStore> ref_fcs_first(new FileChunkStore(true));
-
   fs::path ref_chunk_dir_first(test_dir_ / "ref_chunks_first");
-  EXPECT_EQ(true, ref_fcs_first->Init(ref_chunk_dir_first, 10));
+  EXPECT_TRUE(ref_fcs_first->Init(ref_chunk_dir_first, 10));
   EXPECT_EQ(0, ref_fcs_first->Count());
   EXPECT_TRUE(ref_fcs_first->Empty());
   EXPECT_FALSE(ref_fcs_first->Has(""));
@@ -108,7 +108,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
 
   //  Reuse existing chunk directory
   std::shared_ptr<FileChunkStore> ref_fcs_second(new FileChunkStore(true));
-  EXPECT_EQ(true, ref_fcs_second->Init(ref_chunk_dir_first, 10));
+  EXPECT_TRUE(ref_fcs_second->Init(ref_chunk_dir_first, 10));
   EXPECT_EQ(0, ref_fcs_second->Count());
   EXPECT_TRUE(ref_fcs_second->Empty());
   EXPECT_FALSE(ref_fcs_second->Has(""));
@@ -116,7 +116,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
 
   //  Test by passing nothing for Dir name
   std::shared_ptr<FileChunkStore> ref_fcs_third(new FileChunkStore(true));
-  EXPECT_EQ(false, ref_fcs_third->Init("", 10));
+  EXPECT_FALSE(ref_fcs_third->Init("", 10));
   EXPECT_EQ(0, ref_fcs_third->Count());
   EXPECT_TRUE(ref_fcs_third->Empty());
   EXPECT_FALSE(ref_fcs_third->Has(""));
@@ -132,10 +132,10 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Get) {
 
   //  try to get a chunk without initialising chunk store
   EXPECT_TRUE(fcs->Get("anything").empty());
-  EXPECT_EQ(false, fcs->Get("some_chunk", path));
+  EXPECT_FALSE(fcs->Get("some_chunk", path));
 
   //  initialise
-  fcs->Init(chunk_dir_, 2);
+  EXPECT_TRUE(fcs->Init(chunk_dir_, 2));
 
   //  try getting something non existing
   EXPECT_TRUE(fcs->Get("whatever").empty());
@@ -325,7 +325,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Count) {
 }
 
 TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
-  std::string str = "12345";
+  std::string str("12345");
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false));
   EXPECT_EQ(12345, fcs->GetNumFromString(str));
 
@@ -386,15 +386,15 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
       boost::scoped_ptr<FileChunkStore> temp_cs(new FileChunkStore(false));
       EXPECT_TRUE(temp_cs->Init(chunk_dir_, 4));
       EXPECT_EQ(store_size,
-              temp_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
+                temp_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
 
       //  test a ref counted chunk store on non ref counted storage
       boost::scoped_ptr<FileChunkStore> temp_ref_cs(new FileChunkStore(true));
       EXPECT_TRUE(temp_ref_cs->Init(chunk_dir_, 4));
       //  ref counted chunk store should not include chunks created
       //  without ref counting
-      EXPECT_EQ(0,
-            temp_ref_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
+      EXPECT_EQ(0, temp_ref_cs->RetrieveChunkInfo(
+                       temp_cs->storage_location_).second);
     }
   }
 
@@ -402,9 +402,8 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
   std::shared_ptr<FileChunkStore> excep_chunk_store(new FileChunkStore(false));
   fs::path ch_folder(test_dir_ / "no_chunks");
   EXPECT_TRUE(excep_chunk_store->Init(ch_folder));
-  RestoredChunkStoreInfo chunk_info = excep_chunk_store->
-                                        RetrieveChunkInfo(
-                                          fs::path("non existant"));
+  RestoredChunkStoreInfo chunk_info =
+      excep_chunk_store->RetrieveChunkInfo(fs::path("non existant"));
   EXPECT_EQ(0, chunk_info.first);
   EXPECT_EQ(0, chunk_info.second);
 }
