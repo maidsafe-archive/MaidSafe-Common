@@ -39,34 +39,76 @@
 #    CBFS_ROOT_DIR                                                             #
 #                                                                              #
 #  Variables set and cached by this module are:                                #
-#    Cbfs_INCLUDE_DIR, Cbfs_LIBRARY_DIR, Cbfs_LIBRARY                          #
+#    Cbfs_INCLUDE_DIR, Cbfs_LIBRARY_DIR, Cbfs_LIBRARY_DIR_DEBUG, Cbfs_LIBRARY, #
+#    and Cbfs_LIBRARY_DEBUG                                                    #
 #                                                                              #
 #==============================================================================#
 
 
 UNSET(Cbfs_INCLUDE_DIR CACHE)
 UNSET(Cbfs_LIBRARY_DIR CACHE)
+UNSET(Cbfs_LIBRARY_DIR_DEBUG CACHE)
 UNSET(Cbfs_LIBRARY CACHE)
+UNSET(Cbfs_LIBRARY_DEBUG CACHE)
 
 IF(CBFS_ROOT_DIR)
   SET(CBFS_ROOT_DIR ${CBFS_ROOT_DIR} CACHE PATH "Path to Callback File System library directory" FORCE)
+ELSE()
+  SET(CBFS_ROOT_DIR "C:/Program Files/EldoS/Callback File System")
 ENDIF()
-FIND_LIBRARY(Cbfs_LIBRARY NAMES cbfs cbfs.lib PATHS ${CBFS_ROOT_DIR})
+
+SET(CBFS_LIBPATH_SUFFIX SourceCode/CallbackFS/CPP/Release)
+SET(CBFS_LIBPATH_SUFFIX_DEBUG SourceCode/CallbackFS/CPP/Debug)
+SET(CBFS_INCPATH_SUFFIX SourceCode/CallbackFS/CPP)
+IF(CMAKE_CL_64)
+  SET(CBFS_LIBPATH_SUFFIX ${CBFS_LIBPATH_SUFFIX} "CPP/VC2008/64bit/static_runtime(MT)")
+  SET(CBFS_LIBPATH_SUFFIX_DEBUG ${CBFS_LIBPATH_SUFFIX_DEBUG} "CPP/VC2008/64bit/static_runtime(MT)")
+  SET(CBFS_INCPATH_SUFFIX ${CBFS_INCPATH_SUFFIX} "CPP/VC2008/64bit/static_runtime(MT)")
+ELSE()
+  SET(CBFS_LIBPATH_SUFFIX ${CBFS_LIBPATH_SUFFIX} "CPP/VC2008/32bit/static_runtime(MT)")
+  SET(CBFS_LIBPATH_SUFFIX_DEBUG ${CBFS_LIBPATH_SUFFIX_DEBUG} "CPP/VC2008/32bit/static_runtime(MT)")
+  SET(CBFS_INCPATH_SUFFIX ${CBFS_INCPATH_SUFFIX} "CPP/VC2008/32bit/static_runtime(MT)")
+ENDIF()
+
+FIND_LIBRARY(Cbfs_LIBRARY NAMES cbfs PATHS ${CBFS_ROOT_DIR} PATH_SUFFIXES ${CBFS_LIBPATH_SUFFIX} NO_DEFAULT_PATH)
+FIND_LIBRARY(Cbfs_LIBRARY_DEBUG NAMES cbfs PATHS ${CBFS_ROOT_DIR} PATH_SUFFIXES ${CBFS_LIBPATH_SUFFIX_DEBUG} NO_DEFAULT_PATH)
+FIND_PATH(Cbfs_INCLUDE_DIR CbFS.h PATHS ${CBFS_ROOT_DIR} PATH_SUFFIXES ${CBFS_INCPATH_SUFFIX} NO_DEFAULT_PATH)
+
 IF(NOT Cbfs_LIBRARY)
   SET(ERROR_MESSAGE "\nCould not find Callback File System.  NO CBFS LIBRARY - ")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}If Cbfs is already installed, run:\n")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=<Path to Cbfs lib directory>\n\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=<Path to Cbfs root directory>\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}e.g.\n${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=\"C:\\Program Files\\EldoS\\Callback File System\"\n\n")
   MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
 ENDIF()
-GET_FILENAME_COMPONENT(CBFS_ROOT_DIR ${Cbfs_LIBRARY} PATH)
-SET(Cbfs_LIBRARY_DIR ${CBFS_ROOT_DIR} CACHE PATH "Path to Callback File System library directory" FORCE)
 
-FIND_PATH(Cbfs_INCLUDE_DIR cbfs.h PATHS ${CBFS_ROOT_DIR})
+IF(NOT Cbfs_LIBRARY_DEBUG)
+  SET(ERROR_MESSAGE "\nCould not find Callback File System.  NO CBFS DEBUG LIBRARY - ")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}If Cbfs is already installed, run:\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=<Path to Cbfs root directory>\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}e.g.\n${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=\"C:\\Program Files\\EldoS\\Callback File System\"\n\n")
+  MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
+ENDIF()
+
 IF(NOT Cbfs_INCLUDE_DIR)
   SET(ERROR_MESSAGE "\nCould not find Callback File System.  NO CBFS.H - ")
   SET(ERROR_MESSAGE "${ERROR_MESSAGE}If Cbfs is already installed, run:\n")
-  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=<Path to Cbfs include directory>\n\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=<Path to Cbfs root directory>\n")
+  SET(ERROR_MESSAGE "${ERROR_MESSAGE}e.g.\n${ERROR_MESSAGE_CMAKE_PATH} -DCBFS_ROOT_DIR=\"C:\\Program Files\\EldoS\\Callback File System\"\n\n")
   MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
 ENDIF()
 
+GET_FILENAME_COMPONENT(CBFS_ROOT_DIR ${Cbfs_LIBRARY} PATH)
+SET(Cbfs_LIBRARY_DIR ${CBFS_ROOT_DIR} CACHE PATH "Path to Callback File System library directory" FORCE)
+GET_FILENAME_COMPONENT(CBFS_ROOT_DIR ${Cbfs_LIBRARY_DEBUG} PATH)
+SET(Cbfs_LIBRARY_DIR_DEBUG ${CBFS_ROOT_DIR} CACHE PATH "Path to Callback File System library directory" FORCE)
+
+INCLUDE_DIRECTORIES(SYSTEM ${Cbfs_INCLUDE_DIR})
+IF(CMAKE_INCLUDE_DIRECTORIES_BEFORE)
+  SET(INCLUDE_DIRS ${Cbfs_INCLUDE_DIR} ${INCLUDE_DIRS})
+ELSE()
+  SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Cbfs_INCLUDE_DIR})
+ENDIF()
+
 MESSAGE("-- Found library ${Cbfs_LIBRARY}")
+MESSAGE("-- Found library ${Cbfs_LIBRARY_DEBUG}")

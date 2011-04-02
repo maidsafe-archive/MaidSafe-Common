@@ -35,13 +35,27 @@ Threadpool::Threadpool(const boost::uint8_t &poolsize)
   // add work to prevent io_service completing
   work_.reset(new boost::asio::io_service::work(io_service_));
   for (boost::uint8_t i = 0; i < poolsize; ++i)
-    thread_group_.create_thread(boost::bind(&boost::asio::io_service::run,
-                                            &io_service_));
+    thread_group_.create_thread(boost::bind(&Threadpool::Start, this));
+}
+
+void Threadpool::Start() {
+  while (work_) {
+    try {
+      io_service_.run();
+    }
+    catch(const std::exception &e) {
+      DLOG(ERROR) << "Threadpool::Start - " << e.what() << std::endl;
+    }
+  }
+}
+
+void Threadpool::Stop() {
+  work_.reset();
 }
 
 Threadpool::~Threadpool() {
-  work_.reset();  // stop all new jobs
-  thread_group_.join_all();  // wait on current threads completing
+  Stop();
+  thread_group_.join_all();
 }
 
 bool Threadpool::EnqueueTask(const VoidFunctor &functor) {

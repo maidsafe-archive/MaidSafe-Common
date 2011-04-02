@@ -166,6 +166,55 @@ TEST_F(ThreadpoolTest, BEH_BASE_MultipleTasks) {
                          completed_tasks.begin()));
 }
 
+class AnException: public std::exception {
+  virtual const char* what() const throw() {
+    return "Test exception";
+  }
+};
+
+void ThrowMe() {
+  AnException MyException;
+  throw MyException;
+}
+
+TEST_F(ThreadpoolTest, BEH_BASE_ThrowingTask) {
+  boost::function<void()> functor(boost::bind(&Work::DoTask, &work_, 999));
+  boost::function<void()> throwing_functor(boost::bind(&ThrowMe));
+  // Run a threadpool with 0 threads
+  Threadpool threadpool1(0);
+  EXPECT_TRUE(threadpool1.EnqueueTask(functor));
+  Sleep(kMaxTaskDuration_ + 10);
+  EXPECT_TRUE(work_.completed_tasks().empty());
+
+  // Run a threadpool with 1 thread
+  Threadpool threadpool2(1);
+  EXPECT_TRUE(threadpool2.EnqueueTask(functor));
+  EXPECT_TRUE(work_.completed_tasks().empty());
+  Sleep(kMaxTaskDuration_ + 10);
+  EXPECT_EQ(1U, work_.completed_tasks().size());
+
+  // Run a threadpool with 10 threads
+  Threadpool threadpool3(10);
+  EXPECT_TRUE(threadpool3.EnqueueTask(functor));
+  EXPECT_EQ(1U, work_.completed_tasks().size());
+  Sleep(kMaxTaskDuration_ + 10);
+  EXPECT_EQ(2U, work_.completed_tasks().size());
+
+  // Destroy a running threadpool with 10 threads
+  {
+    Threadpool threadpool4(10);
+    EXPECT_TRUE(threadpool4.EnqueueTask(functor));
+    Sleep(kMaxTaskDuration_ + 10);
+    EXPECT_EQ(3U, work_.completed_tasks().size());
+  }
+  {
+    Threadpool threadpool5(2);
+    threadpool5.EnqueueTask(throwing_functor);
+    EXPECT_TRUE(threadpool5.EnqueueTask(functor));
+    Sleep(kMaxTaskDuration_ + 10);
+  }
+}
+
 }  // namespace test
 
 }  // namespace maidsafe

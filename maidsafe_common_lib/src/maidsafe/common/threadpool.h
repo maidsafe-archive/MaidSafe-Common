@@ -44,6 +44,8 @@ class Threadpool {
  public:
   explicit Threadpool(const boost::uint8_t &poolsize);
   ~Threadpool();
+  void Start();
+  void Stop();
   typedef boost::function<void()> VoidFunctor;
   // we may add this method plus the private run now method later
   // template <typename T>
