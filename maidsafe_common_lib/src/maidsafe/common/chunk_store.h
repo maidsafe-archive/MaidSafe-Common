@@ -46,7 +46,8 @@ namespace maidsafe {
  * Abstract class to manage storage and retrieval of named data items (chunks).
  *
  * A chunk is a small, content-adressable piece of data. The name has to match
- * the hash (SHA512) of the content, otherwise the chunk is deemed invalid.
+ * the cryptographic hash of the content, otherwise the chunk is deemed invalid.
+ * The type of hash function used is chosen by the implementation.
  *
  * The storage capacity can be limited by setting Capacity to a value greater
  * than zero. If that limit is reached, further Store operations will fail. A

@@ -137,11 +137,14 @@ bool MemoryChunkStore::Has(const std::string &name) const {
 }
 
 bool MemoryChunkStore::Validate(const std::string &name) const {
+  if (!hash_func_)
+    return false;
+
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
 
-  return name == crypto::Hash<crypto::SHA512>(it->second.second);
+  return name == hash_func_(it->second.second);
 }
 
 std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {

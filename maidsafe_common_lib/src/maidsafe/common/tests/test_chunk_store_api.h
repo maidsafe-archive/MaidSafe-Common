@@ -53,9 +53,11 @@ class ChunkStoreTest: public testing::Test {
         chunk_dir_(test_dir_ / "chunks"),
         alt_chunk_dir_(test_dir_ / "chunks_alt"),
         ref_chunk_dir_(test_dir_ / "chunks_ref"),
-        chunk_store_(new T(false)),
-        alt_chunk_store_(new T(false)),
-        ref_chunk_store_(new T(true)) {}
+        tiger_chunk_dir_(test_dir_ / "chunks_tiger"),
+        chunk_store_(),
+        alt_chunk_store_(),
+        ref_chunk_store_(),
+        tiger_chunk_store_() {}
   ~ChunkStoreTest() {}
  protected:
   void SetUp() {
@@ -65,9 +67,11 @@ class ChunkStoreTest: public testing::Test {
     fs::create_directories(chunk_dir_);
     fs::create_directories(alt_chunk_dir_);
     fs::create_directories(ref_chunk_dir_);
-    InitChunkStore(chunk_store_, chunk_dir_);
-    InitChunkStore(alt_chunk_store_, alt_chunk_dir_);
-    InitChunkStore(ref_chunk_store_, ref_chunk_dir_);
+    fs::create_directories(tiger_chunk_dir_);
+    InitChunkStore<crypto::SHA512>(&chunk_store_, false, chunk_dir_);
+    InitChunkStore<crypto::SHA512>(&alt_chunk_store_, false, alt_chunk_dir_);
+    InitChunkStore<crypto::SHA512>(&ref_chunk_store_, true, ref_chunk_dir_);
+    InitChunkStore<crypto::Tiger>(&tiger_chunk_store_, false, tiger_chunk_dir_);
   }
   void TearDown() {
     try {
@@ -76,7 +80,9 @@ class ChunkStoreTest: public testing::Test {
     }
     catch(...) {}
   }
-  void InitChunkStore(std::shared_ptr<ChunkStore> chunk_store,
+  template <class HashType>
+  void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
+                      bool reference_counting,
                       const fs::path &chunk_dir);
   fs::path CreateRandomFile(const fs::path &file_path,
                             const std::uint64_t &file_size) {
@@ -106,8 +112,10 @@ class ChunkStoreTest: public testing::Test {
     ofs.close();
     return file_path;
   }
-  fs::path test_dir_, chunk_dir_, alt_chunk_dir_, ref_chunk_dir_;
-  std::shared_ptr<ChunkStore> chunk_store_, alt_chunk_store_, ref_chunk_store_;
+  fs::path test_dir_, chunk_dir_, alt_chunk_dir_, ref_chunk_dir_,
+           tiger_chunk_dir_;
+  std::shared_ptr<ChunkStore> chunk_store_, alt_chunk_store_, ref_chunk_store_,
+                              tiger_chunk_store_;  // mmmm, tiger chunks...
 };
 
 TYPED_TEST_CASE_P(ChunkStoreTest);
@@ -170,8 +178,10 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_EQ(0, this->chunk_store_->Count());
   EXPECT_EQ(0, this->chunk_store_->Size());
   EXPECT_FALSE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_mem));
   EXPECT_EQ(0, this->chunk_store_->Size(name_mem));
   EXPECT_FALSE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_file));
   EXPECT_EQ(0, this->chunk_store_->Size(name_file));
 
   // store from string
@@ -180,8 +190,10 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_EQ(1, this->chunk_store_->Count());
   EXPECT_EQ(123, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
   EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
   EXPECT_FALSE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_file));
   EXPECT_EQ(0, this->chunk_store_->Size(name_file));
 
   ASSERT_EQ(name_mem,
@@ -193,8 +205,10 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_EQ(2, this->chunk_store_->Count());
   EXPECT_EQ(579, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
   EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(456, this->chunk_store_->Size(name_file));
 
   ASSERT_EQ(name_file,
@@ -213,8 +227,10 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_EQ(2, this->chunk_store_->Count());
   EXPECT_EQ(579, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
   EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(456, this->chunk_store_->Size(name_file));
 
   ASSERT_EQ(name_mem,
@@ -238,6 +254,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_EQ(3, this->chunk_store_->Count());
   EXPECT_EQ(912, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(new_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(new_name));
   EXPECT_EQ(333, this->chunk_store_->Size(new_name));
 }
 
@@ -262,16 +279,24 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
   EXPECT_EQ(2, this->chunk_store_->Count());
   EXPECT_EQ(579, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(456, this->chunk_store_->Size(name_file));
 
   // Delete existing chunks
   EXPECT_TRUE(this->chunk_store_->Delete(name_file));
   EXPECT_FALSE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(0, this->chunk_store_->Size(name_file));
   EXPECT_TRUE(this->chunk_store_->Get(name_file).empty());
   EXPECT_EQ(1, this->chunk_store_->Count());
   EXPECT_EQ(123, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Delete(name_mem));
   EXPECT_FALSE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(0, this->chunk_store_->Size(name_mem));
   EXPECT_TRUE(this->chunk_store_->Get(name_mem).empty());
 
   EXPECT_TRUE(this->chunk_store_->Empty());
@@ -300,27 +325,39 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_MoveTo) {
   // (1 2 | 2 3)  ->  (1 | 2 3)
   EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
   EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(0, this->chunk_store_->Count(name2));
+  EXPECT_EQ(0, this->chunk_store_->Size(name2));
   EXPECT_EQ(1, this->chunk_store_->Count());
   EXPECT_EQ(100, this->chunk_store_->Size());
   EXPECT_TRUE(this->alt_chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->alt_chunk_store_->Count(name2));
+  EXPECT_EQ(50, this->alt_chunk_store_->Size(name2));
   EXPECT_EQ(2, this->alt_chunk_store_->Count());
   EXPECT_EQ(75, this->alt_chunk_store_->Size());
 
   // (1 | 2 3)  ->  (1 2 | 3)
   EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
   EXPECT_TRUE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->chunk_store_->Count(name2));
+  EXPECT_EQ(50, this->chunk_store_->Size(name2));
   EXPECT_EQ(2, this->chunk_store_->Count());
   EXPECT_EQ(150, this->chunk_store_->Size());
   EXPECT_FALSE(this->alt_chunk_store_->Has(name2));
+  EXPECT_EQ(0, this->alt_chunk_store_->Count(name2));
+  EXPECT_EQ(0, this->alt_chunk_store_->Size(name2));
   EXPECT_EQ(1, this->alt_chunk_store_->Count());
   EXPECT_EQ(25, this->alt_chunk_store_->Size());
 
   // (1 2 | 3)  ->  (1 2 3 | )
   EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name3, this->chunk_store_.get()));
   EXPECT_TRUE(this->chunk_store_->Has(name3));
+  EXPECT_EQ(1, this->chunk_store_->Count(name3));
+  EXPECT_EQ(25, this->chunk_store_->Size(name3));
   EXPECT_EQ(3, this->chunk_store_->Count());
   EXPECT_EQ(175, this->chunk_store_->Size());
   EXPECT_FALSE(this->alt_chunk_store_->Has(name3));
+  EXPECT_EQ(0, this->alt_chunk_store_->Count(name3));
+  EXPECT_EQ(0, this->alt_chunk_store_->Size(name3));
   EXPECT_EQ(0, this->alt_chunk_store_->Count());
   EXPECT_EQ(0, this->alt_chunk_store_->Size());
   EXPECT_TRUE(this->alt_chunk_store_->Empty());
@@ -332,17 +369,36 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_MoveTo) {
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Validate) {
-  std::string content(RandomString(123));
-  std::string name(crypto::Hash<crypto::SHA512>(content));
+  std::string content1(RandomString(123)), content2(RandomString(213));
+  std::string name1(crypto::Hash<crypto::SHA512>(content1)),
+              name2(crypto::Hash<crypto::Tiger>(content2));
 
   EXPECT_FALSE(this->chunk_store_->Validate(""));
-  EXPECT_FALSE(this->chunk_store_->Validate(name));
-  ASSERT_TRUE(this->chunk_store_->Store(name, content));
-  EXPECT_TRUE(this->chunk_store_->Validate(name));
-  ASSERT_TRUE(this->chunk_store_->Delete(name));
-  ASSERT_TRUE(this->chunk_store_->Store(name, "this won't validate"));
-  EXPECT_FALSE(this->chunk_store_->Validate(name));
-  EXPECT_TRUE(this->chunk_store_->Has(name));
+  EXPECT_FALSE(this->chunk_store_->Validate(name1));
+  EXPECT_FALSE(this->chunk_store_->Validate(name2));
+  EXPECT_FALSE(this->tiger_chunk_store_->Validate(""));
+  EXPECT_FALSE(this->tiger_chunk_store_->Validate(name1));
+  EXPECT_FALSE(this->tiger_chunk_store_->Validate(name2));
+
+  ASSERT_TRUE(this->chunk_store_->Store(name1, content1));
+  ASSERT_TRUE(this->chunk_store_->Store(name2, content2));
+  ASSERT_TRUE(this->tiger_chunk_store_->Store(name1, content1));
+  ASSERT_TRUE(this->tiger_chunk_store_->Store(name2, content2));
+
+  EXPECT_TRUE(this->chunk_store_->Validate(name1));
+  EXPECT_FALSE(this->chunk_store_->Validate(name2));
+  EXPECT_FALSE(this->tiger_chunk_store_->Validate(name1));
+  EXPECT_TRUE(this->tiger_chunk_store_->Validate(name2));
+
+  ASSERT_TRUE(this->chunk_store_->Delete(name1));
+  ASSERT_TRUE(this->chunk_store_->Store(name1, "this won't validate"));
+  EXPECT_FALSE(this->chunk_store_->Validate(name1));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+
+  ASSERT_TRUE(this->tiger_chunk_store_->Delete(name2));
+  ASSERT_TRUE(this->tiger_chunk_store_->Store(name2, "this won't validate"));
+  EXPECT_FALSE(this->tiger_chunk_store_->Validate(name2));
+  EXPECT_TRUE(this->tiger_chunk_store_->Has(name2));
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Capacity) {
@@ -445,19 +501,22 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   // add chunk twice, reference counting disabled
   EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
   EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
   EXPECT_EQ(100, this->chunk_store_->Size());
   EXPECT_EQ(1, this->chunk_store_->Count());
-  EXPECT_EQ(1, this->chunk_store_->Count(name1));
   EXPECT_TRUE(this->chunk_store_->Store(name1, ""));
   EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
   EXPECT_EQ(100, this->chunk_store_->Size());
   EXPECT_EQ(1, this->chunk_store_->Count());
-  EXPECT_EQ(1, this->chunk_store_->Count(name1));
   EXPECT_TRUE(this->chunk_store_->Delete(name1));
   EXPECT_FALSE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->chunk_store_->Size(name1));
   EXPECT_EQ(0, this->chunk_store_->Size());
   EXPECT_EQ(0, this->chunk_store_->Count());
-  EXPECT_EQ(0, this->chunk_store_->Count(name1));
   EXPECT_TRUE(this->chunk_store_->Empty());
 
   // test failures
@@ -474,33 +533,41 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
   EXPECT_FALSE(this->ref_chunk_store_->Has(""));
   EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(""));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size(""));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size(name1));
   EXPECT_FALSE(this->ref_chunk_store_->Validate(""));
   EXPECT_FALSE(this->ref_chunk_store_->Validate(name1));
 
   // add chunk twice, reference counting enabled
   EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
   EXPECT_TRUE(this->ref_chunk_store_->Validate(name1));
   EXPECT_EQ(content1, this->ref_chunk_store_->Get(name1));
   EXPECT_EQ(100, this->ref_chunk_store_->Size());
   EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
   EXPECT_TRUE(this->ref_chunk_store_->Store(name1, ""));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
   EXPECT_EQ(100, this->ref_chunk_store_->Size());
   EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name1));
   EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
   EXPECT_EQ(100, this->ref_chunk_store_->Size());
   EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
   EXPECT_FALSE(this->ref_chunk_store_->Empty());
   EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
   EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size(name1));
   EXPECT_EQ(0, this->ref_chunk_store_->Size());
   EXPECT_EQ(0, this->ref_chunk_store_->Count());
-  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
   EXPECT_TRUE(this->ref_chunk_store_->Empty());
 
   // adding from file
@@ -542,6 +609,22 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   EXPECT_FALSE(this->ref_chunk_store_->Has(name2));
   EXPECT_TRUE(this->ref_chunk_store_->Empty());
   EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+
+  // multiple chunks
+  std::uintmax_t n1((RandomUint32() % 5) + 1), n2((RandomUint32() % 5) + 1);
+  this->ref_chunk_store_->SetCapacity(150);
+  for (std::uintmax_t i = 0; i < n1; ++i)
+    EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
+  for (std::uintmax_t i = 0; i < n2; ++i)
+    EXPECT_TRUE(this->ref_chunk_store_->Store(name2, content2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
+  EXPECT_EQ(n1, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(n2, this->ref_chunk_store_->Count(name2));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
+  EXPECT_EQ(50, this->ref_chunk_store_->Size(name2));
+  EXPECT_EQ(150, this->ref_chunk_store_->Size());
+  EXPECT_EQ(2, this->ref_chunk_store_->Count());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_SmallName) {

@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_MEMORY_CHUNK_STORE_H_
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <string>
 #include "boost/filesystem.hpp"
@@ -49,8 +50,11 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  explicit MemoryChunkStore(bool reference_counting)
+  typedef std::function<std::string(std::string)> HashFunc;
+
+  MemoryChunkStore(bool reference_counting, HashFunc hash_func)
       : ChunkStore(reference_counting),
+        hash_func_(hash_func),
         chunks_() {}
   ~MemoryChunkStore() {}
 
@@ -160,6 +164,7 @@ class MemoryChunkStore: public ChunkStore {
   typedef std::pair<std::uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
+  HashFunc hash_func_;
   std::map<std::string, ChunkEntry> chunks_;
 };
 

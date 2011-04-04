@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <utility>
 #include "boost/filesystem.hpp"
@@ -45,19 +46,19 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 namespace test {
-  class FileChunkStoreTest_BEH_FCS_Methods_Test;
-}
-
-//  pair of chunk count and total of all chunk sizes in a dir
-typedef std::pair <std::uintmax_t, std::uintmax_t> RestoredChunkStoreInfo;
+class FileChunkStoreTest_BEH_FCS_Methods_Test;
+}  // namespace test
 
 /**
  * Manages storage and retrieval of chunks using the file system.
  */
 class FileChunkStore: public ChunkStore {
  public:
-  explicit FileChunkStore(bool reference_counting)
+  typedef std::function<std::string(fs::path)> HashFunc;
+
+  FileChunkStore(bool reference_counting, HashFunc hash_func)
       : ChunkStore(reference_counting),
+        hash_func_(hash_func),
         initialised_(false),
         storage_location_(),
         chunk_count_(0),
@@ -180,6 +181,8 @@ class FileChunkStore: public ChunkStore {
   friend class test::FileChunkStoreTest_BEH_FCS_Methods_Test;
 
  private:
+  typedef std::pair<std::uintmax_t, std::uintmax_t> RestoredChunkStoreInfo;
+
   FileChunkStore(const FileChunkStore&);
   FileChunkStore& operator=(const FileChunkStore&);
 
@@ -221,10 +224,8 @@ class FileChunkStore: public ChunkStore {
   std::uintmax_t GetChunkReferenceCount(const fs::path &) const;
 
   std::uintmax_t GetNumFromString(const std::string &) const;
-  std::string GetStringFromNum(const std::uintmax_t &) const;
 
-  std::string GetExtensionWithReferenceCount(const std::uintmax_t &) const;
-
+  HashFunc hash_func_;
   bool initialised_;
   fs::path storage_location_;
   std::uintmax_t chunk_count_;
