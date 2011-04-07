@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <utility>
 #include "boost/filesystem.hpp"
+#include "boost/filesystem/fstream.hpp"
 
 #include "maidsafe/common/chunk_store.h"
 
@@ -62,18 +63,19 @@ class FileChunkStore: public ChunkStore {
         initialised_(false),
         storage_location_(),
         chunk_count_(0),
-        dir_depth_(0) {}
-  ~FileChunkStore() {}
+        dir_depth_(0),
+        info_file_() {}
+  ~FileChunkStore();
 
   /**
    * Initialises the chunk storage directory.
    *
    * If the given directory path does not exist, it will be created.
    * @param storage_location Path to storage directory
-   * @param directory depth
+   * @param dir_depth directory depth
    * @return True if directory exists or could be created
    */
-  bool Init(const fs::path &storage_location, int dir_depth = 5);
+  bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U);
 
   /**
    * Retrieves a chunk's content as a string.
@@ -107,8 +109,8 @@ class FileChunkStore: public ChunkStore {
    * @return True if chunk could be stored or already existed
    */
   bool Store(const std::string &name,
-                     const fs::path &source_file_name,
-                     bool delete_source_file);
+             const fs::path &source_file_name,
+             bool delete_source_file);
 
   /**
    * Deletes a stored chunk.
@@ -124,8 +126,7 @@ class FileChunkStore: public ChunkStore {
    * @param sink_chunk_store The receiving ChunkStore
    * @return True if operation successful
    */
-  bool MoveTo(const std::string &name,
-                      ChunkStore *sink_chunk_store);
+  bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
 
   /**
    * Checks if a chunk exists.
@@ -207,11 +208,18 @@ class FileChunkStore: public ChunkStore {
   }
 
   /**
-   * Tries to read the dir specified and gets
-   * total number of chunks and their collective
-   * size
+   * Tries to read the ChunkStore info file in
+   * dir specified and gets total number of chunks
+   * and their collective size
    */
   RestoredChunkStoreInfo RetrieveChunkInfo(const fs::path &location) const;
+
+  /**
+   * Saves the current state of the ChunkStore
+   * (in terms of total number of chunks and their
+   * collective size) to the info file
+   */
+  void SaveChunkStoreState();
 
   bool IsChunkStoreInitialised() const { return initialised_; }
 
@@ -230,6 +238,7 @@ class FileChunkStore: public ChunkStore {
   fs::path storage_location_;
   std::uintmax_t chunk_count_;
   unsigned int dir_depth_;
+  fs::fstream info_file_;
 };
 
 }  //  namespace maidsafe

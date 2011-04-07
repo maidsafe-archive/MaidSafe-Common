@@ -29,15 +29,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/utils.h"
 
-#include "boost/filesystem/fstream.hpp"
 #include "boost/lexical_cast.hpp"
 
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
+FileChunkStore::~FileChunkStore() {
+  info_file_.close();
+}
+
 bool FileChunkStore::Init(const fs::path &storage_location,
-                          int dir_depth) {
+                          unsigned int dir_depth) {
   try {
     if (storage_location.empty())
       return false;
@@ -56,7 +59,13 @@ bool FileChunkStore::Init(const fs::path &storage_location,
 
     storage_location_ = storage_location;
     dir_depth_ = dir_depth;
-    initialised_ = true;
+    std::string info_name("info");
+    if (kReferenceCounting)
+      info_name += "_ref";
+    info_file_.open(storage_location_ / info_name,
+                    std::ios_base::out | std::ios_base::trunc);
+    SaveChunkStoreState();
+    initialised_ = info_file_.good();
   }
   catch(const std::exception &e) {
     DLOG(ERROR) << "Init - " << e.what() << std::endl;
@@ -439,6 +448,7 @@ bool FileChunkStore::Empty() const {
 }
 
 void FileChunkStore::Clear() {
+  info_file_.close();
   ResetChunkCount();
   fs::remove_all(storage_location_);
   ChunkStore::Clear();
@@ -467,38 +477,38 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
 
 FileChunkStore::RestoredChunkStoreInfo FileChunkStore::RetrieveChunkInfo(
     const fs::path &location) const {
-  boost::uintmax_t count(0);
   RestoredChunkStoreInfo chunk_store_info;
   chunk_store_info.first = 0;
   chunk_store_info.second = 0;
 
-  try {
-    for (fs::directory_iterator it(location); it != fs::directory_iterator();
-         ++it) {
-      if (fs::is_regular_file(it->status())) {
-        if (GetChunkReferenceCount(it->path()) > 0) {
-          ++chunk_store_info.first;
-          chunk_store_info.second += fs::file_size(*it);
-        }
-      } else if (fs::is_directory(it->path())) {
-        RestoredChunkStoreInfo info = RetrieveChunkInfo(it->path());
-        chunk_store_info.first += info.first;
-        chunk_store_info.second += info.second;
-      }
-    }
-  }
-  catch(...) {}
+  std::string info_name("info");
+  if (kReferenceCounting)
+    info_name += "_ref";
+  fs::fstream info(location / info_name, std::ios_base::in);
+  if (info.good())
+    info >> chunk_store_info.first >> chunk_store_info.second;
+
+  info.close();
+
   return chunk_store_info;
+}
+
+void FileChunkStore::SaveChunkStoreState() {
+  info_file_.seekp(0, std::ios_base::beg);
+  info_file_ << chunk_count_ << std::endl << ChunkStore::Size();
+  info_file_.flush();
 }
 
 void FileChunkStore::ChunkAdded(const std::uintmax_t &delta) {
   IncreaseSize(delta);
   IncreaseChunkCount();
+  SaveChunkStoreState();
 }
 
 void FileChunkStore::ChunkRemoved(const std::uintmax_t &delta) {
   DecreaseSize(delta);
   DecreaseChunkCount();
+  SaveChunkStoreState();
 }
 
 /**

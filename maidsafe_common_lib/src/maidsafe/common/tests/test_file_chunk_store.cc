@@ -373,18 +373,10 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
   chunk_name = crypto::Hash<crypto::SHA512>(content);
 
   EXPECT_TRUE(fcs->Init(chunk_dir_, 4));
-  chunk_path = fcs->ChunkNameToFilePath(chunk_name);
-  EXPECT_TRUE(fcs->Store(chunk_name, content));
-  std::uintmax_t store_size = fcs->Size(chunk_name);
+  std::uintmax_t store_size(0);
 
-  //  use the same location in another store
-  std::shared_ptr<FileChunkStore> sec_cs(new FileChunkStore(false, hash_func_));
-  EXPECT_TRUE(sec_cs->Init(chunk_dir_, 4));
-  EXPECT_EQ(store_size,
-              sec_cs->RetrieveChunkInfo(chunk_path.parent_path()).second);
-
-  //  store more chunks
-  for (int i = 0; i < 5; ++i) {
+  //  store chunks
+  for (int i = 0; i < 6; ++i) {
     content = RandomString(50);
     chunk_name = crypto::Hash<crypto::SHA512>(content);
 
@@ -392,23 +384,25 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
     EXPECT_TRUE(fcs->Store(chunk_name, content));
 
     store_size += fcs->Size(chunk_name);
+  }
 
-    {
-      boost::scoped_ptr<FileChunkStore> temp_cs(
-          new FileChunkStore(false, hash_func_));
-      EXPECT_TRUE(temp_cs->Init(chunk_dir_, 4));
-      EXPECT_EQ(store_size,
-                temp_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
+  //  use the same location in another store
+  fcs.reset();
+  {
+    boost::scoped_ptr<FileChunkStore> temp_cs(
+        new FileChunkStore(false, hash_func_));
+    EXPECT_TRUE(temp_cs->Init(chunk_dir_, 4));
+    EXPECT_EQ(store_size,
+              temp_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
 
-      //  test a ref counted chunk store on non ref counted storage
-      boost::scoped_ptr<FileChunkStore> temp_ref_cs(
-          new FileChunkStore(true, hash_func_));
-      EXPECT_TRUE(temp_ref_cs->Init(chunk_dir_, 4));
-      //  ref counted chunk store should not include chunks created
-      //  without ref counting
-      EXPECT_EQ(0, temp_ref_cs->RetrieveChunkInfo(
-                       temp_cs->storage_location_).second);
-    }
+    //  test a ref counted chunk store on non ref counted storage
+    boost::scoped_ptr<FileChunkStore> temp_ref_cs(
+        new FileChunkStore(true, hash_func_));
+    EXPECT_TRUE(temp_ref_cs->Init(chunk_dir_, 4));
+    //  ref counted chunk store should not include chunks created
+    //  without ref counting
+    EXPECT_EQ(0, temp_ref_cs->RetrieveChunkInfo(
+                      temp_cs->storage_location_).second);
   }
 
   //  cause exception in RetrieveChunkInfo
