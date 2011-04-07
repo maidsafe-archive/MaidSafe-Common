@@ -48,7 +48,7 @@ bool FileChunkStore::Init(const fs::path &storage_location,
       ResetChunkCount(chunk_info.first);
       IncreaseSize(chunk_info.second);
     } else {
-      if (!fs::create_directory(storage_location))
+      if (!fs::create_directories(storage_location))
         return false;
       ResetChunkCount();
       ChunkStore::Clear();

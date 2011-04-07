@@ -68,7 +68,7 @@ class FileChunkStore: public ChunkStore {
   /**
    * Initialises the chunk storage directory.
    *
-   * If the given directory does not exist, it will be created.
+   * If the given directory path does not exist, it will be created.
    * @param storage_location Path to storage directory
    * @param directory depth
    * @return True if directory exists or could be created
