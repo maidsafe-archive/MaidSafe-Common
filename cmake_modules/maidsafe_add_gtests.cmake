@@ -31,6 +31,8 @@
 #                                                                              #
 #  Written by maidsafe.net team                                                #
 #                                                                              #
+#==============================================================================#
+#                                                                              #
 #  For a test target named test_stuff, the module is invoked by calling        #
 #  ADD_GTESTS(test_stuff)                                                      #
 #                                                                              #
