@@ -30,14 +30,23 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string>
 
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#endif
+
 #include "boost/cstdint.hpp"
-#include "boost/filesystem/v3/path.hpp"
+#include "boost/filesystem/path.hpp"
 #include "boost/scoped_ptr.hpp"
 
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#  pragma warning(disable: 4505)
+#endif
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/version.h"

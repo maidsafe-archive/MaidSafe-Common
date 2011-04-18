@@ -28,12 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>  // NOLINT
 #include <iomanip>
 
-#include "gtest/gtest.h"
 #include "boost/format.hpp"
 
 #define BOOST_INCLUDE_MAIN
 #include "boost/test/test_tools.hpp"
 
+#include "maidsafe/common/test.h"
 
 TEST(boost, BEH_BOOST_formattest1) {
   ASSERT_EQ(boost::str(boost::format("  %%  ")), "  %  ")

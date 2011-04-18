@@ -29,9 +29,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_UTILS_H_
 
 #include <string>
+
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#  pragma warning(disable: 4127)
+#endif
+
 #include "boost/cstdint.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/filesystem/path.hpp"
+#include "boost/filesystem.hpp"
+#include "boost/token_functions.hpp"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
 #include "maidsafe/common/version.h"
 
 namespace fs = boost::filesystem;
@@ -92,7 +104,7 @@ class Stats {
   * Get the average of values in the set.
   * @return arithmetic mean
   */
-  T Mean() const { return size_ > 0 ? sum_ / size_ : 0; }
+  T Mean() const { return size_ > 0 ? static_cast<T>(sum_ / size_) : 0; }
  private:
   boost::uint64_t size_;
   T min_;

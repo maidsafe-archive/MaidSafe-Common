@@ -1,4 +1,4 @@
-/* Copyright (c) 2009 maidsafe.net limited
+/* Copyright (c) 2011 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -25,37 +25,17 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include "maidsafe/common/platform_config.h"
-#include "maidsafe/common/log.h"
-#include "maidsafe/common/test.h"
+#ifndef MAIDSAFE_COMMON_TEST_H_
+#define MAIDSAFE_COMMON_TEST_H_
 
-namespace maidsafe {
-
-namespace test {
-
-TEST(FindPlatform, BEH_BASE_DetectPlatform) {
-  int macflag(0);
-  int posixflag(0);
-  int winflag(0);
-
-  std::string log_output("We have cunningly detected your platform as being ");
-
-#if defined(MAIDSAFE_APPLE)
-  ++macflag;
-  log_output += "APPLE.";
-#elif defined(MAIDSAFE_POSIX)
-  ++posixflag;
-  log_output += "POSIX.";
-#elif defined(MAIDSAFE_WIN32)
-  ++winflag;
-  log_output += "WIN32.";
+#ifdef __MSVC__
+#  pragma warning(push, 1)
 #endif
 
-  ASSERT_EQ(1, macflag + posixflag + winflag);
-  DLOG(INFO) << log_output << std::endl;
-}
+#include "gtest/gtest.h"
 
-}  // namespace test
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
-}  // namespace maidsafe
+#endif  // MAIDSAFE_COMMON_TEST_H_

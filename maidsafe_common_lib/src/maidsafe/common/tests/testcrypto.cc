@@ -26,12 +26,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <cstdlib>
-#include "gtest/gtest.h"
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/scoped_ptr.hpp"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -366,7 +366,7 @@ TEST(CryptoTest, BEH_BASE_AsymSign) {
 
 TEST(CryptoTest, BEH_BASE_Compress) {
   const size_t kTestDataSize(10000);
-  const size_t kTolerance(kTestDataSize * 0.005);
+  const size_t kTolerance(kTestDataSize / 200);
   std::string initial_data(kTestDataSize, 'A');
   initial_data.replace(0, kTestDataSize / 2, RandomString(kTestDataSize / 2));
   std::random_shuffle(initial_data.begin(), initial_data.end());

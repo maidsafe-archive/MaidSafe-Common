@@ -34,6 +34,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <string>
 
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#  pragma warning(disable: 4127)
+#endif
+
 #include "boost/filesystem/fstream.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/lexical_cast.hpp"
@@ -48,6 +53,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"
 #include "cryptopp/hex.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
 #include "maidsafe/common/log.h"
 
 namespace maidsafe {

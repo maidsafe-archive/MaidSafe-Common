@@ -37,8 +37,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <string>
 #include <utility>
+
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#  pragma warning(disable: 4127)
+#endif
+
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
+#include "boost/token_functions.hpp"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
 #include "maidsafe/common/chunk_store.h"
 

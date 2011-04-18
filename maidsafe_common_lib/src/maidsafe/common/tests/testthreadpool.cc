@@ -26,9 +26,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "boost/lexical_cast.hpp"
-#include "boost/thread/mutex.hpp"
-#include "gtest/gtest.h"
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#endif
+#include "boost/thread.hpp"
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/threadpool.h"
 #include "maidsafe/common/utils.h"
 

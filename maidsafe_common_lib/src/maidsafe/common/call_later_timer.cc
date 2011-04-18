@@ -56,7 +56,7 @@ CallLaterTimer::~CallLaterTimer() {
 }
 
 void CallLaterTimer::Run() {
-  while (true) {
+  for (;;) {
     boost::system::error_code ec;
     io_service_.run(ec);
     if (!ec)

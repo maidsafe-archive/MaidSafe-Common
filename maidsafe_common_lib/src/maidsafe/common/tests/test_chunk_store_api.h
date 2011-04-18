@@ -31,11 +31,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 #include <vector>
-#include "gtest/gtest.h"
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "maidsafe/common/chunk_store.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;

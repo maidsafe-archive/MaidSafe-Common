@@ -25,11 +25,12 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
+#include "boost/lexical_cast.hpp"
+
 #include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/utils.h"
-
-#include "boost/lexical_cast.hpp"
 
 namespace fs = boost::filesystem;
 
@@ -87,7 +88,8 @@ std::string FileChunkStore::Get(const std::string &name) const {
     return "";
 
   if (kReferenceCounting)
-    file_path.replace_extension("." + IntToString(ref_count));
+    file_path.replace_extension(
+        "." + boost::lexical_cast<std::string>(ref_count));
 
   std::string content;
   if (ReadFile(file_path, &content))
@@ -110,7 +112,8 @@ bool FileChunkStore::Get(const std::string &name,
     return false;
 
   if (kReferenceCounting)
-    source_file_path.replace_extension("." + IntToString(ref_count));
+    source_file_path.replace_extension(
+        "." + boost::lexical_cast<std::string>(ref_count));
 
   boost::system::error_code ec;
   fs::copy_file(source_file_path, sink_file_name,
@@ -149,9 +152,11 @@ bool FileChunkStore::Store(const std::string &name,
     } else {
       //  chunk already exists
       fs::path old_path(chunk_file), new_path(chunk_file);
-      old_path.replace_extension("." + IntToString(ref_count));
+      old_path.replace_extension(
+          "." + boost::lexical_cast<std::string>(ref_count));
       ++ref_count;
-      new_path.replace_extension("." + IntToString(ref_count));
+      new_path.replace_extension(
+          "." + boost::lexical_cast<std::string>(ref_count));
 
       //  do a rename
       boost::system::error_code ec;
@@ -175,7 +180,6 @@ bool FileChunkStore::Store(const std::string &name,
     ChunkAdded(content.size());
     return true;
   }
-  return false;
 }
 
 bool FileChunkStore::Store(const std::string &name,
@@ -220,9 +224,11 @@ bool FileChunkStore::Store(const std::string &name,
     } else {
       //  chunk already exists
       fs::path old_path(chunk_file), new_path(chunk_file);
-      old_path.replace_extension("." + IntToString(ref_count));
+      old_path.replace_extension(
+          "." + boost::lexical_cast<std::string>(ref_count));
       ++ref_count;
-      new_path.replace_extension("." + IntToString(ref_count));
+      new_path.replace_extension(
+          "." + boost::lexical_cast<std::string>(ref_count));
 
       //  do a rename
       fs::rename(old_path, new_path, ec);
@@ -281,7 +287,8 @@ bool FileChunkStore::Delete(const std::string &name) {
     if (ref_count == 0)
       return true;
 
-    chunk_file.replace_extension("." + IntToString(ref_count));
+    chunk_file.replace_extension(
+        "." + boost::lexical_cast<std::string>(ref_count));
 
     //  check if last reference
     if (ref_count == 1) {
@@ -296,7 +303,8 @@ bool FileChunkStore::Delete(const std::string &name) {
       //  reduce the reference counter, but retain the file
       --ref_count;
       fs::path new_chunk_path(chunk_file);
-      new_chunk_path.replace_extension("." + IntToString(ref_count));
+      new_chunk_path.replace_extension(
+          "." + boost::lexical_cast<std::string>(ref_count));
 
       //  do a rename
       boost::system::error_code ec;
@@ -341,7 +349,8 @@ bool FileChunkStore::MoveTo(const std::string &name,
     if (ref_count == 0)
       return false;
 
-    chunk_file.replace_extension("." + IntToString(ref_count));
+    chunk_file.replace_extension(
+        "." + boost::lexical_cast<std::string>(ref_count));
 
     if (ref_count == 1) {
       // avoid copy on last reference
@@ -405,7 +414,8 @@ bool FileChunkStore::Validate(const std::string &name) const {
     return false;
 
   if (kReferenceCounting)
-    chunk_file.replace_extension("." + IntToString(ref_count));
+    chunk_file.replace_extension(
+        "." + boost::lexical_cast<std::string>(ref_count));
 
   return name == hash_func_(chunk_file);
 }
@@ -419,8 +429,8 @@ std::uintmax_t FileChunkStore::Size(const std::string &name) const {
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   if (kReferenceCounting)
-    chunk_file.replace_extension(
-        "." + IntToString(GetChunkReferenceCount(chunk_file)));
+    chunk_file.replace_extension("." + boost::lexical_cast<std::string>(
+        GetChunkReferenceCount(chunk_file)));
 
   boost::system::error_code ec;
   std::uintmax_t size = fs::file_size(chunk_file, ec);

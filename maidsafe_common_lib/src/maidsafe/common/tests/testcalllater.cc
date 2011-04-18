@@ -25,11 +25,17 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "gtest/gtest.h"
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#endif
 #include "boost/thread/thread.hpp"
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/call_later_timer.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/test.h"
 
 namespace maidsafe {
 

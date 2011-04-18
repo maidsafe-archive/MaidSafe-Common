@@ -30,12 +30,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <map>
 
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#endif
+
 #include "boost/asio.hpp"
 #include "boost/bind.hpp"
 #include "boost/cstdint.hpp"
 #include "boost/function.hpp"
 #include "boost/thread.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
 #include "maidsafe/common/version.h"
 
 namespace maidsafe {

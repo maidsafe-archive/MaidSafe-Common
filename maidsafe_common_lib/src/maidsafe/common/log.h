@@ -32,10 +32,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // For MSVC, we need to include windows.h which in turn includes WinGDI.h
 // which defines ERROR (which conflicts with Glog's ERROR definition)
 #ifdef __MSVC__
-#include <windows.h>
-#undef ERROR
+#  include <windows.h>
+#  undef ERROR
+#  pragma warning(push, 1)
+#  include "glog/logging.h"
+#  pragma warning(pop)
+#else
+#  include "glog/logging.h"  // NOLINT (Fraser)
 #endif
-#include "glog/logging.h"
 #include "maidsafe/common/version.h"
 
 #endif  // MAIDSAFE_COMMON_LOG_H_

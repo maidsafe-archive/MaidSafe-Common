@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <set>
 
-#include "gtest/gtest.h"
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/progress.hpp"
@@ -38,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -141,17 +141,17 @@ TEST(UtilsTest, BEH_BASE_Stats) {
     EXPECT_FLOAT_EQ(0.0, stats.Sum());
     EXPECT_FLOAT_EQ(0.0, stats.Mean());
 
-    stats.Add(1.1);
-    stats.Add(2.2);
-    stats.Add(3.3);
-    stats.Add(4.4);
-    stats.Add(0.0);
+    stats.Add(1.1f);
+    stats.Add(2.2f);
+    stats.Add(3.3f);
+    stats.Add(4.4f);
+    stats.Add(0.0f);
 
     EXPECT_EQ(5, stats.Size());
-    EXPECT_FLOAT_EQ(0.0, stats.Min());
-    EXPECT_FLOAT_EQ(4.4, stats.Max());
-    EXPECT_FLOAT_EQ(11.0, stats.Sum());
-    EXPECT_FLOAT_EQ(2.2, stats.Mean());
+    EXPECT_FLOAT_EQ(0.0f, stats.Min());
+    EXPECT_FLOAT_EQ(4.4f, stats.Max());
+    EXPECT_FLOAT_EQ(11.0f, stats.Sum());
+    EXPECT_FLOAT_EQ(2.2f, stats.Mean());
   }
 }
 
@@ -235,16 +235,13 @@ TEST(UtilsTest, BEH_BASE_Base32EncodeDecode) {
 
 TEST(UtilsTest, BEH_BASE_TimeFunctions) {
   boost::uint64_t s, ms, ns;
-  ms = GetDurationSinceEpoch().total_milliseconds();
-  ns = GetDurationSinceEpoch().total_nanoseconds();
-  s = GetDurationSinceEpoch().total_seconds();
-
-  // Within a second
-  EXPECT_NEAR(s*1000, ms, 1000) << "s vs. ms failed.";
-  // Within a second
-  EXPECT_NEAR(s*1000000000, ns, 1000000000) << "s vs. ns failed.";
-  // Within quarter of a second
-  EXPECT_NEAR(ms*1000000, ns, 250000000) << "ms vs. ns failed.";
+  boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
+  ms = since_epoch.total_milliseconds();
+  ns = since_epoch.total_nanoseconds();
+  s = since_epoch.total_seconds();
+  EXPECT_EQ(s, ms / 1000) << "s vs. ms failed.";
+  EXPECT_EQ(s, ns / 1000000000) << "s vs. ns failed.";
+  EXPECT_EQ(ms, ns / 1000000) << "ms vs. ns failed.";
 }
 
 TEST(UtilsTest, BEH_BASE_SRandomNumberGen) {
@@ -252,7 +249,7 @@ TEST(UtilsTest, BEH_BASE_SRandomNumberGen) {
   std::set<boost::uint32_t>random_uints;
   const size_t kCount(10000);
   // look for less than 0.05% duplicates
-  const size_t kMaxDuplicates(kCount * 0.0005);
+  const size_t kMaxDuplicates(kCount / 2000);
   for (size_t i = 0; i < kCount; ++i) {
     random_ints.insert(SRandomInt32());
     random_uints.insert(SRandomUint32());
@@ -266,7 +263,7 @@ TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
   std::set<boost::uint32_t>random_uints;
   const size_t kCount(10000);
   // look for less than 0.05% duplicates
-  const size_t kMaxDuplicates(kCount * 0.0005);
+  const size_t kMaxDuplicates(kCount / 2000);
   for (size_t i = 0; i < kCount; ++i) {
     random_ints.insert(RandomInt32());
     random_uints.insert(RandomUint32());

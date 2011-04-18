@@ -26,12 +26,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <cstddef>
-#include "gtest/gtest.h"
 #include "boost/detail/lightweight_test.hpp"
 #include "boost/detail/atomic_count.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/weak_ptr.hpp"
+#include "maidsafe/common/test.h"
 
 class X {
  public:

@@ -27,6 +27,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/crypto.h"
 
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#endif
+
 #include "cryptopp/gzip.h"
 #include "cryptopp/hex.h"
 #include "cryptopp/aes.h"
@@ -35,6 +39,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/osrng.h"
 #include "cryptopp/integer.h"
 #include "cryptopp/pwdbased.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
 #include "maidsafe/common/platform_config.h"
 #include "maidsafe/common/utils.h"
