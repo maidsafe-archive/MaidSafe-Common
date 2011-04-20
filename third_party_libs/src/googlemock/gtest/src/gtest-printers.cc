@@ -56,11 +56,11 @@ namespace {
 using ::std::ostream;
 
 #if GTEST_OS_WINDOWS_MOBILE  // Windows CE does not define _snprintf_s.
-#define snprintf _snprintf
+# define snprintf _snprintf
 #elif _MSC_VER >= 1400  // VC 8.0 and later deprecate snprintf and _snprintf.
-#define snprintf _snprintf_s
+# define snprintf _snprintf_s
 #elif _MSC_VER
-#define snprintf _snprintf
+# define snprintf _snprintf
 #endif  // GTEST_OS_WINDOWS_MOBILE
 
 // Prints a segment of bytes in the given object.
@@ -138,7 +138,7 @@ enum CharFormat {
 // Returns true if c is a printable ASCII character.  We test the
 // value of c directly instead of calling isprint(), which is buggy on
 // Windows Mobile.
-static inline bool IsPrintableAscii(wchar_t c) {
+inline bool IsPrintableAscii(wchar_t c) {
   return 0x20 <= c && c <= 0x7E;
 }
 
@@ -154,9 +154,6 @@ static CharFormat PrintAsCharLiteralTo(Char c, ostream* os) {
       break;
     case L'\'':
       *os << "\\'";
-      break;
-    case L'\?':
-      *os << "\\?";
       break;
     case L'\\':
       *os << "\\\\";
@@ -291,8 +288,7 @@ static void PrintWideCharsAsStringTo(const wchar_t* begin, size_t len,
   bool is_previous_hex = false;
   for (size_t index = 0; index < len; ++index) {
     const wchar_t cur = begin[index];
-    if (is_previous_hex && 0 <= cur && cur < 128 &&
-        IsXDigit(static_cast<char>(cur))) {
+    if (is_previous_hex && isascii(cur) && IsXDigit(static_cast<char>(cur))) {
       // Previous character is of '\x..' form and this character can be
       // interpreted as another hexadecimal digit in its number. Break string to
       // disambiguate.
@@ -308,7 +304,7 @@ void PrintTo(const char* s, ostream* os) {
   if (s == NULL) {
     *os << "NULL";
   } else {
-    *os << implicit_cast<const void*>(s) << " pointing to ";
+    *os << ImplicitCast_<const void*>(s) << " pointing to ";
     PrintCharsAsStringTo(s, strlen(s), os);
   }
 }
@@ -325,7 +321,7 @@ void PrintTo(const wchar_t* s, ostream* os) {
   if (s == NULL) {
     *os << "NULL";
   } else {
-    *os << implicit_cast<const void*>(s) << " pointing to ";
+    *os << ImplicitCast_<const void*>(s) << " pointing to ";
     PrintWideCharsAsStringTo(s, wcslen(s), os);
   }
 }

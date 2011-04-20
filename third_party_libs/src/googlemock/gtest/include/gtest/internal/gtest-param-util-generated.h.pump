@@ -59,8 +59,8 @@ namespace testing {
 // include/gtest/gtest-param-test.h.
 template <typename ForwardIterator>
 internal::ParamGenerator<
-    typename ::std::iterator_traits<ForwardIterator>::value_type> ValuesIn(
-        ForwardIterator begin, ForwardIterator end);
+  typename ::testing::internal::IteratorTraits<ForwardIterator>::value_type>
+ValuesIn(ForwardIterator begin, ForwardIterator end);
 
 template <typename T, size_t N>
 internal::ParamGenerator<T> ValuesIn(const T (&array)[N]);
@@ -115,7 +115,7 @@ $for j [[
 
 ]]
 
-#if GTEST_HAS_COMBINE
+# if GTEST_HAS_COMBINE
 // INTERNAL IMPLEMENTATION - DO NOT USE IN USER CODE.
 //
 // Generates values from the Cartesian product of values produced
@@ -291,7 +291,7 @@ $for j [[
 
 ]]
 
-#endif  // GTEST_HAS_COMBINE
+# endif  // GTEST_HAS_COMBINE
 
 }  // namespace internal
 }  // namespace testing

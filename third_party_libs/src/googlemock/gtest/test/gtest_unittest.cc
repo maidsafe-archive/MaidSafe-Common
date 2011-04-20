@@ -310,10 +310,10 @@ TEST(FormatTimeInMillisAsSecondsTest, FormatsNegativeNumber) {
 
 #if GTEST_CAN_COMPARE_NULL
 
-#ifdef __BORLANDC__
+# ifdef __BORLANDC__
 // Silences warnings: "Condition is always true", "Unreachable code"
-#pragma option push -w-ccc -w-rch
-#endif
+#  pragma option push -w-ccc -w-rch
+# endif
 
 // Tests that GTEST_IS_NULL_LITERAL_(x) is true when x is a null
 // pointer literal.
@@ -322,14 +322,15 @@ TEST(NullLiteralTest, IsTrueForNullLiterals) {
   EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(0));
   EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(0U));
   EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(0L));
-  EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(false));
-#ifndef __BORLANDC__
+
+# ifndef __BORLANDC__
+
   // Some compilers may fail to detect some null pointer literals;
   // as long as users of the framework don't use such literals, this
   // is harmless.
   EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(1 - 1));
-  EXPECT_TRUE(GTEST_IS_NULL_LITERAL_(true && false));
-#endif
+
+# endif
 }
 
 // Tests that GTEST_IS_NULL_LITERAL_(x) is false when x is not a null
@@ -341,10 +342,10 @@ TEST(NullLiteralTest, IsFalseForNonNullLiterals) {
   EXPECT_FALSE(GTEST_IS_NULL_LITERAL_(static_cast<void*>(NULL)));
 }
 
-#ifdef __BORLANDC__
+# ifdef __BORLANDC__
 // Restores warnings after previous "#pragma option push" suppressed them.
-#pragma option pop
-#endif
+#  pragma option pop
+# endif
 
 #endif  // GTEST_CAN_COMPARE_NULL
 //
@@ -1150,7 +1151,8 @@ TEST(StringTest, CanBeAssignedNonEmpty) {
 TEST(StringTest, CanBeAssignedSelf) {
   String dest("hello");
 
-  dest = dest;
+  // Use explicit function call notation here to suppress self-assign warning.
+  dest.operator=(dest);
   EXPECT_STREQ("hello", dest.c_str());
 }
 
@@ -1212,7 +1214,7 @@ TEST(StringTest, ShowWideCStringQuoted) {
                String::ShowWideCStringQuoted(L"foo").c_str());
 }
 
-#if GTEST_OS_WINDOWS_MOBILE
+# if GTEST_OS_WINDOWS_MOBILE
 TEST(StringTest, AnsiAndUtf16Null) {
   EXPECT_EQ(NULL, String::AnsiToUtf16(NULL));
   EXPECT_EQ(NULL, String::Utf16ToAnsi(NULL));
@@ -1235,7 +1237,7 @@ TEST(StringTest, AnsiAndUtf16ConvertPathChars) {
   EXPECT_EQ(0, wcsncmp(L".:\\ \"*?", utf16, 3));
   delete [] utf16;
 }
-#endif  // GTEST_OS_WINDOWS_MOBILE
+# endif  // GTEST_OS_WINDOWS_MOBILE
 
 #endif  // GTEST_OS_WINDOWS
 
@@ -1369,7 +1371,7 @@ TEST_F(ExpectFatalFailureTest, CatchesFatalFailureOnAllThreads) {
 
 #ifdef __BORLANDC__
 // Silences warnings: "Condition is always true"
-#pragma option push -w-ccc
+# pragma option push -w-ccc
 #endif
 
 // Tests that EXPECT_FATAL_FAILURE() can be used in a non-void
@@ -1397,7 +1399,7 @@ void DoesNotAbortHelper(bool* aborted) {
 
 #ifdef __BORLANDC__
 // Restores warnings after previous "#pragma option push" suppressed them.
-#pragma option pop
+# pragma option pop
 #endif
 
 TEST_F(ExpectFatalFailureTest, DoesNotAbort) {
@@ -1414,8 +1416,8 @@ static int global_var = 0;
 #define GTEST_USE_UNPROTECTED_COMMA_ global_var++, global_var++
 
 TEST_F(ExpectFatalFailureTest, AcceptsMacroThatExpandsToUnprotectedComma) {
-#if !defined(__BORLANDC__) || __BORLANDC__ >= 0x600
-  // ICE's in C++Builder 2007.
+#ifndef __BORLANDC__
+  // ICE's in C++Builder.
   EXPECT_FATAL_FAILURE({
     GTEST_USE_UNPROTECTED_COMMA_;
     AddFatalFailure();
@@ -3535,7 +3537,7 @@ TEST(AssertionTest, AppendUserMessage) {
 
 #ifdef __BORLANDC__
 // Silences warnings: "Condition is always true", "Unreachable code"
-#pragma option push -w-ccc -w-rch
+# pragma option push -w-ccc -w-rch
 #endif
 
 // Tests ASSERT_TRUE.
@@ -3548,8 +3550,8 @@ TEST(AssertionTest, ASSERT_TRUE) {
 // Tests ASSERT_TRUE(predicate) for predicates returning AssertionResult.
 TEST(AssertionTest, AssertTrueWithAssertionResult) {
   ASSERT_TRUE(ResultIsEven(2));
-#if !defined(__BORLANDC__) || __BORLANDC__ >= 0x600
-  // ICE's in C++Builder 2007.
+#ifndef __BORLANDC__
+  // ICE's in C++Builder.
   EXPECT_FATAL_FAILURE(ASSERT_TRUE(ResultIsEven(3)),
                        "Value of: ResultIsEven(3)\n"
                        "  Actual: false (3 is odd)\n"
@@ -3574,8 +3576,8 @@ TEST(AssertionTest, ASSERT_FALSE) {
 // Tests ASSERT_FALSE(predicate) for predicates returning AssertionResult.
 TEST(AssertionTest, AssertFalseWithAssertionResult) {
   ASSERT_FALSE(ResultIsEven(3));
-#if !defined(__BORLANDC__) || __BORLANDC__ >= 0x600
-  // ICE's in C++Builder 2007.
+#ifndef __BORLANDC__
+  // ICE's in C++Builder.
   EXPECT_FATAL_FAILURE(ASSERT_FALSE(ResultIsEven(2)),
                        "Value of: ResultIsEven(2)\n"
                        "  Actual: true (2 is even)\n"
@@ -3590,7 +3592,7 @@ TEST(AssertionTest, AssertFalseWithAssertionResult) {
 
 #ifdef __BORLANDC__
 // Restores warnings after previous "#pragma option push" supressed them
-#pragma option pop
+# pragma option pop
 #endif
 
 // Tests using ASSERT_EQ on double values.  The purpose is to make
@@ -3693,13 +3695,14 @@ void ThrowNothing() {}
 TEST(AssertionTest, ASSERT_THROW) {
   ASSERT_THROW(ThrowAnInteger(), int);
 
-#ifndef __BORLANDC__
+# ifndef __BORLANDC__
+
   // ICE's in C++Builder 2007 and 2009.
   EXPECT_FATAL_FAILURE(
       ASSERT_THROW(ThrowAnInteger(), bool),
       "Expected: ThrowAnInteger() throws an exception of type bool.\n"
       "  Actual: it throws a different type.");
-#endif
+# endif
 
   EXPECT_FATAL_FAILURE(
       ASSERT_THROW(ThrowNothing(), bool),
@@ -3730,7 +3733,8 @@ TEST(AssertionTest, ASSERT_ANY_THROW) {
 // compile.
 TEST(AssertionTest, AssertPrecedence) {
   ASSERT_EQ(1 < 2, true);
-  ASSERT_EQ(true && false, false);
+  bool false_value = false;
+  ASSERT_EQ(true && false_value, false);
 }
 
 // A subroutine used by the following test.
@@ -3807,7 +3811,7 @@ TEST(AssertionTest, ExpectWorksWithUncopyableObject) {
 
 enum NamedEnum {
   kE1 = 0,
-  kE2 = 1,
+  kE2 = 1
 };
 
 TEST(AssertionTest, NamedEnum) {
@@ -3820,13 +3824,15 @@ TEST(AssertionTest, NamedEnum) {
 // The version of gcc used in XCode 2.2 has a bug and doesn't allow
 // anonymous enums in assertions.  Therefore the following test is not
 // done on Mac.
-// Sun Studio also rejects this code.
-#if !GTEST_OS_MAC && !defined(__SUNPRO_CC)
+// Sun Studio and HP aCC also reject this code.
+#if !GTEST_OS_MAC && !defined(__SUNPRO_CC) && !defined(__HP_aCC)
 
 // Tests using assertions with anonymous enums.
 enum {
   kCaseA = -1,
-#if GTEST_OS_LINUX
+
+# if GTEST_OS_LINUX
+
   // We want to test the case where the size of the anonymous enum is
   // larger than sizeof(int), to make sure our implementation of the
   // assertions doesn't truncate the enums.  However, MSVC
@@ -3837,16 +3843,22 @@ enum {
   // int size.  We want to test whether this will confuse the
   // assertions.
   kCaseB = testing::internal::kMaxBiggestInt,
-#else
+
+# else
+
   kCaseB = INT_MAX,
-#endif  // GTEST_OS_LINUX
-  kCaseC = 42,
+
+# endif  // GTEST_OS_LINUX
+
+  kCaseC = 42
 };
 
 TEST(AssertionTest, AnonymousEnum) {
-#if GTEST_OS_LINUX
+# if GTEST_OS_LINUX
+
   EXPECT_EQ(static_cast<int>(kCaseA), static_cast<int>(kCaseB));
-#endif  // GTEST_OS_LINUX
+
+# endif  // GTEST_OS_LINUX
 
   EXPECT_EQ(kCaseA, kCaseA);
   EXPECT_NE(kCaseA, kCaseB);
@@ -3865,10 +3877,16 @@ TEST(AssertionTest, AnonymousEnum) {
   ASSERT_LE(kCaseA, kCaseB);
   ASSERT_GT(kCaseB, kCaseA);
   ASSERT_GE(kCaseA, kCaseA);
+
+# ifndef __BORLANDC__
+
+  // ICE's in C++Builder.
   EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseB),
                        "Value of: kCaseB");
   EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseC),
                        "Actual: 42");
+# endif
+
   EXPECT_FATAL_FAILURE(ASSERT_EQ(kCaseA, kCaseC),
                        "Which is: -1");
 }
@@ -3925,12 +3943,14 @@ TEST(HRESULTAssertionTest, EXPECT_HRESULT_FAILED) {
 TEST(HRESULTAssertionTest, ASSERT_HRESULT_FAILED) {
   ASSERT_HRESULT_FAILED(E_UNEXPECTED);
 
-#ifndef __BORLANDC__
+# ifndef __BORLANDC__
+
   // ICE's in C++Builder 2007 and 2009.
   EXPECT_FATAL_FAILURE(ASSERT_HRESULT_FAILED(OkHRESULTSuccess()),
     "Expected: (OkHRESULTSuccess()) fails.\n"
     "  Actual: 0x00000000");
-#endif
+# endif
+
   EXPECT_FATAL_FAILURE(ASSERT_HRESULT_FAILED(FalseHRESULTSuccess()),
     "Expected: (FalseHRESULTSuccess()) fails.\n"
     "  Actual: 0x00000001");
@@ -3947,12 +3967,13 @@ TEST(HRESULTAssertionTest, Streaming) {
       EXPECT_HRESULT_SUCCEEDED(E_UNEXPECTED) << "expected failure",
       "expected failure");
 
-#ifndef __BORLANDC__
+# ifndef __BORLANDC__
+
   // ICE's in C++Builder 2007 and 2009.
   EXPECT_FATAL_FAILURE(
       ASSERT_HRESULT_SUCCEEDED(E_UNEXPECTED) << "expected failure",
       "expected failure");
-#endif
+# endif
 
   EXPECT_NONFATAL_FAILURE(
       EXPECT_HRESULT_FAILED(S_OK) << "expected failure",
@@ -3967,7 +3988,7 @@ TEST(HRESULTAssertionTest, Streaming) {
 
 #ifdef __BORLANDC__
 // Silences warnings: "Condition is always true", "Unreachable code"
-#pragma option push -w-ccc -w-rch
+# pragma option push -w-ccc -w-rch
 #endif
 
 // Tests that the assertion macros behave like single statements.
@@ -4188,7 +4209,7 @@ TEST(ExpectTest, ExpectFalseWithAssertionResult) {
 
 #ifdef __BORLANDC__
 // Restores warnings after previous "#pragma option push" supressed them
-#pragma option pop
+# pragma option pop
 #endif
 
 // Tests EXPECT_EQ.
@@ -4219,7 +4240,7 @@ TEST(ExpectTest, EXPECT_EQ_Double) {
 TEST(ExpectTest, EXPECT_EQ_NULL) {
   // A success.
   const char* p = NULL;
-  // Some older GCC versions may issue a spurious waring in this or the next
+  // Some older GCC versions may issue a spurious warning in this or the next
   // assertion statement. This warning should not be suppressed with
   // static_cast since the test verifies the ability to use bare NULL as the
   // expected parameter to the macro.
@@ -4489,8 +4510,10 @@ TEST(MacroTest, SUCCEED) {
 // Tests using bool values in {EXPECT|ASSERT}_EQ.
 TEST(EqAssertionTest, Bool) {
   EXPECT_EQ(true,  true);
-  EXPECT_FATAL_FAILURE(ASSERT_EQ(false, true),
-                       "Value of: true");
+  EXPECT_FATAL_FAILURE({
+      bool false_value = false;
+      ASSERT_EQ(false_value, true);
+    }, "Value of: true");
 }
 
 // Tests using int values in {EXPECT|ASSERT}_EQ.
@@ -4774,10 +4797,13 @@ TEST(ComparisonAssertionTest, AcceptsUnprintableArgs) {
 
   // Code tested by EXPECT_FATAL_FAILURE cannot reference local
   // variables, so we have to write UnprintableChar('x') instead of x.
+#ifndef __BORLANDC__
+  // ICE's in C++Builder.
   EXPECT_FATAL_FAILURE(ASSERT_NE(UnprintableChar('x'), UnprintableChar('x')),
                        "1-byte object <78>");
   EXPECT_FATAL_FAILURE(ASSERT_LE(UnprintableChar('y'), UnprintableChar('x')),
                        "1-byte object <78>");
+#endif
   EXPECT_FATAL_FAILURE(ASSERT_LE(UnprintableChar('y'), UnprintableChar('x')),
                        "1-byte object <79>");
   EXPECT_FATAL_FAILURE(ASSERT_GE(UnprintableChar('x'), UnprintableChar('y')),
@@ -5424,6 +5450,7 @@ class InitGoogleTestTest : public Test {
 
   // This macro wraps TestParsingFlags s.t. the user doesn't need
   // to specify the array sizes.
+
 #define GTEST_TEST_PARSING_FLAGS_(argv1, argv2, expected, should_print_help) \
   TestParsingFlags(sizeof(argv1)/sizeof(*argv1) - 1, argv1, \
                    sizeof(argv2)/sizeof(*argv2) - 1, argv2, \
@@ -6237,7 +6264,7 @@ TEST(StreamingAssertionsTest, Unconditional) {
 
 #ifdef __BORLANDC__
 // Silences warnings: "Condition is always true", "Unreachable code"
-#pragma option push -w-ccc -w-rch
+# pragma option push -w-ccc -w-rch
 #endif
 
 TEST(StreamingAssertionsTest, Truth) {
@@ -6260,7 +6287,7 @@ TEST(StreamingAssertionsTest, Truth2) {
 
 #ifdef __BORLANDC__
 // Restores warnings after previous "#pragma option push" supressed them
-#pragma option pop
+# pragma option pop
 #endif
 
 TEST(StreamingAssertionsTest, IntegerEquals) {
@@ -6469,8 +6496,9 @@ TEST(ColoredOutputTest, UsesColorsWhenTermSupportsColors) {
 
 // Verifies that StaticAssertTypeEq works in a namespace scope.
 
-static bool dummy1 = StaticAssertTypeEq<bool, bool>();
-static bool dummy2 = StaticAssertTypeEq<const int, const int>();
+static bool dummy1 GTEST_ATTRIBUTE_UNUSED_ = StaticAssertTypeEq<bool, bool>();
+static bool dummy2 GTEST_ATTRIBUTE_UNUSED_ =
+    StaticAssertTypeEq<const int, const int>();
 
 // Verifies that StaticAssertTypeEq works in a class.
 
@@ -7194,8 +7222,10 @@ TEST(CopyArrayTest, WorksForDegeneratedArrays) {
 TEST(CopyArrayTest, WorksForOneDimensionalArrays) {
   const char a[3] = "hi";
   int b[3];
+#ifndef __BORLANDC__  // C++Builder cannot compile some array size deductions.
   CopyArray(a, &b);
   EXPECT_TRUE(ArrayEq(a, b));
+#endif
 
   int c[3];
   CopyArray(a, 3, c);
@@ -7205,8 +7235,10 @@ TEST(CopyArrayTest, WorksForOneDimensionalArrays) {
 TEST(CopyArrayTest, WorksForTwoDimensionalArrays) {
   const int a[2][3] = { { 0, 1, 2 }, { 3, 4, 5 } };
   int b[2][3];
+#ifndef __BORLANDC__  // C++Builder cannot compile some array size deductions.
   CopyArray(a, &b);
   EXPECT_TRUE(ArrayEq(a, b));
+#endif
 
   int c[2][3];
   CopyArray(a, 2, c);

@@ -101,7 +101,7 @@ struct LinkedPtrLessThan {
     (defined(_MSC_VER) && !defined(_NATIVE_WCHAR_T_DEFINED))
 // wchar_t is a typedef.
 #else
-#define GMOCK_WCHAR_T_IS_NATIVE_ 1
+# define GMOCK_WCHAR_T_IS_NATIVE_ 1
 #endif
 
 // signed wchar_t and unsigned wchar_t are NOT in the C++ standard.
@@ -114,7 +114,8 @@ struct LinkedPtrLessThan {
 // To gcc,
 //   wchar_t == signed wchar_t != unsigned wchar_t == unsigned int
 #ifdef __GNUC__
-#define GMOCK_HAS_SIGNED_WCHAR_T_ 1  // signed/unsigned wchar_t are valid types.
+// signed/unsigned wchar_t are valid types.
+# define GMOCK_HAS_SIGNED_WCHAR_T_ 1
 #endif
 
 // In what follows, we use the term "kind" to indicate whether a type
@@ -304,7 +305,7 @@ inline void Expect(bool condition, const char* file, int line) {
 // Severity level of a log.
 enum LogSeverity {
   INFO = 0,
-  WARNING = 1,
+  WARNING = 1
 };
 
 // Valid values for the --gmock_verbose flag.

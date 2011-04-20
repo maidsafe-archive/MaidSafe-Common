@@ -36,10 +36,12 @@
 #include <stdio.h>
 
 #if GTEST_OS_MAC
-#include <time.h>
+# include <time.h>
 #endif  // GTEST_OS_MAC
 
+#include <list>
 #include <utility>  // For std::pair and std::make_pair.
+#include <vector>
 
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
@@ -79,12 +81,12 @@ class Derived : public Base {
 
 TEST(ImplicitCastTest, ConvertsPointers) {
   Derived derived(0);
-  EXPECT_TRUE(&derived == ::testing::internal::implicit_cast<Base*>(&derived));
+  EXPECT_TRUE(&derived == ::testing::internal::ImplicitCast_<Base*>(&derived));
 }
 
 TEST(ImplicitCastTest, CanUseInheritance) {
   Derived derived(1);
-  Base base = ::testing::internal::implicit_cast<Base>(derived);
+  Base base = ::testing::internal::ImplicitCast_<Base>(derived);
   EXPECT_EQ(derived.member(), base.member());
 }
 
@@ -103,7 +105,7 @@ class Castable {
 TEST(ImplicitCastTest, CanUseNonConstCastOperator) {
   bool converted = false;
   Castable castable(&converted);
-  Base base = ::testing::internal::implicit_cast<Base>(castable);
+  Base base = ::testing::internal::ImplicitCast_<Base>(castable);
   EXPECT_TRUE(converted);
 }
 
@@ -122,7 +124,7 @@ class ConstCastable {
 TEST(ImplicitCastTest, CanUseConstCastOperatorOnConstValues) {
   bool converted = false;
   const ConstCastable const_castable(&converted);
-  Base base = ::testing::internal::implicit_cast<Base>(const_castable);
+  Base base = ::testing::internal::ImplicitCast_<Base>(const_castable);
   EXPECT_TRUE(converted);
 }
 
@@ -148,14 +150,14 @@ TEST(ImplicitCastTest, CanSelectBetweenConstAndNonConstCasrAppropriately) {
   bool converted = false;
   bool const_converted = false;
   ConstAndNonConstCastable castable(&converted, &const_converted);
-  Base base = ::testing::internal::implicit_cast<Base>(castable);
+  Base base = ::testing::internal::ImplicitCast_<Base>(castable);
   EXPECT_TRUE(converted);
   EXPECT_FALSE(const_converted);
 
   converted = false;
   const_converted = false;
   const ConstAndNonConstCastable const_castable(&converted, &const_converted);
-  base = ::testing::internal::implicit_cast<Base>(const_castable);
+  base = ::testing::internal::ImplicitCast_<Base>(const_castable);
   EXPECT_FALSE(converted);
   EXPECT_TRUE(const_converted);
 }
@@ -167,8 +169,27 @@ class To {
 
 TEST(ImplicitCastTest, CanUseImplicitConstructor) {
   bool converted = false;
-  To to = ::testing::internal::implicit_cast<To>(&converted);
+  To to = ::testing::internal::ImplicitCast_<To>(&converted);
+  (void)to;
   EXPECT_TRUE(converted);
+}
+
+TEST(IteratorTraitsTest, WorksForSTLContainerIterators) {
+  StaticAssertTypeEq<int,
+      IteratorTraits< ::std::vector<int>::const_iterator>::value_type>();
+  StaticAssertTypeEq<bool,
+      IteratorTraits< ::std::list<bool>::iterator>::value_type>();
+}
+
+TEST(IteratorTraitsTest, WorksForPointerToNonConst) {
+  StaticAssertTypeEq<char, IteratorTraits<char*>::value_type>();
+  StaticAssertTypeEq<const void*, IteratorTraits<const void**>::value_type>();
+}
+
+TEST(IteratorTraitsTest, WorksForPointerToConst) {
+  StaticAssertTypeEq<char, IteratorTraits<const char*>::value_type>();
+  StaticAssertTypeEq<const void*,
+      IteratorTraits<const void* const*>::value_type>();
 }
 
 // Tests that the element_type typedef is available in scoped_ptr and refers
@@ -206,6 +227,44 @@ TEST(GtestCheckSyntaxTest, WorksWithSwitch) {
   switch(0)
     case 0:
       GTEST_CHECK_(true) << "Check failed in switch case";
+}
+
+// Verifies behavior of FormatFileLocation.
+TEST(FormatFileLocationTest, FormatsFileLocation) {
+  EXPECT_PRED_FORMAT2(IsSubstring, "foo.cc", FormatFileLocation("foo.cc", 42));
+  EXPECT_PRED_FORMAT2(IsSubstring, "42", FormatFileLocation("foo.cc", 42));
+}
+
+TEST(FormatFileLocationTest, FormatsUnknownFile) {
+  EXPECT_PRED_FORMAT2(
+      IsSubstring, "unknown file", FormatFileLocation(NULL, 42));
+  EXPECT_PRED_FORMAT2(IsSubstring, "42", FormatFileLocation(NULL, 42));
+}
+
+TEST(FormatFileLocationTest, FormatsUknownLine) {
+  EXPECT_EQ("foo.cc:", FormatFileLocation("foo.cc", -1));
+}
+
+TEST(FormatFileLocationTest, FormatsUknownFileAndLine) {
+  EXPECT_EQ("unknown file:", FormatFileLocation(NULL, -1));
+}
+
+// Verifies behavior of FormatCompilerIndependentFileLocation.
+TEST(FormatCompilerIndependentFileLocationTest, FormatsFileLocation) {
+  EXPECT_EQ("foo.cc:42", FormatCompilerIndependentFileLocation("foo.cc", 42));
+}
+
+TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownFile) {
+  EXPECT_EQ("unknown file:42",
+            FormatCompilerIndependentFileLocation(NULL, 42));
+}
+
+TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownLine) {
+  EXPECT_EQ("foo.cc", FormatCompilerIndependentFileLocation("foo.cc", -1));
+}
+
+TEST(FormatCompilerIndependentFileLocationTest, FormatsUknownFileAndLine) {
+  EXPECT_EQ("unknown file", FormatCompilerIndependentFileLocation(NULL, -1));
 }
 
 #if GTEST_OS_MAC
@@ -289,15 +348,19 @@ TEST(GtestCheckDeathTest, LivesSilentlyOnSuccess) {
 // For simplicity, we only cover the most important platforms here.
 TEST(RegexEngineSelectionTest, SelectsCorrectRegexEngine) {
 #if GTEST_HAS_POSIX_RE
+
   EXPECT_TRUE(GTEST_USES_POSIX_RE);
+
 #else
+
   EXPECT_TRUE(GTEST_USES_SIMPLE_RE);
+
 #endif
 }
 
 #if GTEST_USES_POSIX_RE
 
-#if GTEST_HAS_TYPED_TEST
+# if GTEST_HAS_TYPED_TEST
 
 template <typename Str>
 class RETest : public ::testing::Test {};
@@ -306,9 +369,9 @@ class RETest : public ::testing::Test {};
 // supports.
 typedef testing::Types<
     ::std::string,
-#if GTEST_HAS_GLOBAL_STRING
+#  if GTEST_HAS_GLOBAL_STRING
     ::string,
-#endif  // GTEST_HAS_GLOBAL_STRING
+#  endif  // GTEST_HAS_GLOBAL_STRING
     const char*> StringTypes;
 
 TYPED_TEST_CASE(RETest, StringTypes);
@@ -359,7 +422,7 @@ TYPED_TEST(RETest, PartialMatchWorks) {
   EXPECT_FALSE(RE::PartialMatch(TypeParam("zza"), re));
 }
 
-#endif  // GTEST_HAS_TYPED_TEST
+# endif  // GTEST_HAS_TYPED_TEST
 
 #elif GTEST_USES_SIMPLE_RE
 

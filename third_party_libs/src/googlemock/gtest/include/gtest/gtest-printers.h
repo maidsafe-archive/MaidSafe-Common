@@ -308,7 +308,10 @@ void DefaultPrintTo(IsNotContainer /* dummy */,
   } else {
     // C++ doesn't allow casting from a function pointer to any object
     // pointer.
-    if (ImplicitlyConvertible<T*, const void*>::value) {
+    //
+    // IsTrue() silences warnings: "Condition is always true",
+    // "unreachable code".
+    if (IsTrue(ImplicitlyConvertible<T*, const void*>::value)) {
       // T is not a function type.  We just call << to print p,
       // relying on ADL to pick up user-defined << for their pointer
       // types, if any.
@@ -404,22 +407,22 @@ GTEST_API_ void PrintTo(wchar_t wc, ::std::ostream* os);
 // Overloads for C strings.
 GTEST_API_ void PrintTo(const char* s, ::std::ostream* os);
 inline void PrintTo(char* s, ::std::ostream* os) {
-  PrintTo(implicit_cast<const char*>(s), os);
+  PrintTo(ImplicitCast_<const char*>(s), os);
 }
 
 // signed/unsigned char is often used for representing binary data, so
 // we print pointers to it as void* to be safe.
 inline void PrintTo(const signed char* s, ::std::ostream* os) {
-  PrintTo(implicit_cast<const void*>(s), os);
+  PrintTo(ImplicitCast_<const void*>(s), os);
 }
 inline void PrintTo(signed char* s, ::std::ostream* os) {
-  PrintTo(implicit_cast<const void*>(s), os);
+  PrintTo(ImplicitCast_<const void*>(s), os);
 }
 inline void PrintTo(const unsigned char* s, ::std::ostream* os) {
-  PrintTo(implicit_cast<const void*>(s), os);
+  PrintTo(ImplicitCast_<const void*>(s), os);
 }
 inline void PrintTo(unsigned char* s, ::std::ostream* os) {
-  PrintTo(implicit_cast<const void*>(s), os);
+  PrintTo(ImplicitCast_<const void*>(s), os);
 }
 
 // MSVC can be configured to define wchar_t as a typedef of unsigned
@@ -431,7 +434,7 @@ inline void PrintTo(unsigned char* s, ::std::ostream* os) {
 // Overloads for wide C strings
 GTEST_API_ void PrintTo(const wchar_t* s, ::std::ostream* os);
 inline void PrintTo(wchar_t* s, ::std::ostream* os) {
-  PrintTo(implicit_cast<const wchar_t*>(s), os);
+  PrintTo(ImplicitCast_<const wchar_t*>(s), os);
 }
 #endif
 
@@ -578,8 +581,8 @@ class UniversalPrinter {
   // MSVC warns about adding const to a function type, so we want to
   // disable the warning.
 #ifdef _MSC_VER
-#pragma warning(push)          // Saves the current warning state.
-#pragma warning(disable:4180)  // Temporarily disables warning 4180.
+# pragma warning(push)          // Saves the current warning state.
+# pragma warning(disable:4180)  // Temporarily disables warning 4180.
 #endif  // _MSC_VER
 
   // Note: we deliberately don't call this PrintTo(), as that name
@@ -598,7 +601,7 @@ class UniversalPrinter {
   }
 
 #ifdef _MSC_VER
-#pragma warning(pop)           // Restores the warning state.
+# pragma warning(pop)           // Restores the warning state.
 #endif  // _MSC_VER
 };
 
@@ -649,8 +652,8 @@ class UniversalPrinter<T&> {
   // MSVC warns about adding const to a function type, so we want to
   // disable the warning.
 #ifdef _MSC_VER
-#pragma warning(push)          // Saves the current warning state.
-#pragma warning(disable:4180)  // Temporarily disables warning 4180.
+# pragma warning(push)          // Saves the current warning state.
+# pragma warning(disable:4180)  // Temporarily disables warning 4180.
 #endif  // _MSC_VER
 
   static void Print(const T& value, ::std::ostream* os) {
@@ -663,7 +666,7 @@ class UniversalPrinter<T&> {
   }
 
 #ifdef _MSC_VER
-#pragma warning(pop)           // Restores the warning state.
+# pragma warning(pop)           // Restores the warning state.
 #endif  // _MSC_VER
 };
 
@@ -736,12 +739,26 @@ struct TuplePrefixPrinter<0> {
   template <typename Tuple>
   static void TersePrintPrefixToStrings(const Tuple&, Strings*) {}
 };
+// We have to specialize the entire TuplePrefixPrinter<> class
+// template here, even though the definition of
+// TersePrintPrefixToStrings() is the same as the generic version, as
+// Embarcadero (formerly CodeGear, formerly Borland) C++ doesn't
+// support specializing a method template of a class template.
 template <>
-template <typename Tuple>
-void TuplePrefixPrinter<1>::PrintPrefixTo(const Tuple& t, ::std::ostream* os) {
-  UniversalPrinter<typename ::std::tr1::tuple_element<0, Tuple>::type>::
-      Print(::std::tr1::get<0>(t), os);
-}
+struct TuplePrefixPrinter<1> {
+  template <typename Tuple>
+  static void PrintPrefixTo(const Tuple& t, ::std::ostream* os) {
+    UniversalPrinter<typename ::std::tr1::tuple_element<0, Tuple>::type>::
+        Print(::std::tr1::get<0>(t), os);
+  }
+
+  template <typename Tuple>
+  static void TersePrintPrefixToStrings(const Tuple& t, Strings* strings) {
+    ::std::stringstream ss;
+    UniversalTersePrint(::std::tr1::get<0>(t), &ss);
+    strings->push_back(ss.str());
+  }
+};
 
 // Helper function for printing a tuple.  T must be instantiated with
 // a tuple type.

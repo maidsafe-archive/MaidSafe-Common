@@ -1004,8 +1004,8 @@ TEST(StrEqTest, MatchesEqualString) {
 }
 
 TEST(StrEqTest, CanDescribeSelf) {
-  Matcher<string> m = StrEq("Hi-\'\"\?\\\a\b\f\n\r\t\v\xD3");
-  EXPECT_EQ("is equal to \"Hi-\'\\\"\\?\\\\\\a\\b\\f\\n\\r\\t\\v\\xD3\"",
+  Matcher<string> m = StrEq("Hi-\'\"?\\\a\b\f\n\r\t\v\xD3");
+  EXPECT_EQ("is equal to \"Hi-\'\\\"?\\\\\\a\\b\\f\\n\\r\\t\\v\\xD3\"",
       Describe(m));
 
   string str("01204500800");
@@ -1393,8 +1393,8 @@ TEST(StdWideStrEqTest, MatchesEqual) {
 }
 
 TEST(StdWideStrEqTest, CanDescribeSelf) {
-  Matcher< ::std::wstring> m = StrEq(L"Hi-\'\"\?\\\a\b\f\n\r\t\v");
-  EXPECT_EQ("is equal to L\"Hi-\'\\\"\\?\\\\\\a\\b\\f\\n\\r\\t\\v\"",
+  Matcher< ::std::wstring> m = StrEq(L"Hi-\'\"?\\\a\b\f\n\r\t\v");
+  EXPECT_EQ("is equal to L\"Hi-\'\\\"?\\\\\\a\\b\\f\\n\\r\\t\\v\"",
     Describe(m));
 
   Matcher< ::std::wstring> m2 = StrEq(L"\xD3\x576\x8D3\xC74D");
@@ -1584,8 +1584,8 @@ TEST(GlobalWideStrEqTest, MatchesEqual) {
 }
 
 TEST(GlobalWideStrEqTest, CanDescribeSelf) {
-  Matcher< ::wstring> m = StrEq(L"Hi-\'\"\?\\\a\b\f\n\r\t\v");
-  EXPECT_EQ("is equal to L\"Hi-\'\\\"\\?\\\\\\a\\b\\f\\n\\r\\t\\v\"",
+  Matcher< ::wstring> m = StrEq(L"Hi-\'\"?\\\a\b\f\n\r\t\v");
+  EXPECT_EQ("is equal to L\"Hi-\'\\\"?\\\\\\a\\b\\f\\n\\r\\t\\v\"",
     Describe(m));
 
   Matcher< ::wstring> m2 = StrEq(L"\xD3\x576\x8D3\xC74D");
@@ -2254,6 +2254,29 @@ TEST(TrulyTest, CanBeUsedWithFunctor) {
   Matcher<int> m = Truly(IsGreaterThan(5));
   EXPECT_TRUE(m.Matches(6));
   EXPECT_FALSE(m.Matches(4));
+}
+
+// A class that can be implicitly converted to bool.
+class ConvertibleToBool {
+ public:
+  explicit ConvertibleToBool(int number) : number_(number) {}
+  operator bool() const { return number_ != 0; }
+
+ private:
+  int number_;
+};
+
+ConvertibleToBool IsNotZero(int number) {
+  return ConvertibleToBool(number);
+}
+
+// Tests that the predicate used in Truly() may return a class that's
+// implicitly convertible to bool, even when the class has no
+// operator!().
+TEST(TrulyTest, PredicateCanReturnAClassConvertibleToBool) {
+  Matcher<int> m = Truly(IsNotZero);
+  EXPECT_TRUE(m.Matches(1));
+  EXPECT_FALSE(m.Matches(0));
 }
 
 // Tests that Truly(predicate) can describe itself properly.

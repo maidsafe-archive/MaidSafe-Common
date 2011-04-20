@@ -43,6 +43,7 @@
 #include "gmock/internal/gmock-port.h"
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
+#include "gtest/internal/gtest-port.h"
 
 namespace testing {
 namespace internal {
@@ -88,6 +89,7 @@ using testing::Ne;
 using testing::Return;
 using testing::Sequence;
 using testing::internal::ExpectationTester;
+using testing::internal::FormatFileLocation;
 using testing::internal::g_gmock_mutex;
 using testing::internal::kErrorVerbosity;
 using testing::internal::kInfoVerbosity;
@@ -100,6 +102,34 @@ using testing::HasSubstr;
 using testing::internal::CaptureStdout;
 using testing::internal::GetCapturedStdout;
 #endif
+
+class Incomplete;
+
+class MockIncomplete {
+ public:
+  // This line verifies that a mock method can take a by-reference
+  // argument of an incomplete type.
+  MOCK_METHOD1(ByRefFunc, void(const Incomplete& x));
+};
+
+// Tells Google Mock how to print a value of type Incomplete.
+void PrintTo(const Incomplete& x, ::std::ostream* os);
+
+TEST(MockMethodTest, CanInstantiateWithIncompleteArgType) {
+  // Even though this mock class contains a mock method that takes
+  // by-reference an argument whose type is incomplete, we can still
+  // use the mock, as long as Google Mock knows how to print the
+  // argument.
+  MockIncomplete incomplete;
+  EXPECT_CALL(incomplete, ByRefFunc(_))
+      .Times(AnyNumber());
+}
+
+// The definition of the printer for the argument type doesn't have to
+// be visible where the mock is used.
+void PrintTo(const Incomplete& /* x */, ::std::ostream* os) {
+  *os << "incomplete";
+}
 
 class Result {};
 
@@ -797,6 +827,19 @@ TEST(ExpectCallTest, NthMatchTakesNthAction) {
   EXPECT_EQ(3, b.DoB());
 }
 
+// Tests that the WillRepeatedly() action is taken when the WillOnce(...)
+// list is exhausted.
+TEST(ExpectCallTest, TakesRepeatedActionWhenWillListIsExhausted) {
+  MockB b;
+  EXPECT_CALL(b, DoB())
+      .WillOnce(Return(1))
+      .WillRepeatedly(Return(2));
+
+  EXPECT_EQ(1, b.DoB());
+  EXPECT_EQ(2, b.DoB());
+  EXPECT_EQ(2, b.DoB());
+}
+
 #if GTEST_HAS_STREAM_REDIRECTION
 
 // Tests that the default action is taken when the WillOnce(...) list is
@@ -832,20 +875,33 @@ TEST(ExpectCallTest, TakesDefaultActionWhenWillListIsExhausted) {
                         " - returning default value."));
 }
 
-#endif  // GTEST_HAS_STREAM_REDIRECTION
-
-// Tests that the WillRepeatedly() action is taken when the WillOnce(...)
-// list is exhausted.
-TEST(ExpectCallTest, TakesRepeatedActionWhenWillListIsExhausted) {
+TEST(FunctionMockerTest, ReportsExpectCallLocationForExhausedActions) {
   MockB b;
-  EXPECT_CALL(b, DoB())
-      .WillOnce(Return(1))
-      .WillRepeatedly(Return(2));
+  std::string expect_call_location = FormatFileLocation(__FILE__, __LINE__ + 1);
+  EXPECT_CALL(b, DoB()).Times(AnyNumber()).WillOnce(Return(1));
 
   EXPECT_EQ(1, b.DoB());
-  EXPECT_EQ(2, b.DoB());
-  EXPECT_EQ(2, b.DoB());
+
+  CaptureStdout();
+  EXPECT_EQ(0, b.DoB());
+  const String output = GetCapturedStdout();
+  // The warning message should contain the call location.
+  EXPECT_PRED_FORMAT2(IsSubstring, expect_call_location, output);
 }
+
+TEST(FunctionMockerTest, ReportsDefaultActionLocationOfUninterestingCalls) {
+  std::string on_call_location;
+  CaptureStdout();
+  {
+    MockB b;
+    on_call_location = FormatFileLocation(__FILE__, __LINE__ + 1);
+    ON_CALL(b, DoB(_)).WillByDefault(Return(0));
+    b.DoB(0);
+  }
+  EXPECT_PRED_FORMAT2(IsSubstring, on_call_location, GetCapturedStdout());
+}
+
+#endif  // GTEST_HAS_STREAM_REDIRECTION
 
 // Tests that an uninteresting call performs the default action.
 TEST(UninterestingCallTest, DoesDefaultAction) {
@@ -1299,12 +1355,33 @@ TEST(SequenceTest, Retirement) {
 TEST(ExpectationTest, ConstrutorsWork) {
   MockA a;
   Expectation e1;  // Default ctor.
-  Expectation e2 = EXPECT_CALL(a, DoA(1));  // Ctor from EXPECT_CALL.
-  Expectation e3 = e2;  // Copy ctor.
+
+  // Ctor from various forms of EXPECT_CALL.
+  Expectation e2 = EXPECT_CALL(a, DoA(2));
+  Expectation e3 = EXPECT_CALL(a, DoA(3)).With(_);
+  {
+    Sequence s;
+    Expectation e4 = EXPECT_CALL(a, DoA(4)).Times(1);
+    Expectation e5 = EXPECT_CALL(a, DoA(5)).InSequence(s);
+  }
+  Expectation e6 = EXPECT_CALL(a, DoA(6)).After(e2);
+  Expectation e7 = EXPECT_CALL(a, DoA(7)).WillOnce(Return());
+  Expectation e8 = EXPECT_CALL(a, DoA(8)).WillRepeatedly(Return());
+  Expectation e9 = EXPECT_CALL(a, DoA(9)).RetiresOnSaturation();
+
+  Expectation e10 = e2;  // Copy ctor.
 
   EXPECT_THAT(e1, Ne(e2));
-  EXPECT_THAT(e2, Eq(e3));
-  a.DoA(1);
+  EXPECT_THAT(e2, Eq(e10));
+
+  a.DoA(2);
+  a.DoA(3);
+  a.DoA(4);
+  a.DoA(5);
+  a.DoA(6);
+  a.DoA(7);
+  a.DoA(8);
+  a.DoA(9);
 }
 
 TEST(ExpectationTest, AssignmentWorks) {
@@ -1640,14 +1717,14 @@ TEST(DeletingMockEarlyTest, Success2) {
 // Suppresses warning on unreferenced formal parameter in MSVC with
 // -W4.
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4100)
+# pragma warning(push)
+# pragma warning(disable:4100)
 #endif
 
 ACTION_P(Delete, ptr) { delete ptr; }
 
 #ifdef _MSC_VER
-#pragma warning(pop)
+# pragma warning(pop)
 #endif
 
 TEST(DeletingMockEarlyTest, CanDeleteSelfInActionReturningVoid) {
@@ -1813,7 +1890,9 @@ TEST(FunctionCallMessageTest, UninterestingCallGeneratesFyiWithStackTrace) {
   const String output = GetCapturedStdout();
   EXPECT_PRED_FORMAT2(IsSubstring, "GMOCK WARNING", output);
   EXPECT_PRED_FORMAT2(IsSubstring, "Stack trace:", output);
-#ifndef NDEBUG
+
+# ifndef NDEBUG
+
   // We check the stack trace content in dbg-mode only, as opt-mode
   // may inline the call we are interested in seeing.
 
@@ -1827,7 +1906,8 @@ TEST(FunctionCallMessageTest, UninterestingCallGeneratesFyiWithStackTrace) {
   c.NonVoidMethod();
   const String output2 = GetCapturedStdout();
   EXPECT_PRED_FORMAT2(IsSubstring, "NonVoidMethod(", output2);
-#endif  // NDEBUG
+
+# endif  // NDEBUG
 }
 
 // Tests that an uninteresting mock function call causes the function
@@ -1872,14 +1952,14 @@ class GMockVerboseFlagTest : public VerboseFlagPreservingFixture {
                     const string& function_name) {
     if (should_print) {
       EXPECT_THAT(output.c_str(), HasSubstr(expected_substring));
-#ifndef NDEBUG
+# ifndef NDEBUG
       // We check the stack trace content in dbg-mode only, as opt-mode
       // may inline the call we are interested in seeing.
       EXPECT_THAT(output.c_str(), HasSubstr(function_name));
-#else
+# else
       // Suppresses 'unused function parameter' warnings.
       static_cast<void>(function_name);
-#endif  // NDEBUG
+# endif  // NDEBUG
     } else {
       EXPECT_STREQ("", output.c_str());
     }

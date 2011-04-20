@@ -1392,15 +1392,15 @@ class TrulyMatcher {
   template <typename T>
   bool MatchAndExplain(T& x,  // NOLINT
                        MatchResultListener* /* listener */) const {
-#if GTEST_OS_WINDOWS
-    // MSVC warns about converting a value into bool (warning 4800).
-#pragma warning(push)          // Saves the current warning state.
-#pragma warning(disable:4800)  // Temporarily disables warning 4800.
-#endif  // GTEST_OS_WINDOWS
-    return predicate_(x);
-#if GTEST_OS_WINDOWS
-#pragma warning(pop)           // Restores the warning state.
-#endif  // GTEST_OS_WINDOWS
+    // Without the if-statement, MSVC sometimes warns about converting
+    // a value to bool (warning 4800).
+    //
+    // We cannot write 'return !!predicate_(x);' as that doesn't work
+    // when predicate_(x) returns a class convertible to bool but
+    // having no operator!().
+    if (predicate_(x))
+      return true;
+    return false;
   }
 
   void DescribeTo(::std::ostream* os) const {

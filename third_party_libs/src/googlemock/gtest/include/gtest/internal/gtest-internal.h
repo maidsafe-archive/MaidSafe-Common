@@ -40,10 +40,10 @@
 #include "gtest/internal/gtest-port.h"
 
 #if GTEST_OS_LINUX
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+# include <stdlib.h>
+# include <sys/types.h>
+# include <sys/wait.h>
+# include <unistd.h>
 #endif  // GTEST_OS_LINUX
 
 #include <ctype.h>
@@ -156,9 +156,9 @@ char (&IsNullLiteralHelper(...))[2];  // NOLINT
 #ifdef GTEST_ELLIPSIS_NEEDS_POD_
 // We lose support for NULL detection where the compiler doesn't like
 // passing non-POD classes through ellipsis (...).
-#define GTEST_IS_NULL_LITERAL_(x) false
+# define GTEST_IS_NULL_LITERAL_(x) false
 #else
-#define GTEST_IS_NULL_LITERAL_(x) \
+# define GTEST_IS_NULL_LITERAL_(x) \
     (sizeof(::testing::internal::IsNullLiteralHelper(x)) == 1)
 #endif  // GTEST_ELLIPSIS_NEEDS_POD_
 
@@ -195,22 +195,31 @@ class GTEST_API_ ScopedTrace {
 template <typename T>
 String StreamableToString(const T& streamable);
 
+// The Symbian compiler has a bug that prevents it from selecting the
+// correct overload of FormatForComparisonFailureMessage (see below)
+// unless we pass the first argument by reference.  If we do that,
+// however, Visual Age C++ 10.1 generates a compiler error.  Therefore
+// we only apply the work-around for Symbian.
+#if defined(__SYMBIAN32__)
+# define GTEST_CREF_WORKAROUND_ const&
+#else
+# define GTEST_CREF_WORKAROUND_
+#endif
+
 // When this operand is a const char* or char*, if the other operand
 // is a ::std::string or ::string, we print this operand as a C string
 // rather than a pointer (we do the same for wide strings); otherwise
 // we print it as a pointer to be safe.
 
 // This internal macro is used to avoid duplicated code.
-// Making the first operand const reference works around a bug in the
-// Symbian compiler which is unable to select the correct specialization of
-// FormatForComparisonFailureMessage.
 #define GTEST_FORMAT_IMPL_(operand2_type, operand1_printer)\
 inline String FormatForComparisonFailureMessage(\
-    operand2_type::value_type* const& str, const operand2_type& /*operand2*/) {\
+    operand2_type::value_type* GTEST_CREF_WORKAROUND_ str, \
+    const operand2_type& /*operand2*/) {\
   return operand1_printer(str);\
 }\
 inline String FormatForComparisonFailureMessage(\
-    const operand2_type::value_type* const& str, \
+    const operand2_type::value_type* GTEST_CREF_WORKAROUND_ str, \
     const operand2_type& /*operand2*/) {\
   return operand1_printer(str);\
 }
@@ -233,13 +242,10 @@ GTEST_FORMAT_IMPL_(::wstring, String::ShowWideCStringQuoted)
 // printed is a char/wchar_t pointer and the other operand is not a
 // string/wstring object.  In such cases, we just print the operand as
 // a pointer to be safe.
-//
-// Making the first operand const reference works around a bug in the
-// Symbian compiler which is unable to select the correct specialization of
-// FormatForComparisonFailureMessage.
 #define GTEST_FORMAT_CHAR_PTR_IMPL_(CharType)                       \
   template <typename T>                                             \
-  String FormatForComparisonFailureMessage(CharType* const& p, const T&) { \
+  String FormatForComparisonFailureMessage(CharType* GTEST_CREF_WORKAROUND_ p, \
+                                           const T&) { \
     return PrintToString(static_cast<const void*>(p));              \
   }
 
@@ -536,20 +542,6 @@ GTEST_API_ AssertionResult IsHRESULTFailure(const char* expr,
 
 #endif  // GTEST_OS_WINDOWS
 
-// Formats a source file path and a line number as they would appear
-// in a compiler error message.
-inline String FormatFileLocation(const char* file, int line) {
-  const char* const file_name = file == NULL ? "unknown file" : file;
-  if (line < 0) {
-    return String::Format("%s:", file_name);
-  }
-#ifdef _MSC_VER
-  return String::Format("%s(%d):", file_name, line);
-#else
-  return String::Format("%s:%d:", file_name, line);
-#endif  // _MSC_VER
-}
-
 // Types of SetUpTestCase() and TearDownTestCase() functions.
 typedef void (*SetUpTestCaseFunc)();
 typedef void (*TearDownTestCaseFunc)();
@@ -561,10 +553,10 @@ typedef void (*TearDownTestCaseFunc)();
 //
 //   test_case_name:   name of the test case
 //   name:             name of the test
-//   test_case_comment: a comment on the test case that will be included in
-//                      the test output
-//   comment:          a comment on the test that will be included in the
-//                     test output
+//   type_param        the name of the test's type parameter, or NULL if
+//                     this is not  a typed or a type-parameterized test.
+//   value_param       text representation of the test's value parameter,
+//                     or NULL if this is not a type-parameterized test.
 //   fixture_class_id: ID of the test fixture class
 //   set_up_tc:        pointer to the function that sets up the test case
 //   tear_down_tc:     pointer to the function that tears down the test case
@@ -573,7 +565,8 @@ typedef void (*TearDownTestCaseFunc)();
 //                     ownership of the factory object.
 GTEST_API_ TestInfo* MakeAndRegisterTestInfo(
     const char* test_case_name, const char* name,
-    const char* test_case_comment, const char* comment,
+    const char* type_param,
+    const char* value_param,
     TypeId fixture_class_id,
     SetUpTestCaseFunc set_up_tc,
     TearDownTestCaseFunc tear_down_tc,
@@ -662,8 +655,8 @@ class TypeParameterizedTest {
         String::Format("%s%s%s/%d", prefix, prefix[0] == '\0' ? "" : "/",
                        case_name, index).c_str(),
         GetPrefixUntilComma(test_names).c_str(),
-        String::Format("TypeParam = %s", GetTypeName<Type>().c_str()).c_str(),
-        "",
+        GetTypeName<Type>().c_str(),
+        NULL,  // No value parameter.
         GetTypeId<FixtureClass>(),
         TestClass::SetUpTestCase,
         TestClass::TearDownTestCase,
@@ -801,16 +794,17 @@ struct RemoveConst { typedef T type; };  // NOLINT
 template <typename T>
 struct RemoveConst<const T> { typedef T type; };  // NOLINT
 
-// MSVC 8.0 has a bug which causes the above definition to fail to
-// remove the const in 'const int[3]'.  The following specialization
-// works around the bug.  However, it causes trouble with gcc and thus
-// needs to be conditionally compiled.
-#ifdef _MSC_VER
+// MSVC 8.0, Sun C++, and IBM XL C++ have a bug which causes the above
+// definition to fail to remove the const in 'const int[3]' and 'const
+// char[3][4]'.  The following specialization works around the bug.
+// However, it causes trouble with GCC and thus needs to be
+// conditionally compiled.
+#if defined(_MSC_VER) || defined(__SUNPRO_CC) || defined(__IBMCPP__)
 template <typename T, size_t N>
-struct RemoveConst<T[N]> {
+struct RemoveConst<const T[N]> {
   typedef typename RemoveConst<T>::type type[N];
 };
-#endif  // _MSC_VER
+#endif
 
 // A handy wrapper around RemoveConst that works when the argument
 // T depends on template parameters.
@@ -880,11 +874,17 @@ class ImplicitlyConvertible {
   // possible loss of data, so we need to temporarily disable the
   // warning.
 #ifdef _MSC_VER
-#pragma warning(push)          // Saves the current warning state.
-#pragma warning(disable:4244)  // Temporarily disables warning 4244.
+# pragma warning(push)          // Saves the current warning state.
+# pragma warning(disable:4244)  // Temporarily disables warning 4244.
+
   static const bool value =
       sizeof(Helper(ImplicitlyConvertible::MakeFrom())) == 1;
-#pragma warning(pop)           // Restores the warning state.
+# pragma warning(pop)           // Restores the warning state.
+#elif defined(__BORLANDC__)
+  // C++Builder cannot use member overload resolution during template
+  // instantiation.  The simplest workaround is to use its C++0x type traits
+  // functions (C++Builder 2009 and above only).
+  static const bool value = __is_convertible(From, To);
 #else
   static const bool value =
       sizeof(Helper(ImplicitlyConvertible::MakeFrom())) == 1;
@@ -903,21 +903,45 @@ struct IsAProtocolMessage
   ImplicitlyConvertible<const T*, const ::proto2::Message*>::value> {
 };
 
-// When the compiler sees expression IsContainerTest<C>(0), the first
-// overload of IsContainerTest will be picked if C is an STL-style
-// container class (since C::const_iterator* is a valid type and 0 can
-// be converted to it), while the second overload will be picked
-// otherwise (since C::const_iterator will be an invalid type in this
-// case).  Therefore, we can determine whether C is a container class
-// by checking the type of IsContainerTest<C>(0).  The value of the
-// expression is insignificant.
+// When the compiler sees expression IsContainerTest<C>(0), if C is an
+// STL-style container class, the first overload of IsContainerTest
+// will be viable (since both C::iterator* and C::const_iterator* are
+// valid types and NULL can be implicitly converted to them).  It will
+// be picked over the second overload as 'int' is a perfect match for
+// the type of argument 0.  If C::iterator or C::const_iterator is not
+// a valid type, the first overload is not viable, and the second
+// overload will be picked.  Therefore, we can determine whether C is
+// a container class by checking the type of IsContainerTest<C>(0).
+// The value of the expression is insignificant.
+//
+// Note that we look for both C::iterator and C::const_iterator.  The
+// reason is that C++ injects the name of a class as a member of the
+// class itself (e.g. you can refer to class iterator as either
+// 'iterator' or 'iterator::iterator').  If we look for C::iterator
+// only, for example, we would mistakenly think that a class named
+// iterator is an STL container.
+//
+// Also note that the simpler approach of overloading
+// IsContainerTest(typename C::const_iterator*) and
+// IsContainerTest(...) doesn't work with Visual Age C++ and Sun C++.
 typedef int IsContainer;
 template <class C>
-IsContainer IsContainerTest(typename C::const_iterator*) { return 0; }
+IsContainer IsContainerTest(int /* dummy */,
+                            typename C::iterator* /* it */ = NULL,
+                            typename C::const_iterator* /* const_it */ = NULL) {
+  return 0;
+}
 
 typedef char IsNotContainer;
 template <class C>
-IsNotContainer IsContainerTest(...) { return '\0'; }
+IsNotContainer IsContainerTest(long /* dummy */) { return '\0'; }
+
+// EnableIf<condition>::type is void when 'Cond' is true, and
+// undefined when 'Cond' is false.  To use SFINAE to make a function
+// overload only apply when a particular expression is true, add
+// "typename EnableIf<expression>::type* = 0" as the last parameter.
+template<bool> struct EnableIf;
+template<> struct EnableIf<true> { typedef void type; };  // NOLINT
 
 // Utilities for native arrays.
 
@@ -1009,6 +1033,7 @@ class NativeArray {
  public:
   // STL-style container typedefs.
   typedef Element value_type;
+  typedef Element* iterator;
   typedef const Element* const_iterator;
 
   // Constructs from a native array.
@@ -1182,7 +1207,7 @@ class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
   GTEST_TEST_CLASS_NAME_(test_case_name, test_name)() {}\
  private:\
   virtual void TestBody();\
-  static ::testing::TestInfo* const test_info_;\
+  static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;\
   GTEST_DISALLOW_COPY_AND_ASSIGN_(\
       GTEST_TEST_CLASS_NAME_(test_case_name, test_name));\
 };\
@@ -1190,7 +1215,7 @@ class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
 ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_case_name, test_name)\
   ::test_info_ =\
     ::testing::internal::MakeAndRegisterTestInfo(\
-        #test_case_name, #test_name, "", "", \
+        #test_case_name, #test_name, NULL, NULL, \
         (parent_id), \
         parent_class::SetUpTestCase, \
         parent_class::TearDownTestCase, \
