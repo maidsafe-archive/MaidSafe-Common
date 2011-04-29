@@ -25,17 +25,33 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// #include "boost/filesystem/convenience.hpp"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/log.h"
 
 int main(int argc, char **argv) {
   // Initialising logging
   google::InitGoogleLogging(argv[0]);
-  // Choose to direct output to stderr or not.
+
+  // Choose to direct output to stderr instead of logfiles.
   FLAGS_logtostderr = false;
-  // If Google logging is linked in, log messages at or above this level.
-  // Severity levels are INFO, WARNING, ERROR, and FATAL (0 to 3 respectively).
+
+  // Choose to direct output to stderr as well as to logfiles.
+  FLAGS_alsologtostderr = false;
+
+  // Log messages at or above this level. Severity levels are INFO, WARNING,
+  // ERROR, and FATAL (0 to 3 respectively).
   FLAGS_minloglevel = 3;
+
+  // Prepend the log prefix to the start of each log line
+  FLAGS_log_prefix = true;
+
+  // Logfiles are written into this directory instead of the default logging one
+//  FLAGS_log_dir = boost::filesystem::temp_directory_path().string();
+
+  // Show all VLOG(m) messages for m <= this.
+  FLAGS_v = 0;
+
   testing::InitGoogleTest(&argc, argv);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
