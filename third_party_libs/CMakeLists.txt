@@ -48,17 +48,6 @@ IF(NOT BUILD_TARGET)
   SET(BUILD_TARGET "ALL")
 ENDIF()
 
-IF(${BUILD_TARGET} MATCHES "ALL")
-  SET(MSG "\nBuilding ALL targets.\nTo change this, run cmake with one of the following options:\n")
-ELSE()
-  SET(MSG "\nBuilding target ${BUILD_TARGET} only.\nTo change this, run cmake with one of the following options:\n")
-ENDIF()
-SET(MSG "${MSG}    -DBUILD_TARGET=ALL\n")
-SET(MSG "${MSG}    -DBUILD_TARGET=GMOCK_GTEST\n")
-SET(MSG "${MSG}    -DBUILD_TARGET=CRYPTOPP\n")
-SET(MSG "${MSG}    -DBUILD_TARGET=PROTOBUF\n")
-SET(MSG "${MSG}    -DBUILD_TARGET=GLOG\n")
-MESSAGE("${MSG}")
 SET(SEPARATOR "\n====================================================================================================\n\n")
 
 GET_FILENAME_COMPONENT(COMMON_ROOT_DIR ${CURRENT_DIR} PATH)
@@ -80,15 +69,12 @@ SET(BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin/")
 SET(SHARE_DIR "${CMAKE_INSTALL_PREFIX}/share/maidsafe/")
 SET(EXPORT_FILE "${SHARE_DIR}maidsafe_third_party.cmake")
 
-MESSAGE("The third party libraries and headers will be installed to:\n")
-MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${LIB_PREFIX_RELEASE})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${LIB_PREFIX_DEBUG})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${INC_DIR})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${BIN_DIR})
 EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${SHARE_DIR})
 FILE(WRITE ${EXPORT_FILE} "\n")
-FILE(WRITE ${CURRENT_DIR}/install_prefix.cmake "SET(MAIDSAFE_COMMON_INSTALL_PREFIX \"${CMAKE_INSTALL_PREFIX}\")")
 
 FUNCTION(APPEND_TO_EXPORT_FILE LINE)
   FILE(APPEND ${EXPORT_FILE} "${LINE}\n")
@@ -420,20 +406,19 @@ FIND_LIBRARY(Glog_LIBRARY_RELEASE NAMES libglog.a libglog_static.lib
 FIND_LIBRARY(Glog_LIBRARY_DEBUG NAMES libglog.a libglog_static.lib
                PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/Debug
                NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-IF(APPLE)
+IF(WIN32)
   FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
-              PATHS ${CURRENT_DIR}/build_glog/src
+              PATHS ${CURRENT_DIR}/src/glog/src/windows
               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 ELSE()
   FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
-              PATHS ${CURRENT_DIR}/build_glog/include ${CURRENT_DIR}/src/glog/src/windows
+              PATHS ${CURRENT_DIR}/build_glog/include ${CURRENT_DIR}/build_glog/src
               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 ENDIF()
 
 IF(NOT Glog_LIBRARY_RELEASE OR NOT Glog_LIBRARY_DEBUG OR NOT Glog_INCLUDE_DIR)
   MESSAGE(FATAL_ERROR "${GLOG_OUTVAR}")
 ENDIF()
-
 
 MESSAGE("-- Found Google Logging")
 GET_FILENAME_COMPONENT(Glog_LIBRARY_RELEASE_NAME ${Glog_LIBRARY_RELEASE} NAME)
@@ -458,3 +443,5 @@ APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Glog_
 
 
 UNSET(BUILD_TARGET CACHE)
+
+FILE(WRITE ${CURRENT_DIR}/install_prefix.cmake "SET(MAIDSAFE_COMMON_INSTALL_PREFIX \"${CMAKE_INSTALL_PREFIX}\")")
