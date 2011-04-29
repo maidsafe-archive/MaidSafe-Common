@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_CALL_LATER_TIMER_H_
 
 #include <map>
+#include <memory>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
