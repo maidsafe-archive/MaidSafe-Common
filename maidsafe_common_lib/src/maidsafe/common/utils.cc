@@ -238,4 +238,49 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
   return true;
 }
 
+
+namespace test {
+
+TestPath CreateTestPath(std::string test_prefix) {
+  if (test_prefix.empty())
+    test_prefix = "MaidSafe_Test";
+
+  if (test_prefix.substr(0, 13) != "MaidSafe_Test" &&
+      test_prefix.substr(0, 12) != "Sigmoid_Test") {
+    LOG(WARNING) << "Test prefix should preferably be \"MaidSafe_Test<optional"
+                 << " test name>\" or \"Sigmoid_Test<optional test name>\".";
+  }
+
+  test_prefix += "_%%%%-%%%%-%%%%";
+
+  boost::system::error_code error_code;
+  TestPath test_path(new fs::path(fs::unique_path(
+      fs::temp_directory_path(error_code) / test_prefix)), CleanupTest);
+  if (error_code) {
+    LOG(WARNING) << "Can't get a temp directory: " << error_code.message();
+    return TestPath(new fs::path);
+  }
+
+  if (!fs::create_directories(*test_path, error_code) || error_code) {
+    LOG(WARNING) << "Failed to create test directory " << *test_path
+                 << "  (error message: " << error_code.message() << ")";
+    return TestPath(new fs::path);
+  }
+
+  LOG(INFO) << "Created test directory " << *test_path;
+  return test_path;
+}
+
+void CleanupTest(fs::path *test_path) {
+  if (test_path->empty())
+    return;
+  boost::system::error_code error_code;
+  if (!fs::remove_all(*test_path, error_code) || error_code) {
+    LOG(WARNING) << "Failed to clean up test directory " << *test_path
+                 << "  (error message: " << error_code.message() << ")";
+  }
+}
+
+}  // namespace test
+
 }  // namespace maidsafe

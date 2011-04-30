@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_UTILS_H_
 
 #include <string>
+#include <memory>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -163,6 +164,26 @@ bool ReadFile(const fs::path &file_path, std::string *content);
 
 // Writes the given content string to a file, overwriting if applicable
 bool WriteFile(const fs::path &file_path, const std::string &content);
+
+
+namespace test {
+
+typedef std::shared_ptr<fs::path> TestPath;
+
+// Tries to create a unique directory in the temp directory and returns a shared
+// pointer to the path of the new directory.  If the creation fails, or a temp
+// directory cannot be found, the method returns a pointer to an empty path.  If
+// a directory is successfully created, an attempt to delete it is made when the
+// shared_ptr is destroyed by using CleanupTest (below) as a custom deleter.
+// The test_prefix should preferably be "MaidSafe_Test<optional test name>" or
+// "Sigmoid_Test<optional test name>".
+TestPath CreateTestPath(std::string test_prefix = "");
+
+// Used as a custom deleter for instances of TestPath.  Tries to remove the test
+// directory created in the CreateTestPath method above.
+void CleanupTest(fs::path *test_path);
+
+}  // namespace test
 
 }  // namespace maidsafe
 

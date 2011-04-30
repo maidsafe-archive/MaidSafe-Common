@@ -48,12 +48,11 @@ template <typename T>
 class ChunkStoreTest: public testing::Test {
  public:
   ChunkStoreTest()
-      : test_dir_(fs::unique_path(fs::temp_directory_path() /
-                  "MaidSafe_TestChunkStore_%%%%-%%%%-%%%%")),
-        chunk_dir_(test_dir_ / "chunks"),
-        alt_chunk_dir_(test_dir_ / "chunks_alt"),
-        ref_chunk_dir_(test_dir_ / "chunks_ref"),
-        tiger_chunk_dir_(test_dir_ / "chunks_tiger"),
+      : test_dir_(CreateTestPath("MaidSafe_TestChunkStore")),
+        chunk_dir_(*test_dir_ / "chunks"),
+        alt_chunk_dir_(*test_dir_ / "chunks_alt"),
+        ref_chunk_dir_(*test_dir_ / "chunks_ref"),
+        tiger_chunk_dir_(*test_dir_ / "chunks_tiger"),
         chunk_store_(),
         alt_chunk_store_(),
         ref_chunk_store_(),
@@ -61,9 +60,6 @@ class ChunkStoreTest: public testing::Test {
   ~ChunkStoreTest() {}
  protected:
   void SetUp() {
-    if (fs::exists(test_dir_))
-      fs::remove_all(test_dir_);
-    fs::create_directories(test_dir_);
     fs::create_directories(chunk_dir_);
     fs::create_directories(alt_chunk_dir_);
     fs::create_directories(ref_chunk_dir_);
@@ -72,13 +68,6 @@ class ChunkStoreTest: public testing::Test {
     InitChunkStore<crypto::SHA512>(&alt_chunk_store_, false, alt_chunk_dir_);
     InitChunkStore<crypto::SHA512>(&ref_chunk_store_, true, ref_chunk_dir_);
     InitChunkStore<crypto::Tiger>(&tiger_chunk_store_, false, tiger_chunk_dir_);
-  }
-  void TearDown() {
-    try {
-      if (fs::exists(test_dir_))
-        fs::remove_all(test_dir_);
-    }
-    catch(...) {}
   }
   template <class HashType>
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
@@ -112,8 +101,8 @@ class ChunkStoreTest: public testing::Test {
     ofs.close();
     return file_path;
   }
-  fs::path test_dir_, chunk_dir_, alt_chunk_dir_, ref_chunk_dir_,
-           tiger_chunk_dir_;
+  std::shared_ptr<fs::path> test_dir_;
+  fs::path chunk_dir_, alt_chunk_dir_, ref_chunk_dir_, tiger_chunk_dir_;
   std::shared_ptr<ChunkStore> chunk_store_, alt_chunk_store_, ref_chunk_store_,
                               tiger_chunk_store_;  // mmmm, tiger chunks...
 };
@@ -132,7 +121,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Init) {
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Get) {
   std::string content(RandomString(100));
   std::string name(crypto::Hash<crypto::SHA512>(content));
-  fs::path path(this->test_dir_ / "chunk.dat");
+  fs::path path(*this->test_dir_ / "chunk.dat");
   ASSERT_FALSE(fs::exists(path));
 
   // non-existant chunk, should fail
@@ -162,7 +151,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Get) {
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
-  fs::path path(this->test_dir_ / "chunk.dat");
+  fs::path path(*this->test_dir_ / "chunk.dat");
   this->CreateRandomFile(path, 456);
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
@@ -171,7 +160,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_FALSE(this->chunk_store_->Store(name_mem, ""));
   EXPECT_FALSE(this->chunk_store_->Store("", content));
   EXPECT_FALSE(this->chunk_store_->Store(name_file, "", false));
-  EXPECT_FALSE(this->chunk_store_->Store(name_file, this->test_dir_ / "fail",
+  EXPECT_FALSE(this->chunk_store_->Store(name_file, *this->test_dir_ / "fail",
                                          false));
   EXPECT_FALSE(this->chunk_store_->Store("", path, false));
   EXPECT_TRUE(this->chunk_store_->Empty());
@@ -214,7 +203,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   ASSERT_EQ(name_file,
             crypto::Hash<crypto::SHA512>(this->chunk_store_->Get(name_file)));
 
-  fs::path new_path(this->test_dir_ / "chunk2.dat");
+  fs::path new_path(*this->test_dir_ / "chunk2.dat");
   this->CreateRandomFile(new_path, 333);
   std::string new_name(crypto::HashFile<crypto::SHA512>(new_path));
 
@@ -261,7 +250,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
 TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
-  fs::path path(this->test_dir_ / "chunk.dat");
+  fs::path path(*this->test_dir_ / "chunk.dat");
   this->CreateRandomFile(path, 456);
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
@@ -494,7 +483,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   std::string name1(crypto::Hash<crypto::SHA512>(content1));
   std::string content2(RandomString(50));
   std::string name2(crypto::Hash<crypto::SHA512>(content2));
-  fs::path path(this->test_dir_ / "chunk.dat");
+  fs::path path(*this->test_dir_ / "chunk.dat");
   this->CreateRandomFile(path, 25);
   std::string name3(crypto::HashFile<crypto::SHA512>(path));
 
@@ -522,9 +511,9 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   // test failures
   EXPECT_TRUE(this->ref_chunk_store_->Get("").empty());
   EXPECT_TRUE(this->ref_chunk_store_->Get(name1).empty());
-  EXPECT_FALSE(this->ref_chunk_store_->Get("", this->test_dir_ / "dummy"));
+  EXPECT_FALSE(this->ref_chunk_store_->Get("", *this->test_dir_ / "dummy"));
   EXPECT_FALSE(this->ref_chunk_store_->Get(name1, ""));
-  EXPECT_FALSE(this->ref_chunk_store_->Get(name1, this->test_dir_ / "dummy"));
+  EXPECT_FALSE(this->ref_chunk_store_->Get(name1, *this->test_dir_ / "dummy"));
   EXPECT_FALSE(this->ref_chunk_store_->Store("", "dummy"));
   EXPECT_FALSE(this->ref_chunk_store_->Store(name1, ""));
   EXPECT_FALSE(this->ref_chunk_store_->Store("", path, false));

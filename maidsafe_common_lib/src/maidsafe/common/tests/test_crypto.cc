@@ -156,17 +156,12 @@ TEST(CryptoTest, BEH_BASE_Hash) {
       "ecce1e3610505fce94f732ee25e8cb7afaf7fcc8888866fd"));
 
   // Set up temp test dir and files
-  const fs::path kTestDir(fs::path("temp") / std::string("crypto_test_" +
-      boost::lexical_cast<std::string>(SRandomUint32()).substr(0, 8)));
-  try {
-    ASSERT_TRUE(fs::create_directories(kTestDir));
-  }
-  catch(const std::exception &e) {
-    FAIL() << e.what();
-  }
+  std::shared_ptr<fs::path> test_dir(
+      maidsafe::test::CreateTestPath("MaidSafe_TestCrypto"));
+  ASSERT_FALSE(test_dir->empty());
   std::vector<fs::path> input_files;
   for (size_t i = 0; i < test_data.size(); ++i) {
-    fs::path input_path(kTestDir);
+    fs::path input_path(*test_dir);
     input_path /= "Input" + boost::lexical_cast<std::string>(i) + ".txt";
     input_files.push_back(input_path);
     fs::fstream input_file(input_path.c_str(),
@@ -240,13 +235,6 @@ TEST(CryptoTest, BEH_BASE_Hash) {
   EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("NonExistent")).empty());
   EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("/")).empty());
   EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("NonExistent")).empty());
-
-  try {
-    EXPECT_GT(fs::remove_all(kTestDir), 0);
-  }
-  catch(const std::exception &e) {
-    FAIL() << e.what();
-  }
 }
 
 std::string CorruptData(const std::string &input) {
