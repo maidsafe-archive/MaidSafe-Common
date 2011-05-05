@@ -29,10 +29,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_LOG_H_
 #define MAIDSAFE_COMMON_LOG_H_
 
+#include <string>
 // For MSVC, we need to include windows.h which in turn includes WinGDI.h
 // which defines ERROR (which conflicts with Glog's ERROR definition)
 #ifdef __MSVC__
-#  include <windows.h>
+#  include <windows.h>  // NOLINT
 #  undef ERROR
 #  pragma warning(push, 1)
 #  include "glog/logging.h"
@@ -41,5 +42,124 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  include "glog/logging.h"  // NOLINT (Fraser)
 #endif
 #include "maidsafe/common/version.h"
+
+namespace google {
+
+#undef COMPACT_GOOGLE_LOG_INFO
+#undef LOG_TO_STRING_INFO
+#undef COMPACT_GOOGLE_LOG_WARNING
+#undef LOG_TO_STRING_WARNING
+#undef COMPACT_GOOGLE_LOG_ERROR
+#undef LOG_TO_STRING_ERROR
+#undef COMPACT_GOOGLE_LOG_FATAL
+#undef LOG_TO_STRING_FATAL
+#undef COMPACT_GOOGLE_LOG_DFATAL
+#undef LOG
+#undef DLOG
+
+#if GOOGLE_STRIP_LOG == 0
+#  define COMPACT_GOOGLE_LOG_INFO(project, separator) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__)
+#  define LOG_TO_STRING_INFO(project, separator, message) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::INFO, message)
+#else
+#  define COMPACT_GOOGLE_LOG_INFO(project, separator) google::NullStream()
+#  define LOG_TO_STRING_INFO(project, separator, message) google::NullStream()
+#endif
+
+#if GOOGLE_STRIP_LOG <= 1
+#  define COMPACT_GOOGLE_LOG_WARNING(project, separator) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::WARNING)
+#  define LOG_TO_STRING_WARNING(project, separator, message) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::WARNING, message)
+#else
+#  define COMPACT_GOOGLE_LOG_WARNING(project, separator) google::NullStream()
+#  define LOG_TO_STRING_WARNING(project, separator, message) \
+          google::NullStream()
+#endif
+
+#if GOOGLE_STRIP_LOG <= 2
+#  define COMPACT_GOOGLE_LOG_ERROR(project, separator) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::ERROR)
+#  define LOG_TO_STRING_ERROR(project, separator, message) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::ERROR, message)
+#else
+#  define COMPACT_GOOGLE_LOG_ERROR(project, separator) google::NullStream()
+#  define LOG_TO_STRING_ERROR(project, separator, message) google::NullStream()
+#endif
+
+#if GOOGLE_STRIP_LOG <= 3
+#  define COMPACT_GOOGLE_LOG_FATAL(project, separator) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessageFatal( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__)
+#  define LOG_TO_STRING_FATAL(project, separator, message) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::FATAL, message)
+#else
+#  define COMPACT_GOOGLE_LOG_FATAL(project, separator) google::NullStreamFatal()
+#  define LOG_TO_STRING_FATAL(project, separator, message) \
+          google::NullStreamFatal()
+#endif
+
+#ifdef NDEBUG
+#  define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_ERROR
+#elif GOOGLE_STRIP_LOG <= 3
+#  define COMPACT_GOOGLE_LOG_DFATAL(project, separator) \
+          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          google::LogMessageVoidify() & google::LogMessage( \
+          std::string((std::string(__FILE__) + #separator + \
+          #project)).c_str(), __LINE__, google::FATAL)
+#else
+#  define COMPACT_GOOGLE_LOG_DFATAL(project, separator) \
+          google::NullStreamFatal()
+#endif
+
+
+#define ULOG(severity) COMPACT_GOOGLE_LOG_ ## severity(user, :).stream()
+#define BLOG(severity) COMPACT_GOOGLE_LOG_ ## severity(benchmark, :).stream()
+
+#define LOG(severity) COMPACT_GOOGLE_LOG_ ## severity(common, :).stream()
+#define DLOG(severity) LOG(severity)
+}  // google
+
+extern bool FLAGS_ms_logging_user;
+extern bool FLAGS_ms_logging_benchmark;
+
+extern bool FLAGS_ms_logging_common;
+extern bool FLAGS_ms_logging_encrypt;
+extern bool FLAGS_ms_logging_dht;
+extern bool FLAGS_ms_logging_pki;
+extern bool FLAGS_ms_logging_passport;
+extern bool FLAGS_ms_logging_pd;
+extern bool FLAGS_ms_logging_lifestuff;
+extern bool FLAGS_ms_logging_lifestuff_gui;
+extern bool FLAGS_ms_logging_file_browser;
+
+extern bool FLAGS_ms_logging_sigmoid_storage_director;
+extern bool FLAGS_ms_logging_sigmoid_core;
+extern bool FLAGS_ms_logging_sigmoid_pro;
+
 
 #endif  // MAIDSAFE_COMMON_LOG_H_

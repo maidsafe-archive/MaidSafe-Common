@@ -159,7 +159,7 @@ RENAME_EXECUTABLE(TESTboost)
 
 TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static glog_static boost_filesystem boost_system boost_thread ${SYS_LIB})
 TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
-TARGET_LINK_LIBRARIES(TESTboost glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
+TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
 
 ###################################################################################################
 # Builds                                                                                          #
