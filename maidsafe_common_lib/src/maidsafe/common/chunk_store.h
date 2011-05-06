@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <string>
 #include "boost/filesystem.hpp"
+#include "maidsafe/common/alternative_store.h"
 #include "maidsafe/common/version.h"
 
 namespace fs = boost::filesystem;
@@ -53,7 +54,7 @@ namespace maidsafe {
  * than zero. If that limit is reached, further Store operations will fail. A
  * value of zero (the default) equals infinite storage capacity.
  */
-class ChunkStore {
+class ChunkStore : public AlternativeStore {
  public:
   explicit ChunkStore(bool reference_counting)
       : kReferenceCounting(reference_counting), capacity_(0), size_(0) {}
