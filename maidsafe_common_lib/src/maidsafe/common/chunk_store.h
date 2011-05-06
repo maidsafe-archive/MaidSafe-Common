@@ -57,7 +57,10 @@ namespace maidsafe {
 class ChunkStore : public AlternativeStore {
  public:
   explicit ChunkStore(bool reference_counting)
-      : kReferenceCounting(reference_counting), capacity_(0), size_(0) {}
+      : AlternativeStore(),
+        kReferenceCounting(reference_counting),
+        capacity_(0),
+        size_(0) {}
   virtual ~ChunkStore() {}
 
   /**
