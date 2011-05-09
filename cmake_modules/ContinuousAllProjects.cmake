@@ -81,7 +81,7 @@ SET(CTEST_BUILD_CONFIGURATION "Debug")
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 
 ###############################################################################
-# Finding Modules Paths                                                       #
+# Finding Modules Paths & setting initial update status                       #
 ###############################################################################
 ## TEST_ROOT_DIRECTORY ##
 SET(MAIDSAFE_TEST_ROOT_DIRECTORY ${CTEST_SCRIPT_DIRECTORY}/../../../../../)
@@ -93,6 +93,7 @@ FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
   ELSEIF(UNIX)
     SET(${EACH_MODULE}_BINARY_DIRECTORY ${${EACH_MODULE}_SOURCE_DIRECTORY}/build/Linux/${CTEST_BUILD_CONFIGURATION})
   ENDIF()
+  SET(${EACH_MODULE}_UPDATED 0)
   IF(EXISTS ${${EACH_MODULE}_SOURCE_DIRECTORY})
     MESSAGE("Found ${EACH_MODULE} at "${${EACH_MODULE}_SOURCE_DIRECTORY})
   ELSE()
@@ -144,6 +145,10 @@ MESSAGE("=======================================================================
 # Utility Functions                                                           #
 ###############################################################################
 FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
+  IF(${${MODULE_NAME}_UPDATED} GREATER 0)
+    MESSAGE("${EACH_MODULE} has changed last time!!")
+    RETURN()
+  ENDIF()
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
   SET(MODULE_BINARY_DIRECTORY ${${MODULE_NAME}_BINARY_DIRECTORY})
   MESSAGE("Checking updates for " ${MODULE_NAME})
