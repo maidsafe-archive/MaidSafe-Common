@@ -60,6 +60,12 @@ SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY true)
 FILE(GLOB cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 FILE(GLOB cryptopp_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
+IF(CMAKE_CL_64)
+  SET(cryptopp_SOURCES ${cryptopp_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/x64dll.asm ${CMAKE_CURRENT_SOURCE_DIR}/x64masm.asm)
+  ADD_CUSTOM_COMMAND(OUTPUT $(IntDir)x64dll.obj COMMAND ml64.exe /c /nologo /Fo$(IntDir)x64dll.obj /Zi "${CMAKE_CURRENT_SOURCE_DIR}/x64dll.asm" MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/x64dll.asm VERBATIM)
+  ADD_CUSTOM_COMMAND(OUTPUT $(IntDir)x64masm.obj COMMAND ml64.exe /c /nologo /Fo$(IntDir)x64masm.obj /Zi "${CMAKE_CURRENT_SOURCE_DIR}/x64masm.asm" MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/x64masm.asm VERBATIM)
+ENDIF()
+
 # Not used
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/eccrypto.cpp")
 LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/eprecomp.cpp")
@@ -128,7 +134,7 @@ ELSEIF(WIN32 AND MSVC)
                                             LINK_FLAGS_RELWITHDEBINFO "/LTCG"
                                             LINK_FLAGS_MINSIZEREL "/LTCG")
   SET(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Oi /Oy /GL /DNDEBUG /GF /MT /Gy /Zi")
-  SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Oi /D_DEBUG /MTd /arch:SSE /ZI")
+  SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Oi /D_DEBUG /MTd /Zi")
   LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dll.cpp") # this file doesn't use precompiled headers
   LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/iterhash.cpp") # this file doesn't use precompiled headers
   LIST(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/pch.cpp") # this file is used to create precompiled headers
@@ -138,4 +144,3 @@ ELSEIF(WIN32 AND MSVC)
                                COMPILE_FLAGS "/Yc\"pch.h\"")
   TARGET_LINK_LIBRARIES(cryptest odbc32.lib odbccp32.lib Ws2_32.lib)
 ENDIF()
-
