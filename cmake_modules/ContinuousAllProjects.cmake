@@ -23,10 +23,10 @@ MESSAGE("Starting Script version: ${SCRIPT_VERSION}")
 #Append/comment modules name here in order of dependency starting with MAIDSAFE_COMMON
 #Test will run for below modules
 SET(ALL_MODULE_LIST
-    "MAIDSAFE_COMMON"
-    "MAIDSAFE_DHT"
+    #"MAIDSAFE_COMMON"
     "MAIDSAFE_ENCRYPT"
-#   "PKI"
+#   "MAIDSAFE_DHT"
+    "PKI"
 #   "PASSPORT"
 #   "MAIDSAFE_PD"
 #   "FILE_BROWSER"
@@ -48,16 +48,16 @@ MESSAGE("=======================================================================
 ###############################################################################
 #Module folder-name/path relative to TEST_ROOT_DIRECTORY
 SET(MAIDSAFE_COMMON "MaidSafe-Common/maidsafe_common_lib")
-SET(MAIDSAFE_DHT "MaidSafe-DHT")
 SET(MAIDSAFE_ENCRYPT "MaidSafe-Encrypt")
-SET(PKI PKI)
-SET(PASSPORT Passport)
-SET(MAIDSAFE_PD MaidSafe-PD)
-SET(FILE_BROWSER File-Browser)
-SET(LIFESTUFF LifeStuff)
-SET(LIFESTUFF_GUI LifeStuff-GUI)
-SET(SIGMOID_CORE SigmoidCore)
-SET(DEDUPLICATOR_GAUGE Deduplicator-Gauge)
+SET(MAIDSAFE_DHT "MaidSafe-DHT")
+SET(PKI "PKI")
+SET(PASSPORT "Passport")
+SET(MAIDSAFE_PD "MaidSafe-PD")
+SET(FILE_BROWSER "File-Browser")
+SET(LIFESTUFF "LifeStuff")
+SET(LIFESTUFF_GUI "LifeStuff-GUI")
+SET(SIGMOID_CORE "SigmoidCore")
+SET(DEDUPLICATOR_GAUGE "Deduplicator-Gauge")
 
 #List the Module if needs to be installed
 SET(MAIDSAFE_COMMON_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
@@ -69,6 +69,66 @@ SET(PKI_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
 SET(MAIDSAFE_PD_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
 SET(FILE_BROWSER_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
 SET(LIFESTUFF_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
+
+#List of dependent modules which will be tested for a given module
+SET(MAIDSAFE_COMMON_DEPENDANTS
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DHT
+    PKI
+    PASSPORT
+    MAIDSAFE_PD
+    LIFESTUFF
+    LIFESTUFF_GUI
+    SIGMOID_CORE
+    DEDUPLICATOR_GAUGE
+    )
+SET(MAIDSAFE_ENCRYPT_DEPENDANTS
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DHT
+    SIGMOID_CORE
+    )
+    SET(MAIDSAFE_DHT_DEPENDANTS
+    MAIDSAFE_DHT
+    PKI
+    PASSPORT
+    MAIDSAFE_PD
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(PKI_DEPENDANTS
+    PKI
+    PASSPORT
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(PASSPORT_DEPENDANTS
+    PASSPORT
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(MAIDSAFE_PD_DEPENDANTS
+    MAIDSAFE_PD
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(FILE_BROWSER_DEPENDANTS
+    FILE_BROWSER
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(LIFESTUFF_DEPENDANTS
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(LIFESTUFF_GUI_DEPENDANTS
+    LIFESTUFF_GUI
+    )
+SET(SIGMOID_CORE_DEPENDANTS
+    SIGMOID_CORE)
+SET(DEDUPLICATOR_GAUGE_DEPENDANTS
+    DEDUPLICATOR_GAUGE)
+
 ##############################################################################
 #Variable(s) determined after running cmake                                  #
 ##############################################################################
@@ -79,6 +139,13 @@ SET(CTEST_CMAKE_GENERATOR "@CMAKE_GENERATOR@")
 SET(CTEST_BUILD_CONFIGURATION "Debug")
 #SET(CTEST_BUILD_OPTIONS "-DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
+###############################################################################
+
+FUNCTION(SET_FORCE_TEST_FOR_DEPENDANTS MODULE_NAME VALUE)
+  FOREACH(EACH_MODULE ${${MODULE_NAME}_DEPENDANTS})
+    SET(${EACH_MODULE}_NEEDS_FORCE_TEST ${VALUE} PARENT_SCOPE)
+  ENDFOREACH()
+ENDFUNCTION()
 
 ###############################################################################
 # Finding Modules Paths & setting initial update status                       #
@@ -93,7 +160,10 @@ FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
   ELSEIF(UNIX)
     SET(${EACH_MODULE}_BINARY_DIRECTORY ${${EACH_MODULE}_SOURCE_DIRECTORY}/build/Linux/${CTEST_BUILD_CONFIGURATION})
   ENDIF()
+
   SET(${EACH_MODULE}_UPDATED 0)
+  SET_FORCE_TEST_FOR_DEPENDANTS(${EACH_MODULE} 0)
+
   IF(EXISTS ${${EACH_MODULE}_SOURCE_DIRECTORY})
     MESSAGE("Found ${EACH_MODULE} at "${${EACH_MODULE}_SOURCE_DIRECTORY})
   ELSE()
@@ -145,10 +215,6 @@ MESSAGE("=======================================================================
 # Utility Functions                                                           #
 ###############################################################################
 FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
-  IF(${${MODULE_NAME}_UPDATED} GREATER 0)
-    MESSAGE("${EACH_MODULE} has changed last time!!")
-    RETURN()
-  ENDIF()
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
   SET(MODULE_BINARY_DIRECTORY ${${MODULE_NAME}_BINARY_DIRECTORY})
   MESSAGE("Checking updates for " ${MODULE_NAME})
@@ -160,10 +226,13 @@ FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
 ENDFUNCTION()
 
 FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
-  IF(${${MODULE_NAME}_UPDATED} GREATER 0)
-    MESSAGE("${MODULE_NAME} repository changed.")
-  ELSE()
-    MESSAGE("No new updates for ${MODULE_NAME}.  Skipping test run.")
+  #IF(${${MODULE_NAME}_UPDATED} GREATER 0)
+  #  MESSAGE("${MODULE_NAME} repository changed.")
+  #ELSE()
+  #  MESSAGE("No new updates for ${MODULE_NAME}.  Skipping test run.")
+  #  RETURN()
+  #ENDIF()
+  IF(${${MODULE_NAME}_NEEDS_FORCE_TEST} EQUAL 0)
     RETURN()
   ENDIF()
 
@@ -239,6 +308,7 @@ FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
     ENDIF()
   ENDIF()
   SET(${MODULE_NAME}_UPDATED 0 PARENT_SCOPE)
+  SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
 ENDFUNCTION()
 
 ###############################################################################
@@ -248,12 +318,14 @@ WHILE(1)
   FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
     CHECK_UPDATE_STATUS_FOR_MODULE(${EACH_MODULE})
     IF(${${EACH_MODULE}_UPDATED} GREATER 0)
-      MESSAGE("${EACH_MODULE} has changed; starting over again...")
+      MESSAGE("${EACH_MODULE} has changed; Will run tests for module and its dependants...")
+      SET_FORCE_TEST_FOR_DEPENDANTS(${EACH_MODULE} 1)
       BREAK()
     ENDIF()
     RUN_CONTINUOUS_ONCE(${EACH_MODULE})
     IF(${${EACH_MODULE}_UPDATED} GREATER 0)
       MESSAGE("${EACH_MODULE} has changed; starting over again...")
+      SET_FORCE_TEST_FOR_DEPENDANTS(${EACH_MODULE} 1)
       BREAK()
     ENDIF()
   ENDFOREACH()
