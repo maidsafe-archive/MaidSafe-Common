@@ -23,9 +23,9 @@ MESSAGE("Starting Script version: ${SCRIPT_VERSION}")
 #Append/comment modules name here in order of dependency starting with MAIDSAFE_COMMON
 #Test will run for below modules
 SET(ALL_MODULE_LIST
-    #"MAIDSAFE_COMMON"
+    "MAIDSAFE_COMMON"
     "MAIDSAFE_ENCRYPT"
-#   "MAIDSAFE_DHT"
+    "MAIDSAFE_DHT"
     "PKI"
 #   "PASSPORT"
 #   "MAIDSAFE_PD"
