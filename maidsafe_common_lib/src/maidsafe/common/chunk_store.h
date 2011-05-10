@@ -143,7 +143,7 @@ class ChunkStore : public AlternativeStore {
    * Retrieves the total size of the stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() const {
+  virtual std::uintmax_t Size() const {
     return size_;
   }
 
@@ -153,7 +153,7 @@ class ChunkStore : public AlternativeStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t Capacity() const {
+  virtual std::uintmax_t Capacity() const {
     return capacity_;
   }
 
@@ -164,7 +164,7 @@ class ChunkStore : public AlternativeStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetCapacity(const std::uintmax_t &capacity) {
+  virtual void SetCapacity(const std::uintmax_t &capacity) {
     capacity_ = capacity;
     if (capacity_ > 0 && capacity_ < size_)
       capacity_ = size_;
@@ -175,7 +175,7 @@ class ChunkStore : public AlternativeStore {
    * given size.
    * @return True if required size vacant
    */
-  bool Vacant(const std::uintmax_t &required_size) const {
+  virtual bool Vacant(const std::uintmax_t &required_size) const {
     return capacity_ == 0 || size_ + required_size <= capacity_;
   }
 

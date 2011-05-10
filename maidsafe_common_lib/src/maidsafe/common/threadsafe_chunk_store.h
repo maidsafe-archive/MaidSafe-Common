@@ -41,14 +41,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/thread/shared_mutex.hpp"
 #include "boost/thread/locks.hpp"
 
-
-
+#include "maidsafe/common/chunk_store.h"
 
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-
-class ChunkStore;
 
 /**
  * Abstract class to manage storage and retrieval of named data items (chunks).
@@ -61,20 +58,22 @@ class ChunkStore;
  * than zero. If that limit is reached, further Store operations will fail. A
  * value of zero (the default) equals infinite storage capacity.
  */
-class ThreadsafeChunkStore {
+class ThreadsafeChunkStore : public ChunkStore {
  public:
-  explicit ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store)
-      : chunk_store_(chunk_store),
+  explicit ThreadsafeChunkStore(bool reference_counting,
+                                std::shared_ptr<ChunkStore> chunk_store)
+      : ChunkStore(reference_counting),
+        chunk_store_(chunk_store),
         shared_mutex_() {}
 
-  virtual ~ThreadsafeChunkStore() {}
+  ~ThreadsafeChunkStore() {}
 
   /**
    * Retrieves a chunk's content as a string.
    * @param name Chunk name
    * @return Chunk content, or empty if non-existant
    */
-  virtual std::string Get(const std::string &name) const;
+  std::string Get(const std::string &name) const;
 
   /**
    * Retrieves a chunk's content as a file, potentially overwriting an existing
@@ -83,8 +82,8 @@ class ThreadsafeChunkStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  virtual bool Get(const std::string &name,
-                   const fs::path &sink_file_name) const;
+  bool Get(const std::string &name,
+           const fs::path &sink_file_name) const;
 
   /**
    * Stores chunk content under the given name.
@@ -92,7 +91,7 @@ class ThreadsafeChunkStore {
    * @param content The chunk's content
    * @return True if chunk could be stored or already existed
    */
-  virtual bool Store(const std::string &name, const std::string &content);
+  bool Store(const std::string &name, const std::string &content);
 
   /**
    * Stores chunk content under the given name.
@@ -101,8 +100,8 @@ class ThreadsafeChunkStore {
    * @param delete_source_file True if file can be deleted after storing
    * @return True if chunk could be stored or already existed
    */
-  virtual bool Store(const std::string &name,
-                     const fs::path &source_file_name,
+  bool Store(const std::string &name,
+             const fs::path &source_file_name,
                      bool delete_source_file);
 
   /**
@@ -110,7 +109,7 @@ class ThreadsafeChunkStore {
    * @param name Chunk name
    * @return True if chunk deleted or non-existant
    */
-  virtual bool Delete(const std::string &name);
+  bool Delete(const std::string &name);
 
   /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
@@ -119,15 +118,15 @@ class ThreadsafeChunkStore {
    * @param sink_chunk_store The receiving ChunkStore
    * @return True if operation successful
    */
-  virtual bool MoveTo(const std::string &name,
-                      ChunkStore *sink_chunk_store);
+  bool MoveTo(const std::string &name,
+              ChunkStore *sink_chunk_store);
 
   /**
    * Checks if a chunk exists.
    * @param name Chunk name
    * @return True if chunk exists
    */
-  virtual bool Has(const std::string &name) const;
+  bool Has(const std::string &name) const;
 
   /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
@@ -136,14 +135,14 @@ class ThreadsafeChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-  virtual bool Validate(const std::string &name) const;
+  bool Validate(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  virtual std::uintmax_t Size(const std::string &name) const;
+  std::uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the stored chunks.
@@ -184,24 +183,24 @@ class ThreadsafeChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  virtual std::uintmax_t Count(const std::string &name) const;
+  std::uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  virtual std::uintmax_t Count() const;
+  std::uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
    * @return True if no chunks stored
    */
-  virtual bool Empty() const;
+  bool Empty() const;
 
   /**
    * Deletes all stored chunks.
    */
-  virtual void Clear();
+  void Clear();
 
  private:
   ThreadsafeChunkStore(const ThreadsafeChunkStore&);

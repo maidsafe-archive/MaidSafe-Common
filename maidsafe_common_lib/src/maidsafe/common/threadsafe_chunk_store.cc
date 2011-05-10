@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "maidsafe/common/threadsafe_chunk_store.h"
 
-#include "maidsafe/common/chunk_store.h"
+
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
