@@ -14,7 +14,7 @@ for /f %%g in (%temp%\filelist2.txt) do (
 findstr /i /v /b "Setup Done Total" %temp%\code_style_errors.txt > %temp%\code_style_errors2.txt
 set count=0
 for /f  %%g in (%temp%\code_style_errors2.txt) do (call :s_do_sums)
-cls & echo. & echo.
+echo. & echo.
 type %temp%\code_style_errors2.txt
 echo. & echo.
 if %count% geq 1 echo There are %count% errors! & call :function & exit /B 1
