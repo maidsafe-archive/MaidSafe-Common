@@ -102,7 +102,7 @@ class ThreadsafeChunkStore : public ChunkStore {
    */
   bool Store(const std::string &name,
              const fs::path &source_file_name,
-                     bool delete_source_file);
+             bool delete_source_file);
 
   /**
    * Deletes a stored chunk.
