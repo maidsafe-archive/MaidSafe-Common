@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/threadsafe_chunk_store.h"
 #include "maidsafe/common/memory_chunk_store.h"
+#include "maidsafe/common/threadpool.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -62,18 +63,16 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   ThreadsafeChunkStoreTest()
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunkname_(),
-        thread_group_(),
+        thread_pool_(),
         threadsafe_chunk_store_() {
     std::shared_ptr<MemoryChunkStore> chunk_store;
     chunk_store.reset(new MemoryChunkStore(false, std::bind(
         &crypto::Hash<crypto::SHA512>, std::placeholders::_1)));
     threadsafe_chunk_store_.reset(new ThreadsafeChunkStore(false, chunk_store));
-    thread_group_.reset(new boost::thread_group());
+    thread_pool_.reset(new Threadpool(30));
   }
 
-  ~ThreadsafeChunkStoreTest() {
-    thread_group_.reset();
-  }
+  ~ThreadsafeChunkStoreTest() {}
   void SetUp() {
     StoreContents(17);
     StoreFromSourceFile(13);
@@ -158,33 +157,33 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   }
   std::shared_ptr<fs::path> test_dir_;
   std::vector<std::string> chunkname_;
-  std::shared_ptr<boost::thread_group> thread_group_;
+  std::shared_ptr<Threadpool> thread_pool_;
   std::shared_ptr<ThreadsafeChunkStore> threadsafe_chunk_store_;
 };
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Get) {
-  size_t map_size = this->chunkname_.size();
+  size_t entry_size = this->chunkname_.size();
   uint32_t index = RandomUint32();
-  for (size_t i = 0; i < map_size; ++i) {
-    auto it = this->chunkname_.at(index % map_size);
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(index % entry_size);
     std::string chunk(RandomAlphaNumericString(6));
     fs::path path(*test_dir_ / chunk);
-    this->thread_group_->create_thread(
+    this->thread_pool_->EnqueueTask(
       std::bind(&ThreadsafeChunkStoreTest::GetFileChunk, this, it, path));
-    this->thread_group_->create_thread(
+    this->thread_pool_->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::GetMemChunk, this, it));
   }
-  this->thread_group_->join_all();
+  thread_pool_->Stop();
 }
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Has) {
-  size_t map_size = this->chunkname_.size();
+  size_t entry_size = this->chunkname_.size();
   uint32_t index = RandomUint32();
-  for (size_t i = 0; i < map_size; ++i) {
-    auto it = this->chunkname_.at(index % map_size);
-    this->thread_group_->create_thread(
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(index % entry_size);
+    this->thread_pool_->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::HasChunk, this, it));
   }
-  this->thread_group_->join_all();
+  thread_pool_->Stop();
 }
 
 

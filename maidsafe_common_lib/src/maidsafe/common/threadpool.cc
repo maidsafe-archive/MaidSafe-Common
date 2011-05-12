@@ -30,12 +30,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-Threadpool::Threadpool(const boost::uint8_t &poolsize)
+Threadpool::Threadpool(const uint8_t &poolsize)
     : io_service_(), work_(), thread_group_() {
   // add work to prevent io_service completing
   work_.reset(new boost::asio::io_service::work(io_service_));
   for (boost::uint8_t i = 0; i < poolsize; ++i)
-    thread_group_.create_thread(boost::bind(&Threadpool::Start, this));
+    thread_group_.create_thread(std::bind(&Threadpool::Start, this));
 }
 
 void Threadpool::Start() {
@@ -51,11 +51,12 @@ void Threadpool::Start() {
 
 void Threadpool::Stop() {
   work_.reset();
+  io_service_.stop();
+  thread_group_.join_all();
 }
 
 Threadpool::~Threadpool() {
   Stop();
-  thread_group_.join_all();
 }
 
 bool Threadpool::EnqueueTask(const VoidFunctor &functor) {
