@@ -27,7 +27,7 @@ SET(ALL_MODULE_LIST
     "MAIDSAFE_ENCRYPT"
     "MAIDSAFE_DHT"
     "PKI"
-#   "PASSPORT"
+    "PASSPORT"
 #   "MAIDSAFE_PD"
 #   "FILE_BROWSER"
 #   "LIFESTUFF"
@@ -44,7 +44,7 @@ ENDFOREACH()
 MESSAGE("================================================================================")
 
 ###############################################################################
-# Test configurations                                                         #
+# Module configurations                                                       #
 ###############################################################################
 #Module folder-name/path relative to TEST_ROOT_DIRECTORY
 SET(MAIDSAFE_COMMON "MaidSafe-Common/maidsafe_common_lib")
@@ -129,17 +129,55 @@ SET(SIGMOID_CORE_DEPENDANTS
 SET(DEDUPLICATOR_GAUGE_DEPENDANTS
     DEDUPLICATOR_GAUGE)
 
-##############################################################################
-#Variable(s) determined after running cmake                                  #
-##############################################################################
+###############################################################################
+# Variable(s) determined after running cmake                                  #
+###############################################################################
 SET(CTEST_CMAKE_GENERATOR "@CMAKE_GENERATOR@")
 
-##############################################################################
+###############################################################################
+# Test configurations                                                         #
+###############################################################################
+IF(NOT "${CTEST_SCRIPT_ARG}" MATCHES "^(Nightly|NightlyDebug|NightlyRelease|Experimental|ExperimentalDebug|ExperimentalRelease|Continuous|ContinuousRelease|ContinuousDebug)$")
+  MESSAGE(FATAL_ERROR "Allowed arguments are Nightly, Experimental, Continuous, NightlyDebug, NightlyRelease, ExperimentalDebug, ExperimentalRelease, ContinuousRelease & ContinuousDebug \n eg. ctest -S ${CTEST_SCRIPT_NAME},NightlyDebug")
+ENDIF()
 
-SET(CTEST_BUILD_CONFIGURATION "Debug")
+# Select the model (Nightly, Experimental, Continuous).
+IF(${CTEST_SCRIPT_ARG} MATCHES Continuous)
+  SET(DASHBOARD_MODEL Continuous)
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Nightly)
+  SET(DASHBOARD_MODEL Nightly)
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Experimental)
+  SET(DASHBOARD_MODEL Experimental)
+ENDIF()
+
+IF(NOT DEFINED DASHBOARD_MODEL)
+  SET(DASHBOARD_MODEL Experimental)  #default to "Experimental"
+ENDIF()
+
+IF(${CTEST_SCRIPT_ARG} MATCHES Debug)
+  SET(CTEST_BUILD_CONFIGURATION "Debug")
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Release)
+  SET(CTEST_BUILD_CONFIGURATION "Release")
+ENDIF()
+
+IF(NOT DEFINED CTEST_BUILD_CONFIGURATION)
+  SET(CTEST_BUILD_CONFIGURATION "Debug")  #default to "Debug"
+ENDIF()
+
 #SET(CTEST_BUILD_OPTIONS "-DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
+MESSAGE("Dashboard Model Selected:      ${DASHBOARD_MODEL}")
+MESSAGE("Build Configuration Selected:  ${CTEST_BUILD_CONFIGURATION}")
+MESSAGE("================================================================================")
 ###############################################################################
+# Utility functions                                                           #
+###############################################################################
+
+FUNCTION(SET_FORCE_TEST_FOR_ALL_MODULE VALUE)
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    SET(${EACH_MODULE}_NEEDS_FORCE_TEST ${VALUE} PARENT_SCOPE)
+  ENDFOREACH()
+ENDFUNCTION()
 
 FUNCTION(SET_FORCE_TEST_FOR_DEPENDANTS MODULE_NAME VALUE)
   FOREACH(EACH_MODULE ${${MODULE_NAME}_DEPENDANTS})
@@ -178,7 +216,6 @@ FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
 ENDFOREACH()
 
 MESSAGE("================================================================================")
-
 ###############################################################################
 #Finding hostname                                                             #
 ###############################################################################
@@ -212,7 +249,7 @@ SET(CTEST_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
 MESSAGE("================================================================================")
 
 ###############################################################################
-# Utility Functions                                                           #
+# Ctest Utility Functions                                                     #
 ###############################################################################
 FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
@@ -220,18 +257,12 @@ FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
   MESSAGE("Checking updates for " ${MODULE_NAME})
   SET(CTEST_SOURCE_DIRECTORY ${MODULE_SOURCE_DIRECTORY})
   SET(CTEST_BINARY_DIRECTORY ${MODULE_BINARY_DIRECTORY})
-  CTEST_START("Continuous")
+  CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
   CTEST_UPDATE(SOURCE ${MODULE_SOURCE_DIRECTORY} RETURN_VALUE UPDATED_COUNT)
   SET(${MODULE_NAME}_UPDATED ${UPDATED_COUNT} PARENT_SCOPE)
 ENDFUNCTION()
 
 FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
-  #IF(${${MODULE_NAME}_UPDATED} GREATER 0)
-  #  MESSAGE("${MODULE_NAME} repository changed.")
-  #ELSE()
-  #  MESSAGE("No new updates for ${MODULE_NAME}.  Skipping test run.")
-  #  RETURN()
-  #ENDIF()
   IF(${${MODULE_NAME}_NEEDS_FORCE_TEST} EQUAL 0)
     RETURN()
   ENDIF()
@@ -247,18 +278,7 @@ FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
   SET(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"")
   SET(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
-#  EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
-#      COMMAND ${CTEST_CMAKE_COMMAND} ${MODULE_SOURCE_DIRECTORY}
-#      RESULT_VARIABLE ret_var
-#      OUTPUT_VARIABLE out_var
-#      )
-#  IF(NOT ${ret_var} EQUAL 0)
-#    MESSAGE(FATAL_ERROR "  Running cmake for ${MODULE_NAME} returned ${ret_var}. Output : ${out_var}")
-#  ELSE()
-#    MESSAGE("  Ran cmake for ${MODULE_NAME}.")
-#  ENDIF()
-
-  CTEST_START("Continuous")
+  CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
   CTEST_UPDATE(RETURN_VALUE UPDATED_COUNT)
   SET(${EACH_MODULE}_UPDATED ${UPDATED_COUNT} PARENT_SCOPE)
   IF(${${EACH_MODULE}_UPDATED} GREATER 0)
@@ -314,7 +334,9 @@ ENDFUNCTION()
 ###############################################################################
 # TEST                                                                        #
 ###############################################################################
+IF("${DASHBOARD_MODEL}" STREQUAL "Continuous") ### DASHBOARD_MODEL Continuous
 WHILE(1)
+  MESSAGE("Starting Continuous test now...")
   FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
     CHECK_UPDATE_STATUS_FOR_MODULE(${EACH_MODULE})
     IF(${${EACH_MODULE}_UPDATED} GREATER 0)
@@ -331,3 +353,18 @@ WHILE(1)
   ENDFOREACH()
   CTEST_SLEEP(60)
 ENDWHILE()
+ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Nightly") ### DASHBOARD_MODEL Nightly
+  MESSAGE("Starting Nightly test now...")
+    FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+      SET_FORCE_TEST_FOR_ALL_MODULE(${EACH_MODULE} 1)
+      RUN_CONTINUOUS_ONCE(${EACH_MODULE})
+    ENDFOREACH()
+    MESSAGE("Nightly test completed. Exiting the script now...")
+ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Experimental")  ### DASHBOARD_MODEL Experimental
+  MESSAGE("Starting Experimental test now...")
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    SET_FORCE_TEST_FOR_ALL_MODULE(${EACH_MODULE} 1)
+    RUN_CONTINUOUS_ONCE(${EACH_MODULE})
+  ENDFOREACH()
+  MESSAGE("Experimental test completed. Exiting the script now...")
+ENDIF()
