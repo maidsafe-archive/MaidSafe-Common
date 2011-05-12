@@ -64,7 +64,9 @@ class ThreadsafeChunkStoreTest: public testing::Test {
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunkname_(),
         thread_pool_(),
-        threadsafe_chunk_store_() {
+        threadsafe_chunk_store_(),
+        total_chunk_size_(),
+        mutex_() {
     std::shared_ptr<MemoryChunkStore> chunk_store;
     chunk_store.reset(new MemoryChunkStore(false, std::bind(
         &crypto::Hash<crypto::SHA512>, std::placeholders::_1)));
@@ -82,20 +84,22 @@ class ThreadsafeChunkStoreTest: public testing::Test {
                       bool reference_counting,
                       const fs::path &chunk_dir);
   void StoreContents(const uint16_t &num) {
-    for (uint16_t i = 0; i < num; ++i) {
-      std::string contents = RandomString(64);
+    for (uint16_t i = 1; i < num + 1; ++i) {
+      std::string contents = RandomString(64 * i);
       std::string chunk_name = crypto::Hash<crypto::SHA512>(contents);
       chunkname_.push_back(chunk_name);
       threadsafe_chunk_store_->Store(chunk_name, contents);
+      total_chunk_size_+= (64 * i);
     }
   }
   void StoreFromSourceFile(const uint16_t &num) {
-    for (uint16_t i = 0; i < num; ++i) {
+    for (uint16_t i = 1; i < num + 1; ++i) {
       fs::path path(*test_dir_ / "chunk.dat");
-      CreateRandomFile(path, 177);
+      CreateRandomFile(path, 177 * i);
       std::string file_name = crypto::HashFile<crypto::SHA512>(path);
       threadsafe_chunk_store_->Store(file_name, path, true);
       chunkname_.push_back(file_name);
+      total_chunk_size_+= (177 * i);
     }
   }
 
@@ -124,6 +128,26 @@ class ThreadsafeChunkStoreTest: public testing::Test {
 
   void HasChunk(const std::string &chunk_name) {
     EXPECT_TRUE(threadsafe_chunk_store_->Has(chunk_name));
+  }
+
+  void DeleteChunk(const std::string &chunk_name) {
+    EXPECT_TRUE(threadsafe_chunk_store_->Delete(chunk_name));
+    EXPECT_FALSE(threadsafe_chunk_store_->Has(chunk_name));
+  }
+
+  void ChunkSize(const std::string &chunk_name, uint64_t *total_size) {
+    uint64_t chunk_size = threadsafe_chunk_store_->Size(chunk_name);
+
+    boost::mutex::scoped_lock lock(mutex_);
+    *total_size = *total_size + chunk_size;
+  }
+
+  void ValidateChunk(const std::string &chunk_name) {
+    EXPECT_TRUE(threadsafe_chunk_store_->Validate(chunk_name));
+  }
+
+  void Size() {
+    EXPECT_EQ(total_chunk_size_, threadsafe_chunk_store_->Size());
   }
 
  protected:
@@ -159,6 +183,8 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   std::vector<std::string> chunkname_;
   std::shared_ptr<Threadpool> thread_pool_;
   std::shared_ptr<ThreadsafeChunkStore> threadsafe_chunk_store_;
+  uint64_t total_chunk_size_;
+  boost::mutex mutex_;
 };
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Get) {
@@ -169,12 +195,13 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Get) {
     std::string chunk(RandomAlphaNumericString(6));
     fs::path path(*test_dir_ / chunk);
     this->thread_pool_->EnqueueTask(
-      std::bind(&ThreadsafeChunkStoreTest::GetFileChunk, this, it, path));
+        std::bind(&ThreadsafeChunkStoreTest::GetFileChunk, this, it, path));
     this->thread_pool_->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::GetMemChunk, this, it));
   }
-  thread_pool_->Stop();
+  this->thread_pool_->Stop();
 }
+
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Has) {
   size_t entry_size = this->chunkname_.size();
   uint32_t index = RandomUint32();
@@ -183,8 +210,54 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Has) {
     this->thread_pool_->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::HasChunk, this, it));
   }
-  thread_pool_->Stop();
+  this->thread_pool_->Stop();
 }
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Delete) {
+  size_t entry_size = this->chunkname_.size();
+  uint32_t index = RandomUint32();
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(index % entry_size);
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::DeleteChunk, this, it));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Validate) {
+  size_t entry_size = this->chunkname_.size();
+  uint32_t index = RandomUint32();
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(index % entry_size);
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::ValidateChunk, this, it));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size_For_Chunk) {
+  size_t entry_size = this->chunkname_.size();
+  uint64_t total_size(0);
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(i);
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::ChunkSize, this, it, &total_size));
+  }
+  this->thread_pool_->Stop();
+  EXPECT_EQ(this->total_chunk_size_, total_size);
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size) {
+  size_t entry_size = this->chunkname_.size();
+  uint32_t index = RandomUint32();
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(index % entry_size);
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::Size, this));
+  }
+  this->thread_pool_->Stop();
+}
+
 
 
 }  // namespace test
