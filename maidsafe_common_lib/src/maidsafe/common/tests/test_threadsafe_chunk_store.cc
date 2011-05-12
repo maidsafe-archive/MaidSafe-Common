@@ -44,6 +44,10 @@ namespace maidsafe {
 
 namespace test {
 
+namespace test_tscs {
+  const size_t kIterationSize = 13;
+}
+
 template <> template <class HashType>
 void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
@@ -150,6 +154,38 @@ class ThreadsafeChunkStoreTest: public testing::Test {
     EXPECT_EQ(total_chunk_size_, threadsafe_chunk_store_->Size());
   }
 
+  void ChunkStoreCapacity(const uint64_t &capacity) {
+    EXPECT_EQ(capacity, threadsafe_chunk_store_->Capacity());
+  }
+
+  void SetCapacity(const size_t &index, const std::vector<uint32_t> &capacity) {
+    threadsafe_chunk_store_->SetCapacity(capacity[index]);
+    auto it = std::find(capacity.begin(), capacity.end(),
+                        threadsafe_chunk_store_->Capacity());
+    EXPECT_NE(it, capacity.end());
+  }
+
+  void Vacant(const uint64_t &required_size) {
+    EXPECT_TRUE(threadsafe_chunk_store_->Vacant(required_size));
+  }
+
+  void ChunkCount(const std::string &chunk_name) {
+    EXPECT_EQ(uintmax_t(1), threadsafe_chunk_store_->Count(chunk_name));
+  }
+
+  void TotalChunk() {
+    EXPECT_EQ(uintmax_t(chunkname_.size()), threadsafe_chunk_store_->Count());
+  }
+
+  void EmptyChunk() {
+    EXPECT_FALSE(threadsafe_chunk_store_->Empty());
+  }
+
+  void ClearChunk() {
+    threadsafe_chunk_store_->Clear();
+    EXPECT_TRUE(threadsafe_chunk_store_->Empty());
+  }
+
  protected:
   fs::path CreateRandomFile(const fs::path &file_path,
                             const std::uint64_t &file_size) {
@@ -249,16 +285,81 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size_For_Chunk) {
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size) {
   size_t entry_size = this->chunkname_.size();
-  uint32_t index = RandomUint32();
   for (size_t i = 0; i < entry_size; ++i) {
-    auto it = this->chunkname_.at(index % entry_size);
     this->thread_pool_->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::Size, this));
   }
   this->thread_pool_->Stop();
 }
 
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Capacity) {
+  size_t entry_size = this->chunkname_.size();
+  uint64_t capacity = total_chunk_size_ * 3;
+  this->threadsafe_chunk_store_->SetCapacity(capacity);
+  for (size_t i = 0; i < entry_size; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::ChunkStoreCapacity, this,
+        capacity));
+  }
+  this->thread_pool_->Stop();
+}
 
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_SetCapacity) {
+  std::vector<uint32_t> capacity;
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i)
+    capacity.push_back(RandomUint32());
+
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::SetCapacity, this, i, capacity));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Vacant) {
+  uint64_t capacity = total_chunk_size_ * 3;
+  this->threadsafe_chunk_store_->SetCapacity(capacity);
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::Vacant, this, total_chunk_size_));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Count) {
+  size_t entry_size = this->chunkname_.size();
+  uint32_t index = RandomUint32();
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(index % entry_size);
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::ChunkCount, this, it));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Count_Total) {
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::TotalChunk, this));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Empty) {
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::EmptyChunk, this));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Clear) {
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::ClearChunk, this));
+  }
+  this->thread_pool_->Stop();
+}
 
 }  // namespace test
 
