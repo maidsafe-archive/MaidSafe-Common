@@ -169,10 +169,10 @@ SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 MESSAGE("Dashboard Model Selected:      ${DASHBOARD_MODEL}")
 MESSAGE("Build Configuration Selected:  ${CTEST_BUILD_CONFIGURATION}")
 MESSAGE("================================================================================")
+
 ###############################################################################
 # Utility functions                                                           #
 ###############################################################################
-
 FUNCTION(SET_FORCE_TEST_FOR_ALL_MODULE VALUE)
   FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
     SET(${EACH_MODULE}_NEEDS_FORCE_TEST ${VALUE} PARENT_SCOPE)
@@ -216,6 +216,7 @@ FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
 ENDFOREACH()
 
 MESSAGE("================================================================================")
+
 ###############################################################################
 #Finding hostname                                                             #
 ###############################################################################
@@ -229,24 +230,14 @@ MESSAGE("Hostname: " ${HOSTNAME})
 ###############################################################################
 FIND_PROGRAM(CTEST_CMAKE_COMMAND NAMES cmake)
 IF(NOT CTEST_CMAKE_COMMAND)
-  MESSAGE(FATAL_ERROR "Couldn't find cmake executable.Specify path of Ctest executable. \n e.g. -DCTEST_CMAKE_COMMAND=C:/Program Files/CMake 2.8/bin/cmake.exe")
+  MESSAGE(FATAL_ERROR "Couldn't find CTest executable. Specify path of CTest executable. \n e.g. -DCTEST_CMAKE_COMMAND=\"C:/Program Files/CMake 2.8/bin/cmake.exe\"")
 ENDIF()
+MESSAGE("-- Found CTest executable at " ${CTEST_CMAKE_COMMAND})
 
-IF(WIN32)
-  FIND_PROGRAM(CTEST_GIT_COMMAND NAMES git.cmd PATHS "D:/Program Files/Git/cmd" "C:/Program Files/Git/cmd")
-ELSEIF(UNIX)
-  FIND_PROGRAM(CTEST_GIT_COMMAND NAMES git)
-ENDIF()
-IF(NOT CTEST_GIT_COMMAND)
-  MESSAGE(FATAL_ERROR "Couldn't find Git executable. Specify path as -DCTEST_GIT_COMMAND=C:/Program Files/Git/cmd/git.cmd")
-ENDIF()
+INCLUDE(maidsafe_find_git)
+SET(CTEST_UPDATE_COMMAND "${Git_EXECUTABLE}")
 
-MESSAGE("Found Ctest executable at " ${CTEST_CMAKE_COMMAND})
-MESSAGE("Found Git executable at " ${CTEST_GIT_COMMAND})
-
-SET(CTEST_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
-
-MESSAGE("================================================================================")
+MESSAGE(FATAL_ERROR "================================================================================")
 
 ###############################################################################
 # Ctest Utility Functions                                                     #
