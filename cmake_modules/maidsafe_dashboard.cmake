@@ -234,10 +234,11 @@ IF(NOT CTEST_CMAKE_COMMAND)
 ENDIF()
 MESSAGE("-- Found CTest executable at " ${CTEST_CMAKE_COMMAND})
 
+SET(CMAKE_MODULE_PATH ${CTEST_SCRIPT_DIRECTORY})
 INCLUDE(maidsafe_find_git)
 SET(CTEST_UPDATE_COMMAND "${Git_EXECUTABLE}")
 
-MESSAGE(FATAL_ERROR "================================================================================")
+MESSAGE("================================================================================")
 
 ###############################################################################
 # Ctest Utility Functions                                                     #
