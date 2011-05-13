@@ -80,30 +80,41 @@ class ThreadsafeChunkStoreTest: public testing::Test {
 
   ~ThreadsafeChunkStoreTest() {}
   void SetUp() {
-    StoreContents(17);
-    StoreFromSourceFile(13);
+    StoreContents(17, false);
+    StoreFromSourceFile(13, false);
   }
   template <class HashType>
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
                       bool reference_counting,
                       const fs::path &chunk_dir);
-  void StoreContents(const uint16_t &num) {
+  void StoreContents(const uint16_t &num, const bool &check_flag) {
     for (uint16_t i = 1; i < num + 1; ++i) {
       std::string contents = RandomString(64 * i);
       std::string chunk_name = crypto::Hash<crypto::SHA512>(contents);
-      chunkname_.push_back(chunk_name);
       threadsafe_chunk_store_->Store(chunk_name, contents);
-      total_chunk_size_+= (64 * i);
+
+      if (check_flag) {
+        EXPECT_TRUE(threadsafe_chunk_store_->Has(chunk_name));
+      } else {
+        chunkname_.push_back(chunk_name);
+        total_chunk_size_+= (64 * i);
+      }
     }
   }
-  void StoreFromSourceFile(const uint16_t &num) {
+  void StoreFromSourceFile(const uint16_t &num, const bool &check_flag) {
     for (uint16_t i = 1; i < num + 1; ++i) {
-      fs::path path(*test_dir_ / "chunk.dat");
+      std::string chunk(RandomAlphaNumericString(6));
+      fs::path path(*test_dir_ / chunk);
       CreateRandomFile(path, 177 * i);
       std::string file_name = crypto::HashFile<crypto::SHA512>(path);
       threadsafe_chunk_store_->Store(file_name, path, true);
-      chunkname_.push_back(file_name);
-      total_chunk_size_+= (177 * i);
+
+      if (check_flag) {
+        EXPECT_TRUE(threadsafe_chunk_store_->Has(file_name));
+      } else {
+        chunkname_.push_back(file_name);
+        total_chunk_size_+= (177 * i);
+      }
     }
   }
 
@@ -184,6 +195,14 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   void ClearChunk() {
     threadsafe_chunk_store_->Clear();
     EXPECT_TRUE(threadsafe_chunk_store_->Empty());
+  }
+
+  void MoveChunk(const std::string &chunk_name,
+                 ChunkStore *another_chunk_store) {
+    EXPECT_TRUE(threadsafe_chunk_store_->MoveTo(chunk_name,
+                                                another_chunk_store));
+    EXPECT_FALSE(threadsafe_chunk_store_->Has(chunk_name));
+    EXPECT_TRUE(another_chunk_store->Has(chunk_name));
   }
 
  protected:
@@ -359,6 +378,140 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Clear) {
         std::bind(&ThreadsafeChunkStoreTest::ClearChunk, this));
   }
   this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_MoveTo) {
+  MemoryChunkStore another_chunk_store(
+      false, std::bind(&crypto::Hash<crypto::SHA512>, std::placeholders::_1));
+  size_t entry_size = this->chunkname_.size();
+  for (size_t i = 0; i < entry_size; ++i) {
+    auto it = this->chunkname_.at(i);
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::MoveChunk, this, it,
+                  &another_chunk_store));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Store) {
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::StoreContents, this, i, true));
+    this->thread_pool_->EnqueueTask(
+        std::bind(&ThreadsafeChunkStoreTest::StoreFromSourceFile, this, i,
+                  true));
+  }
+  this->thread_pool_->Stop();
+}
+
+TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Misc) {
+  std::vector<std::string> delete_chunknames, moveto_chunknames;
+  for (uint16_t i = 0; i < 17; ++i) {
+    std::string contents = RandomString(64 * i);
+    std::string chunk_name = crypto::Hash<crypto::SHA512>(contents);
+    threadsafe_chunk_store_->Store(chunk_name, contents);
+    if (i < 10)
+      delete_chunknames.push_back(chunk_name);
+    else
+      moveto_chunknames.push_back(chunk_name);
+  }
+  typedef std::function<void()> functor;
+  std::vector<functor> functors;
+
+  // Create Delete functor
+  for (size_t i = 0; i < delete_chunknames.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::DeleteChunk, this,
+                           delete_chunknames[i]);
+    functors.push_back(f1);
+  }
+
+  // Create MoveTo functor
+  MemoryChunkStore another_chunk_store(
+      false, std::bind(&crypto::Hash<crypto::SHA512>, std::placeholders::_1));
+  for (size_t i = 0; i < moveto_chunknames.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::MoveChunk, this,
+                           moveto_chunknames[i], &another_chunk_store);
+    functors.push_back(f1);
+  }
+
+  //  create Store functor
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::StoreContents, this, i,
+                           true);
+    functor f2 = std::bind(&ThreadsafeChunkStoreTest::StoreFromSourceFile,
+                           this, i, true);
+    functors.push_back(f1);
+    functors.push_back(f2);
+  }
+
+  //  create Has functor
+  for (size_t i = 0; i < chunkname_.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::HasChunk, this,
+                           chunkname_[i]);
+    functors.push_back(f1);
+  }
+
+  // create Get functor
+  for (size_t i = 0; i < chunkname_.size(); ++i) {
+    std::string chunk(RandomAlphaNumericString(6));
+    fs::path path(*test_dir_ / chunk);
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::GetFileChunk, this,
+                            chunkname_[i], path);
+    functor f2 = std::bind(&ThreadsafeChunkStoreTest::GetMemChunk, this,
+                           chunkname_[i]);
+    functors.push_back(f1);
+    functors.push_back(f2);
+  }
+
+  //  create Size functor
+  uint64_t total_size(0);
+  for (size_t i = 0; i < chunkname_.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::ChunkSize, this,
+                           chunkname_[i], &total_size);
+    functors.push_back(f1);
+  }
+
+  //  create Validate functor
+  for (size_t i = 0; i < chunkname_.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::ValidateChunk, this,
+                           chunkname_[i]);
+    functors.push_back(f1);
+  }
+
+  //  create Count functor
+  for (size_t i = 0; i < chunkname_.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::ChunkCount, this,
+                           chunkname_[i]);
+    functors.push_back(f1);
+  }
+
+  //  create Empty functor
+  for (size_t i = 0; i < chunkname_.size(); ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::EmptyChunk, this);
+    functors.push_back(f1);
+  }
+
+  //  create Capacity functor
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::ChunkStoreCapacity, this,
+                           0);
+    functors.push_back(f1);
+  }
+
+  //  create vacant functor
+  for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
+    functor f1 = std::bind(&ThreadsafeChunkStoreTest::Vacant, this, (i * 13));
+    functors.push_back(f1);
+  }
+
+  std::random_shuffle(functors.begin(), functors.end());
+
+  for (size_t i = 0; i < functors.size(); ++i) {
+    this->thread_pool_->EnqueueTask(functors[i]);
+  }
+  this->thread_pool_->Stop();
+  // Check for Chunksizes
+  EXPECT_EQ(this->total_chunk_size_, total_size);
 }
 
 }  // namespace test
