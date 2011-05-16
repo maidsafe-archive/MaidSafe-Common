@@ -50,7 +50,6 @@ ELSEIF(CMAKE_BUILD_TYPE_DIR MATCHES "kdev")
 ENDIF()
 
 SET(ERROR_MESSAGE "No generator previously specified.\nTo see a full list of generators, run:\n\t${ERROR_MESSAGE_CMAKE_PATH} --help\n")
-SET(CMAKE_GEN ${CMAKE_GENERATOR} CACHE INTERNAL "" FORCE)
 IF(NOT ${CMAKE_C_COMPILER_WORKS})
   MESSAGE(FATAL_ERROR ${ERROR_MESSAGE})
 ENDIF()
@@ -66,6 +65,10 @@ OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 # This call resets CMAKE_BUILD_TYPE, hence it's copied from CMAKE_BUILD_TYPE_DIR which is set above.
 PROJECT(${PROJECT_NAME})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, the build type is set by running cmake from the appropriate build subdirectory e.g. for a Debug build, \"cd build/Linux/Debug && cmake ../../..\"." FORCE)
+
+IF(MSVC AND ${MSVC_VERSION} LESS 1600)  # i.e for MSVC < Visual Studio 10.0
+  MESSAGE(FATAL_ERROR "In order to use C++0x features, this library cannot be built using a version of Visual Studio less than 10.0 (i.e. VS 2010)")
+ENDIF()
 
 ###################################################################################################
 # Third party library search                                                                      #
@@ -88,7 +91,7 @@ IF(NOT MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE OR NOT CRYPTO_TEST_CMAKE OR FORCE_TH
     MESSAGE("-- Creating third party libs.  Building target ${FORCE_THIRD_PARTY_BUILD} only.")
   ENDIF()
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory BuildThirdPartyLibs)
-  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} "-DBUILD_TARGET=${FORCE_THIRD_PARTY_BUILD}" ${THIRD_PARTY_CMAKE} WORKING_DIRECTORY BuildThirdPartyLibs)# OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} "-DBUILD_TARGET=${FORCE_THIRD_PARTY_BUILD}" ${THIRD_PARTY_CMAKE} -G ${CMAKE_GENERATOR} WORKING_DIRECTORY BuildThirdPartyLibs)# OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
   UNSET(FORCE_THIRD_PARTY_BUILD CACHE)
   FIND_FILE(MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE install_prefix.cmake ${PROJECT_SOURCE_DIR}/../third_party_libs)
   FIND_FILE(CRYPTO_TEST_CMAKE crypto_test.cmake ${PROJECT_SOURCE_DIR}/../third_party_libs)
