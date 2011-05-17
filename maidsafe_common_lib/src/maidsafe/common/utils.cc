@@ -232,6 +232,7 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
                                      std::ios::binary);
     file_out.write(content.data(), content.size());
     file_out.close();
+    // std::cout<<"\n******close the file *************\n";
   }
   catch(...) {
     return false;

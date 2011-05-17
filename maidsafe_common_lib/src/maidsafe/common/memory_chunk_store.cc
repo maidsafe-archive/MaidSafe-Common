@@ -35,7 +35,7 @@ std::string MemoryChunkStore::Get(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return "";
-
+ 
   return it->second.second;
 }
 
@@ -44,7 +44,7 @@ bool MemoryChunkStore::Get(const std::string &name,
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
-
+  
   return WriteFile(sink_file_name, it->second.second);
 }
 

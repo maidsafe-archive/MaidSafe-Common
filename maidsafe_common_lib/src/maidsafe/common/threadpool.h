@@ -42,11 +42,10 @@ namespace maidsafe {
 
 class Threadpool {
  public:
-  explicit Threadpool(const boost::uint8_t &poolsize);
+  explicit Threadpool(const uint8_t &poolsize);
   ~Threadpool();
-  void Start();
   void Stop();
-  typedef boost::function<void()> VoidFunctor;
+  typedef std::function<void()> VoidFunctor;
   // we may add this method plus the private run now method later
   // template <typename T>
   // AddTask (io_service_.post(
@@ -62,6 +61,7 @@ class Threadpool {
   // no copy or assign for thread safety (functors)
   Threadpool(const Threadpool&);
   Threadpool &operator=(const Threadpool&);
+  void Start();
   boost::asio::io_service io_service_;
   std::shared_ptr<boost::asio::io_service::work> work_;
   boost::thread_group thread_group_;

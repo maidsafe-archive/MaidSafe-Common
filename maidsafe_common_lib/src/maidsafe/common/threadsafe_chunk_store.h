@@ -26,18 +26,22 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
- * @file chunk_store.h
- * @brief Declaration of ChunkStore interface.
+ * @file threadsafe_chunk_store.h
+ * @brief Declaration of ThreadsafeChunkStore interface.
  */
 
-#ifndef MAIDSAFE_COMMON_CHUNK_STORE_H_
-#define MAIDSAFE_COMMON_CHUNK_STORE_H_
+#ifndef MAIDSAFE_COMMON_THREADSAFE_CHUNK_STORE_H_
+#define MAIDSAFE_COMMON_THREADSAFE_CHUNK_STORE_H_
 
 #include <cstdint>
 #include <string>
+#include <utility>
+
 #include "boost/filesystem.hpp"
-#include "maidsafe/common/alternative_store.h"
-#include "maidsafe/common/version.h"
+#include "boost/thread/shared_mutex.hpp"
+#include "boost/thread/locks.hpp"
+
+#include "maidsafe/common/chunk_store.h"
 
 namespace fs = boost::filesystem;
 
@@ -54,21 +58,22 @@ namespace maidsafe {
  * than zero. If that limit is reached, further Store operations will fail. A
  * value of zero (the default) equals infinite storage capacity.
  */
-class ChunkStore : public AlternativeStore {
+class ThreadsafeChunkStore : public ChunkStore {
  public:
-  explicit ChunkStore(bool reference_counting)
-      : AlternativeStore(),
-        kReferenceCounting(reference_counting),
-        capacity_(0),
-        size_(0) {}
-  virtual ~ChunkStore() {}
+  explicit ThreadsafeChunkStore(bool reference_counting,
+                                std::shared_ptr<ChunkStore> chunk_store)
+      : ChunkStore(reference_counting),
+        chunk_store_(chunk_store),
+        shared_mutex_() {}
+
+  ~ThreadsafeChunkStore() {}
 
   /**
    * Retrieves a chunk's content as a string.
    * @param name Chunk name
    * @return Chunk content, or empty if non-existant
    */
-  virtual std::string Get(const std::string &name) const = 0;
+  std::string Get(const std::string &name) const;
 
   /**
    * Retrieves a chunk's content as a file, potentially overwriting an existing
@@ -77,8 +82,8 @@ class ChunkStore : public AlternativeStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  virtual bool Get(const std::string &name,
-                   const fs::path &sink_file_name) const = 0;
+  bool Get(const std::string &name,
+           const fs::path &sink_file_name) const;
 
   /**
    * Stores chunk content under the given name.
@@ -86,7 +91,7 @@ class ChunkStore : public AlternativeStore {
    * @param content The chunk's content
    * @return True if chunk could be stored or already existed
    */
-  virtual bool Store(const std::string &name, const std::string &content) = 0;
+  bool Store(const std::string &name, const std::string &content);
 
   /**
    * Stores chunk content under the given name.
@@ -95,16 +100,16 @@ class ChunkStore : public AlternativeStore {
    * @param delete_source_file True if file can be deleted after storing
    * @return True if chunk could be stored or already existed
    */
-  virtual bool Store(const std::string &name,
-                     const fs::path &source_file_name,
-                     bool delete_source_file) = 0;
+  bool Store(const std::string &name,
+             const fs::path &source_file_name,
+             bool delete_source_file);
 
   /**
    * Deletes a stored chunk.
    * @param name Chunk name
    * @return True if chunk deleted or non-existant
    */
-  virtual bool Delete(const std::string &name) = 0;
+  bool Delete(const std::string &name);
 
   /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
@@ -113,15 +118,15 @@ class ChunkStore : public AlternativeStore {
    * @param sink_chunk_store The receiving ChunkStore
    * @return True if operation successful
    */
-  virtual bool MoveTo(const std::string &name,
-                      ChunkStore *sink_chunk_store) = 0;
+  bool MoveTo(const std::string &name,
+              ChunkStore *sink_chunk_store);
 
   /**
    * Checks if a chunk exists.
    * @param name Chunk name
    * @return True if chunk exists
    */
-  virtual bool Has(const std::string &name) const = 0;
+  bool Has(const std::string &name) const;
 
   /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
@@ -130,22 +135,20 @@ class ChunkStore : public AlternativeStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-  virtual bool Validate(const std::string &name) const = 0;
+  bool Validate(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  virtual std::uintmax_t Size(const std::string &name) const = 0;
+  std::uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the stored chunks.
    * @return Size in bytes
    */
-  virtual std::uintmax_t Size() const {
-    return size_;
-  }
+  std::uintmax_t Size() const;
 
   /**
    * Retrieves the maximum storage capacity available to this ChunkStore.
@@ -153,9 +156,7 @@ class ChunkStore : public AlternativeStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  virtual std::uintmax_t Capacity() const {
-    return capacity_;
-  }
+  std::uintmax_t Capacity() const;
 
   /**
    * Sets the maximum storage capacity available to this ChunkStore.
@@ -164,20 +165,14 @@ class ChunkStore : public AlternativeStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  virtual void SetCapacity(const std::uintmax_t &capacity) {
-    capacity_ = capacity;
-    if (capacity_ > 0 && capacity_ < size_)
-      capacity_ = size_;
-  }
+  void SetCapacity(const std::uintmax_t &capacity);
 
   /**
    * Checks whether the ChunkStore has enough capacity to store a chunk of the
    * given size.
    * @return True if required size vacant
    */
-  virtual bool Vacant(const std::uintmax_t &required_size) const {
-    return capacity_ == 0 || size_ + required_size <= capacity_;
-  }
+  bool Vacant(const std::uintmax_t &required_size) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -188,60 +183,36 @@ class ChunkStore : public AlternativeStore {
    * @param name Chunk name
    * @return Reference count
    */
-  virtual std::uintmax_t Count(const std::string &name) const = 0;
+  std::uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  virtual std::uintmax_t Count() const = 0;
+  std::uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
    * @return True if no chunks stored
    */
-  virtual bool Empty() const = 0;
+  bool Empty() const;
 
   /**
    * Deletes all stored chunks.
    */
-  virtual void Clear() { size_ = 0; }
-
- protected:
-  /// Whether reference counting is enabled for this instance.
-  const bool kReferenceCounting;
-
-  /**
-   * Increases the total size of the stored chunks.
-   *
-   * To be called by derived class when storing non-existant chunk.
-   * @param delta Size to add to total
-   */
-  void IncreaseSize(const std::uintmax_t &delta) {
-    size_ += delta;
-    if (capacity_ > 0 && capacity_ < size_)
-      capacity_ = size_;
-  }
-
-  /**
-   * Decreases the total size of the stored chunks.
-   *
-   * To be called by derived class when deleting existant chunk.
-   * @param delta Size to subtract from total
-   */
-  void DecreaseSize(const std::uintmax_t &delta) {
-    if (delta <= size_)
-      size_ -= delta;
-    else
-      size_ = 0;
-  }
+  void Clear();
 
  private:
-  ChunkStore(const ChunkStore&);
-  ChunkStore& operator=(const ChunkStore&);
-  std::uintmax_t capacity_, size_;
+  ThreadsafeChunkStore(const ThreadsafeChunkStore&);
+  ThreadsafeChunkStore& operator=(const ThreadsafeChunkStore&);
+
+  typedef boost::shared_lock<boost::shared_mutex> SharedLock;
+  typedef boost::unique_lock<boost::shared_mutex> UniqueLock;
+
+  std::shared_ptr<ChunkStore> chunk_store_;
+  mutable boost::shared_mutex shared_mutex_;
 };
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_CHUNK_STORE_H_
+#endif  // MAIDSAFE_COMMON_THREADSAFE_CHUNK_STORE_H_

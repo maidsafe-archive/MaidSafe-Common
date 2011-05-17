@@ -44,8 +44,8 @@ namespace test {
 
 class Work {
  public:
-  Work(const boost::uint8_t &min_task_sleep,
-       const boost::uint8_t &max_task_sleep)
+  Work(const uint8_t &min_task_sleep,
+       const uint8_t &max_task_sleep)
       : min_task_sleep_(min_task_sleep),
         max_task_sleep_(max_task_sleep),
         task_sleep_difference_(max_task_sleep - min_task_sleep + 1),
@@ -86,7 +86,7 @@ class Work {
  private:
   Work(const Work&);
   Work& operator=(const Work&);
-  boost::uint8_t min_task_sleep_, max_task_sleep_, task_sleep_difference_;
+  uint8_t min_task_sleep_, max_task_sleep_, task_sleep_difference_;
   std::vector<int> completed_tasks_;
   boost::mutex completed_tasks_mutex_;
   bool done_min_sleep_, done_max_sleep_;
@@ -101,11 +101,11 @@ class ThreadpoolTest : public testing::Test {
   virtual ~ThreadpoolTest() {}
   virtual void SetUp() {}
   virtual void TearDown() {}
-  void Sleep(const boost::uint32_t &duration) {
+  void Sleep(const uint32_t &duration) {
     boost::this_thread::sleep(boost::posix_time::milliseconds(duration));
   }
   const boost::posix_time::milliseconds kTimeout_;
-  const boost::uint8_t kMinTaskDuration_, kMaxTaskDuration_;
+  const uint8_t kMinTaskDuration_, kMaxTaskDuration_;
   Work work_;
  private:
   ThreadpoolTest(const ThreadpoolTest&);
@@ -113,7 +113,7 @@ class ThreadpoolTest : public testing::Test {
 };
 
 TEST_F(ThreadpoolTest, BEH_BASE_SingleTask) {
-  boost::function<void()> functor(boost::bind(&Work::DoTask, &work_, 999));
+  std::function<void()> functor(std::bind(&Work::DoTask, &work_, 999));
   // Run a threadpool with 0 threads
   Threadpool threadpool1(0);
   EXPECT_TRUE(threadpool1.EnqueueTask(functor));
@@ -153,7 +153,7 @@ TEST_F(ThreadpoolTest, BEH_BASE_MultipleTasks) {
     Threadpool threadpool(kThreadCount);
     ASSERT_TRUE(work_.completed_tasks().empty());
     for (size_t i = 0; i < kTaskCount; ++i) {
-      threadpool.EnqueueTask(boost::bind(&Work::DoTask, &work_, i));
+      threadpool.EnqueueTask(std::bind(&Work::DoTask, &work_, i));
       enqueued_tasks.push_back(i);
     }
     size_t timeout_count(0);
@@ -185,8 +185,8 @@ void ThrowMe() {
 }
 
 TEST_F(ThreadpoolTest, BEH_BASE_ThrowingTask) {
-  boost::function<void()> functor(boost::bind(&Work::DoTask, &work_, 999));
-  boost::function<void()> throwing_functor(boost::bind(&ThrowMe));
+  std::function<void()> functor(std::bind(&Work::DoTask, &work_, 999));
+  std::function<void()> throwing_functor(std::bind(&ThrowMe));
   // Run a threadpool with 0 threads
   Threadpool threadpool1(0);
   EXPECT_TRUE(threadpool1.EnqueueTask(functor));
