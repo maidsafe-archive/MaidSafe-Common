@@ -66,8 +66,10 @@ OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 PROJECT(${PROJECT_NAME})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, the build type is set by running cmake from the appropriate build subdirectory e.g. for a Debug build, \"cd build/Linux/Debug && cmake ../../..\"." FORCE)
 
-IF(MSVC AND ${MSVC_VERSION} LESS 1600)  # i.e for MSVC < Visual Studio 10.0
-  MESSAGE(FATAL_ERROR "In order to use C++0x features, this library cannot be built using a version of Visual Studio less than 10.0 (i.e. VS 2010)")
+IF(MSVC)
+  IF(${MSVC_VERSION} LESS 1600)  # i.e for MSVC < Visual Studio 10.0
+    MESSAGE(FATAL_ERROR "In order to use C++0x features, this library cannot be built using a version of Visual Studio less than 10.0 (i.e. VS 2010)")
+  ENDIF()
 ENDIF()
 
 ###################################################################################################
