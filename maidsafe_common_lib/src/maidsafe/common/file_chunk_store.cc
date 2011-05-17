@@ -470,8 +470,10 @@ fs::path FileChunkStore::ChunkNameToFilePath(const std::string &chunk_name,
   std::string encoded_file_name = EncodeToBase32(chunk_name);
 
   unsigned int dir_depth_for_chunk = dir_depth_;
-  if (encoded_file_name.length() < dir_depth_for_chunk)
-    dir_depth_for_chunk = encoded_file_name.length() - 1;
+  if (encoded_file_name.length() < dir_depth_for_chunk) {
+    dir_depth_for_chunk =
+        static_cast<unsigned int>(encoded_file_name.length()) - 1;
+  }
 
   fs::path storage_dir(storage_location_);
   for (unsigned int i = 0; i < dir_depth_for_chunk; ++i)

@@ -111,7 +111,7 @@ bool CallLaterTimer::CancelOne(const boost::uint32_t &call_later_id) {
 
 int CallLaterTimer::CancelAll() {
   boost::mutex::scoped_lock guard(timers_mutex_);
-  int n = timers_.size();
+  int n = static_cast<int>(timers_.size());
   for (TimersMap::iterator it = timers_.begin(); it != timers_.end(); ++it) {
     it->second->cancel();
   }

@@ -146,7 +146,7 @@ TEST_F(ThreadpoolTest, BEH_BASE_SingleTask) {
 TEST_F(ThreadpoolTest, BEH_BASE_MultipleTasks) {
   const size_t kThreadCount(10);
   const size_t kTaskCount(1000);
-  std::vector<int> enqueued_tasks;
+  std::vector<size_t> enqueued_tasks;
   enqueued_tasks.reserve(kTaskCount);
   {
     Threadpool threadpool(kThreadCount);
