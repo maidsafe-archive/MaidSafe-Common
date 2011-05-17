@@ -272,7 +272,7 @@ TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
   EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
 }
 
-TEST(UtilsTest, BEH_ENCRYPT_ReadWriteFile) {
+TEST(UtilsTest, FUNC_ENCRYPT_ReadWriteFile) {
   fs::path file_path(fs::unique_path(fs::temp_directory_path() /
       "MaidSafe_TestUtils_%%%%-%%%%-%%%%.dat"));
   std::string file_content;
