@@ -87,7 +87,7 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
                       bool reference_counting,
                       const fs::path &chunk_dir);
-  void StoreContents(const uint16_t &num, const bool &check_flag) {
+  void StoreContents(const size_t &num, const bool &check_flag) {
     for (uint16_t i = 1; i < num + 1; ++i) {
       std::string contents = RandomString(64 * i);
       std::string chunk_name = crypto::Hash<crypto::SHA512>(contents);
@@ -101,7 +101,7 @@ class ThreadsafeChunkStoreTest: public testing::Test {
       }
     }
   }
-  void StoreFromSourceFile(const uint16_t &num, const bool &check_flag) {
+  void StoreFromSourceFile(const size_t &num, const bool &check_flag) {
     for (uint16_t i = 1; i < num + 1; ++i) {
       std::string chunk(RandomAlphaNumericString(6));
       fs::path path(*test_dir_ / chunk);

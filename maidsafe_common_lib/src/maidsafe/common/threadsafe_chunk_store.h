@@ -48,20 +48,13 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 /**
- * Abstract class to manage storage and retrieval of named data items (chunks).
- *
- * A chunk is a small, content-adressable piece of data. The name has to match
- * the cryptographic hash of the content, otherwise the chunk is deemed invalid.
- * The type of hash function used is chosen by the implementation.
- *
- * The storage capacity can be limited by setting Capacity to a value greater
- * than zero. If that limit is reached, further Store operations will fail. A
- * value of zero (the default) equals infinite storage capacity.
+ * Concrete threadsafe class to manage storage and retrieval of chunks.  The
+ * class implements shared mutex locking around another concrete ChunkStore.
  */
 class ThreadsafeChunkStore : public ChunkStore {
  public:
-  explicit ThreadsafeChunkStore(bool reference_counting,
-                                std::shared_ptr<ChunkStore> chunk_store)
+  ThreadsafeChunkStore(bool reference_counting,
+                       std::shared_ptr<ChunkStore> chunk_store)
       : ChunkStore(reference_counting),
         chunk_store_(chunk_store),
         shared_mutex_() {}
@@ -82,8 +75,7 @@ class ThreadsafeChunkStore : public ChunkStore {
    * @param sink_file_name Path to output file
    * @return True if chunk exists and could be written to file.
    */
-  bool Get(const std::string &name,
-           const fs::path &sink_file_name) const;
+  bool Get(const std::string &name, const fs::path &sink_file_name) const;
 
   /**
    * Stores chunk content under the given name.
@@ -118,8 +110,7 @@ class ThreadsafeChunkStore : public ChunkStore {
    * @param sink_chunk_store The receiving ChunkStore
    * @return True if operation successful
    */
-  bool MoveTo(const std::string &name,
-              ChunkStore *sink_chunk_store);
+  bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
 
   /**
    * Checks if a chunk exists.

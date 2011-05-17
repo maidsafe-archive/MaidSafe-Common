@@ -147,12 +147,12 @@ TEST_F(ThreadpoolTest, BEH_BASE_SingleTask) {
 TEST_F(ThreadpoolTest, BEH_BASE_MultipleTasks) {
   const size_t kThreadCount(10);
   const size_t kTaskCount(1000);
-  std::vector<size_t> enqueued_tasks;
+  std::vector<int> enqueued_tasks;
   enqueued_tasks.reserve(kTaskCount);
   {
     Threadpool threadpool(kThreadCount);
     ASSERT_TRUE(work_.completed_tasks().empty());
-    for (size_t i = 0; i < kTaskCount; ++i) {
+    for (int i = 0; i < kTaskCount; ++i) {
       threadpool.EnqueueTask(std::bind(&Work::DoTask, &work_, i));
       enqueued_tasks.push_back(i);
     }
