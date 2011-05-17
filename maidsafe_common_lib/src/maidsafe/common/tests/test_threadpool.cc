@@ -152,7 +152,7 @@ TEST_F(ThreadpoolTest, BEH_BASE_MultipleTasks) {
   {
     Threadpool threadpool(kThreadCount);
     ASSERT_TRUE(work_.completed_tasks().empty());
-    for (int i = 0; i < kTaskCount; ++i) {
+    for (int i = 0; i < static_cast<int>(kTaskCount); ++i) {
       threadpool.EnqueueTask(std::bind(&Work::DoTask, &work_, i));
       enqueued_tasks.push_back(i);
     }
