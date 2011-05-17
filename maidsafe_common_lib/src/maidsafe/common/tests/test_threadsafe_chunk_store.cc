@@ -242,7 +242,7 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   boost::mutex mutex_;
 };
 
-TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Get) {
+TEST_F(ThreadsafeChunkStoreTest, FUNC_TSCS_Get) {
   size_t entry_size = this->chunkname_.size();
   uint32_t index = RandomUint32();
   for (size_t i = 0; i < entry_size; ++i) {
