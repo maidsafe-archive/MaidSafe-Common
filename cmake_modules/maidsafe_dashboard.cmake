@@ -1,5 +1,5 @@
 SET(SCRIPT_VERSION 1)
-FILE(STRINGS "${CTEST_SCRIPT_NAME}" INSTALLED_VERSION_INFO LIMIT_COUNT 1)
+FILE(STRINGS "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" INSTALLED_VERSION_INFO LIMIT_COUNT 1)
 STRING(REPLACE " " ";" INSTALLED_VERSION_INFO ${INSTALLED_VERSION_INFO})
 LIST(GET INSTALLED_VERSION_INFO 1 INSTALLED_VERSION)
 STRING(REPLACE ")" "" INSTALLED_VERSION ${INSTALLED_VERSION})
@@ -24,10 +24,10 @@ MESSAGE("Starting Script version: ${SCRIPT_VERSION}")
 #Test will run for below modules
 SET(ALL_MODULE_LIST
     "MAIDSAFE_COMMON"
-    "MAIDSAFE_DHT"
     "MAIDSAFE_ENCRYPT"
-#   "PKI"
-#   "PASSPORT"
+    "MAIDSAFE_DHT"
+    "PKI"
+    "PASSPORT"
 #   "MAIDSAFE_PD"
 #   "FILE_BROWSER"
 #   "LIFESTUFF"
@@ -44,20 +44,20 @@ ENDFOREACH()
 MESSAGE("================================================================================")
 
 ###############################################################################
-# Test configurations                                                         #
+# Module configurations                                                       #
 ###############################################################################
 #Module folder-name/path relative to TEST_ROOT_DIRECTORY
 SET(MAIDSAFE_COMMON "MaidSafe-Common/maidsafe_common_lib")
-SET(MAIDSAFE_DHT "MaidSafe-DHT")
 SET(MAIDSAFE_ENCRYPT "MaidSafe-Encrypt")
-SET(PKI PKI)
-SET(PASSPORT Passport)
-SET(MAIDSAFE_PD MaidSafe-PD)
-SET(FILE_BROWSER File-Browser)
-SET(LIFESTUFF LifeStuff)
-SET(LIFESTUFF_GUI LifeStuff-GUI)
-SET(SIGMOID_CORE SigmoidCore)
-SET(DEDUPLICATOR_GAUGE Deduplicator-Gauge)
+SET(MAIDSAFE_DHT "MaidSafe-DHT")
+SET(PKI "PKI")
+SET(PASSPORT "Passport")
+SET(MAIDSAFE_PD "MaidSafe-PD")
+SET(FILE_BROWSER "File-Browser")
+SET(LIFESTUFF "LifeStuff")
+SET(LIFESTUFF_GUI "LifeStuff-GUI")
+SET(SIGMOID_CORE "SigmoidCore")
+SET(DEDUPLICATOR_GAUGE "Deduplicator-Gauge")
 
 #List the Module if needs to be installed
 SET(MAIDSAFE_COMMON_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
@@ -69,16 +69,121 @@ SET(PKI_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
 SET(MAIDSAFE_PD_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
 SET(FILE_BROWSER_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
 SET(LIFESTUFF_SHOULD_BE_INSTALLED_AFTER_UPDATE 1)
-##############################################################################
-#Variable(s) determined after running cmake                                  #
-##############################################################################
+
+#List of dependent modules which will be tested for a given module
+SET(MAIDSAFE_COMMON_DEPENDANTS
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DHT
+    PKI
+    PASSPORT
+    MAIDSAFE_PD
+    LIFESTUFF
+    LIFESTUFF_GUI
+    SIGMOID_CORE
+    DEDUPLICATOR_GAUGE
+    )
+SET(MAIDSAFE_ENCRYPT_DEPENDANTS
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DHT
+    SIGMOID_CORE
+    )
+    SET(MAIDSAFE_DHT_DEPENDANTS
+    MAIDSAFE_DHT
+    PKI
+    PASSPORT
+    MAIDSAFE_PD
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(PKI_DEPENDANTS
+    PKI
+    PASSPORT
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(PASSPORT_DEPENDANTS
+    PASSPORT
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(MAIDSAFE_PD_DEPENDANTS
+    MAIDSAFE_PD
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(FILE_BROWSER_DEPENDANTS
+    FILE_BROWSER
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(LIFESTUFF_DEPENDANTS
+    LIFESTUFF
+    LIFESTUFF_GUI
+    )
+SET(LIFESTUFF_GUI_DEPENDANTS
+    LIFESTUFF_GUI
+    )
+SET(SIGMOID_CORE_DEPENDANTS
+    SIGMOID_CORE)
+SET(DEDUPLICATOR_GAUGE_DEPENDANTS
+    DEDUPLICATOR_GAUGE)
+
+###############################################################################
+# Variable(s) determined after running cmake                                  #
+###############################################################################
 SET(CTEST_CMAKE_GENERATOR "@CMAKE_GENERATOR@")
 
-##############################################################################
+###############################################################################
+# Test configurations                                                         #
+###############################################################################
+IF(NOT "${CTEST_SCRIPT_ARG}" MATCHES "^(Nightly|NightlyDebug|NightlyRelease|Experimental|ExperimentalDebug|ExperimentalRelease|Continuous|ContinuousRelease|ContinuousDebug)$")
+  MESSAGE(FATAL_ERROR "Allowed arguments are Nightly, Experimental, Continuous, NightlyDebug, NightlyRelease, ExperimentalDebug, ExperimentalRelease, ContinuousRelease & ContinuousDebug \n eg. ctest -S ${CTEST_SCRIPT_NAME},NightlyDebug")
+ENDIF()
 
-SET(CTEST_BUILD_CONFIGURATION "Debug")
+# Select the model (Nightly, Experimental, Continuous).
+IF(${CTEST_SCRIPT_ARG} MATCHES Continuous)
+  SET(DASHBOARD_MODEL Continuous)
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Nightly)
+  SET(DASHBOARD_MODEL Nightly)
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Experimental)
+  SET(DASHBOARD_MODEL Experimental)
+ENDIF()
+
+IF(NOT DEFINED DASHBOARD_MODEL)
+  SET(DASHBOARD_MODEL Experimental)  #default to "Experimental"
+ENDIF()
+
+IF(${CTEST_SCRIPT_ARG} MATCHES Debug)
+  SET(CTEST_BUILD_CONFIGURATION "Debug")
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Release)
+  SET(CTEST_BUILD_CONFIGURATION "Release")
+ENDIF()
+
+IF(NOT DEFINED CTEST_BUILD_CONFIGURATION)
+  SET(CTEST_BUILD_CONFIGURATION "Debug")  #default to "Debug"
+ENDIF()
+
 #SET(CTEST_BUILD_OPTIONS "-DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
+MESSAGE("Dashboard Model Selected:      ${DASHBOARD_MODEL}")
+MESSAGE("Build Configuration Selected:  ${CTEST_BUILD_CONFIGURATION}")
+MESSAGE("================================================================================")
+
+###############################################################################
+# Utility functions                                                           #
+###############################################################################
+FUNCTION(SET_FORCE_TEST_FOR_ALL_MODULE VALUE)
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    SET(${EACH_MODULE}_NEEDS_FORCE_TEST ${VALUE} PARENT_SCOPE)
+  ENDFOREACH()
+ENDFUNCTION()
+
+FUNCTION(SET_FORCE_TEST_FOR_DEPENDANTS MODULE_NAME VALUE)
+  FOREACH(EACH_MODULE ${${MODULE_NAME}_DEPENDANTS})
+    SET(${EACH_MODULE}_NEEDS_FORCE_TEST ${VALUE} PARENT_SCOPE)
+  ENDFOREACH()
+ENDFUNCTION()
 
 ###############################################################################
 # Finding Modules Paths & setting initial update status                       #
@@ -93,7 +198,10 @@ FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
   ELSEIF(UNIX)
     SET(${EACH_MODULE}_BINARY_DIRECTORY ${${EACH_MODULE}_SOURCE_DIRECTORY}/build/Linux/${CTEST_BUILD_CONFIGURATION})
   ENDIF()
+
   SET(${EACH_MODULE}_UPDATED 0)
+  SET_FORCE_TEST_FOR_DEPENDANTS(${EACH_MODULE} 0)
+
   IF(EXISTS ${${EACH_MODULE}_SOURCE_DIRECTORY})
     MESSAGE("Found ${EACH_MODULE} at "${${EACH_MODULE}_SOURCE_DIRECTORY})
   ELSE()
@@ -122,48 +230,32 @@ MESSAGE("Hostname: " ${HOSTNAME})
 ###############################################################################
 FIND_PROGRAM(CTEST_CMAKE_COMMAND NAMES cmake)
 IF(NOT CTEST_CMAKE_COMMAND)
-  MESSAGE(FATAL_ERROR "Couldn't find cmake executable.Specify path of Ctest executable. \n e.g. -DCTEST_CMAKE_COMMAND=C:/Program Files/CMake 2.8/bin/cmake.exe")
+  MESSAGE(FATAL_ERROR "Couldn't find CTest executable. Specify path of CTest executable. \n e.g. -DCTEST_CMAKE_COMMAND=\"C:/Program Files/CMake 2.8/bin/cmake.exe\"")
 ENDIF()
+MESSAGE("-- Found CTest executable at " ${CTEST_CMAKE_COMMAND})
 
-IF(WIN32)
-  FIND_PROGRAM(CTEST_GIT_COMMAND NAMES git.cmd PATHS "D:/Program Files/Git/cmd" "C:/Program Files/Git/cmd")
-ELSEIF(UNIX)
-  FIND_PROGRAM(CTEST_GIT_COMMAND NAMES git)
-ENDIF()
-IF(NOT CTEST_GIT_COMMAND)
-  MESSAGE(FATAL_ERROR "Couldn't find Git executable. Specify path as -DCTEST_GIT_COMMAND=C:/Program Files/Git/cmd/git.cmd")
-ENDIF()
-
-MESSAGE("Found Ctest executable at " ${CTEST_CMAKE_COMMAND})
-MESSAGE("Found Git executable at " ${CTEST_GIT_COMMAND})
-
-SET(CTEST_UPDATE_COMMAND "${CTEST_GIT_COMMAND}")
+SET(CMAKE_MODULE_PATH ${CTEST_SCRIPT_DIRECTORY})
+INCLUDE(maidsafe_find_git)
+SET(CTEST_UPDATE_COMMAND "${Git_EXECUTABLE}")
 
 MESSAGE("================================================================================")
 
 ###############################################################################
-# Utility Functions                                                           #
+# Ctest Utility Functions                                                     #
 ###############################################################################
 FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
-  IF(${${MODULE_NAME}_UPDATED} GREATER 0)
-    MESSAGE("${EACH_MODULE} has changed last time!!")
-    RETURN()
-  ENDIF()
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
   SET(MODULE_BINARY_DIRECTORY ${${MODULE_NAME}_BINARY_DIRECTORY})
   MESSAGE("Checking updates for " ${MODULE_NAME})
   SET(CTEST_SOURCE_DIRECTORY ${MODULE_SOURCE_DIRECTORY})
   SET(CTEST_BINARY_DIRECTORY ${MODULE_BINARY_DIRECTORY})
-  CTEST_START("Continuous")
+  CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
   CTEST_UPDATE(SOURCE ${MODULE_SOURCE_DIRECTORY} RETURN_VALUE UPDATED_COUNT)
   SET(${MODULE_NAME}_UPDATED ${UPDATED_COUNT} PARENT_SCOPE)
 ENDFUNCTION()
 
-FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
-  IF(${${MODULE_NAME}_UPDATED} GREATER 0)
-    MESSAGE("${MODULE_NAME} repository changed.")
-  ELSE()
-    MESSAGE("No new updates for ${MODULE_NAME}.  Skipping test run.")
+FUNCTION(RUN_TEST_ONCE MODULE_NAME)
+  IF(${${MODULE_NAME}_NEEDS_FORCE_TEST} EQUAL 0)
     RETURN()
   ENDIF()
 
@@ -178,18 +270,7 @@ FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
   SET(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"")
   SET(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
-#  EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
-#      COMMAND ${CTEST_CMAKE_COMMAND} ${MODULE_SOURCE_DIRECTORY}
-#      RESULT_VARIABLE ret_var
-#      OUTPUT_VARIABLE out_var
-#      )
-#  IF(NOT ${ret_var} EQUAL 0)
-#    MESSAGE(FATAL_ERROR "  Running cmake for ${MODULE_NAME} returned ${ret_var}. Output : ${out_var}")
-#  ELSE()
-#    MESSAGE("  Ran cmake for ${MODULE_NAME}.")
-#  ENDIF()
-
-  CTEST_START("Continuous")
+  CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
   CTEST_UPDATE(RETURN_VALUE UPDATED_COUNT)
   SET(${EACH_MODULE}_UPDATED ${UPDATED_COUNT} PARENT_SCOPE)
   IF(${${EACH_MODULE}_UPDATED} GREATER 0)
@@ -239,23 +320,43 @@ FUNCTION(RUN_CONTINUOUS_ONCE MODULE_NAME)
     ENDIF()
   ENDIF()
   SET(${MODULE_NAME}_UPDATED 0 PARENT_SCOPE)
+  SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
 ENDFUNCTION()
 
 ###############################################################################
 # TEST                                                                        #
 ###############################################################################
+IF("${DASHBOARD_MODEL}" STREQUAL "Continuous") ### DASHBOARD_MODEL Continuous
 WHILE(1)
+  MESSAGE("Starting Continuous test now...")
   FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
     CHECK_UPDATE_STATUS_FOR_MODULE(${EACH_MODULE})
     IF(${${EACH_MODULE}_UPDATED} GREATER 0)
-      MESSAGE("${EACH_MODULE} has changed; starting over again...")
+      MESSAGE("${EACH_MODULE} has changed; Will run tests for module and its dependants...")
+      SET_FORCE_TEST_FOR_DEPENDANTS(${EACH_MODULE} 1)
       BREAK()
     ENDIF()
-    RUN_CONTINUOUS_ONCE(${EACH_MODULE})
+    RUN_TEST_ONCE(${EACH_MODULE})
     IF(${${EACH_MODULE}_UPDATED} GREATER 0)
       MESSAGE("${EACH_MODULE} has changed; starting over again...")
+      SET_FORCE_TEST_FOR_DEPENDANTS(${EACH_MODULE} 1)
       BREAK()
     ENDIF()
   ENDFOREACH()
   CTEST_SLEEP(60)
 ENDWHILE()
+ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Nightly") ### DASHBOARD_MODEL Nightly
+  MESSAGE("Starting Nightly test now...")
+    FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+      SET_FORCE_TEST_FOR_ALL_MODULE(${EACH_MODULE} 1)
+      RUN_TEST_ONCE(${EACH_MODULE})
+    ENDFOREACH()
+    MESSAGE("Nightly test completed. Exiting the script now...")
+ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Experimental")  ### DASHBOARD_MODEL Experimental
+  MESSAGE("Starting Experimental test now...")
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    SET_FORCE_TEST_FOR_ALL_MODULE(${EACH_MODULE} 1)
+    RUN_TEST_ONCE(${EACH_MODULE})
+  ENDFOREACH()
+  MESSAGE("Experimental test completed. Exiting the script now...")
+ENDIF()

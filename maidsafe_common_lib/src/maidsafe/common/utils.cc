@@ -62,7 +62,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-CryptoPP::AutoSeededX917RNG<CryptoPP::AES> g_srandom_number_generator;
+// CryptoPP::AutoSeededX917RNG<CryptoPP::AES> g_srandom_number_generator;
+CryptoPP::AutoSeededRandomPool g_srandom_number_generator;
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
       total_microseconds()));

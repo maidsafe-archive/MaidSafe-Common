@@ -140,6 +140,7 @@ TEST_F(ThreadpoolTest, BEH_BASE_SingleTask) {
     EXPECT_TRUE(threadpool4.EnqueueTask(functor));
     EXPECT_EQ(2U, work_.completed_tasks().size());
   }
+  Sleep(kMaxTaskDuration_ + 10);
   EXPECT_EQ(3U, work_.completed_tasks().size());
 }
 

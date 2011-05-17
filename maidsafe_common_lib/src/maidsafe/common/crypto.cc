@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/osrng.h"
 #include "cryptopp/integer.h"
 #include "cryptopp/pwdbased.h"
+#include "cryptopp/cryptlib.h"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -147,6 +148,7 @@ CryptoPP::RandomNumberGenerator &GlobalRNG() {
   return rand_pool;
 }
 
+
 std::string AsymEncrypt(const std::string &input,
                         const std::string &public_key) {
   try {
@@ -159,6 +161,8 @@ std::string AsymEncrypt(const std::string &input,
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what() << std::endl;
+    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
+      AsymEncrypt(input, public_key);
     return "";
   }
 }
@@ -177,6 +181,8 @@ std::string AsymDecrypt(const std::string &input,
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what() << std::endl;
+    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
+       AsymEncrypt(input, private_key);
     return "";
   }
 }
@@ -192,6 +198,8 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what() << std::endl;
+    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
+      AsymEncrypt(input, private_key);
     return "";
   }
 }
