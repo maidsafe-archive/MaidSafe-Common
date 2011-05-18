@@ -1,4 +1,4 @@
-SET(SCRIPT_VERSION 2)
+SET(SCRIPT_VERSION 3)
 FILE(STRINGS "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" INSTALLED_VERSION_INFO LIMIT_COUNT 1)
 STRING(REPLACE " " ";" INSTALLED_VERSION_INFO ${INSTALLED_VERSION_INFO})
 LIST(GET INSTALLED_VERSION_INFO 1 INSTALLED_VERSION)
@@ -170,6 +170,14 @@ MESSAGE("Dashboard Model Selected:      ${DASHBOARD_MODEL}")
 MESSAGE("Build Configuration Selected:  ${CTEST_BUILD_CONFIGURATION}")
 MESSAGE("================================================================================")
 
+FIND_FILE(DART_CONFIG NAMES DartConfiguration.tcl
+             PATHS "${CTEST_SCRIPT_DIRECTORY}/../../../../../MaidSafe-Common/maidsafe_common_lib/build"
+             PATH_SUFFIXES Win_MSVC Linux/Debug Linux/Release Linux/RelWithDebInfo Linux/MinSizeRel OSX/Debug OSX/Release OSX/RelWithDebInfo OSX/MinSizeRel
+             NO_DEFAULT_PATH)
+FILE(STRINGS ${DART_CONFIG} DART_CONFIG_CONTENTS REGEX "BuildName: ")
+STRING(REPLACE "BuildName: " "" CTEST_BUILD_NAME ${DART_CONFIG_CONTENTS})
+SET(CTEST_BUILD_NAME "${CTEST_BUILD_NAME} (${CTEST_BUILD_CONFIGURATION} v${SCRIPT_VERSION})")
+
 ###############################################################################
 # Utility functions                                                           #
 ###############################################################################
@@ -230,9 +238,9 @@ MESSAGE("Hostname: " ${HOSTNAME})
 ###############################################################################
 FIND_PROGRAM(CTEST_CMAKE_COMMAND NAMES cmake)
 IF(NOT CTEST_CMAKE_COMMAND)
-  MESSAGE(FATAL_ERROR "Couldn't find CTest executable. Specify path of CTest executable. \n e.g. -DCTEST_CMAKE_COMMAND=\"C:/Program Files/CMake 2.8/bin/cmake.exe\"")
+  MESSAGE(FATAL_ERROR "Couldn't find CMake executable. Specify path of CMake executable. \n e.g. -DCTEST_CMAKE_COMMAND=\"C:/Program Files/CMake 2.8/bin/cmake.exe\"")
 ENDIF()
-MESSAGE("-- Found CTest executable at " ${CTEST_CMAKE_COMMAND})
+MESSAGE("-- Found CMake")
 
 SET(CMAKE_MODULE_PATH ${CTEST_SCRIPT_DIRECTORY})
 INCLUDE(maidsafe_find_git)
