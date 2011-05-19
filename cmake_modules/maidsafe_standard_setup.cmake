@@ -191,9 +191,6 @@ IF(UNIX)
   ENDIF()
 ENDIF()
 
-INCLUDE(CTest)
-INCLUDE(maidsafe_add_gtests)
-
 SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 50000)
 SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 50000)
 SET(CTEST_CONTINUOUS_DURATION 600)
@@ -201,9 +198,11 @@ SET(CTEST_CONTINUOUS_MINIMUM_INTERVAL 10)
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY true)
 
 IF(UNIX)
-  SET(MEMORYCHECK_COMMAND "/usr/bin/valgrind --trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes")
-#  SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=100 --verbose --demangle=yes")
+  SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes")
 ENDIF()
+
+INCLUDE(CTest)
+INCLUDE(maidsafe_add_gtests)
 
 IF(MAIDSAFE_COMMON_INSTALL_DIR)
   FILE(TO_CMAKE_PATH ${MAIDSAFE_COMMON_INSTALL_DIR} CMAKE_INSTALL_PREFIX)

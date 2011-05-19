@@ -1,4 +1,4 @@
-SET(SCRIPT_VERSION 3)
+SET(SCRIPT_VERSION 4)
 FILE(STRINGS "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" INSTALLED_VERSION_INFO LIMIT_COUNT 1)
 STRING(REPLACE " " ";" INSTALLED_VERSION_INFO ${INSTALLED_VERSION_INFO})
 LIST(GET INSTALLED_VERSION_INFO 1 INSTALLED_VERSION)
@@ -28,12 +28,12 @@ SET(ALL_MODULE_LIST
     "MAIDSAFE_DHT"
     "PKI"
     "PASSPORT"
-#   "MAIDSAFE_PD"
-#   "FILE_BROWSER"
-#   "LIFESTUFF"
-#   "LIFESTUFF_GUI"
-#   "SIGMOID_CORE"
-#   "DEDUPLICATOR_GAUGE"
+#    "MAIDSAFE_PD"
+#    "FILE_BROWSER"
+#    "LIFESTUFF"
+#    "LIFESTUFF_GUI"
+#    "SIGMOID_CORE"
+#    "DEDUPLICATOR_GAUGE"
     )
 
 MESSAGE("================================================================================")
@@ -165,7 +165,6 @@ IF(NOT DEFINED CTEST_BUILD_CONFIGURATION)
 ENDIF()
 
 #SET(CTEST_BUILD_OPTIONS "-DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
-SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE)
 MESSAGE("Dashboard Model Selected:      ${DASHBOARD_MODEL}")
 MESSAGE("Build Configuration Selected:  ${CTEST_BUILD_CONFIGURATION}")
 MESSAGE("================================================================================")
@@ -250,8 +249,32 @@ SET(CTEST_UPDATE_COMMAND "${Git_EXECUTABLE}")
 
 MESSAGE("================================================================================")
 
+IF(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
+  # Launchers work only with Makefile generators.
+  SET(CTEST_USE_LAUNCHERS 0)
+ELSEIF(NOT DEFINED CTEST_USE_LAUNCHERS)
+  SET(CTEST_USE_LAUNCHERS 1)
+ENDIF()
+
 ###############################################################################
-# Ctest Utility Functions                                                     #
+# Configure CTest                                                             #
+###############################################################################
+SET(CTEST_CONFIGURE_COMMAND "${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE:STRING=${CTEST_BUILD_CONFIGURATION} -G \"${CTEST_CMAKE_GENERATOR}\"")
+
+FIND_PROGRAM(CTEST_MEMORYCHECK_COMMAND
+  NAMES purify valgrind boundscheck
+  PATHS
+  "[HKEY_LOCAL_MACHINE\\SOFTWARE\\Rational Software\\Purify\\Setup;InstallFolder]"
+  DOC "Path to the memory checking command, used for memory error detection."
+  )
+SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes")
+SET(CTEST_CUSTOM_MEMCHECK_IGNORE ${CTEST_CUSTOM_MEMCHECK_IGNORE} STYLE_CHECK)
+FIND_PROGRAM(CTEST_COVERAGE_COMMAND NAMES gcov)
+# Avoid non-ascii characters in tool output.
+SET(ENV{LC_ALL} C)
+
+###############################################################################
+# CTest Utility Functions                                                     #
 ###############################################################################
 FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
@@ -275,8 +298,6 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
   SET(CTEST_SOURCE_DIRECTORY ${MODULE_SOURCE_DIRECTORY})
   SET(CTEST_BINARY_DIRECTORY ${MODULE_BINARY_DIRECTORY})
 
-  SET(CTEST_CONFIGURE_COMMAND "${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE:STRING=${CTEST_BUILD_CONFIGURATION}")
-  SET(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"-G${CTEST_CMAKE_GENERATOR}\"")
   SET(CTEST_CONFIGURE_COMMAND "${CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\"")
 
   CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
@@ -298,19 +319,29 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
     MESSAGE("  Cleaned ${MODULE_NAME}.")
   ENDIF()
 
-  CTEST_CONFIGURE(RETURN_VALUE ret)
-  IF(NOT ${ret} EQUAL 0)
-    MESSAGE(FATAL_ERROR " CTEST_CONFIGURE failed ret:${ret_var}.")
+  CTEST_CONFIGURE(RETURN_VALUE RETURNED)
+  IF(NOT ${RETURNED} EQUAL 0)
+    MESSAGE(FATAL_ERROR "  CTEST_CONFIGURE failed ret: ${RETURNED}")
   ENDIF()
 
-  CTEST_BUILD(RETURN_VALUE ret)
-  IF(NOT ${ret} EQUAL 0)
-    MESSAGE(FATAL_ERROR " CTEST_BUILD failed ret:${ret_var}.")
+  CTEST_BUILD(RETURN_VALUE RETURNED)
+  IF(NOT ${RETURNED} EQUAL 0)
+    MESSAGE(FATAL_ERROR "  CTEST_BUILD failed ret: ${RETURNED}")
   ENDIF()
   MESSAGE("  Built ${MODULE_NAME}.")
 
   CTEST_TEST()
   MESSAGE("  Ran all tests for ${MODULE_NAME}.")
+
+  IF(${DASHBOARD_MODEL} MATCHES Nightly AND CTEST_MEMORYCHECK_COMMAND)
+    CTEST_MEMCHECK()
+    MESSAGE("  Ran memory check for ${MODULE_NAME}.")
+  ENDIF()
+
+  IF(CTEST_COVERAGE_COMMAND)
+    CTEST_COVERAGE()
+    MESSAGE("  Ran coverage for ${MODULE_NAME}.")
+  ENDIF()
 
   #Submitting test results to cdash
   CTEST_SUBMIT()
