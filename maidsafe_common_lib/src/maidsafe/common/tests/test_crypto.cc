@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/lexical_cast.hpp"
-#include "boost/scoped_ptr.hpp"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -68,7 +67,7 @@ TEST(CryptoTest, BEH_BASE_SecurePasswordGeneration) {
   EXPECT_TRUE(SecurePassword("password", "salt", 0).empty());
   const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
   const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
-  const boost::uint32_t kKnownIterations1(5);
+  const uint32_t kKnownIterations1(5);
   const std::string kKnownDerived1(DecodeFromHex("0a89927670e292af98080a3"
       "c3e2bdee4289b768de74570f9f470282756390fe36de6da2cbc407f4ecf6a9f62ef6249c"
       "c"));
@@ -78,7 +77,7 @@ TEST(CryptoTest, BEH_BASE_SecurePasswordGeneration) {
       "696573206d75737420636f6d6d756e69636174652077697468206f74686572206e2d656e"
       "74697469657320766961206e2d3120656e746974656568656568656573"));
   const std::string kKnownSalt2(DecodeFromHex("1234567878563412"));
-  const boost::uint32_t kKnownIterations2(500);
+  const uint32_t kKnownIterations2(500);
   const std::string kKnownDerived2(DecodeFromHex("ecae5ed132d15bac4c67cc5"
       "de7c4a5559ca448334bdf9dc8f2b9aa86a363ddaaf7b431a8456e51582508c74405dba27"
       "9"));
@@ -362,7 +361,7 @@ TEST(CryptoTest, BEH_BASE_Compress) {
 
   // Compress
   std::vector<std::string> compressed_strings;
-  for (boost::uint16_t level = 0; level <= kMaxCompressionLevel; ++level) {
+  for (uint16_t level = 0; level <= kMaxCompressionLevel; ++level) {
     compressed_strings.push_back(Compress(kTestData, level));
     if (level > 0) {
       EXPECT_GE(compressed_strings.at(level - 1).size() + kTolerance,
@@ -373,7 +372,7 @@ TEST(CryptoTest, BEH_BASE_Compress) {
             compressed_strings.at(kMaxCompressionLevel).size());
 
   // Uncompress
-  for (boost::uint16_t level = 0; level <= kMaxCompressionLevel; ++level)
+  for (uint16_t level = 0; level <= kMaxCompressionLevel; ++level)
     EXPECT_EQ(kTestData, Uncompress(compressed_strings.at(level)));
 
   // Try to compress with invalid compression level

@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_UTILS_H_
 #define MAIDSAFE_COMMON_UTILS_H_
 
+#include <cstdint>
 #include <string>
 #include <memory>
 
@@ -36,7 +37,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4127)
 #endif
 
-#include "boost/cstdint.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/token_functions.hpp"
@@ -45,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/version.h"
 
 namespace fs = boost::filesystem;
@@ -85,7 +86,7 @@ class Stats {
   * Get the size of the data set.
   * @return number of elements
   */
-  boost::uint64_t Size() const { return size_; }
+  uint64_t Size() const { return size_; }
   /**
   * Get the smallest value in the set.
   * @return minimum
@@ -107,23 +108,23 @@ class Stats {
   */
   T Mean() const { return size_ > 0 ? static_cast<T>(sum_ / size_) : 0; }
  private:
-  boost::uint64_t size_;
+  uint64_t size_;
   T min_;
   T max_;
   T sum_;
 };
 
 // Generate a cryptographically-secure 32bit signed integer
-boost::int32_t SRandomInt32();
+int32_t SRandomInt32();
 
 // Generate a non-cryptographically-secure 32bit signed integer
-boost::int32_t RandomInt32();
+int32_t RandomInt32();
 
 // Generate a cryptographically-secure 32bit unsigned integer
-boost::uint32_t SRandomUint32();
+uint32_t SRandomUint32();
 
 // Generate a non-cryptographically-secure 32bit unsigned integer
-boost::uint32_t RandomUint32();
+uint32_t RandomUint32();
 
 // Generate a cryptographically-secure random string.
 std::string SRandomString(const size_t &length);
@@ -164,6 +165,9 @@ bool ReadFile(const fs::path &file_path, std::string *content);
 
 // Writes the given content string to a file, overwriting if applicable
 bool WriteFile(const fs::path &file_path, const std::string &content);
+
+// Causes running thread to sleep for specified duration.
+void Sleep(const boost::posix_time::time_duration &duration);
 
 
 namespace test {

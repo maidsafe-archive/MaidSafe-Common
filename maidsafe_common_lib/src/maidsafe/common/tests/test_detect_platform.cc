@@ -53,7 +53,7 @@ TEST(FindPlatform, BEH_BASE_DetectPlatform) {
 #endif
 
   ASSERT_EQ(1, macflag + posixflag + winflag);
-  DLOG(INFO) << log_output << std::endl;
+  DLOG(INFO) << log_output;
 }
 
 }  // namespace test

@@ -27,17 +27,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <memory>
 #include <cstring>
+#include "boost/asio/io_service.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/thread.hpp"
 #include "boost/thread/thread.hpp"
-#include "boost/scoped_ptr.hpp"
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/threadsafe_chunk_store.h"
 #include "maidsafe/common/memory_chunk_store.h"
-#include "maidsafe/common/threadpool.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -67,26 +66,62 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   ThreadsafeChunkStoreTest()
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunkname_(),
-        thread_pool_(),
         threadsafe_chunk_store_(),
+        asio_service_(),
+        work_(new boost::asio::io_service::work(asio_service_)),
+        thread_group_(),
         total_chunk_size_(),
         mutex_() {
     std::shared_ptr<MemoryChunkStore> chunk_store;
     chunk_store.reset(new MemoryChunkStore(false, std::bind(
         &crypto::Hash<crypto::SHA512>, std::placeholders::_1)));
     threadsafe_chunk_store_.reset(new ThreadsafeChunkStore(false, chunk_store));
-    thread_pool_.reset(new Threadpool(30));
   }
 
   ~ThreadsafeChunkStoreTest() {}
+
   void SetUp() {
     StoreContents(17, false);
     StoreFromSourceFile(13, false);
+    for (uint8_t i = 0; i < 30U; ++i) {
+      thread_group_.create_thread(
+          std::bind(&ThreadsafeChunkStoreTest::RunThread, this));
+    }
   }
+
+  void RunThread() {
+    while (work_) {
+      try {
+        asio_service_.run();
+      }
+      catch(const std::exception &e) {
+        DLOG(ERROR) << "Exception in RunThread, " << e.what();
+      }
+    }
+  }
+
+  bool EnqueueTask(const std::function<void()> &functor) {
+    try {
+      asio_service_.post(functor);
+      return true;
+    }
+    catch(const std::exception &e) {
+      DLOG(ERROR) << "Cannot post job to pool: " << e.what();
+      return false;
+    }
+  }
+
+  void StopThreadpool() {
+    work_.reset();
+    asio_service_.stop();
+    thread_group_.join_all();
+  }
+
   template <class HashType>
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
                       bool reference_counting,
                       const fs::path &chunk_dir);
+
   void StoreContents(const size_t &num, const bool &check_flag) {
     for (uint16_t i = 1; i < num + 1; ++i) {
       std::string contents = RandomString(64 * i);
@@ -100,6 +135,7 @@ class ThreadsafeChunkStoreTest: public testing::Test {
       }
     }
   }
+
   void StoreFromSourceFile(const size_t &num, const bool &check_flag) {
     for (uint16_t i = 1; i < num + 1; ++i) {
       std::string chunk(RandomAlphaNumericString(6));
@@ -234,8 +270,10 @@ class ThreadsafeChunkStoreTest: public testing::Test {
   }
   std::shared_ptr<fs::path> test_dir_;
   std::vector<std::string> chunkname_;
-  std::shared_ptr<Threadpool> thread_pool_;
   std::shared_ptr<ThreadsafeChunkStore> threadsafe_chunk_store_;
+  boost::asio::io_service asio_service_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
+  boost::thread_group thread_group_;
   uint64_t total_chunk_size_;
   boost::mutex mutex_;
 };
@@ -247,12 +285,12 @@ TEST_F(ThreadsafeChunkStoreTest, FUNC_TSCS_Get) {
     auto it = this->chunkname_.at(index % entry_size);
     std::string chunk(RandomAlphaNumericString(6));
     fs::path path(*test_dir_ / chunk);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::GetFileChunk, this, it, path));
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::GetMemChunk, this, it));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Has) {
@@ -260,10 +298,10 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Has) {
   uint32_t index = RandomUint32();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(index % entry_size);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::HasChunk, this, it));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Delete) {
@@ -271,10 +309,10 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Delete) {
   uint32_t index = RandomUint32();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(index % entry_size);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::DeleteChunk, this, it));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Validate) {
@@ -282,10 +320,10 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Validate) {
   uint32_t index = RandomUint32();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(index % entry_size);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::ValidateChunk, this, it));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size_For_Chunk) {
@@ -293,20 +331,25 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size_For_Chunk) {
   uint64_t total_size(0);
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(i);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::ChunkSize, this, it, &total_size));
   }
-  this->thread_pool_->Stop();
+  int timeout(100), current(0);
+  while ((this->total_chunk_size_ != total_size) && (current < timeout)) {
+    Sleep(boost::posix_time::milliseconds(1));
+    ++current;
+  }
+  this->StopThreadpool();
   EXPECT_EQ(this->total_chunk_size_, total_size);
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Size) {
   size_t entry_size = this->chunkname_.size();
   for (size_t i = 0; i < entry_size; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::Size, this));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Capacity) {
@@ -314,11 +357,11 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Capacity) {
   uint64_t capacity = total_chunk_size_ * 3;
   this->threadsafe_chunk_store_->SetCapacity(capacity);
   for (size_t i = 0; i < entry_size; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::ChunkStoreCapacity, this,
         capacity));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_SetCapacity) {
@@ -327,20 +370,20 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_SetCapacity) {
     capacity.push_back(RandomUint32());
 
   for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::SetCapacity, this, i, capacity));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Vacant) {
   uint64_t capacity = total_chunk_size_ * 3;
   this->threadsafe_chunk_store_->SetCapacity(capacity);
   for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::Vacant, this, total_chunk_size_));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Count) {
@@ -348,34 +391,34 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Count) {
   uint32_t index = RandomUint32();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(index % entry_size);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::ChunkCount, this, it));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Count_Total) {
   for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::TotalChunk, this));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Empty) {
   for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::EmptyChunk, this));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Clear) {
   for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::ClearChunk, this));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_MoveTo) {
@@ -384,22 +427,22 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_MoveTo) {
   size_t entry_size = this->chunkname_.size();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(i);
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::MoveChunk, this, it,
                   &another_chunk_store));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Store) {
   for (size_t i = 0; i < test_tscs::kIterationSize; ++i) {
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::StoreContents, this, i, true));
-    this->thread_pool_->EnqueueTask(
+    this->EnqueueTask(
         std::bind(&ThreadsafeChunkStoreTest::StoreFromSourceFile, this, i,
                   true));
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Misc) {
@@ -507,9 +550,9 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Misc) {
   std::random_shuffle(functors.begin(), functors.end());
 
   for (size_t i = 0; i < functors.size(); ++i) {
-    this->thread_pool_->EnqueueTask(functors[i]);
+    this->EnqueueTask(functors[i]);
   }
-  this->thread_pool_->Stop();
+  this->StopThreadpool();
   // Check for Chunksizes
   EXPECT_GE(this->total_chunk_size_, total_size);
 }

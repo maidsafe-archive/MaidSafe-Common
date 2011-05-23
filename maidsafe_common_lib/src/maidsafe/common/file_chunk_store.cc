@@ -69,7 +69,7 @@ bool FileChunkStore::Init(const fs::path &storage_location,
     initialised_ = info_file_.good();
   }
   catch(const std::exception &e) {
-    DLOG(ERROR) << "Init - " << e.what() << std::endl;
+    DLOG(ERROR) << "Init - " << e.what();
     return false;
   }
   return true;
@@ -556,7 +556,7 @@ std::uintmax_t FileChunkStore::GetChunkReferenceCount(
     }
   }
   catch(const std::exception &e) {
-    DLOG(ERROR) << "GetChunkReferenceCount - " << e.what() << std::endl;
+    DLOG(ERROR) << "GetChunkReferenceCount - " << e.what();
   }
 
   return 0;

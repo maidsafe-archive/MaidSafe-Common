@@ -27,6 +27,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/crypto.h"
 
+#include <memory>
+
 #ifdef __MSVC__
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4702)
@@ -66,11 +68,11 @@ std::string XOR(const std::string &first, const std::string &second) {
 
 std::string SecurePassword(const std::string &password,
                            const std::string &salt,
-                           const boost::uint32_t &pin) {
+                           const uint32_t &pin) {
   if (password.empty() || salt.empty() || pin == 0)
     return "";
   byte purpose = 0;
-  boost::uint16_t iter = (pin % 1000) + 1000;
+  uint16_t iter = (pin % 1000) + 1000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
   pbkdf.DeriveKey(derived, derived.size(), purpose,
@@ -108,7 +110,7 @@ std::string SymmEncrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     return "";
   }
 }
@@ -138,7 +140,7 @@ std::string SymmDecrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     return "";
   }
 }
@@ -160,7 +162,7 @@ std::string AsymEncrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
       AsymEncrypt(input, public_key);
     return "";
@@ -180,7 +182,7 @@ std::string AsymDecrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
        AsymEncrypt(input, private_key);
     return "";
@@ -197,7 +199,7 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
       AsymEncrypt(input, private_key);
     return "";
@@ -215,24 +217,24 @@ bool AsymCheckSig(const std::string &input_data,
     CryptoPP::StringSource signature_string(input_signature, true);
     if (signature_string.MaxRetrievable() != verifier.SignatureLength())
       return result;
-    boost::scoped_ptr<CryptoPP::SecByteBlock> signature(
+    const std::unique_ptr<CryptoPP::SecByteBlock> kSignature(
         new CryptoPP::SecByteBlock(verifier.SignatureLength()));
-    signature_string.Get(*signature, signature->size());
+    signature_string.Get(*kSignature, kSignature->size());
     CryptoPP::SignatureVerificationFilter *verifier_filter(
         new CryptoPP::SignatureVerificationFilter(verifier));
-    verifier_filter->Put(*signature, verifier.SignatureLength());
+    verifier_filter->Put(*kSignature, verifier.SignatureLength());
     CryptoPP::StringSource ssource(input_data, true, verifier_filter);
     result = verifier_filter->GetLastResult();
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Crypto::AsymCheckSig - " << e.what() << std::endl;
+    DLOG(ERROR) << "Crypto::AsymCheckSig - " << e.what();
     return false;
   }
 }
 
 std::string Compress(const std::string &input,
-                     const boost::uint16_t &compression_level) {
+                     const uint16_t &compression_level) {
   if (compression_level > kMaxCompressionLevel)
     return "";
   try {
@@ -242,7 +244,7 @@ std::string Compress(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     return "";
   }
 }
@@ -255,12 +257,12 @@ std::string Uncompress(const std::string &input) {
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     return "";
   }
 }
 
-void RsaKeyPair::GenerateKeys(const boost::uint16_t &key_size) {
+void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
   private_key_.clear();
   public_key_.clear();
   CryptoPP::RandomPool rand_pool;

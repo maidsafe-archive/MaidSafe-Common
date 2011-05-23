@@ -31,8 +31,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
-#include "boost/progress.hpp"
-#include "boost/timer.hpp"
 #include "boost/thread.hpp"
 
 #include "maidsafe/common/crypto.h"
@@ -234,7 +232,7 @@ TEST(UtilsTest, BEH_BASE_Base32EncodeDecode) {
 }
 
 TEST(UtilsTest, BEH_BASE_TimeFunctions) {
-  boost::uint64_t s, ms, ns;
+  uint64_t s, ms, ns;
   boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
   ms = since_epoch.total_milliseconds();
   ns = since_epoch.total_nanoseconds();
@@ -245,8 +243,8 @@ TEST(UtilsTest, BEH_BASE_TimeFunctions) {
 }
 
 TEST(UtilsTest, BEH_BASE_SRandomNumberGen) {
-  std::set<boost::int32_t>random_ints;
-  std::set<boost::uint32_t>random_uints;
+  std::set<int32_t>random_ints;
+  std::set<uint32_t>random_uints;
   const size_t kCount(10000);
   // look for less than 0.05% duplicates
   const size_t kMaxDuplicates(kCount / 2000);
@@ -259,8 +257,8 @@ TEST(UtilsTest, BEH_BASE_SRandomNumberGen) {
 }
 
 TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
-  std::set<boost::int32_t>random_ints;
-  std::set<boost::uint32_t>random_uints;
+  std::set<int32_t>random_ints;
+  std::set<uint32_t>random_uints;
   const size_t kCount(10000);
   // look for less than 0.05% duplicates
   const size_t kMaxDuplicates(kCount / 2000);

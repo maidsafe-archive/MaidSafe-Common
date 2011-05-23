@@ -44,6 +44,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/lexical_cast.hpp"
 #include "boost/scoped_array.hpp"
 #include "boost/thread/mutex.hpp"
+#include "boost/thread/thread.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
@@ -70,14 +71,14 @@ boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
 boost::mutex g_srandom_number_generator_mutex;
 boost::mutex g_random_number_generator_mutex;
 
-boost::int32_t SRandomInt32() {
-  boost::int32_t result(0);
+int32_t SRandomInt32() {
+  int32_t result(0);
   bool success = false;
   while (!success) {
     boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::Integer rand_num(g_srandom_number_generator, 32);
     if (rand_num.IsConvertableToLong()) {
-      result = static_cast<boost::int32_t>(
+      result = static_cast<int32_t>(
                rand_num.AbsoluteValue().ConvertToLong());
       success = true;
     }
@@ -85,21 +86,21 @@ boost::int32_t SRandomInt32() {
   return result;
 }
 
-boost::int32_t RandomInt32() {
+int32_t RandomInt32() {
   boost::uniform_int<> uniform_distribution(0,
-      boost::integer_traits<boost::int32_t>::const_max);
+      boost::integer_traits<int32_t>::const_max);
   boost::mutex::scoped_lock lock(g_random_number_generator_mutex);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
       g_random_number_generator, uniform_distribution);
   return uni();
 }
 
-boost::uint32_t SRandomUint32() {
-  return static_cast<boost::uint32_t>(SRandomInt32());
+uint32_t SRandomUint32() {
+  return static_cast<uint32_t>(SRandomInt32());
 }
 
-boost::uint32_t RandomUint32() {
-  return static_cast<boost::uint32_t>(RandomInt32());
+uint32_t RandomUint32() {
+  return static_cast<uint32_t>(RandomInt32());
 }
 
 std::string SRandomString(const size_t &length) {
@@ -238,6 +239,10 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
     return false;
   }
   return true;
+}
+
+void Sleep(const boost::posix_time::time_duration &duration) {
+  boost::this_thread::sleep(duration);
 }
 
 

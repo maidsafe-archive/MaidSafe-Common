@@ -28,7 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
-#include "boost/scoped_ptr.hpp"
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/utils.h"
@@ -188,7 +187,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Store) {
   EXPECT_TRUE(fcs->Get(name, path));
 
   //  reference counted chunk store
-  boost::shared_ptr<FileChunkStore> ref_fcs(
+  std::shared_ptr<FileChunkStore> ref_fcs(
       new FileChunkStore(true, hash_func_));
   EXPECT_FALSE(ref_fcs->Store(name, content));
 
@@ -380,20 +379,20 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
   //  use the same location in another store
   fcs.reset();
   {
-    boost::scoped_ptr<FileChunkStore> temp_cs(
+    const std::unique_ptr<FileChunkStore> kTempCs(
         new FileChunkStore(false, hash_func_));
-    EXPECT_TRUE(temp_cs->Init(chunk_dir_, 4));
+    EXPECT_TRUE(kTempCs->Init(chunk_dir_, 4));
     EXPECT_EQ(store_size,
-              temp_cs->RetrieveChunkInfo(temp_cs->storage_location_).second);
+              kTempCs->RetrieveChunkInfo(kTempCs->storage_location_).second);
 
     //  test a ref counted chunk store on non ref counted storage
-    boost::scoped_ptr<FileChunkStore> temp_ref_cs(
+    const std::unique_ptr<FileChunkStore> kTempRefCs(
         new FileChunkStore(true, hash_func_));
-    EXPECT_TRUE(temp_ref_cs->Init(chunk_dir_, 4));
+    EXPECT_TRUE(kTempRefCs->Init(chunk_dir_, 4));
     //  ref counted chunk store should not include chunks created
     //  without ref counting
-    EXPECT_EQ(0, temp_ref_cs->RetrieveChunkInfo(
-                      temp_cs->storage_location_).second);
+    EXPECT_EQ(0, kTempRefCs->RetrieveChunkInfo(
+                      kTempCs->storage_location_).second);
   }
 
   //  cause exception in RetrieveChunkInfo

@@ -28,15 +28,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_CRYPTO_H_
 #define MAIDSAFE_COMMON_CRYPTO_H_
 
+#include <cstdint>
 #include <string>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
 #endif
 
-#include "boost/cstdint.hpp"
 #include "boost/filesystem/path.hpp"
-#include "boost/scoped_ptr.hpp"
 
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
@@ -69,9 +68,9 @@ typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
-const boost::uint16_t AES256_KeySize = 32;  /**< size in bytes. */
-const boost::uint16_t  AES256_IVSize = 16;  /**< size in bytes. */
-const boost::uint16_t  kMaxCompressionLevel = 9;
+const uint16_t AES256_KeySize = 32;  /**< size in bytes. */
+const uint16_t  AES256_IVSize = 16;  /**< size in bytes. */
+const uint16_t  kMaxCompressionLevel = 9;
 
 /** XOR one string with another.
  *  The function performs an bitwise XOR on each char of first with the
@@ -90,7 +89,7 @@ std::string XOR(const std::string &first, const std::string &second);
  *  @return The derived key. */
 std::string SecurePassword(const std::string &password,
                            const std::string &salt,
-                           const boost::uint32_t &pin);
+                           const uint32_t &pin);
 
 /** Hash function operating on a string.
  *  @tparam HashType type of hash function to use (e.g. SHA512)
@@ -119,7 +118,7 @@ std::string HashFile(const boost::filesystem::path &file_path) {
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
   catch(const std::exception &e) {
-    DLOG(ERROR) << e.what() << std::endl;
+    DLOG(ERROR) << e.what();
     result.clear();
   }
   return result;
@@ -194,7 +193,7 @@ bool AsymCheckSig(const std::string &input_data,
  *  @param compression_level level of compression.
  *  @return the compressed data or an empty string. */
 std::string Compress(const std::string &input,
-                     const boost::uint16_t &compression_level);
+                     const uint16_t &compression_level);
 
 /** Uncompress a string.
  *  Uncompress a string using gzip.
@@ -239,7 +238,7 @@ class RsaKeyPair {
 
   /** Generates a pair of RSA keys of given size.
    *  @param key_size size in bits of the keys. */
-  void GenerateKeys(const boost::uint16_t &key_size);
+  void GenerateKeys(const uint16_t &key_size);
 
  private:
   std::string public_key_;
