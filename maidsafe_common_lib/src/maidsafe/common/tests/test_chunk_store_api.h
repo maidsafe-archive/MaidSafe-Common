@@ -109,7 +109,7 @@ class ChunkStoreTest: public testing::Test {
 
 TYPED_TEST_CASE_P(ChunkStoreTest);
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Init) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Init) {
   EXPECT_EQ(0, this->chunk_store_->Size());
   EXPECT_EQ(0, this->chunk_store_->Capacity());
   EXPECT_EQ(0, this->chunk_store_->Count());
@@ -118,7 +118,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Init) {
   EXPECT_FALSE(this->chunk_store_->Has("something"));
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Get) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Get) {
   std::string content(RandomString(100));
   std::string name(crypto::Hash<crypto::SHA512>(content));
   fs::path path(*this->test_dir_ / "chunk.dat");
@@ -148,7 +148,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Get) {
   EXPECT_FALSE(this->chunk_store_->Get(name, ""));
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
   fs::path path(*this->test_dir_ / "chunk.dat");
@@ -247,7 +247,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Store) {
   EXPECT_EQ(333, this->chunk_store_->Size(new_name));
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Delete) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
   fs::path path(*this->test_dir_ / "chunk.dat");
@@ -293,7 +293,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Delete) {
   EXPECT_EQ(0, this->chunk_store_->Size());
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_MoveTo) {
+TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
   std::string content1(RandomString(100));
   std::string name1(crypto::Hash<crypto::SHA512>(content1));
   std::string content2(RandomString(50));
@@ -357,7 +357,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_MoveTo) {
   EXPECT_FALSE(this->chunk_store_->MoveTo(name1, NULL));
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Validate) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Validate) {
   std::string content1(RandomString(123)), content2(RandomString(213));
   std::string name1(crypto::Hash<crypto::SHA512>(content1)),
               name2(crypto::Hash<crypto::Tiger>(content2));
@@ -390,7 +390,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Validate) {
   EXPECT_TRUE(this->tiger_chunk_store_->Has(name2));
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Capacity) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Capacity) {
   std::string content1(RandomString(100));
   std::string name1(crypto::Hash<crypto::SHA512>(content1));
   std::string content2(RandomString(50));
@@ -478,7 +478,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Capacity) {
   EXPECT_EQ(125, this->chunk_store_->Capacity());
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
+TYPED_TEST_P(ChunkStoreTest, BEH_References) {
   std::string content1(RandomString(100));
   std::string name1(crypto::Hash<crypto::SHA512>(content1));
   std::string content2(RandomString(50));
@@ -616,7 +616,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_References) {
   EXPECT_EQ(2, this->ref_chunk_store_->Count());
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_SmallName) {
+TYPED_TEST_P(ChunkStoreTest, BEH_SmallName) {
   EXPECT_FALSE(this->chunk_store_->Has("x"));
   EXPECT_EQ(0, this->chunk_store_->Count("x"));
   EXPECT_TRUE(this->chunk_store_->Get("x").empty());
@@ -630,7 +630,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_SmallName) {
   EXPECT_FALSE(this->alt_chunk_store_->Validate("x"));
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_CS_Clear) {
+TYPED_TEST_P(ChunkStoreTest, BEH_Clear) {
   std::vector<std::string> chunks;
   for (int i = 0; i < 20; ++i) {
     std::string content(RandomString(100));
@@ -653,16 +653,16 @@ TYPED_TEST_P(ChunkStoreTest, BEH_CS_Clear) {
 }
 
 REGISTER_TYPED_TEST_CASE_P(ChunkStoreTest,
-                           BEH_CS_Init,
-                           BEH_CS_Get,
-                           BEH_CS_Store,
-                           BEH_CS_Delete,
-                           BEH_CS_MoveTo,
-                           BEH_CS_Validate,
-                           BEH_CS_Capacity,
-                           BEH_CS_References,
-                           BEH_CS_SmallName,
-                           BEH_CS_Clear);
+                           BEH_Init,
+                           BEH_Get,
+                           BEH_Store,
+                           BEH_Delete,
+                           BEH_MoveTo,
+                           BEH_Validate,
+                           BEH_Capacity,
+                           BEH_References,
+                           BEH_SmallName,
+                           BEH_Clear);
 
 }  // namespace test
 

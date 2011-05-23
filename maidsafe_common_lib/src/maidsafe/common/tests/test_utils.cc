@@ -56,7 +56,7 @@ void GenerateSRandomStrings(const int &string_count,
     SRandomString(string_size);
 }
 
-TEST(UtilsTest, FUNC_BASE_RandomStringMultiThread) {
+TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
@@ -70,7 +70,7 @@ TEST(UtilsTest, FUNC_BASE_RandomStringMultiThread) {
   }
 }
 
-TEST(UtilsTest, FUNC_BASE_SRandomStringMultiThread) {
+TEST(UtilsTest, BEH_SRandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
@@ -84,7 +84,7 @@ TEST(UtilsTest, FUNC_BASE_SRandomStringMultiThread) {
   }
 }
 
-TEST(UtilsTest, FUNC_BASE_RandomStringGenerator) {
+TEST(UtilsTest, BEH_RandomStringGenerator) {
   std::set<std::string>random_strings;
   const size_t kCount(100);
   const size_t kMaxDuplicates(1);
@@ -97,7 +97,7 @@ TEST(UtilsTest, FUNC_BASE_RandomStringGenerator) {
   }
 }
 
-TEST(UtilsTest, FUNC_BASE_SRandomStringGenerator) {
+TEST(UtilsTest, BEH_SRandomStringGenerator) {
   std::set<std::string>random_strings;
   const size_t kCount(100);
   const size_t kMaxDuplicates(1);
@@ -110,7 +110,7 @@ TEST(UtilsTest, FUNC_BASE_SRandomStringGenerator) {
   }
 }
 
-TEST(UtilsTest, BEH_BASE_Stats) {
+TEST(UtilsTest, BEH_Stats) {
   {
     Stats<int> stats;
     EXPECT_EQ(0, stats.Size());
@@ -153,14 +153,14 @@ TEST(UtilsTest, BEH_BASE_Stats) {
   }
 }
 
-TEST(UtilsTest, BEH_BASE_IntToString) {
+TEST(UtilsTest, BEH_IntToString) {
   EXPECT_EQ("1234567890", IntToString(1234567890));
   EXPECT_EQ("-1234567890", IntToString(-1234567890));
   EXPECT_EQ("0", IntToString(0));
   EXPECT_EQ("0", IntToString(-0));
 }
 
-TEST(UtilsTest, BEH_BASE_RandomStringSingleThread) {
+TEST(UtilsTest, BEH_RandomStringSingleThread) {
   const size_t kStringSize = 4096;
   std::string test1 = RandomAlphaNumericString(kStringSize);
   std::string test2 = RandomAlphaNumericString(kStringSize);
@@ -175,7 +175,7 @@ TEST(UtilsTest, BEH_BASE_RandomStringSingleThread) {
   }
 }
 
-TEST(UtilsTest, BEH_BASE_HexEncodeDecode) {
+TEST(UtilsTest, BEH_HexEncodeDecode) {
   const std::string kKnownEncoded("0123456789abcdef");
   const std::string kKnownDecoded("\x1\x23\x45\x67\x89\xab\xcd\xef");
   EXPECT_EQ(kKnownEncoded, EncodeToHex(kKnownDecoded));
@@ -192,7 +192,7 @@ TEST(UtilsTest, BEH_BASE_HexEncodeDecode) {
   }
 }
 
-TEST(UtilsTest, BEH_BASE_Base64EncodeDecode) {
+TEST(UtilsTest, BEH_Base64EncodeDecode) {
   const std::string kKnownEncoded("BCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr"
                                   "stuvwxyz0123456789+/A");
   const std::string kKnownDecoded("\x04\x20\xc4\x14\x61\xc8\x24\xa2\xcc\x34\xe3"
@@ -213,7 +213,7 @@ TEST(UtilsTest, BEH_BASE_Base64EncodeDecode) {
   }
 }
 
-TEST(UtilsTest, BEH_BASE_Base32EncodeDecode) {
+TEST(UtilsTest, BEH_Base32EncodeDecode) {
   const std::string kKnownEncoded("bcdefghijkmnpqrstuvwxyz23456789a");
   const std::string kKnownDecoded("\x08\x86\x42\x98\xe8\x4a\x96\xc6\xb9\xf0\x8c"
                                   "\xa7\x4a\xda\xf8\xce\xb7\xce\xfb\xe0");
@@ -231,7 +231,7 @@ TEST(UtilsTest, BEH_BASE_Base32EncodeDecode) {
   }
 }
 
-TEST(UtilsTest, BEH_BASE_TimeFunctions) {
+TEST(UtilsTest, BEH_TimeFunctions) {
   uint64_t s, ms, ns;
   boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
   ms = since_epoch.total_milliseconds();
@@ -242,7 +242,7 @@ TEST(UtilsTest, BEH_BASE_TimeFunctions) {
   EXPECT_EQ(ms, ns / 1000000) << "ms vs. ns failed.";
 }
 
-TEST(UtilsTest, BEH_BASE_SRandomNumberGen) {
+TEST(UtilsTest, BEH_SRandomNumberGen) {
   std::set<int32_t>random_ints;
   std::set<uint32_t>random_uints;
   const size_t kCount(10000);
@@ -256,7 +256,7 @@ TEST(UtilsTest, BEH_BASE_SRandomNumberGen) {
   EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
 }
 
-TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
+TEST(UtilsTest, BEH_RandomNumberGen) {
   std::set<int32_t>random_ints;
   std::set<uint32_t>random_uints;
   const size_t kCount(10000);
@@ -270,9 +270,9 @@ TEST(UtilsTest, BEH_BASE_RandomNumberGen) {
   EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
 }
 
-TEST(UtilsTest, FUNC_ENCRYPT_ReadWriteFile) {
-  fs::path file_path(fs::unique_path(fs::temp_directory_path() /
-      "MaidSafe_TestUtils_%%%%-%%%%-%%%%.dat"));
+TEST(UtilsTest, BEH_ReadWriteFile) {
+  TestPath test_path(CreateTestPath("MaidSafe_TestUtils"));
+  fs::path file_path(*test_path / "file.dat");
   std::string file_content;
   ASSERT_FALSE(fs::exists(file_path));
   EXPECT_FALSE(ReadFile(file_path, NULL));
@@ -299,8 +299,31 @@ TEST(UtilsTest, FUNC_ENCRYPT_ReadWriteFile) {
   EXPECT_TRUE(WriteFile(file_path, "moo"));
   EXPECT_TRUE(ReadFile(file_path, &file_content_in));
   EXPECT_EQ("moo", file_content_in);
+}
 
-  fs::remove(file_path);
+TEST(UtilsTest, BEH_CreateTestPath) {
+  fs::path test_path;
+  boost::system::error_code error_code;
+  {
+    TestPath test_path_ptr(CreateTestPath());
+    test_path = *test_path_ptr;
+    EXPECT_FALSE(test_path.empty());
+    EXPECT_TRUE(fs::exists(test_path, error_code));
+    EXPECT_EQ(0, error_code.value()) << error_code.message();
+  }
+  EXPECT_FALSE(fs::exists(test_path, error_code));
+  EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
+        << error_code.message();
+  {
+    TestPath test_path_ptr(CreateTestPath("Another"));
+    test_path = *test_path_ptr;
+    EXPECT_FALSE(test_path.empty());
+    EXPECT_TRUE(fs::exists(test_path, error_code));
+    EXPECT_EQ(0, error_code.value()) << error_code.message();
+  }
+  EXPECT_FALSE(fs::exists(test_path, error_code));
+  EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
+        << error_code.message();
 }
 
 }  // namespace test

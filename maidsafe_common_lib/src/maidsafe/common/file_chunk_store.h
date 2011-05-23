@@ -58,7 +58,7 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 namespace test {
-class FileChunkStoreTest_BEH_FCS_Methods_Test;
+class FileChunkStoreTest_BEH_Methods_Test;
 }  // namespace test
 
 /**
@@ -190,7 +190,7 @@ class FileChunkStore: public ChunkStore {
    */
   void Clear();
 
-  friend class test::FileChunkStoreTest_BEH_FCS_Methods_Test;
+  friend class test::FileChunkStoreTest_BEH_Methods_Test;
 
  private:
   typedef std::pair<std::uintmax_t, std::uintmax_t> RestoredChunkStoreInfo;

@@ -67,7 +67,7 @@ class FileChunkStoreTest: public testing::Test {
   FileChunkStore::HashFunc hash_func_;
 };
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
+TEST_F(FileChunkStoreTest, BEH_Init) {
   //  File chunk store without reference counting
   std::shared_ptr<FileChunkStore> fcs_first(
       new FileChunkStore(false, hash_func_));
@@ -126,7 +126,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Init) {
   EXPECT_FALSE(ref_fcs_third->Has("something"));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Get) {
+TEST_F(FileChunkStoreTest, BEH_Get) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
 
   std::string content(RandomString(100));
@@ -163,7 +163,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Get) {
   EXPECT_TRUE(fcs_ref->Get(name, sink_path));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Store) {
+TEST_F(FileChunkStoreTest, BEH_Store) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
 
   std::string content(RandomString(100));
@@ -234,7 +234,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Store) {
   EXPECT_TRUE(chunk_store->Store(content, name));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Capacity) {
+TEST_F(FileChunkStoreTest, BEH_Capacity) {
   //  create a chunk store with limited capacity
   std::shared_ptr<FileChunkStore> fcs_cap(new FileChunkStore(true, hash_func_));
   EXPECT_TRUE(fcs_cap->Init(ref_chunk_dir_, 4));
@@ -257,7 +257,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Capacity) {
   EXPECT_FALSE(fcs_cap->Store(extra_content_chunk_name, path, true));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Misc) {
+TEST_F(FileChunkStoreTest, BEH_Misc) {
   //  create a chunk store without reference counting
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
 
@@ -285,7 +285,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Misc) {
   EXPECT_TRUE(ref_fcs->Get(name).empty());
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Delete) {
+TEST_F(FileChunkStoreTest, BEH_Delete) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
   EXPECT_FALSE(fcs->Delete("somechunk"));
 
@@ -300,7 +300,7 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Delete) {
   EXPECT_TRUE(ref_fcs->Delete("unknownchunk"));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_MoveTo) {
+TEST_F(FileChunkStoreTest, BEH_MoveTo) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
   std::shared_ptr<FileChunkStore> sink_fcs(
       new FileChunkStore(false, hash_func_));
@@ -308,12 +308,12 @@ TEST_F(FileChunkStoreTest, BEH_FCS_MoveTo) {
   EXPECT_FALSE(fcs->MoveTo("somechunk", sink_fcs.get()));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Validate) {
+TEST_F(FileChunkStoreTest, BEH_Validate) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
   EXPECT_FALSE(fcs->Validate("somechunk"));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Size) {
+TEST_F(FileChunkStoreTest, BEH_Size) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
   EXPECT_EQ(0, fcs->Size("somechunk"));
 
@@ -326,12 +326,12 @@ TEST_F(FileChunkStoreTest, BEH_FCS_Size) {
   EXPECT_EQ(0, fcs->Size(""));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Count) {
+TEST_F(FileChunkStoreTest, BEH_Count) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
   EXPECT_EQ(0, fcs->Count("somechunk"));
 }
 
-TEST_F(FileChunkStoreTest, BEH_FCS_Methods) {
+TEST_F(FileChunkStoreTest, BEH_Methods) {
   std::shared_ptr<FileChunkStore> fcs(new FileChunkStore(false, hash_func_));
   EXPECT_EQ(12345, fcs->GetNumFromString("12345"));
   EXPECT_EQ(0, fcs->GetNumFromString("not_a_num123"));

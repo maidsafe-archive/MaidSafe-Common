@@ -41,7 +41,7 @@ namespace crypto {
 
 namespace test {
 
-TEST(CryptoTest, BEH_BASE_Obfuscation) {
+TEST(CryptoTest, BEH_Obfuscation) {
   EXPECT_TRUE(XOR("A", "").empty());
   EXPECT_TRUE(XOR("", "B").empty());
   EXPECT_TRUE(XOR("A", "BB").empty());
@@ -61,7 +61,7 @@ TEST(CryptoTest, BEH_BASE_Obfuscation) {
   EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2));
 }
 
-TEST(CryptoTest, BEH_BASE_SecurePasswordGeneration) {
+TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   EXPECT_TRUE(SecurePassword("", "salt", 100).empty());
   EXPECT_TRUE(SecurePassword("password", "", 100).empty());
   EXPECT_TRUE(SecurePassword("password", "salt", 0).empty());
@@ -116,7 +116,7 @@ struct HashTestData {
   std::string Tiger_raw_result;
 };
 
-TEST(CryptoTest, BEH_BASE_Hash) {
+TEST(CryptoTest, BEH_Hash) {
   // Set up industry standard test data
   std::vector<HashTestData> test_data;
   test_data.push_back(HashTestData("abc",
@@ -244,7 +244,7 @@ std::string CorruptData(const std::string &input) {
   return output;
 }
 
-TEST(CryptoTest, BEH_BASE_SymmEncrypt) {
+TEST(CryptoTest, BEH_SymmEncrypt) {
   // Set up data
   const std::string kKey(DecodeFromHex("0a89927670e292af98080a3c3e2bdee4"
                                        "289b768de74570f9f470282756390fe3"));
@@ -280,7 +280,7 @@ TEST(CryptoTest, BEH_BASE_SymmEncrypt) {
   EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
 }
 
-TEST(CryptoTest, BEH_BASE_AsymEncrypt) {
+TEST(CryptoTest, BEH_AsymEncrypt) {
   // Set up data
   RsaKeyPair rsakp;
   rsakp.GenerateKeys(4096);
@@ -318,7 +318,7 @@ TEST(CryptoTest, BEH_BASE_AsymEncrypt) {
   EXPECT_TRUE(AsymEncrypt(kInvalidData, kPublicKey).empty());
 }
 
-TEST(CryptoTest, BEH_BASE_AsymSign) {
+TEST(CryptoTest, BEH_AsymSign) {
   // Set up data
   RsaKeyPair rsakp;
   rsakp.GenerateKeys(4096);
@@ -351,7 +351,7 @@ TEST(CryptoTest, BEH_BASE_AsymSign) {
   EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kPrivateKey));
 }
 
-TEST(CryptoTest, BEH_BASE_Compress) {
+TEST(CryptoTest, BEH_Compress) {
   const size_t kTestDataSize(10000);
   const size_t kTolerance(kTestDataSize / 200);
   std::string initial_data(kTestDataSize, 'A');
@@ -382,7 +382,7 @@ TEST(CryptoTest, BEH_BASE_Compress) {
   EXPECT_TRUE(Uncompress(kTestData).empty());
 }
 
-TEST(CryptoTest, BEH_BASE_Gzip_SHA512_Deterministic) {
+TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
   // if the algorithm changes this test will start failing
   // as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
@@ -401,7 +401,7 @@ TEST(CryptoTest, BEH_BASE_Gzip_SHA512_Deterministic) {
     (crypto::Compress(test_data, 9)))), answer2);
 }
 
-TEST(CryptoTest, BEH_BASE_AES_TIGER_Deterministic) {
+TEST(CryptoTest, BEH_AESTigerDeterministic) {
   // if the algorithm changes this test will start failing
   // as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
@@ -415,7 +415,7 @@ TEST(CryptoTest, BEH_BASE_AES_TIGER_Deterministic) {
     (crypto::Compress(test_data, 9)))), answer2);
 }
 
-TEST(RSAKeysTest, BEH_BASE_RsaKeyPair) {
+TEST(RSAKeysTest, BEH_RsaKeyPair) {
   // Check setters and getters
   RsaKeyPair rsakp;
   EXPECT_TRUE(rsakp.public_key().empty());
