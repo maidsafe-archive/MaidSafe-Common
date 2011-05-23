@@ -92,12 +92,11 @@ class ThreadsafeChunkStoreTest: public testing::Test {
       std::string contents = RandomString(64 * i);
       std::string chunk_name = crypto::Hash<crypto::SHA512>(contents);
       threadsafe_chunk_store_->Store(chunk_name, contents);
-
+      total_chunk_size_+= (64 * i);
       if (check_flag) {
         EXPECT_TRUE(threadsafe_chunk_store_->Has(chunk_name));
       } else {
         chunkname_.push_back(chunk_name);
-        total_chunk_size_+= (64 * i);
       }
     }
   }
@@ -108,12 +107,11 @@ class ThreadsafeChunkStoreTest: public testing::Test {
       CreateRandomFile(path, 177 * i);
       std::string file_name = crypto::HashFile<crypto::SHA512>(path);
       threadsafe_chunk_store_->Store(file_name, path, true);
-
+      total_chunk_size_+= (177 * i);
       if (check_flag) {
         EXPECT_TRUE(threadsafe_chunk_store_->Has(file_name));
       } else {
         chunkname_.push_back(file_name);
-        total_chunk_size_+= (177 * i);
       }
     }
   }
@@ -410,6 +408,8 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Misc) {
     std::string contents = RandomString(64 * i);
     std::string chunk_name = crypto::Hash<crypto::SHA512>(contents);
     threadsafe_chunk_store_->Store(chunk_name, contents);
+    total_chunk_size_+= (64 * i);
+
     if (i < 10)
       delete_chunknames.push_back(chunk_name);
     else
@@ -511,7 +511,7 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_TSCS_Misc) {
   }
   this->thread_pool_->Stop();
   // Check for Chunksizes
-  EXPECT_EQ(this->total_chunk_size_, total_size);
+  EXPECT_GE(this->total_chunk_size_, total_size);
 }
 
 }  // namespace test
