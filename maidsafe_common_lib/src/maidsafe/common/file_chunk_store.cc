@@ -25,11 +25,12 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "maidsafe/common/file_chunk_store.h"
 
 #include "boost/lexical_cast.hpp"
 
-#include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;

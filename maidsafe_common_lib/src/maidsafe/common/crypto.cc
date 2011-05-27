@@ -48,6 +48,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
 #include "maidsafe/common/utils.h"
 

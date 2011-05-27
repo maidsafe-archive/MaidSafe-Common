@@ -47,7 +47,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4505)
 #endif
 
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/version.h"
 
 namespace CryptoPP {
@@ -117,8 +116,8 @@ std::string HashFile(const boost::filesystem::path &file_path) {
     CryptoPP::FileSource(file_path.c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
-  catch(const std::exception &e) {
-    DLOG(ERROR) << e.what();
+  catch(...) {
+    // DLOG(ERROR) << e.what();
     result.clear();
   }
   return result;

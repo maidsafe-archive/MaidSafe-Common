@@ -24,9 +24,11 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #include <functional>
 #include <memory>
 #include <cstring>
+
 #include "boost/asio/io_service.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
@@ -34,9 +36,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/thread/thread.hpp"
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/memory_chunk_store.h"
 #include "maidsafe/common/tests/test_chunk_store_api.h"
 #include "maidsafe/common/threadsafe_chunk_store.h"
-#include "maidsafe/common/memory_chunk_store.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
