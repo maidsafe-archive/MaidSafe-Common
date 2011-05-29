@@ -37,6 +37,7 @@ bool FLAGS_ms_logging_pd = true;
 bool FLAGS_ms_logging_lifestuff = true;
 bool FLAGS_ms_logging_lifestuff_gui = true;
 bool FLAGS_ms_logging_file_browser = true;
+bool FLAGS_ms_logging_drive = true;
 
 bool FLAGS_ms_logging_sigmoid_storage_director = true;
 bool FLAGS_ms_logging_sigmoid_core = true;

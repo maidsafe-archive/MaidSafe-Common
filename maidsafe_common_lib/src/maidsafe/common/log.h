@@ -156,6 +156,7 @@ extern bool FLAGS_ms_logging_pd;
 extern bool FLAGS_ms_logging_lifestuff;
 extern bool FLAGS_ms_logging_lifestuff_gui;
 extern bool FLAGS_ms_logging_file_browser;
+extern bool FLAGS_ms_logging_drive;
 
 extern bool FLAGS_ms_logging_sigmoid_storage_director;
 extern bool FLAGS_ms_logging_sigmoid_core;
