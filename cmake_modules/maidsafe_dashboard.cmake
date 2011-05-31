@@ -260,6 +260,7 @@ ENDIF()
 # Configure CTest                                                             #
 ###############################################################################
 SET(CTEST_CONFIGURE_COMMAND "${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE:STRING=${CTEST_BUILD_CONFIGURATION} -G \"${CTEST_CMAKE_GENERATOR}\"")
+SET(CTEST_CONFIGURATION_TYPE ${CTEST_BUILD_CONFIGURATION})
 
 FIND_PROGRAM(CTEST_MEMORYCHECK_COMMAND
   NAMES purify valgrind boundscheck
