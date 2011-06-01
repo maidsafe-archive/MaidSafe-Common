@@ -141,7 +141,11 @@ namespace google {
 #define BLOG(severity) COMPACT_GOOGLE_LOG_ ## severity(benchmark, :).stream()
 
 #define LOG(severity) COMPACT_GOOGLE_LOG_ ## severity(common, :).stream()
-#define DLOG(severity) LOG(severity)
+#ifndef NDEBUG
+#  define DLOG(severity) LOG(severity)
+#else
+#  define DLOG(severity) google::NullStream()
+#endif
 }  // google
 
 extern bool FLAGS_ms_logging_user;
