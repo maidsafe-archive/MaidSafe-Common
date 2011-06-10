@@ -32,9 +32,9 @@ SET(ALL_MODULE_LIST
 #    "FILE_BROWSER"
 #    "LIFESTUFF"
 #    "LIFESTUFF_GUI"
-#    "SIGMOID_CORE"
+    "SIGMOID_CORE"
 #    "DEDUPLICATOR_GAUGE"
-#    "MAIDSAFE_DRIVE"
+    "MAIDSAFE_DRIVE"
     )
 
 MESSAGE("================================================================================")
@@ -143,6 +143,11 @@ SET(MAIDSAFE_DRIVE_DEPENDANTS
 # Variable(s) determined after running cmake                                  #
 ###############################################################################
 SET(CTEST_CMAKE_GENERATOR "@CMAKE_GENERATOR@")
+
+# Modules supported for Makefile generators only.
+IF(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
+  LIST(REMOVE_ITEM ALL_MODULE_LIST "SIGMOID_CORE" "MAIDSAFE_DRIVE")
+ENDIF()
 
 ###############################################################################
 # Test configurations                                                         #
@@ -337,6 +342,8 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
 
   CTEST_BUILD(RETURN_VALUE RETURNED)
   IF(NOT ${RETURNED} EQUAL 0)
+    #Submitting build failure results to cdash
+    CTEST_SUBMIT()
     MESSAGE(FATAL_ERROR "  CTEST_BUILD failed ret: ${RETURNED}")
   ENDIF()
   MESSAGE("  Built ${MODULE_NAME}.")
