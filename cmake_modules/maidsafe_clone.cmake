@@ -55,13 +55,22 @@ IF(NOT ALL_REPOSITORIES)
         SigmoidCore
         SigmoidPro
         Deduplicator-Gauge
-        )
+        MaidSafe-Drive)
 ENDIF()
 
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 INCLUDE(maidsafe_find_git)
 
 FILE(MAKE_DIRECTORY ${REPOSITORIES_ROOT_DIR})
+
+SET(COMMON_BUILD_DIR maidsafe_common_lib/build)
+IF(WIN32)
+  SET(COMMON_BUILD_DIR ${COMMON_BUILD_DIR}/Win_MSVC)
+ELSEIF(APPLE)
+  SET(COMMON_BUILD_DIR ${COMMON_BUILD_DIR}/OSX)
+ELSEIF(UNIX)
+  SET(COMMON_BUILD_DIR ${COMMON_BUILD_DIR}/Linux)
+ENDIF()
 
 FOREACH(REPO ${ALL_REPOSITORIES})
   MESSAGE("-- Cloning ${REPO}")
@@ -71,5 +80,59 @@ FOREACH(REPO ${ALL_REPOSITORIES})
   IF(NOT RES_VAR EQUAL 0)
     MESSAGE("  Error cloning ${REPO}.  Result: ${RES_VAR}")
     MESSAGE("  ${OUT_VAR}")
+  ELSEIF(REPO STREQUAL "MaidSafe-Common")
+    MESSAGE("-- Configuring ${REPO}")
+    IF(WIN32)
+      # configure for Windows
+      EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}"
+                      COMMAND ${CMAKE_COMMAND} ../../..
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+      IF(NOT RES_VAR EQUAL 0)
+        MESSAGE("  Error configuring ${REPO}.  Result: ${RES_VAR}")
+        MESSAGE("  ${OUT_VAR}")
+      ENDIF()
+    ELSE()
+      # configure in Debug and Release for Linux
+      EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Debug"
+                      COMMAND ${CMAKE_COMMAND} ../../..
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+      IF(NOT RES_VAR EQUAL 0)
+        MESSAGE("  Error configuring ${REPO} in Debug mode.  Result: ${RES_VAR}")
+        MESSAGE("  ${OUT_VAR}")
+      ENDIF()
+      EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Release"
+                      COMMAND ${CMAKE_COMMAND} ../../..
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+      IF(NOT RES_VAR EQUAL 0)
+        MESSAGE("  Error configuring ${REPO} in Release mode.  Result: ${RES_VAR}")
+        MESSAGE("  ${OUT_VAR}")
+      ENDIF()
+    ENDIF()
+
+    MESSAGE("-- Installing ${REPO}")
+    IF(WIN32)
+      SET(BUILD_DEBUG_DIR)
+      SET(BUILD_RELEASE_DIR)
+    ELSE()
+      SET(BUILD_DEBUG_DIR Debug)
+      SET(BUILD_RELEASE_DIR Release)
+    ENDIF()
+
+    # install in Debug
+    EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_DEBUG_DIR}"
+                    COMMAND ${CMAKE_COMMAND} --build . --config Debug --target install
+                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(NOT RES_VAR EQUAL 0)
+      MESSAGE("  Error installing ${REPO} in Debug mode.  Result: ${RES_VAR}")
+      MESSAGE("  ${OUT_VAR}")
+    ENDIF()
+    # install in Release
+    EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_RELEASE_DIR}"
+                    COMMAND ${CMAKE_COMMAND} --build . --config Release --target install
+                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(NOT RES_VAR EQUAL 0)
+      MESSAGE("  Error installing ${REPO} in Release mode.  Result: ${RES_VAR}")
+      MESSAGE("  ${OUT_VAR}")
+    ENDIF()
   ENDIF()
 ENDFOREACH()
