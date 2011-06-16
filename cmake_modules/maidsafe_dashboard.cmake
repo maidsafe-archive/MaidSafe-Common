@@ -8,7 +8,7 @@ IF(NOT ${SCRIPT_VERSION} EQUAL ${INSTALLED_VERSION})
    MESSAGE("Current running version: ${SCRIPT_VERSION}")
    MESSAGE(FATAL_ERROR "This script is updated. Start the script again !!!")
 ENDIF()
-MESSAGE("Starting Script version: ${SCRIPT_VERSION}")
+MESSAGE("Starting Script version: ${SCRIPT_VERSION} -- test")
 
 ###############################################################################
 #Pre-requirement:                                                             #
@@ -323,7 +323,13 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
     RETURN()
   ENDIF()
 
-#clean up module
+  CTEST_CONFIGURE(RETURN_VALUE RETURNED)
+  IF(NOT ${RETURNED} EQUAL 0)
+    MESSAGE(FATAL_ERROR "  CTEST_CONFIGURE failed ret: ${RETURNED}")
+  ENDIF()
+  MESSAGE("  Configured ${MODULE_NAME}.")
+
+  #clean up module
   EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
       COMMAND ${CTEST_CMAKE_COMMAND} --build . --target clean --config ${CTEST_BUILD_CONFIGURATION}
       RESULT_VARIABLE ret_var
@@ -331,14 +337,8 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
       )
   IF(NOT ${ret_var} EQUAL 0)
     MESSAGE(FATAL_ERROR "  Cleaning ${MODULE_NAME} returned ${ret_var}.Output:${out_var}")
-  ELSE()
-    MESSAGE("  Cleaned ${MODULE_NAME}.")
   ENDIF()
-
-  CTEST_CONFIGURE(RETURN_VALUE RETURNED)
-  IF(NOT ${RETURNED} EQUAL 0)
-    MESSAGE(FATAL_ERROR "  CTEST_CONFIGURE failed ret: ${RETURNED}")
-  ENDIF()
+  MESSAGE("  Cleaned ${MODULE_NAME}.")
 
   CTEST_BUILD(RETURN_VALUE RETURNED)
   IF(NOT ${RETURNED} EQUAL 0)
