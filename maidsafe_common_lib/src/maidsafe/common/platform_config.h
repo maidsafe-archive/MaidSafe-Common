@@ -71,7 +71,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 709
+#if MAIDSAFE_COMMON_VERSION != 900
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
