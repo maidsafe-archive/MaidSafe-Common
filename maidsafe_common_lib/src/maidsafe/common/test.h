@@ -38,4 +38,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/version.h"
+
+#if MAIDSAFE_COMMON_VERSION != 709
+#  error This API is not compatible with the installed library.\
+    Please update the MaidSafe-Common library.
+#endif
+
 #endif  // MAIDSAFE_COMMON_TEST_H_

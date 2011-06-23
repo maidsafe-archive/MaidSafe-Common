@@ -112,6 +112,7 @@ INCLUDE_DIRECTORIES(SYSTEM ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
 INCLUDE(maidsafe_standard_setup)
 # Need to overwrite defaults for this project
 SET(MaidSafeCommon_TOOLS_DIR ${PROJECT_SOURCE_DIR}/../tools)
+HANDLE_VERSIONS(${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h)
 
 ###################################################################################################
 # Boost libraries search                                                                          #
@@ -241,17 +242,21 @@ MESSAGE(" ${ERROR_MESSAGE_CMAKE_PATH} -DFORCE_THIRD_PARTY_BUILD=CRYPTOPP")
 MESSAGE(" ${ERROR_MESSAGE_CMAKE_PATH} -DFORCE_THIRD_PARTY_BUILD=PROTOBUF")
 MESSAGE(" ${ERROR_MESSAGE_CMAKE_PATH} -DFORCE_THIRD_PARTY_BUILD=GLOG\n\n")
 MESSAGE("To build and install this project now, run:\n")
-IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Release")
+IF(MSVC)
   MESSAGE("    cmake --build . --config Release --target install")
-ENDIF()
-IF(MSVC OR CMAKE_BUILD_TYPE MATCHES "Debug")
   MESSAGE("    cmake --build . --config Debug --target install")
+ELSE()
+  MESSAGE("    cmake --build . --target install")
 ENDIF()
 MESSAGE("\n\n================================================================================"\n)
 
 FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON_VERSION
        REGEX "VERSION [0-9]+$")
 STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
+
+FOREACH(HEADER_FILE ${HEADER_FILES_COMMON_DIR})
+  CHECK_INSTALL_HEADER_HAS_VERSION_GUARD(${HEADER_FILE})
+ENDFOREACH()
 
 SET(EXPORT_NAME maidsafe_common)
 INSTALL(TARGETS maidsafe_common_static EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
@@ -260,13 +265,8 @@ INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
 INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
 INSTALL(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)
 INSTALL(EXPORT ${EXPORT_NAME} DESTINATION share/maidsafe)
-FIND_FILE(MAIDSAFE_INSTALL_VERSION_CMAKE maidsafe_install_version.cmake PATHS ${CMAKE_MODULE_PATH})
-IF(MAIDSAFE_INSTALL_VERSION_CMAKE)
-  SET(THIS_VERSION MAIDSAFE_COMMON_VERSION)
-  CONFIGURE_FILE(${MAIDSAFE_INSTALL_VERSION_CMAKE} ${CMAKE_BINARY_DIR}/maidsafe_install_version.cmake @ONLY)
-  CONFIGURE_FILE(${CMAKE_BINARY_DIR}/maidsafe_install_version.cmake ${CMAKE_BINARY_DIR}/maidsafe_install_version.cmake @ONLY)
-  INSTALL(SCRIPT ${CMAKE_BINARY_DIR}/maidsafe_install_version.cmake)
-ENDIF()
+ADD_VERSION_INFO_TO_INSTALLED_FILE()
+
 FIND_FILE(CONINUOUS_SCRIPT_CMAKE maidsafe_dashboard.cmake PATHS ${CMAKE_MODULE_PATH})
 IF(CONINUOUS_SCRIPT_CMAKE)
   CONFIGURE_FILE(${CONINUOUS_SCRIPT_CMAKE} ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake @ONLY)
