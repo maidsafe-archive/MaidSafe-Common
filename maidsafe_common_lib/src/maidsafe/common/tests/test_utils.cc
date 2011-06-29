@@ -39,6 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
+namespace bptime = boost::posix_time;
 
 namespace maidsafe {
 
@@ -233,7 +234,7 @@ TEST(UtilsTest, BEH_Base32EncodeDecode) {
 
 TEST(UtilsTest, BEH_TimeFunctions) {
   uint64_t s, ms, ns;
-  boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
+  bptime::time_duration since_epoch(GetDurationSinceEpoch());
   ms = since_epoch.total_milliseconds();
   ns = since_epoch.total_nanoseconds();
   s = since_epoch.total_seconds();
@@ -301,6 +302,56 @@ TEST(UtilsTest, BEH_ReadWriteFile) {
   EXPECT_EQ("moo", file_content_in);
 }
 
+TEST(UtilsTest, BEH_Sleep) {
+  bptime::ptime first_time(bptime::microsec_clock::universal_time());
+  bptime::ptime second_time(bptime::microsec_clock::universal_time());
+  EXPECT_LT((second_time - first_time).total_milliseconds(), 100);
+  Sleep(bptime::milliseconds(100));
+  bptime::ptime third_time(bptime::microsec_clock::universal_time());
+  EXPECT_GE((third_time - first_time).total_milliseconds(), 100);
+}
+
+TEST(UtilsTest, BEH_GetMaidSafeVersion) {
+  EXPECT_EQ("v0.00.00", GetMaidSafeVersion(0));
+  EXPECT_EQ("v0.00.01", GetMaidSafeVersion(1));
+  EXPECT_EQ("v0.00.10", GetMaidSafeVersion(10));
+  EXPECT_EQ("v0.01.00", GetMaidSafeVersion(100));
+  EXPECT_EQ("v0.01.01", GetMaidSafeVersion(101));
+  EXPECT_EQ("v0.01.10", GetMaidSafeVersion(110));
+  EXPECT_EQ("v0.10.00", GetMaidSafeVersion(1000));
+  EXPECT_EQ("v0.10.01", GetMaidSafeVersion(1001));
+  EXPECT_EQ("v0.10.10", GetMaidSafeVersion(1010));
+  EXPECT_EQ("v1.00.00", GetMaidSafeVersion(10000));
+  EXPECT_EQ("v1.00.01", GetMaidSafeVersion(10001));
+  EXPECT_EQ("v1.00.10", GetMaidSafeVersion(10010));
+  EXPECT_EQ("v1.01.00", GetMaidSafeVersion(10100));
+  EXPECT_EQ("v1.01.01", GetMaidSafeVersion(10101));
+  EXPECT_EQ("v1.01.10", GetMaidSafeVersion(10110));
+  EXPECT_EQ("v1.10.00", GetMaidSafeVersion(11000));
+  EXPECT_EQ("v1.10.01", GetMaidSafeVersion(11001));
+  EXPECT_EQ("v1.10.10", GetMaidSafeVersion(11010));
+  EXPECT_EQ("v10.00.00", GetMaidSafeVersion(100000));
+  EXPECT_EQ("v10.00.01", GetMaidSafeVersion(100001));
+  EXPECT_EQ("v10.00.10", GetMaidSafeVersion(100010));
+  EXPECT_EQ("v10.01.00", GetMaidSafeVersion(100100));
+  EXPECT_EQ("v10.01.01", GetMaidSafeVersion(100101));
+  EXPECT_EQ("v10.01.10", GetMaidSafeVersion(100110));
+  EXPECT_EQ("v10.10.00", GetMaidSafeVersion(101000));
+  EXPECT_EQ("v10.10.01", GetMaidSafeVersion(101001));
+  EXPECT_EQ("v10.10.10", GetMaidSafeVersion(101010));
+  std::string major_version, minor_version, patch_version;
+  EXPECT_EQ("v1.01.01", GetMaidSafeVersion(10101, &major_version,
+                                           &minor_version, &patch_version));
+  EXPECT_EQ("1", major_version);
+  EXPECT_EQ("01", minor_version);
+  EXPECT_EQ("01", patch_version);
+  EXPECT_EQ("v12.34.56", GetMaidSafeVersion(123456, &major_version,
+                                            &minor_version, &patch_version));
+  EXPECT_EQ("12", major_version);
+  EXPECT_EQ("34", minor_version);
+  EXPECT_EQ("56", patch_version);
+}
+
 TEST(UtilsTest, BEH_CreateTestPath) {
   fs::path test_path;
   boost::system::error_code error_code;
@@ -324,6 +375,11 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   EXPECT_FALSE(fs::exists(test_path, error_code));
   EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
         << error_code.message();
+  // Ensure we're able to cope with error cases
+  fs::path empty_path;
+  CleanupTest(&empty_path);
+  fs::path non_existent(std::string(100, 'a'));
+  CleanupTest(&non_existent);
 }
 
 }  // namespace test

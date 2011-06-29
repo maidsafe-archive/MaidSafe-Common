@@ -69,13 +69,6 @@ IF(APPLE)
   SET(CMAKE_OSX_SYSROOT "/")
 ENDIF()
 
-IF(CMAKE_BUILD_TYPE MATCHES "Release" AND NOT MSVC)
-  MESSAGE("Building a package which is OK to release.")
-ELSEIF(NOT MSVC)
-  MESSAGE("Building a package which is NOT OK to release.")
-  SET(pddate "DEVELOPER_${pddate}")
-ENDIF()
-
 IF(NOT DEFINED ${KDEV})
   SET(CMAKE_DEBUG_POSTFIX -d)
   SET(CMAKE_RELWITHDEBINFO_POSTFIX -rwdi)
@@ -107,6 +100,7 @@ FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"nat-pmp/\"")
 FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"tests/\"")
 FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"third_party_libs/\"")
 FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"upnp/\"")
+FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"main.cc\"")
 FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake ")\n\n")
 
 IF(DEFINED ADD_LIBRARY_DIR)
@@ -249,6 +243,7 @@ IF(WIN32)
   ENDIF()
 ENDIF()
 
+SET(CPACK_STRIP_FILES TRUE)
 
 ###################################################################################################
 # Helper functions                                                                                #

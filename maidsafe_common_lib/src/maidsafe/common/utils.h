@@ -166,15 +166,21 @@ std::string DecodeFromBase32(const std::string &base32_input);
 // Return the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();
 
-// Reads the given file and returns the contents as a string
+// Reads the given file and returns the contents as a string.
 bool ReadFile(const fs::path &file_path, std::string *content);
 
-// Writes the given content string to a file, overwriting if applicable
+// Writes the given content string to a file, overwriting if applicable.
 bool WriteFile(const fs::path &file_path, const std::string &content);
 
 // Causes running thread to sleep for specified duration.
 void Sleep(const boost::posix_time::time_duration &duration);
 
+// Takes a MaidSafe version as an int and returns the string form, e.g. 901
+// returns "v0.09.01".
+std::string GetMaidSafeVersion(int version,
+                               std::string *major_version = NULL,
+                               std::string *minor_version = NULL,
+                               std::string *patch_version = NULL);
 
 namespace test {
 
