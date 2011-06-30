@@ -376,10 +376,12 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
         << error_code.message();
   // Ensure we're able to cope with error cases
-  fs::path empty_path;
-  CleanupTest(&empty_path);
-  fs::path non_existent(std::string(100, 'a'));
-  CleanupTest(&non_existent);
+  fs::path *empty_path(new fs::path);
+  CleanupTest(empty_path);
+  EXPECT_EQ(NULL, empty_path);
+  fs::path *non_existent(new fs::path(std::string(100, 'a')));
+  CleanupTest(non_existent);
+  EXPECT_EQ(NULL, non_existent);
 }
 
 }  // namespace test

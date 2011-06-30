@@ -197,7 +197,7 @@ TestPath CreateTestPath(std::string test_prefix = "");
 
 // Used as a custom deleter for instances of TestPath.  Tries to remove the test
 // directory created in the CreateTestPath method above.
-void CleanupTest(fs::path *test_path);
+void CleanupTest(fs::path *&test_path);
 
 }  // namespace test
 
