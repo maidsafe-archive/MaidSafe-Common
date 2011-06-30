@@ -70,7 +70,7 @@ std::string XOR(const std::string &first, const std::string &second) {
 std::string SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin) {
-  if (password.empty() || salt.empty() || pin == 0)
+  if (password.empty() || salt.empty() || pin < 500)  // 500 min is secure
     return "";
   byte purpose = 0;
   uint16_t iter = (pin % 1000) + 1000;
