@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <memory>
 #include "boost/filesystem.hpp"
-#include "maidsafe/common/tests/test_chunk_store_api.h"
+#include "maidsafe/common/tests/chunk_store_api_test.h"
 #include "maidsafe/common/memory_chunk_store.h"
 
 namespace maidsafe {
