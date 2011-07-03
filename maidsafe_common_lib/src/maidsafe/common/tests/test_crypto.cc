@@ -48,13 +48,11 @@ TEST(CryptoTest, BEH_Obfuscation) {
   const size_t kStringSize(1024*256);
   std::string str1 = RandomString(kStringSize);
   std::string str2 = RandomString(kStringSize);
-//   for (int i =0; i < 100; ++i) {
   std::string obfuscated = XOR(str1, str2);
   EXPECT_EQ(kStringSize, obfuscated.size());
   EXPECT_EQ(obfuscated, XOR(str2, str1));
   EXPECT_EQ(str1, XOR(obfuscated, str2));
   EXPECT_EQ(str2, XOR(obfuscated, str1));
-//   }
   const std::string kZeros(kStringSize, 0);
   EXPECT_EQ(kZeros, XOR(str1, str1));
   EXPECT_EQ(str1, XOR(kZeros, str1));
