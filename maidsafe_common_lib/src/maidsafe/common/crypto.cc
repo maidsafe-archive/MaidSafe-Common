@@ -72,7 +72,7 @@ std::string SecurePassword(const std::string &password,
                            const uint32_t &pin) {
   if (password.empty() || salt.empty() || pin < 500)  // 500 min is secure
     return "";
-  byte purpose = 0;
+  byte purpose = 0;  // unused in this pbkdf implementation
   uint16_t iter = (pin % 1000) + 1000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
