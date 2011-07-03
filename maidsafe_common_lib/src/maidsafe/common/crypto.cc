@@ -63,7 +63,7 @@ std::string XOR(const std::string &first, const std::string &second) {
   std::string result;
   result.reserve(common_size);
   for (size_t i = 0; i < common_size; ++i)
-    result.push_back(first.at(i) ^ second.at(i));
+    result.push_back(std::move(first.at(i) ^ second.at(i)));
   return result;
 }
 
