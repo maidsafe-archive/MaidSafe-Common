@@ -48,7 +48,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 900
+#if MAIDSAFE_COMMON_VERSION != 901
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -166,15 +166,21 @@ std::string DecodeFromBase32(const std::string &base32_input);
 // Return the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();
 
-// Reads the given file and returns the contents as a string
+// Reads the given file and returns the contents as a string.
 bool ReadFile(const fs::path &file_path, std::string *content);
 
-// Writes the given content string to a file, overwriting if applicable
+// Writes the given content string to a file, overwriting if applicable.
 bool WriteFile(const fs::path &file_path, const std::string &content);
 
 // Causes running thread to sleep for specified duration.
 void Sleep(const boost::posix_time::time_duration &duration);
 
+// Takes a MaidSafe version as an int and returns the string form, e.g. 901
+// returns "v0.09.01".
+std::string GetMaidSafeVersion(int version,
+                               std::string *major_version = NULL,
+                               std::string *minor_version = NULL,
+                               std::string *patch_version = NULL);
 
 namespace test {
 
@@ -191,7 +197,7 @@ TestPath CreateTestPath(std::string test_prefix = "");
 
 // Used as a custom deleter for instances of TestPath.  Tries to remove the test
 // directory created in the CreateTestPath method above.
-void CleanupTest(fs::path *test_path);
+void CleanupTest(fs::path *&test_path);
 
 }  // namespace test
 

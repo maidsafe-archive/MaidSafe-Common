@@ -191,6 +191,8 @@ IF(MSVC)
  #                               PROPERTIES COMPILE_FLAGS "-w -isystem")
 ENDIF()
 
+# Remove utils.h from coverage stats
+FILE(APPEND ${CMAKE_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE \${CTEST_CUSTOM_COVERAGE_EXCLUDE} \"utils.h\")\n\n")
 
 ###################################################################################################
 # Tests                                                                                           #

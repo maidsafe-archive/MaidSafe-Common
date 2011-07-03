@@ -63,6 +63,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
+namespace {
+
 // CryptoPP::AutoSeededX917RNG<CryptoPP::AES> g_srandom_number_generator;
 CryptoPP::AutoSeededRandomPool g_srandom_number_generator;
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
@@ -70,6 +72,8 @@ boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       total_microseconds()));
 boost::mutex g_srandom_number_generator_mutex;
 boost::mutex g_random_number_generator_mutex;
+
+}  // unnamed namespace
 
 int32_t SRandomInt32() {
   int32_t result(0);
@@ -233,7 +237,6 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
                                      std::ios::binary);
     file_out.write(content.data(), content.size());
     file_out.close();
-    // std::cout<<"\n******close the file *************\n";
   }
   catch(...) {
     return false;
@@ -243,6 +246,27 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
 
 void Sleep(const boost::posix_time::time_duration &duration) {
   boost::this_thread::sleep(duration);
+}
+
+std::string GetMaidSafeVersion(int version,
+                               std::string *major_version,
+                               std::string *minor_version,
+                               std::string *patch_version) {
+  std::string full_version(boost::lexical_cast<std::string>(version));
+  size_t padding_count(6 - full_version.size());
+  full_version.insert(0, padding_count, '0');
+  std::string major_ver(full_version.substr(0, 2));
+  std::string minor_ver(full_version.substr(2, 2));
+  std::string patch_ver(full_version.substr(4, 2));
+  if (major_ver.at(0) == '0')
+    major_ver.assign(major_ver.substr(1, 1));
+  if (major_version)
+    *major_version = major_ver;
+  if (minor_version)
+    *minor_version = minor_ver;
+  if (patch_version)
+    *patch_version = patch_ver;
+  return "v" + major_ver + "." + minor_ver + "." + patch_ver;
 }
 
 
@@ -278,14 +302,16 @@ TestPath CreateTestPath(std::string test_prefix) {
   return test_path;
 }
 
-void CleanupTest(fs::path *test_path) {
-  if (test_path->empty())
-    return;
-  boost::system::error_code error_code;
-  if (!fs::remove_all(*test_path, error_code) || error_code) {
-    LOG(WARNING) << "Failed to clean up test directory " << *test_path
-                 << "  (error message: " << error_code.message() << ")";
+void CleanupTest(fs::path *&test_path) {
+  if (!test_path->empty()) {
+    boost::system::error_code error_code;
+    if (!fs::remove_all(*test_path, error_code) || error_code) {
+      LOG(WARNING) << "Failed to clean up test directory " << *test_path
+                   << "  (error message: " << error_code.message() << ")";
+    }
   }
+  delete test_path;
+  test_path = NULL;
 }
 
 }  // namespace test

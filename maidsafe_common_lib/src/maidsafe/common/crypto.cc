@@ -164,9 +164,8 @@ std::string AsymEncrypt(const std::string &input,
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what();
-    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
-      AsymEncrypt(input, public_key);
-    return "";
+    return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
+           AsymEncrypt(input, public_key) : "";
   }
 }
 
@@ -184,9 +183,8 @@ std::string AsymDecrypt(const std::string &input,
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what();
-    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
-       AsymEncrypt(input, private_key);
-    return "";
+    return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
+           AsymDecrypt(input, private_key) : "";
   }
 }
 
@@ -201,9 +199,8 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what();
-    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
-      AsymEncrypt(input, private_key);
-    return "";
+    return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
+           AsymSign(input, private_key) : "";
   }
 }
 
@@ -214,10 +211,9 @@ bool AsymCheckSig(const std::string &input_data,
     CryptoPP::StringSource key(public_key, true);
     CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Verifier
         verifier(key);
-    bool result(false);
     CryptoPP::StringSource signature_string(input_signature, true);
     if (signature_string.MaxRetrievable() != verifier.SignatureLength())
-      return result;
+      return false;
     const std::unique_ptr<CryptoPP::SecByteBlock> kSignature(
         new CryptoPP::SecByteBlock(verifier.SignatureLength()));
     signature_string.Get(*kSignature, kSignature->size());
@@ -225,8 +221,7 @@ bool AsymCheckSig(const std::string &input_data,
         new CryptoPP::SignatureVerificationFilter(verifier));
     verifier_filter->Put(*kSignature, verifier.SignatureLength());
     CryptoPP::StringSource ssource(input_data, true, verifier_filter);
-    result = verifier_filter->GetLastResult();
-    return result;
+    return verifier_filter->GetLastResult();
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Crypto::AsymCheckSig - " << e.what();
