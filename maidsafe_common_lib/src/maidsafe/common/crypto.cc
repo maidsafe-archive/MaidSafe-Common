@@ -63,14 +63,14 @@ std::string XOR(const std::string &first, const std::string &second) {
   std::string result;
   result.reserve(common_size);
   for (size_t i = 0; i < common_size; ++i)
-    result.push_back(std::move(first.at(i) ^ second.at(i)));
+    result.push_back(static_cast<char>(std::move(first.at(i) ^ second.at(i))));
   return result;
 }
 
 std::string SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin) {
-  if (password.empty() || salt.empty() || pin < 500)  // 500 min is secure
+  if (password.empty() || salt.empty() || pin == 0)
     return "";
   byte purpose = 0;  // unused in this pbkdf implementation
   uint16_t iter = (pin % 1000) + 1000;

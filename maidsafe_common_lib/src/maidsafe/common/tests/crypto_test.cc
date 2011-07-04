@@ -65,14 +65,12 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   EXPECT_TRUE(SecurePassword("", "salt", 100).empty());
   EXPECT_TRUE(SecurePassword("password", "", 100).empty());
   EXPECT_TRUE(SecurePassword("password", "salt", 0).empty());
-  EXPECT_TRUE(SecurePassword("password", "salt", 499).empty());
-  EXPECT_FALSE(SecurePassword("password", "salt", 500).empty());
   const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
   const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
-  const uint32_t kKnownIterations1(500);
-  const std::string kKnownDerived1(DecodeFromHex("8be3b208a93f3ffb3"
-               "0d1cc26a44735bf0fad23"
-               "93c39a42555242582f87b37aa7c05cf8da165238475282178ef31c7fac"));
+  const uint32_t kKnownIterations1(5);
+  const std::string kKnownDerived1(DecodeFromHex("0a89927670e292af98080a3"
+      "c3e2bdee4289b768de74570f9f470282756390fe36de6da2cbc407f4ecf6a9f62ef6249c"
+      "c"));
   EXPECT_EQ(kKnownDerived1, SecurePassword(kKnownPassword1,
             kKnownSalt1, kKnownIterations1));
   const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974"
