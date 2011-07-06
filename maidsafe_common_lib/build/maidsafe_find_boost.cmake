@@ -30,6 +30,7 @@
 #==============================================================================#
 #                                                                              #
 #  Written by maidsafe.net team                                                #
+#  Patch https://gist.github.com/a4c52f036fc61c24abac supplied by Marenz       #
 #                                                                              #
 #==============================================================================#
 #                                                                              #
@@ -73,36 +74,35 @@ UNSET(Boost_LIBRARY_DIRS CACHE)
 UNSET(TRY_BOOST_INC_DIR CACHE)
 
 IF(BOOST_LIB_DIR)
-  SET(BOOST_LIB_DIR ${BOOST_LIB_DIR} CACHE PATH "Path to Boost libraries directory" FORCE)
   SET(BOOST_LIBRARYDIR ${BOOST_LIB_DIR} CACHE PATH "Path to Boost libraries directory" FORCE)
 ELSEIF(UNIX)
   SET(BOOST_LIBRARYDIR /usr/local/lib)
 ENDIF()
+
 IF(BOOST_INC_DIR)
-  SET(BOOST_INC_DIR ${BOOST_INC_DIR} CACHE PATH "Path to Boost include directory" FORCE)
-  SET(Boost_INCLUDE_DIR ${BOOST_INC_DIR} CACHE PATH "Path to Boost include directory" FORCE)
+  SET(BOOST_INCLUDEDIR ${BOOST_INC_DIR} CACHE PATH "Path to Boost include directory" FORCE)
 ELSEIF(UNIX)
-  SET(Boost_INCLUDE_DIR /usr/local/include)
+  SET(BOOST_INCLUDEDIR /usr/local/include)
 ELSE()
   LIST(REVERSE BOOST_TRY_VERSIONS)
   FOREACH(TRY_VERSION ${BOOST_TRY_VERSIONS})
     FOREACH(INC_OPTION ${INCLUDE_DIR})
       FIND_FILE(TRY_BOOST_INC_DIR ${TRY_VERSION} ${INC_OPTION})
-      IF(NOT TRY_BOOST_INC_DIR MATCHES TRY_BOOST_INC_DIR-NOTFOUND)
-        SET(Boost_INCLUDE_DIR ${TRY_BOOST_INC_DIR})
+      IF(TRY_BOOST_INC_DIR)
+        SET(BOOST_INCLUDEDIR ${TRY_BOOST_INC_DIR})
         BREAK()
       ENDIF()
     ENDFOREACH()
-    IF(NOT TRY_BOOST_INC_DIR MATCHES TRY_BOOST_INC_DIR-NOTFOUND)
+    IF(TRY_BOOST_INC_DIR)
       BREAK()
     ENDIF()
   ENDFOREACH()
 ENDIF()
-IF(DEFINED BOOST_ROOT_DIR)
-  SET(BOOST_ROOT_DIR ${BOOST_ROOT_DIR} CACHE PATH "Path to Boost root directory" FORCE)
+
+IF(BOOST_ROOT_DIR)
   SET(BOOST_ROOT ${BOOST_ROOT_DIR} CACHE PATH "Path to Boost root directory" FORCE)
 ELSE()
-  SET(BOOST_ROOT_DIR /usr/local)
+  SET(BOOST_ROOT /usr/local)
 ENDIF()
 SET(Boost_USE_STATIC_LIBS ON)
 SET(Boost_USE_MULTITHREADED ON)
