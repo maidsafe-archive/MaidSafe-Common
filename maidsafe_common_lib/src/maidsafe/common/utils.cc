@@ -219,7 +219,9 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
       content->clear();
       return true;
     }
-    content->resize(file_size);
+    if (file_size > std::numeric_limits<unsigned int>::max())
+      return false;
+    content->resize(static_cast<unsigned int>(file_size));
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
   }
