@@ -119,7 +119,8 @@ class Stats {
   T max_;
   T sum_;
 };
-
+// Converts 
+std::string BytesToSiUnits(size_t num);
 // Generate a cryptographically-secure 32bit signed integer
 int32_t SRandomInt32();
 

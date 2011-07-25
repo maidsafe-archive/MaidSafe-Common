@@ -75,6 +75,19 @@ boost::mutex g_random_number_generator_mutex;
 
 }  // unnamed namespace
 
+std::vector<std::string> qualifier {"b","Kib", "Mib", "Gib",
+                                    "Tib", "Pib", "Eib"};
+
+std::string BytesToSiUnits(size_t num) {
+int count = 0;
+ for (size_t i = 1; ; i*=1000) {
+   if (num / (i) < 1000 )
+     return  boost::lexical_cast<std::string>(num/(i)) + " " +  qualifier.at(count) ;
+++count;
+ }
+}
+
+
 int32_t SRandomInt32() {
   int32_t result(0);
   bool success = false;
