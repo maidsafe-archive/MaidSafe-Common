@@ -77,34 +77,34 @@ boost::mutex g_random_number_generator_mutex;
 }  // unnamed namespace
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
-  std::array<std::string, 7> qualifier = {" B", " kB", " MB", " GB", " TB",
-                                          " PB", " EB"};
+  std::array<std::string, 7> qualifier = { {" B", " kB", " MB", " GB", " TB",
+                                            " PB", " EB"} };
   if (num < 1000)
-    return boost::lexical_cast<std::string>(num) + qualifier.at(0);
+    return boost::lexical_cast<std::string>(num) + qualifier[0];
 
   for (uint64_t threshold(999500), midpoint(500), divisor(1000), count(1);
        count != 6;
        threshold *= 1000, midpoint *= 1000, divisor *= 1000, ++count) {
     if (num < threshold)
       return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
-             qualifier.at(count);
+             qualifier[count];
   }
 
-  if (num < 9500000000000000000) {
+  if (num < 9500000000000000000U) {
     return boost::lexical_cast<std::string>(
-           (num + 500000000000000000) / 1000000000000000000) + qualifier.at(6);
+           (num + 500000000000000000U) / 1000000000000000000U) + qualifier[6];
   } else {
     return boost::lexical_cast<std::string>(
-           ((num - 500000000000000000) / 1000000000000000000) + 1) +
-           qualifier.at(6);
+           ((num - 500000000000000000U) / 1000000000000000000U) + 1) +
+           qualifier[6];
   }
 }
 
 std::string BytesToBinarySiUnits(const uint64_t &num) {
-  std::array<std::string, 7> qualifier = {" B", " KiB", " MiB", " GiB", " TiB",
-                                          " PiB", " EiB"};
+  std::array<std::string, 7> qualifier = { {" B", " KiB", " MiB", " GiB",
+                                            " TiB", " PiB", " EiB"} };
   if (num < 1024)
-    return boost::lexical_cast<std::string>(num) + qualifier.at(0);
+    return boost::lexical_cast<std::string>(num) + qualifier[0];
 
   uint64_t threshold(0);
   for (uint64_t midpoint(512), divisor(1024), count(1); count != 6;
@@ -112,16 +112,16 @@ std::string BytesToBinarySiUnits(const uint64_t &num) {
     threshold = (divisor * 1024) - midpoint;
     if (num < threshold)
       return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
-             qualifier.at(count);
+             qualifier[count];
   }
 
-  if (num < 11529215046068469760) {
+  if (num < 11529215046068469760U) {
     return boost::lexical_cast<std::string>(
-           (num + 576460752303423488) / 1152921504606846976) + qualifier.at(6);
+           (num + 576460752303423488U) / 1152921504606846976U) + qualifier[6];
   } else {
     return boost::lexical_cast<std::string>(
-           ((num - 576460752303423488) / 1152921504606846976) + 1) +
-           qualifier.at(6);
+           ((num - 576460752303423488U) / 1152921504606846976U) + 1) +
+           qualifier[6];
   }
 }
 
