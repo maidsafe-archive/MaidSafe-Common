@@ -148,6 +148,61 @@ SET(DEDUPLICATOR_GAUGE_DEPENDANTS
     DEDUPLICATOR_GAUGE
     )
 
+# List of Dependencies per module
+SET(MAIDSAFE_COMMON_DEPENDS_ON
+    )
+SET(MAIDSAFE_ENCRYPT_DEPEND_ON
+    MAIDSAFE_COMMON
+    )
+SET(MAIDSAFE_DHT_DEPENDS_ON
+    MAIDSAFE_COMMON
+    )
+SET(PKI_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_DHT
+    )
+SET(PASSPORT_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_DHT
+    PKI
+    )
+SET(MAIDSAFE_PD_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_DHT
+    )
+SET(FILE_BROWSER_DEPENDS_ON
+    )
+SET(LIFESTUFF_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DHT
+    PKI
+    PASSPORT
+    )
+SET(LIFESTUFF_GUI_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DHT
+    PKI
+    PASSPORT
+    LIFESTUFF
+    )
+SET(MAIDSAFE_DRIVE_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    )
+SET(SIGMOID_CORE_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DRIVE
+    )
+SET(SIGMOID_PRO_DEPENDS_ON
+    MAIDSAFE_COMMON
+    MAIDSAFE_ENCRYPT
+    MAIDSAFE_DRIVE
+    )
+SET(DEDUPLICATOR_GAUGE_DEPENDS_ON
+    )
 
 ###############################################################################
 # Variable(s) determined after running cmake                                  #
@@ -345,9 +400,23 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
 
   CTEST_CONFIGURE(RETURN_VALUE RETURNED)
   IF(NOT ${RETURNED} EQUAL 0)
-    MESSAGE(FATAL_ERROR "  CTEST_CONFIGURE failed ret: ${RETURNED}")
+    MESSAGE("  CTEST_CONFIGURE failed ret: ${RETURNED}")
+    MESSAGE("  Will try again after re-installing dependencies")
+    # Retry Configure after re-installing dependencies
+    INSTALL_DEPENDENCIES(${MODULE_NAME})
+    CTEST_CONFIGURE(RETURN_VALUE RETURNED)
+    IF(NOT ${RETURNED} EQUAL 0)
+      MESSAGE("  CTEST_CONFIGURE failed after re-installing dependencies. ret: ${RETURNED}")
+      #Submitting configure failure results to cdash
+      CTEST_SUBMIT()
+      SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
+      RETURN()
+    ELSE()
+      MESSAGE("  Configured ${MODULE_NAME} after re-installing dependencies.")
+    ENDIF()
+  ELSE()
+    MESSAGE("  Configured ${MODULE_NAME}.")
   ENDIF()
-  MESSAGE("  Configured ${MODULE_NAME}.")
 
   #clean up module
   EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
@@ -408,6 +477,24 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
   SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
 ENDFUNCTION()
 
+FUNCTION(INSTALL_DEPENDENCIES MODULE_NAME)
+  FOREACH(EACH_MODULE ${${MODULE_NAME}_DEPENDS_ON})
+    SET(MODULE_BINARY_DIRECTORY ${${EACH_MODULE}_BINARY_DIRECTORY})
+    MESSAGE("Installing " ${EACH_MODULE})
+    IF(${EACH_MODULE}_SHOULD_BE_INSTALLED_AFTER_UPDATE)
+      EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
+        COMMAND ${CTEST_CMAKE_COMMAND} --build . --config ${CTEST_BUILD_CONFIGURATION} --target install
+        RESULT_VARIABLE ret_var
+        OUTPUT_VARIABLE out_var
+        )
+    IF(NOT ${ret_var} EQUAL 0)
+      MESSAGE("  ERROR : Installing ${EACH_MODULE} returned ${ret_var} Output:${out_var}")
+    ELSE()
+      MESSAGE("  Installed ${EACH_MODULE}.")
+    ENDIF()
+  ENDIF()
+  ENDFOREACH()
+ENDFUNCTION()
 ###############################################################################
 # TEST                                                                        #
 ###############################################################################
