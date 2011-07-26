@@ -44,7 +44,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/chunk_store.h"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 902
+#if MAIDSAFE_COMMON_VERSION != 903
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
