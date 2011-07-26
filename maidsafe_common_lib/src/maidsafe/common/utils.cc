@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <ctype.h>
 
+#include <array>
 #include <cstdint>
 #include <algorithm>
 #include <limits>
@@ -75,18 +76,54 @@ boost::mutex g_random_number_generator_mutex;
 
 }  // unnamed namespace
 
-std::vector<std::string> qualifier {"b","Kib", "Mib", "Gib",
-                                    "Tib", "Pib", "Eib"};
+std::string BytesToDecimalSiUnits(const uint64_t &num) {
+  std::array<std::string, 7> qualifier = {" B", " kB", " MB", " GB", " TB",
+                                          " PB", " EB"};
+  if (num < 1000)
+    return boost::lexical_cast<std::string>(num) + qualifier.at(0);
 
-std::string BytesToSiUnits(size_t num) {
-int count = 0;
- for (size_t i = 1; ; i*=1000) {
-   if (num / (i) < 1000 )
-     return  boost::lexical_cast<std::string>(num/(i)) + " " +  qualifier.at(count) ;
-++count;
- }
+  for (uint64_t threshold(999500), midpoint(500), divisor(1000), count(1);
+       count != 6;
+       threshold *= 1000, midpoint *= 1000, divisor *= 1000, ++count) {
+    if (num < threshold)
+      return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
+             qualifier.at(count);
+  }
+
+  if (num < 9500000000000000000) {
+    return boost::lexical_cast<std::string>(
+           (num + 500000000000000000) / 1000000000000000000) + qualifier.at(6);
+  } else {
+    return boost::lexical_cast<std::string>(
+           ((num - 500000000000000000) / 1000000000000000000) + 1) +
+           qualifier.at(6);
+  }
 }
 
+std::string BytesToBinarySiUnits(const uint64_t &num) {
+  std::array<std::string, 7> qualifier = {" B", " KiB", " MiB", " GiB", " TiB",
+                                          " PiB", " EiB"};
+  if (num < 1024)
+    return boost::lexical_cast<std::string>(num) + qualifier.at(0);
+
+  uint64_t threshold(0);
+  for (uint64_t midpoint(512), divisor(1024), count(1); count != 6;
+       midpoint *= 1024, divisor *= 1024, ++count) {
+    threshold = (divisor * 1024) - midpoint;
+    if (num < threshold)
+      return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
+             qualifier.at(count);
+  }
+
+  if (num < 11529215046068469760) {
+    return boost::lexical_cast<std::string>(
+           (num + 576460752303423488) / 1152921504606846976) + qualifier.at(6);
+  } else {
+    return boost::lexical_cast<std::string>(
+           ((num - 576460752303423488) / 1152921504606846976) + 1) +
+           qualifier.at(6);
+  }
+}
 
 int32_t SRandomInt32() {
   int32_t result(0);

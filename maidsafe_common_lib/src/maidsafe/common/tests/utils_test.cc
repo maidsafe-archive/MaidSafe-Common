@@ -57,6 +57,136 @@ void GenerateSRandomStrings(const int &string_count,
     SRandomString(string_size);
 }
 
+TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
+  EXPECT_EQ("0 B", BytesToDecimalSiUnits(0));
+  EXPECT_EQ("1 B", BytesToDecimalSiUnits(1));
+  EXPECT_EQ("12 B", BytesToDecimalSiUnits(12));
+  EXPECT_EQ("123 B", BytesToDecimalSiUnits(123));
+  EXPECT_EQ("999 B", BytesToDecimalSiUnits(999));
+
+  EXPECT_EQ("1 kB", BytesToDecimalSiUnits(1000));
+  EXPECT_EQ("1 kB", BytesToDecimalSiUnits(1499));
+  EXPECT_EQ("2 kB", BytesToDecimalSiUnits(1500));
+  EXPECT_EQ("2 kB", BytesToDecimalSiUnits(1999));
+  EXPECT_EQ("12 kB", BytesToDecimalSiUnits(12499));
+  EXPECT_EQ("13 kB", BytesToDecimalSiUnits(12500));
+  EXPECT_EQ("123 kB", BytesToDecimalSiUnits(123499));
+  EXPECT_EQ("124 kB", BytesToDecimalSiUnits(123500));
+  EXPECT_EQ("999 kB", BytesToDecimalSiUnits(999499));
+
+  EXPECT_EQ("1 MB", BytesToDecimalSiUnits(999500));
+  EXPECT_EQ("1 MB", BytesToDecimalSiUnits(1000000));
+  EXPECT_EQ("1 MB", BytesToDecimalSiUnits(1499999));
+  EXPECT_EQ("2 MB", BytesToDecimalSiUnits(1500000));
+  EXPECT_EQ("12 MB", BytesToDecimalSiUnits(12499999));
+  EXPECT_EQ("13 MB", BytesToDecimalSiUnits(12500000));
+  EXPECT_EQ("123 MB", BytesToDecimalSiUnits(123499999));
+  EXPECT_EQ("124 MB", BytesToDecimalSiUnits(123500000));
+  EXPECT_EQ("999 MB", BytesToDecimalSiUnits(999499999));
+
+  EXPECT_EQ("1 GB", BytesToDecimalSiUnits(999500000));
+  EXPECT_EQ("1 GB", BytesToDecimalSiUnits(1000000000));
+  EXPECT_EQ("1 GB", BytesToDecimalSiUnits(1499999999));
+  EXPECT_EQ("2 GB", BytesToDecimalSiUnits(1500000000));
+  EXPECT_EQ("12 GB", BytesToDecimalSiUnits(12499999999));
+  EXPECT_EQ("13 GB", BytesToDecimalSiUnits(12500000000));
+  EXPECT_EQ("123 GB", BytesToDecimalSiUnits(123499999999));
+  EXPECT_EQ("124 GB", BytesToDecimalSiUnits(123500000000));
+  EXPECT_EQ("999 GB", BytesToDecimalSiUnits(999499999999));
+
+  EXPECT_EQ("1 TB", BytesToDecimalSiUnits(999500000000));
+  EXPECT_EQ("1 TB", BytesToDecimalSiUnits(1000000000000));
+  EXPECT_EQ("1 TB", BytesToDecimalSiUnits(1499999999999));
+  EXPECT_EQ("2 TB", BytesToDecimalSiUnits(1500000000000));
+  EXPECT_EQ("12 TB", BytesToDecimalSiUnits(12499999999999));
+  EXPECT_EQ("13 TB", BytesToDecimalSiUnits(12500000000000));
+  EXPECT_EQ("123 TB", BytesToDecimalSiUnits(123499999999999));
+  EXPECT_EQ("124 TB", BytesToDecimalSiUnits(123500000000000));
+  EXPECT_EQ("999 TB", BytesToDecimalSiUnits(999499999999999));
+
+  EXPECT_EQ("1 PB", BytesToDecimalSiUnits(999500000000000));
+  EXPECT_EQ("1 PB", BytesToDecimalSiUnits(1000000000000000));
+  EXPECT_EQ("1 PB", BytesToDecimalSiUnits(1499999999999999));
+  EXPECT_EQ("2 PB", BytesToDecimalSiUnits(1500000000000000));
+  EXPECT_EQ("12 PB", BytesToDecimalSiUnits(12499999999999999));
+  EXPECT_EQ("13 PB", BytesToDecimalSiUnits(12500000000000000));
+  EXPECT_EQ("123 PB", BytesToDecimalSiUnits(123499999999999999));
+  EXPECT_EQ("124 PB", BytesToDecimalSiUnits(123500000000000000));
+  EXPECT_EQ("999 PB", BytesToDecimalSiUnits(999499999999999999));
+
+  EXPECT_EQ("1 EB", BytesToDecimalSiUnits(999500000000000000));
+  EXPECT_EQ("1 EB", BytesToDecimalSiUnits(1000000000000000000));
+  EXPECT_EQ("1 EB", BytesToDecimalSiUnits(1499999999999999999));
+  EXPECT_EQ("2 EB", BytesToDecimalSiUnits(1500000000000000000));
+  EXPECT_EQ("9 EB", BytesToDecimalSiUnits(9499999999999999999));
+  EXPECT_EQ("10 EB", BytesToDecimalSiUnits(9500000000000000000));
+  EXPECT_EQ("12 EB", BytesToDecimalSiUnits(12499999999999999999));
+  EXPECT_EQ("13 EB", BytesToDecimalSiUnits(12500000000000000000));
+  EXPECT_EQ("18 EB", BytesToDecimalSiUnits(18446744073709551615));
+}
+
+TEST(UtilsTest, BEH_BytesToBinarySiUnits) {
+  EXPECT_EQ("0 B", BytesToBinarySiUnits(0));
+  EXPECT_EQ("1 B", BytesToBinarySiUnits(1));
+  EXPECT_EQ("12 B", BytesToBinarySiUnits(12));
+  EXPECT_EQ("123 B", BytesToBinarySiUnits(123));
+  EXPECT_EQ("1023 B", BytesToBinarySiUnits(1023));
+
+  EXPECT_EQ("1 KiB", BytesToBinarySiUnits(1024));
+  EXPECT_EQ("1 KiB", BytesToBinarySiUnits(1535));
+  EXPECT_EQ("2 KiB", BytesToBinarySiUnits(1536));
+  EXPECT_EQ("12 KiB", BytesToBinarySiUnits(12799));
+  EXPECT_EQ("13 KiB", BytesToBinarySiUnits(12800));
+  EXPECT_EQ("123 KiB", BytesToBinarySiUnits(126463));
+  EXPECT_EQ("124 KiB", BytesToBinarySiUnits(126464));
+  EXPECT_EQ("1023 KiB", BytesToBinarySiUnits(1048063));
+
+  EXPECT_EQ("1 MiB", BytesToBinarySiUnits(1048064));
+  EXPECT_EQ("1 MiB", BytesToBinarySiUnits(1572863));
+  EXPECT_EQ("2 MiB", BytesToBinarySiUnits(1572864));
+  EXPECT_EQ("12 MiB", BytesToBinarySiUnits(13107199));
+  EXPECT_EQ("13 MiB", BytesToBinarySiUnits(13107200));
+  EXPECT_EQ("123 MiB", BytesToBinarySiUnits(129499135));
+  EXPECT_EQ("124 MiB", BytesToBinarySiUnits(129499136));
+  EXPECT_EQ("1023 MiB", BytesToBinarySiUnits(1073217535));
+
+  EXPECT_EQ("1 GiB", BytesToBinarySiUnits(1073217536));
+  EXPECT_EQ("1 GiB", BytesToBinarySiUnits(1610612735));
+  EXPECT_EQ("2 GiB", BytesToBinarySiUnits(1610612736));
+  EXPECT_EQ("12 GiB", BytesToBinarySiUnits(13421772799));
+  EXPECT_EQ("13 GiB", BytesToBinarySiUnits(13421772800));
+  EXPECT_EQ("123 GiB", BytesToBinarySiUnits(132607115263));
+  EXPECT_EQ("124 GiB", BytesToBinarySiUnits(132607115264));
+  EXPECT_EQ("1023 GiB", BytesToBinarySiUnits(1098974756863));
+
+  EXPECT_EQ("1 TiB", BytesToBinarySiUnits(1098974756864));
+  EXPECT_EQ("1 TiB", BytesToBinarySiUnits(1649267441663));
+  EXPECT_EQ("2 TiB", BytesToBinarySiUnits(1649267441664));
+  EXPECT_EQ("12 TiB", BytesToBinarySiUnits(13743895347199));
+  EXPECT_EQ("13 TiB", BytesToBinarySiUnits(13743895347200));
+  EXPECT_EQ("123 TiB", BytesToBinarySiUnits(135789686030335));
+  EXPECT_EQ("124 TiB", BytesToBinarySiUnits(135789686030336));
+  EXPECT_EQ("1023 TiB", BytesToBinarySiUnits(1125350151028735));
+
+  EXPECT_EQ("1 PiB", BytesToBinarySiUnits(1125350151028736));
+  EXPECT_EQ("1 PiB", BytesToBinarySiUnits(1688849860263935));
+  EXPECT_EQ("2 PiB", BytesToBinarySiUnits(1688849860263936));
+  EXPECT_EQ("12 PiB", BytesToBinarySiUnits(14073748835532799));
+  EXPECT_EQ("13 PiB", BytesToBinarySiUnits(14073748835532800));
+  EXPECT_EQ("123 PiB", BytesToBinarySiUnits(139048638495064063));
+  EXPECT_EQ("124 PiB", BytesToBinarySiUnits(139048638495064064));
+  EXPECT_EQ("1023 PiB", BytesToBinarySiUnits(1152358554653425663));
+
+  EXPECT_EQ("1 EiB", BytesToBinarySiUnits(1152358554653425664));
+  EXPECT_EQ("1 EiB", BytesToBinarySiUnits(1729382256910270463));
+  EXPECT_EQ("2 EiB", BytesToBinarySiUnits(1729382256910270464));
+  EXPECT_EQ("9 EiB", BytesToBinarySiUnits(10952754293765046271));
+  EXPECT_EQ("10 EiB", BytesToBinarySiUnits(10952754293765046272));
+  EXPECT_EQ("15 EiB", BytesToBinarySiUnits(17870283321406128127));
+  EXPECT_EQ("16 EiB", BytesToBinarySiUnits(17870283321406128128));
+  EXPECT_EQ("16 EiB", BytesToBinarySiUnits(18446744073709551615));
+}
+
 TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);

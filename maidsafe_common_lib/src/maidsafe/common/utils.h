@@ -119,8 +119,13 @@ class Stats {
   T max_;
   T sum_;
 };
-// Converts 
-std::string BytesToSiUnits(size_t num);
+
+// Converts num bytes to nearest integral decimal SI value
+std::string BytesToDecimalSiUnits(const uint64_t &num);
+
+// Converts num bytes to nearest integral binary SI value
+std::string BytesToBinarySiUnits(const uint64_t &num);
+
 // Generate a cryptographically-secure 32bit signed integer
 int32_t SRandomInt32();
 
