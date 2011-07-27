@@ -39,6 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
+#include "cryptopp/integer.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
 
@@ -205,6 +206,18 @@ std::string Compress(const std::string &input,
  *  @param input string to be uncompressed.
  *  @return the uncompressed data or an empty string. */
 std::string Uncompress(const std::string &input);
+
+
+/** Return a cryptographically-secure random number
+ *  @param bit_count bit count.
+ *  @return random number. */
+CryptoPP::Integer RandomNumber(size_t bit_count);
+
+
+/** Return a cryptographically-secure random block of bytes
+ *  @param output byte array to be filled with random data.
+ *  @param input size of data. */
+void RandomBlock(byte *output, size_t size);
 
 
 /** Object for managing an RSA key pair.

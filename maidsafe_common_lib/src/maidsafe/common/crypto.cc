@@ -34,13 +34,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4702)
 #endif
 
+#include "boost/scoped_array.hpp"
+#include "boost/thread/mutex.hpp"
 #include "cryptopp/gzip.h"
 #include "cryptopp/hex.h"
 #include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
 #include "cryptopp/rsa.h"
 #include "cryptopp/osrng.h"
-#include "cryptopp/integer.h"
 #include "cryptopp/pwdbased.h"
 #include "cryptopp/cryptlib.h"
 
@@ -50,11 +51,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
-#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
 namespace crypto {
+
+namespace {
+
+CryptoPP::AutoSeededX917RNG<CryptoPP::AES> g_srandom_number_generator;
+boost::mutex g_srandom_number_generator_mutex;
+
+}  // Unnamed namespace
+
 
 std::string XOR(const std::string &first, const std::string &second) {
   size_t common_size(first.size());
@@ -146,20 +154,16 @@ std::string SymmDecrypt(const std::string &input,
   }
 }
 
-CryptoPP::RandomNumberGenerator &GlobalRNG() {
-  static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rand_pool;
-  return rand_pool;
-}
-
-
 std::string AsymEncrypt(const std::string &input,
                         const std::string &public_key) {
   try {
     CryptoPP::StringSource key(public_key, true);
     CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(key);
     std::string result;
+    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::PK_EncryptorFilter(
-        GlobalRNG(), encryptor, new CryptoPP::StringSink(result)));
+        g_srandom_number_generator, encryptor,
+        new CryptoPP::StringSink(result)));
     return result;
   }
   catch(const CryptoPP::Exception &e) {
@@ -177,8 +181,10 @@ std::string AsymDecrypt(const std::string &input,
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(key);
     std::string result;
+    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::PK_DecryptorFilter(
-        GlobalRNG(), decryptor, new CryptoPP::StringSink(result)));
+        g_srandom_number_generator, decryptor,
+        new CryptoPP::StringSink(result)));
     return result;
   }
   catch(const CryptoPP::Exception &e) {
@@ -193,8 +199,9 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Signer signer(key);
     std::string result;
-    CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(GlobalRNG(),
-        signer, new CryptoPP::StringSink(result)));
+    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
+    CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(
+        g_srandom_number_generator, signer, new CryptoPP::StringSink(result)));
     return result;
   }
   catch(const CryptoPP::Exception &e) {
@@ -258,13 +265,23 @@ std::string Uncompress(const std::string &input) {
   }
 }
 
+CryptoPP::Integer RandomNumber(size_t bit_count) {
+  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
+  return CryptoPP::Integer(g_srandom_number_generator, bit_count);
+}
+
+void RandomBlock(byte *output, size_t size) {
+  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
+  g_srandom_number_generator.GenerateBlock(output, size);
+}
+
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
   private_key_.clear();
   public_key_.clear();
   CryptoPP::RandomPool rand_pool;
-  std::string seed = SRandomString(key_size);
-  rand_pool.IncorporateEntropy(reinterpret_cast<const byte*>(seed.c_str()),
-                                                             seed.size());
+  boost::scoped_array<byte> seed(new byte[key_size]);
+  RandomBlock(seed.get(), key_size);
+  rand_pool.IncorporateEntropy(seed.get(), key_size);
 
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
   CryptoPP::StringSink private_key(private_key_);

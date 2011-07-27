@@ -50,8 +50,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
 
-#include "cryptopp/integer.h"
-#include "cryptopp/osrng.h"
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"
 #include "cryptopp/hex.h"
@@ -60,77 +58,78 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 
 namespace maidsafe {
 
 namespace {
 
-// CryptoPP::AutoSeededX917RNG<CryptoPP::AES> g_srandom_number_generator;
-CryptoPP::AutoSeededRandomPool g_srandom_number_generator;
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
-boost::mutex g_srandom_number_generator_mutex;
 boost::mutex g_random_number_generator_mutex;
 
-}  // unnamed namespace
+template <bool Binary>
+struct QualifierType {
+  std::array<std::string, 7> operator()() {
+    std::array<std::string, 7> temp = { {" B", " KiB", " MiB", " GiB", " TiB",
+                                         " PiB", " EiB"} };
+    return temp;
+  }
+};
 
-std::string BytesToDecimalSiUnits(const uint64_t &num) {
-  std::array<std::string, 7> qualifier = { {" B", " kB", " MB", " GB", " TB",
-                                            " PB", " EB"} };
-  if (num < 1000)
+template <>
+struct QualifierType<false> {
+  std::array<std::string, 7> operator()() {
+    std::array<std::string, 7> temp = { {" B", " kB", " MB", " GB", " TB",
+                                         " PB", " EB"} };
+    return temp;
+  }
+};
+
+template <bool Binary>
+std::string BytesToSiUnits(const uint64_t &num) {
+  const uint64_t kKilo(Binary ? 1024 : 1000);
+  std::array<std::string, 7> qualifier = QualifierType<Binary>()();
+
+  if (num < kKilo)
     return boost::lexical_cast<std::string>(num) + qualifier[0];
 
-  for (uint64_t threshold(999500), midpoint(500), divisor(1000), count(1);
-       count != 6;
-       threshold *= 1000, midpoint *= 1000, divisor *= 1000, ++count) {
+  size_t count(1);
+  uint64_t threshold(0), midpoint(kKilo / 2), divisor(kKilo);
+  for (; count != 6; midpoint *= kKilo, divisor *= kKilo, ++count) {
+    threshold = (divisor * kKilo) - midpoint;
     if (num < threshold)
       return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
              qualifier[count];
   }
 
-  if (num < 9500000000000000000U) {
-    return boost::lexical_cast<std::string>(
-           (num + 500000000000000000U) / 1000000000000000000U) + qualifier[6];
+  threshold = (Binary ? 11529215046068469760U : 9500000000000000000U);
+  if (num < threshold) {
+    return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
+           qualifier[6];
   } else {
-    return boost::lexical_cast<std::string>(
-           ((num - 500000000000000000U) / 1000000000000000000U) + 1) +
+    return boost::lexical_cast<std::string>(((num - midpoint) / divisor) + 1) +
            qualifier[6];
   }
 }
 
+}  // unnamed namespace
+
+std::string BytesToDecimalSiUnits(const uint64_t &num) {
+  return BytesToSiUnits<false>(num);
+}
+
 std::string BytesToBinarySiUnits(const uint64_t &num) {
-  std::array<std::string, 7> qualifier = { {" B", " KiB", " MiB", " GiB",
-                                            " TiB", " PiB", " EiB"} };
-  if (num < 1024)
-    return boost::lexical_cast<std::string>(num) + qualifier[0];
-
-  uint64_t threshold(0);
-  for (uint64_t midpoint(512), divisor(1024), count(1); count != 6;
-       midpoint *= 1024, divisor *= 1024, ++count) {
-    threshold = (divisor * 1024) - midpoint;
-    if (num < threshold)
-      return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
-             qualifier[count];
-  }
-
-  if (num < 11529215046068469760U) {
-    return boost::lexical_cast<std::string>(
-           (num + 576460752303423488U) / 1152921504606846976U) + qualifier[6];
-  } else {
-    return boost::lexical_cast<std::string>(
-           ((num - 576460752303423488U) / 1152921504606846976U) + 1) +
-           qualifier[6];
-  }
+  return BytesToSiUnits<true>(num);
 }
 
 int32_t SRandomInt32() {
   int32_t result(0);
   bool success = false;
   while (!success) {
-    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
-    CryptoPP::Integer rand_num(g_srandom_number_generator, 32);
+    CryptoPP::Integer rand_num(crypto::RandomNumber(32));
     if (rand_num.IsConvertableToLong()) {
       result = static_cast<int32_t>(
                rand_num.AbsoluteValue().ConvertToLong());
@@ -168,10 +167,7 @@ std::string SRandomString(const size_t &length) {
     size_t iter_length = std::min(length - random_string.size(), size_t(65536));
 #endif
     boost::scoped_array<byte> random_bytes(new byte[iter_length]);
-    {
-      boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
-      g_srandom_number_generator.GenerateBlock(random_bytes.get(), iter_length);
-    }
+    crypto::RandomBlock(random_bytes.get(), iter_length);
     std::string random_substring;
     CryptoPP::StringSink string_sink(random_substring);
     string_sink.Put(random_bytes.get(), iter_length);
