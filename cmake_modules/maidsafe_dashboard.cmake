@@ -433,7 +433,9 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
   IF(NOT ${RETURNED} EQUAL 0)
     #Submitting build failure results to cdash
     CTEST_SUBMIT()
-    MESSAGE(FATAL_ERROR "  CTEST_BUILD failed ret: ${RETURNED}")
+    MESSAGE("  CTEST_BUILD failed ret: ${RETURNED}")
+    SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
+    RETURN()
   ENDIF()
   MESSAGE("  Built ${MODULE_NAME}.")
 
