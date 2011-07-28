@@ -70,9 +70,17 @@ boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       total_microseconds()));
 boost::mutex g_random_number_generator_mutex;
 
-template <bool Binary>
-struct QualifierType {
-  std::array<std::string, 7> operator()() {
+struct BinaryUnit;
+struct DecimalUnit;
+
+template <typename Units>
+struct UnitType {};
+
+template <>
+struct UnitType<BinaryUnit> {
+  static const uint64_t kKilo = 1024;
+  static const uint64_t kExaThreshold = 11529215046068469760U;
+  static std::array<std::string, 7> Qualifier() {
     std::array<std::string, 7> temp = { {" B", " KiB", " MiB", " GiB", " TiB",
                                          " PiB", " EiB"} };
     return temp;
@@ -80,18 +88,20 @@ struct QualifierType {
 };
 
 template <>
-struct QualifierType<false> {
-  std::array<std::string, 7> operator()() {
+struct UnitType<DecimalUnit> {
+  static const uint64_t kKilo = 1000;
+  static const uint64_t kExaThreshold = 9500000000000000000U;
+  static std::array<std::string, 7> Qualifier() {
     std::array<std::string, 7> temp = { {" B", " kB", " MB", " GB", " TB",
                                          " PB", " EB"} };
     return temp;
   }
 };
 
-template <bool Binary>
+template <typename Units>
 std::string BytesToSiUnits(const uint64_t &num) {
-  const uint64_t kKilo(Binary ? 1024 : 1000);
-  std::array<std::string, 7> qualifier = QualifierType<Binary>()();
+  const uint64_t kKilo(UnitType<Units>::kKilo);
+  std::array<std::string, 7> qualifier = UnitType<Units>::Qualifier();
 
   if (num < kKilo)
     return boost::lexical_cast<std::string>(num) + qualifier[0];
@@ -105,7 +115,7 @@ std::string BytesToSiUnits(const uint64_t &num) {
              qualifier[count];
   }
 
-  threshold = (Binary ? 11529215046068469760U : 9500000000000000000U);
+  threshold = UnitType<Units>::kExaThreshold;
   if (num < threshold) {
     return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
            qualifier[6];
@@ -118,11 +128,11 @@ std::string BytesToSiUnits(const uint64_t &num) {
 }  // unnamed namespace
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
-  return BytesToSiUnits<false>(num);
+  return BytesToSiUnits<DecimalUnit>(num);
 }
 
 std::string BytesToBinarySiUnits(const uint64_t &num) {
-  return BytesToSiUnits<true>(num);
+  return BytesToSiUnits<BinaryUnit>(num);
 }
 
 int32_t SRandomInt32() {
