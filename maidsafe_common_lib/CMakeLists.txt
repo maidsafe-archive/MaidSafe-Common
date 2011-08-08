@@ -34,7 +34,7 @@
 #==============================================================================#
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.4 FATAL_ERROR)
 MESSAGE("================================================================================\n")
 
 SET(ERROR_MESSAGE_CMAKE_PATH "cmake ../../..")
