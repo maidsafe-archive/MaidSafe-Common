@@ -64,7 +64,7 @@ void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
 
 INSTANTIATE_TYPED_TEST_CASE_P(Threadsafe, ChunkStoreTest, ThreadsafeChunkStore);
 
-class ThreadsafeChunkStoreTest: public testing::Test {
+class ThreadsafeChunkStoreTest : public testing::Test {
  public:
   ThreadsafeChunkStoreTest()
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
