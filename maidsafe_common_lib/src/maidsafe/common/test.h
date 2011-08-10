@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -40,7 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1000
+#if MAIDSAFE_COMMON_VERSION != 1001
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
