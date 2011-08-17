@@ -308,7 +308,6 @@ bool FileChunkStore::Delete(const std::string &name) {
           "." + boost::lexical_cast<std::string>(ref_count));
 
       //  do a rename
-      boost::system::error_code ec;
       fs::rename(chunk_file, new_chunk_path, ec);
       if (!ec)
         return true;

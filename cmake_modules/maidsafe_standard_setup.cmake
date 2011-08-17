@@ -38,6 +38,16 @@
 #==============================================================================#
 
 
+FUNCTION(ADD_COVERAGE_EXCLUDE REGEX)
+  FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE \${CTEST_CUSTOM_COVERAGE_EXCLUDE} \"${REGEX}\")\n")
+ENDFUNCTION()
+
+FUNCTION(ADD_MEMCHECK_IGNORE TEST_NAME)
+  FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_MEMCHECK_IGNORE \${CTEST_CUSTOM_MEMCHECK_IGNORE} \"${TEST_NAME}\")\n")
+ENDFUNCTION()
+
+
+
 SET(MAIDSAFE_TEST_TYPE_MESSAGE "Tests included: All")
 IF(NOT MAIDSAFE_TEST_TYPE)
   SET(MAIDSAFE_TEST_TYPE "ALL" CACHE STRING "Choose the type of TEST, options are: ALL, BEH, FUNC" FORCE)
@@ -90,18 +100,14 @@ IF(Boost_INCLUDE_DIR)
   SET(INCLUDE_DIRS ${INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
 ENDIF()
 
-# Create CTestCustom.cmake to avoid inclusion of coverage results from third-party code
-FILE(WRITE ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \".pb.\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"cryptopp/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"distributed_network/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"libupnp/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"nat-pmp/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"tests/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"third_party_libs/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"upnp/\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake " \"main.cc\"")
-FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake ")\n\n")
+# Create CTestCustom.cmake to avoid inclusion of coverage results from test files, protocol buffer files and main.cc files
+FILE(WRITE ${PROJECT_BINARY_DIR}/CTestCustom.cmake "\n")
+ADD_COVERAGE_EXCLUDE(\\\\.pb\\\\.)
+ADD_COVERAGE_EXCLUDE(tests/)
+ADD_COVERAGE_EXCLUDE(main\\\\.cc)
+
+# Avoid running MemCheck on STYLE_CHECK tests
+ADD_MEMCHECK_IGNORE(STYLE_CHECK)
 
 IF(DEFINED ADD_LIBRARY_DIR)
   SET(DEFAULT_LIBRARY_DIR ${DEFAULT_LIBRARY_DIR} ${ADD_LIBRARY_DIR})
@@ -197,8 +203,14 @@ SET(CTEST_CONTINUOUS_DURATION 600)
 SET(CTEST_CONTINUOUS_MINIMUM_INTERVAL 10)
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY true)
 
+IF(NOT DEFINED MEMORY_CHECK)
+  IF($ENV{MEMORY_CHECK})
+    SET(MEMORY_CHECK ON)
+  ENDIF()
+ENDIF()
+
 IF(UNIX)
-  SET(MEMORYCHECK_COMMAND_OPTIONS "--trace-children=yes --quiet --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=50 --verbose --demangle=yes")
+  SET(MEMORYCHECK_COMMAND_OPTIONS "--tool=memcheck --quiet --verbose --trace-children=yes --demangle=yes --num-callers=50 --show-below-main=yes --leak-check=full --show-reachable=yes --track-origins=yes")
 ENDIF()
 
 INCLUDE(CTest)

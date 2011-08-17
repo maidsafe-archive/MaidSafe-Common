@@ -198,10 +198,10 @@ TEST_F(FileChunkStoreTest, BEH_Store) {
   //  store chunks iteratively
   int count = 1000;
   for (int iter = 0; iter < count; ++iter) {
-    std::string content(RandomString(500));
-    std::string name(crypto::Hash<crypto::SHA512>(content));
+    content = RandomString(500);
+    name = crypto::Hash<crypto::SHA512>(content);
     std::string file_name(EncodeToHex(RandomString(10)));
-    fs::path path(*test_dir_ / file_name);
+    path = fs::path(*test_dir_ / file_name);
 
     EXPECT_TRUE(ref_fcs->Store(name, content));
     EXPECT_TRUE(ref_fcs->Get(name, path));

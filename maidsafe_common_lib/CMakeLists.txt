@@ -191,9 +191,6 @@ IF(MSVC)
  #                               PROPERTIES COMPILE_FLAGS "-w -isystem")
 ENDIF()
 
-# Remove utils.h from coverage stats
-FILE(APPEND ${CMAKE_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE \${CTEST_CUSTOM_COVERAGE_EXCLUDE} \"utils.h\")\n\n")
-
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
@@ -220,6 +217,30 @@ ADD_GTESTS(TESTboost)
 INCLUDE(${CRYPTO_TEST_CMAKE})
 
 TEST_SUMMARY_OUTPUT()
+
+# Remove files from coverage stats
+ADD_COVERAGE_EXCLUDE(cryptopp/)
+ADD_COVERAGE_EXCLUDE(third_party_libs/)
+ADD_COVERAGE_EXCLUDE(utils\\\\.h)
+
+# Remove third-party tests from MemCheck runs.
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_bind_function_simple)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_bind_function_object1)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_bind_function_object2)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_bind_member_function_non_void)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_bind_member_function_void)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_nested_bind)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_smart_ptr_AtomicCount1)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_smart_ptr_AtomicCount2)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_smart_ptr_make_shared)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_formattest1)
+ADD_MEMCHECK_IGNORE(boost.BEH_BOOST_formattest2)
+ADD_MEMCHECK_IGNORE(CrypoppTest.BEH_FULL)
+ADD_MEMCHECK_IGNORE(CrypoppTest.BEH_AES)
+ADD_MEMCHECK_IGNORE(CrypoppTest.BEH_SHA)
+ADD_MEMCHECK_IGNORE(CrypoppTest.BEH_RSA_PSS)
+ADD_MEMCHECK_IGNORE(CrypoppTest.BEH_RSA_OAEP)
+ADD_MEMCHECK_IGNORE(CrypoppTest.BEH_RSA_PKCS1_1_5)
 
 
 ###################################################################################################
