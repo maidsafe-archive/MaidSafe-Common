@@ -40,6 +40,21 @@
 #                                                                              #
 #==============================================================================#
 
+IF (NOT BRANCH)
+  SET (BRANCH next)
+ENDIF()
+SET (ALLOWED_BRANCHES master next)
+FOREACH (ALLOWED_BRANCH ${ALLOWED_BRANCHES})
+  IF (${ALLOWED_BRANCH} STREQUAL ${BRANCH})
+    SET(BRANCH_FOUND TRUE)
+  ENDIF()
+ENDFOREACH()
+
+IF (NOT BRANCH_FOUND)
+    MESSAGE(${BRANCH} " is not a valid branch to clone." )  
+    MESSAGE(FATAL_ERROR "Only master or next branches are allowed!")
+ENDIF()
+
 
 IF(NOT ALL_REPOSITORIES)
   SET(ALL_REPOSITORIES
@@ -80,7 +95,24 @@ FOREACH(REPO ${ALL_REPOSITORIES})
   IF(NOT RES_VAR EQUAL 0)
     MESSAGE("  Error cloning ${REPO}.  Result: ${RES_VAR}")
     MESSAGE("  ${OUT_VAR}")
-  ELSEIF(REPO STREQUAL "MaidSafe-Common")
+  ELSE () 
+    EXECUTE_PROCESS(COMMAND ${Git_EXECUTABLE} checkout ${BRANCH}
+                    WORKING_DIRECTORY ${REPOSITORIES_ROOT_DIR}/${REPO}
+                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(NOT RES_VAR EQUAL 0)
+      MESSAGE("  Error Checking out ${REPO}.  Result: ${RES_VAR}")
+      MESSAGE("  ${OUT_VAR}")
+    ELSE()
+      EXECUTE_PROCESS(COMMAND ${Git_EXECUTABLE} pull
+                      WORKING_DIRECTORY ${REPOSITORIES_ROOT_DIR}/${REPO}
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+      IF(NOT RES_VAR EQUAL 0)
+        MESSAGE("  Error pulling ${REPO}.  Result: ${RES_VAR}")
+        MESSAGE("  ${OUT_VAR}")
+      ENDIF()
+    ENDIF()
+  ENDIF()
+  IF((RES_VAR EQUAL 0) AND (REPO STREQUAL "MaidSafe-Common"))
     MESSAGE("-- Configuring ${REPO}")
     IF(WIN32)
       # configure for Windows
