@@ -40,7 +40,7 @@
 #==============================================================================#
 
 
-#Function to generate CC and header files derived from proto files
+# Function to generate CC and header files derived from proto files
 FUNCTION(GENERATE_PROTO_FILES PROTO_FILE CACHE_NAME)
   FILE(STRINGS ${PROTO_SOURCE_DIR}/${PROTO_FILE} PROTO_STRING)
   UNSET(NEW_${ARGV1} CACHE)
@@ -55,7 +55,7 @@ FUNCTION(GENERATE_PROTO_FILES PROTO_FILE CACHE_NAME)
                       ERROR_VARIABLE PROTO_ERR)
     UNSET(${ARGV1} CACHE)
     IF(NOT ${PROTO_RES})
-      MESSAGE("--   Generated files from ${PROTO_FILE_NAME}")
+      MESSAGE("-- Generated files from ${PROTO_FILE_NAME}")
       SET(${ARGV1} ${PROTO_STRING} CACHE STRING "Google Protocol Buffers - file contents for ${PROTO_FILE}")
     ELSE()
       MESSAGE(FATAL_ERROR "Failed trying to generate files from ${PROTO_FILE_NAME}\n${PROTO_ERR}")
@@ -73,6 +73,8 @@ ENDIF()
 IF(NOT PROTO_SOURCE_DIR)
   MESSAGE(FATAL_ERROR "To generate proto files, PROTO_SOURCE_DIR must be set.")
 ENDIF()
+
+REMOVE_OLD_PROTO_FILES()
 
 EXECUTE_PROCESS(COMMAND ${Protoc_EXE} "--version" OUTPUT_VARIABLE TMP_CURRENT_PROTOC_VERSION)
 STRING(STRIP ${TMP_CURRENT_PROTOC_VERSION} CURRENT_PROTOC_VERSION)
