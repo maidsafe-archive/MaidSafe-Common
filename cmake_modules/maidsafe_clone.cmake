@@ -40,21 +40,116 @@
 #                                                                              #
 #==============================================================================#
 
-IF (NOT BRANCH)
-  SET (BRANCH next)
-ENDIF()
-SET (ALLOWED_BRANCHES master next)
-FOREACH (ALLOWED_BRANCH ${ALLOWED_BRANCHES})
-  IF (${ALLOWED_BRANCH} STREQUAL ${BRANCH})
-    SET(BRANCH_FOUND TRUE)
+
+################################################################################
+# Helper functions                                                             #
+################################################################################
+FUNCTION(HELP_OUTPUT MSG)
+  SET(HELP "${MSG}\nUsage:\n")
+  SET(HELP "${HELP}  cmake -D REPOSITORIES_ROOT_DIR=\"<path to root dir of all clones>\" -P maidsafe_clone.cmake\n")
+  SET(HELP "${HELP}Other options:\n")
+  SET(HELP "${HELP}  -D ALL_REPOSITORIES=<semi-colon separated list of repos>\n")
+  SET(HELP "${HELP}  -D BRANCH=<branch name> (master or next)\n")
+  SET(HELP "${HELP}Note: All -D options must be listed BEFORE -P maidsafe_clone.cmake\n")
+  SET(HELP "${HELP}Examples:\n")
+  SET(HELP "${HELP}  cmake -D ALL_REPOSITORIES=MaidSafe-Common\;MaidSafe-Encrypt -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n")
+  SET(HELP "${HELP}  cmake -D BRANCH=next -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n")
+  SET(HELP "${HELP}  cmake -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n\n")
+  MESSAGE(FATAL_ERROR ${HELP})
+ENDFUNCTION()
+
+FUNCTION(CONFIGURE_AND_MAKE_REPO REPO)
+  MESSAGE(">> Configuring ${REPO}")
+  IF(WIN32)
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../..
+                    WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}"
+                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(NOT RES_VAR EQUAL 0)
+      MESSAGE(">> Error configuring ${REPO}")
+      MESSAGE("  ${ERR_VAR}")
+      IF(${REPO} MATCHES MaidSafe-Common)
+        MESSAGE(FATAL_ERROR "\n\n\nFailed to configure MaidSafe-Common.  Terminating.\n\n")
+      ENDIF()
+      RETURN()
+    ENDIF()
+  ELSE()
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../../..
+                    WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Debug"
+                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(NOT RES_VAR EQUAL 0)
+      MESSAGE(">> Error configuring ${REPO} in Debug mode.")
+      MESSAGE("  ${ERR_VAR}")
+      IF(${REPO} MATCHES MaidSafe-Common)
+        MESSAGE(FATAL_ERROR "\n\n\nFailed to configure MaidSafe-Common.  Terminating.\n\n")
+      ENDIF()
+      RETURN()
+    ENDIF()
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../../..
+                    WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Release"
+                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(NOT RES_VAR EQUAL 0)
+      MESSAGE(">> Error configuring ${REPO} in Release mode.")
+      MESSAGE("  ${ERR_VAR}")
+      IF(${REPO} MATCHES MaidSafe-Common)
+        MESSAGE(FATAL_ERROR "\n\n\nFailed to configure MaidSafe-Common.  Terminating.\n\n")
+      ENDIF()
+      RETURN()
+    ENDIF()
   ENDIF()
-ENDFOREACH()
 
-IF (NOT BRANCH_FOUND)
-    MESSAGE(${BRANCH} " is not a valid branch to clone." )  
-    MESSAGE(FATAL_ERROR "Only master or next branches are allowed!")
+  MESSAGE(">> Building ${REPO}")
+  IF(WIN32)
+    SET(BUILD_DEBUG_DIR)
+    SET(BUILD_RELEASE_DIR)
+  ELSE()
+    SET(BUILD_DEBUG_DIR Debug)
+    SET(BUILD_RELEASE_DIR Release)
+  ENDIF()
+
+  LIST(FIND NON_INSTALL_REPOSITORIES ${REPO} NON_INSTALL)
+  IF(NON_INSTALL EQUAL -1)
+    SET(TARGET_INSTALL "install")
+  ELSE()
+    SET(TARGET_INSTALL "all")
+  ENDIF()
+
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build . --config Debug --target ${TARGET_INSTALL}
+                  WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_DEBUG_DIR}"
+                  RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+  IF(NOT RES_VAR EQUAL 1)
+    MESSAGE(">> Error installing ${REPO} in Debug mode.")
+    MESSAGE("  ${ERR_VAR}")
+    IF(${REPO} MATCHES MaidSafe-Common)
+      MESSAGE(FATAL_ERROR "\n\n\nFailed to install MaidSafe-Common.  Terminating.\n\n")
+    ENDIF()
+  ENDIF()
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build . --config Release --target ${TARGET_INSTALL}
+                  WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_RELEASE_DIR}"
+                  RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+  IF(NOT RES_VAR EQUAL 1)
+    MESSAGE(">> Error installing ${REPO} in Release mode.")
+    MESSAGE("  ${ERR_VAR}")
+    IF(${REPO} MATCHES MaidSafe-Common)
+      MESSAGE(FATAL_ERROR "\n\n\nFailed to install MaidSafe-Common.  Terminating.\n\n")
+    ENDIF()
+  ENDIF()
+ENDFUNCTION()
+
+################################################################################
+# Start of script                                                              #
+################################################################################
+IF(NOT REPOSITORIES_ROOT_DIR)
+  HELP_OUTPUT("\n\nYou must set REPOSITORIES_ROOT_DIR to the path of the root dir where the repos will be cloned to.")
 ENDIF()
 
+IF(NOT BRANCH)
+  SET(BRANCH next)
+ENDIF()
+SET(ALLOWED_BRANCHES master next)
+LIST(FIND ALLOWED_BRANCHES ${BRANCH} BRANCH_FOUND)
+IF(BRANCH_FOUND EQUAL -1)
+  HELP_OUTPUT("\n\n\"${BRANCH}\" is not a valid branch.  Only \"master\" or \"next\" is allowed.")
+ENDIF()
 
 IF(NOT ALL_REPOSITORIES)
   SET(ALL_REPOSITORIES
@@ -65,106 +160,88 @@ IF(NOT ALL_REPOSITORIES)
         Passport
         MaidSafe-PD
         File-Browser
+        MaidSafe-Drive
         LifeStuff
         LifeStuff-GUI
         SigmoidCore
         SigmoidPro
-        Deduplicator-Gauge
-        MaidSafe-Drive)
+#        Deduplicator-Gauge
+        )
 ENDIF()
 
-SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+SET(NON_INSTALL_REPOSITORIES
+      File-Browser
+      LifeStuff-GUI
+      SigmoidCore
+      SigmoidPro
+#        Deduplicator-Gauge
+      )
+
+
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR})
 INCLUDE(maidsafe_find_git)
 
+
+################################################################################
+# Clone repos and checkout to requested branch                                 #
+################################################################################
 FILE(MAKE_DIRECTORY ${REPOSITORIES_ROOT_DIR})
-
-SET(COMMON_BUILD_DIR maidsafe_common_lib/build)
-IF(WIN32)
-  SET(COMMON_BUILD_DIR ${COMMON_BUILD_DIR}/Win_MSVC)
-ELSEIF(APPLE)
-  SET(COMMON_BUILD_DIR ${COMMON_BUILD_DIR}/OSX)
-ELSEIF(UNIX)
-  SET(COMMON_BUILD_DIR ${COMMON_BUILD_DIR}/Linux)
-ENDIF()
-
 FOREACH(REPO ${ALL_REPOSITORIES})
-  MESSAGE("-- Cloning ${REPO}")
+  MESSAGE(">> Cloning ${REPO}")
   EXECUTE_PROCESS(COMMAND ${Git_EXECUTABLE} clone git@github.com:maidsafe/${REPO}.git
-                  WORKING_DIRECTORY ${REPOSITORIES_ROOT_DIR}
-                  RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-  IF(NOT RES_VAR EQUAL 0)
-    MESSAGE("  Error cloning ${REPO}.  Result: ${RES_VAR}")
-    MESSAGE("  ${OUT_VAR}")
-  ELSE () 
-    EXECUTE_PROCESS(COMMAND ${Git_EXECUTABLE} checkout ${BRANCH}
-                    WORKING_DIRECTORY ${REPOSITORIES_ROOT_DIR}/${REPO}
+                    WORKING_DIRECTORY ${REPOSITORIES_ROOT_DIR}
                     RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-    IF(NOT RES_VAR EQUAL 0)
-      MESSAGE("  Error Checking out ${REPO}.  Result: ${RES_VAR}")
-      MESSAGE("  ${OUT_VAR}")
-    ELSE()
-      EXECUTE_PROCESS(COMMAND ${Git_EXECUTABLE} pull
+  IF(NOT RES_VAR EQUAL 0)
+    MESSAGE(">> Error cloning ${REPO}.  ${ERR_VAR}")
+  ELSE()
+    IF(NOT ${BRANCH} MATCHES "master")
+      EXECUTE_PROCESS(COMMAND ${Git_EXECUTABLE} checkout ${BRANCH}
                       WORKING_DIRECTORY ${REPOSITORIES_ROOT_DIR}/${REPO}
                       RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
       IF(NOT RES_VAR EQUAL 0)
-        MESSAGE("  Error pulling ${REPO}.  Result: ${RES_VAR}")
-        MESSAGE("  ${OUT_VAR}")
+        MESSAGE(">> Error checking out to branch \"${BRANCH}\" for ${REPO}.  ${ERR_VAR}")
       ENDIF()
     ENDIF()
   ENDIF()
-  IF((RES_VAR EQUAL 0) AND (REPO STREQUAL "MaidSafe-Common"))
-    MESSAGE("-- Configuring ${REPO}")
-    IF(WIN32)
-      # configure for Windows
-      EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}"
-                      COMMAND ${CMAKE_COMMAND} ../../..
-                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-      IF(NOT RES_VAR EQUAL 0)
-        MESSAGE("  Error configuring ${REPO}.  Result: ${RES_VAR}")
-        MESSAGE("  ${OUT_VAR}")
-      ENDIF()
-    ELSE()
-      # configure in Debug and Release for Linux
-      EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Debug"
-                      COMMAND ${CMAKE_COMMAND} ../../..
-                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-      IF(NOT RES_VAR EQUAL 0)
-        MESSAGE("  Error configuring ${REPO} in Debug mode.  Result: ${RES_VAR}")
-        MESSAGE("  ${OUT_VAR}")
-      ENDIF()
-      EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Release"
-                      COMMAND ${CMAKE_COMMAND} ../../..
-                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-      IF(NOT RES_VAR EQUAL 0)
-        MESSAGE("  Error configuring ${REPO} in Release mode.  Result: ${RES_VAR}")
-        MESSAGE("  ${OUT_VAR}")
-      ENDIF()
-    ENDIF()
+ENDFOREACH()
 
-    MESSAGE("-- Installing ${REPO}")
-    IF(WIN32)
-      SET(BUILD_DEBUG_DIR)
-      SET(BUILD_RELEASE_DIR)
-    ELSE()
-      SET(BUILD_DEBUG_DIR Debug)
-      SET(BUILD_RELEASE_DIR Release)
-    ENDIF()
 
-    # install in Debug
-    EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_DEBUG_DIR}"
-                    COMMAND ${CMAKE_COMMAND} --build . --config Debug --target install
-                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-    IF(NOT RES_VAR EQUAL 0)
-      MESSAGE("  Error installing ${REPO} in Debug mode.  Result: ${RES_VAR}")
-      MESSAGE("  ${OUT_VAR}")
-    ENDIF()
-    # install in Release
-    EXECUTE_PROCESS(WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_RELEASE_DIR}"
-                    COMMAND ${CMAKE_COMMAND} --build . --config Release --target install
-                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-    IF(NOT RES_VAR EQUAL 0)
-      MESSAGE("  Error installing ${REPO} in Release mode.  Result: ${RES_VAR}")
-      MESSAGE("  ${OUT_VAR}")
-    ENDIF()
+################################################################################
+# Configure and install MaidSafe-Common                                        #
+################################################################################
+FIND_FILE(COMMON_EXPORT_CMAKE NAMES maidsafe_common.cmake PATHS ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe)
+# If we found maidsafe_common.cmake, assume Common is correctly installed
+IF(COMMON_EXPORT_CMAKE)
+  MESSAGE(">> MaidSafe-Common already installed")
+ELSE()
+  FIND_FILE(COMMON_CMAKELISTS_TXT NAMES CMakeLists.txt PATHS ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/maidsafe_common_lib)
+  IF(NOT COMMON_CMAKELISTS_TXT)
+    MESSAGE(">> Can't find MaidSafe-Common/maidsafe_common_lib/CMakeLists.txt")
+    RETURN()
   ENDIF()
+  IF(WIN32)
+    SET(COMMON_BUILD_DIR maidsafe_common_lib/build/Win_MSVC)
+  ELSEIF(APPLE)
+    SET(COMMON_BUILD_DIR maidsafe_common_lib/build/OSX)
+  ELSEIF(UNIX)
+    SET(COMMON_BUILD_DIR maidsafe_common_lib/build/Linux)
+  ENDIF()
+  CONFIGURE_AND_MAKE_REPO(MaidSafe-Common)
+ENDIF()
+LIST(REMOVE_ITEM ALL_REPOSITORIES "MaidSafe-Common")
+
+
+################################################################################
+# Configure and install others                                                 #
+################################################################################
+IF(WIN32)
+  SET(COMMON_BUILD_DIR build/Win_MSVC)
+ELSEIF(APPLE)
+  SET(COMMON_BUILD_DIR build/OSX)
+ELSEIF(UNIX)
+  SET(COMMON_BUILD_DIR build/Linux)
+ENDIF()
+
+FOREACH(REPO ${ALL_REPOSITORIES})
+  CONFIGURE_AND_MAKE_REPO(${REPO})
 ENDFOREACH()
