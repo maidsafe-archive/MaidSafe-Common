@@ -1,4 +1,4 @@
-SET(SCRIPT_VERSION 9)
+SET(SCRIPT_VERSION 11)
 FILE(STRINGS "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" INSTALLED_VERSION_INFO LIMIT_COUNT 1)
 STRING(REPLACE " " ";" INSTALLED_VERSION_INFO ${INSTALLED_VERSION_INFO})
 LIST(GET INSTALLED_VERSION_INFO 1 INSTALLED_VERSION)
@@ -217,17 +217,24 @@ ENDIF()
 ###############################################################################
 # Test configurations                                                         #
 ###############################################################################
-IF(NOT "${CTEST_SCRIPT_ARG}" MATCHES "^(Nightly|NightlyDebug|NightlyRelease|Experimental|ExperimentalDebug|ExperimentalRelease|Continuous|ContinuousRelease|ContinuousDebug)$")
-  MESSAGE(FATAL_ERROR "Allowed arguments are Nightly, Experimental, Continuous, NightlyDebug, NightlyRelease, ExperimentalDebug, ExperimentalRelease, ContinuousRelease & ContinuousDebug \n eg. ctest -S ${CTEST_SCRIPT_NAME},NightlyDebug")
+IF(NOT "${CTEST_SCRIPT_ARG}" MATCHES "^(Nightly|NightlyDebug|NightlyRelease|NightlyMemCheck|NightlyDebugMemCheck|NightlyReleaseMemCheck|Experimental|ExperimentalDebug|ExperimentalRelease|ExperimentalMemCheck|ExperimentalDebugMemCheck|ExperimentalReleaseMemCheck|Continuous|ContinuousDebug|ContinuousRelease|ContinuousMemCheck|ContinuousDebugMemCheck|ContinuousReleaseMemCheck|Weekly|WeeklyRelease|WeeklyDebug)$")
+  MESSAGE(FATAL_ERROR "Allowed arguments are Nightly, Experimental, Continuous, Weekly,
+                       NightlyDebug, NightlyRelease,NightlyMemCheck,NightlyDebugMemCheck,NightlyReleaseMemCheck,
+                       ExperimentalDebug, ExperimentalRelease,ExperimentalMemCheck,ExperimentalDebugMemCheck,ExperimentalReleaseMemCheck,
+                       ContinuousDebug, ContinuousRelease,ContinuousMemCheck,ContinuousDebugMemCheck,ContinuousReleaseMemCheck,
+                       WeeklyRelease & WeeklyDebug
+                       \n eg. ctest -S ${CTEST_SCRIPT_NAME},NightlyDebug")
 ENDIF()
 
-# Select the model (Nightly, Experimental, Continuous).
+# Select the model (Nightly, Experimental, Continuous & Weekly).
 IF(${CTEST_SCRIPT_ARG} MATCHES Continuous)
   SET(DASHBOARD_MODEL Continuous)
 ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Nightly)
   SET(DASHBOARD_MODEL Nightly)
 ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Experimental)
   SET(DASHBOARD_MODEL Experimental)
+ELSEIF(${CTEST_SCRIPT_ARG} MATCHES Weekly)
+  SET(DASHBOARD_MODEL Weekly)
 ENDIF()
 
 IF(NOT DEFINED DASHBOARD_MODEL)
@@ -244,6 +251,12 @@ IF(NOT DEFINED CTEST_BUILD_CONFIGURATION)
   SET(CTEST_BUILD_CONFIGURATION "Debug")  #default to "Debug"
 ENDIF()
 
+IF(${CTEST_SCRIPT_ARG} MATCHES MemCheck OR ${CTEST_SCRIPT_ARG} MATCHES Weekly)
+  SET(MEMORY_CHECK_NEEDED true})
+ELSE()
+  SET(MEMORY_CHECK_NEEDED false})
+ENDIF()
+
 #SET(CTEST_BUILD_OPTIONS "-DWITH_SSH1=ON -WITH_SFTP=ON -DWITH_SERVER=ON -DWITH_ZLIB=ON -DWITH_PCAP=ON -DWITH_GCRYPT=OFF")
 MESSAGE("Dashboard Model Selected:      ${DASHBOARD_MODEL}")
 MESSAGE("Build Configuration Selected:  ${CTEST_BUILD_CONFIGURATION}")
@@ -255,7 +268,7 @@ FIND_FILE(DART_CONFIG NAMES DartConfiguration.tcl
              NO_DEFAULT_PATH)
 FILE(STRINGS ${DART_CONFIG} DART_CONFIG_CONTENTS REGEX "BuildName: ")
 STRING(REPLACE "BuildName: " "" CTEST_BUILD_NAME ${DART_CONFIG_CONTENTS})
-SET(CTEST_BUILD_NAME "${CTEST_BUILD_NAME} (${CTEST_BUILD_CONFIGURATION} v${SCRIPT_VERSION})")
+#SET(CTEST_BUILD_NAME "${CTEST_BUILD_NAME} (${CTEST_BUILD_CONFIGURATION} v${SCRIPT_VERSION})")
 
 ###############################################################################
 # Utility functions                                                           #
@@ -327,8 +340,6 @@ SET(CMAKE_MODULE_PATH ${CTEST_SCRIPT_DIRECTORY})
 INCLUDE(maidsafe_find_git)
 SET(CTEST_UPDATE_COMMAND "${Git_EXECUTABLE}")
 
-MESSAGE("================================================================================")
-
 IF(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
   # Launchers work only with Makefile generators.
   SET(CTEST_USE_LAUNCHERS 0)
@@ -359,7 +370,12 @@ SET(CTEST_CUSTOM_MEMCHECK_IGNORE ${CTEST_CUSTOM_MEMCHECK_IGNORE} STYLE_CHECK)
 IF(CTEST_MEMORYCHECK_COMMAND)
   SET(MEMORYCHECK_FLAG_ON "-DMEMORY_CHECK=ON")
   SET(MEMORYCHECK_FLAG_OFF "-DMEMORY_CHECK=OFF")
+  MESSAGE("-- Found MemCheck program")
+ELSEIF(MEMORY_CHECK_NEEDED)
+  MESSAGE("-- Unable to find any memory check program. Will skip memory checks")
 ENDIF()
+
+MESSAGE("================================================================================")
 
 # Avoid non-ascii characters in tool output.
 SET(ENV{LC_ALL} C)
@@ -370,7 +386,8 @@ SET(ENV{LC_ALL} C)
 FUNCTION(CHECK_UPDATE_STATUS_FOR_MODULE MODULE_NAME)
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
   SET(MODULE_BINARY_DIRECTORY ${${MODULE_NAME}_BINARY_DIRECTORY})
-  MESSAGE("Checking updates for " ${MODULE_NAME})
+  MESSAGE("  Checking updates for " ${MODULE_NAME})
+  SET(CTEST_BUILD_NAME ${${MODULE_NAME}_BUILD_NAME})
   SET(CTEST_SOURCE_DIRECTORY ${MODULE_SOURCE_DIRECTORY})
   SET(CTEST_BINARY_DIRECTORY ${MODULE_BINARY_DIRECTORY})
   CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
@@ -382,13 +399,13 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
   IF(${${MODULE_NAME}_NEEDS_FORCE_TEST} EQUAL 0)
     RETURN()
   ENDIF()
-
   SET(MODULE_SOURCE_DIRECTORY ${${MODULE_NAME}_SOURCE_DIRECTORY})
   SET(MODULE_BINARY_DIRECTORY ${${MODULE_NAME}_BINARY_DIRECTORY})
   MESSAGE("Running Test for " ${MODULE_NAME})
   SET(CTEST_SOURCE_DIRECTORY ${MODULE_SOURCE_DIRECTORY})
   SET(CTEST_BINARY_DIRECTORY ${MODULE_BINARY_DIRECTORY})
 
+  SET(CTEST_BUILD_NAME ${${MODULE_NAME}_BUILD_NAME})
   SET(CTEST_CONFIGURE_COMMAND "${BASIC_CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\" ${COVERAGE_FLAG_ON} ${MEMORYCHECK_FLAG_OFF}")
 
   CTEST_START(${DASHBOARD_MODEL} TRACK "${DASHBOARD_MODEL}")
@@ -407,9 +424,11 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
     CTEST_CONFIGURE(RETURN_VALUE RETURNED)
     IF(NOT ${RETURNED} EQUAL 0)
       MESSAGE("  CTEST_CONFIGURE failed after re-installing dependencies. ret: ${RETURNED}")
+      MESSAGE("  ERROR : Skipping build for ${MODULE_NAME}")
       #Submitting configure failure results to cdash
       CTEST_SUBMIT()
       SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
+      SET(${MODULE_NAME}_UPDATED 0 PARENT_SCOPE)
       RETURN()
     ELSE()
       MESSAGE("  Configured ${MODULE_NAME} after re-installing dependencies.")
@@ -425,7 +444,11 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
       OUTPUT_VARIABLE out_var
       )
   IF(NOT ${ret_var} EQUAL 0)
-    MESSAGE(FATAL_ERROR "  Cleaning ${MODULE_NAME} returned ${ret_var}.Output:${out_var}")
+    MESSAGE("  Cleaning ${MODULE_NAME} returned ${ret_var}.Output:${out_var}")
+    MESSAGE("  ERROR : Skipping test for ${MODULE_NAME}")
+    SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
+    SET(${MODULE_NAME}_UPDATED 0 PARENT_SCOPE)
+    RETURN()
   ENDIF()
   MESSAGE("  Cleaned ${MODULE_NAME}.")
 
@@ -434,6 +457,7 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
     #Submitting build failure results to cdash
     CTEST_SUBMIT()
     MESSAGE("  CTEST_BUILD failed ret: ${RETURNED}")
+
     SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
     RETURN()
   ENDIF()
@@ -444,7 +468,8 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
 
   CTEST_SUBMIT(PARTS Update Configure Build Test)
 
-  IF(${DASHBOARD_MODEL} MATCHES Nightly AND CTEST_MEMORYCHECK_COMMAND)
+  IF(${MEMORY_CHECK_NEEDED} AND CTEST_MEMORYCHECK_COMMAND)
+    MESSAGE("  Starting Memory check for ${MODULE_NAME}...")
     EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY} COMMAND ${CTEST_CMAKE_COMMAND} --build . --target clean --config ${CTEST_BUILD_CONFIGURATION})
     SET(CTEST_CONFIGURE_COMMAND "${BASIC_CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\" ${COVERAGE_FLAG_OFF} ${MEMORYCHECK_FLAG_ON}")
     CTEST_CONFIGURE()
@@ -454,6 +479,8 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
     SET(CTEST_CONFIGURE_COMMAND "${BASIC_CTEST_CONFIGURE_COMMAND} \"${CTEST_SOURCE_DIRECTORY}\" ${MEMORYCHECK_FLAG_OFF}")
     CTEST_CONFIGURE()
     MESSAGE("  Ran memory check for ${MODULE_NAME}.")
+  ELSEIF(${MEMORY_CHECK_NEEDED})
+    MESSAGE("  ERROR : No memory check program found. Skipping Memory check for ${MODULE_NAME}.")
   ENDIF()
 
   IF(CTEST_COVERAGE_COMMAND)
@@ -470,7 +497,11 @@ FUNCTION(RUN_TEST_ONCE MODULE_NAME)
         OUTPUT_VARIABLE out_var
         )
     IF(NOT ${ret_var} EQUAL 0)
-      MESSAGE(FATAL_ERROR "  Installing ${MODULE_NAME} returned ${ret_var} Output:${out_var}")
+      MESSAGE("  Installing ${MODULE_NAME} returned ${ret_var} Output:${out_var}")
+      MESSAGE("  Skipping installation of ${MODULE_NAME}")
+      SET(${MODULE_NAME}_UPDATED 0 PARENT_SCOPE)
+      SET(${MODULE_NAME}_NEEDS_FORCE_TEST 0 PARENT_SCOPE)
+      RETURN()
     ELSE()
       MESSAGE("  Installed ${MODULE_NAME}.")
     ENDIF()
@@ -481,25 +512,57 @@ ENDFUNCTION()
 
 FUNCTION(INSTALL_DEPENDENCIES MODULE_NAME)
   FOREACH(EACH_MODULE ${${MODULE_NAME}_DEPENDS_ON})
-    SET(MODULE_BINARY_DIRECTORY ${${EACH_MODULE}_BINARY_DIRECTORY})
-    MESSAGE("Installing " ${EACH_MODULE})
-    IF(${EACH_MODULE}_SHOULD_BE_INSTALLED_AFTER_UPDATE)
-      EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
-        COMMAND ${CTEST_CMAKE_COMMAND} --build . --config ${CTEST_BUILD_CONFIGURATION} --target install
-        RESULT_VARIABLE ret_var
-        OUTPUT_VARIABLE out_var
-        )
-    IF(NOT ${ret_var} EQUAL 0)
-      MESSAGE("  ERROR : Installing ${EACH_MODULE} returned ${ret_var} Output:${out_var}")
-    ELSE()
-      MESSAGE("  Installed ${EACH_MODULE}.")
+    LIST(FIND ALL_MODULE_LIST ${EACH_MODULE} output)
+    IF(NOT ${output} EQUAL -1)
+      SET(MODULE_BINARY_DIRECTORY ${${EACH_MODULE}_BINARY_DIRECTORY})
+      MESSAGE("Installing " ${EACH_MODULE})
+      IF(${EACH_MODULE}_SHOULD_BE_INSTALLED_AFTER_UPDATE)
+        EXECUTE_PROCESS(WORKING_DIRECTORY ${MODULE_BINARY_DIRECTORY}
+          COMMAND ${CTEST_CMAKE_COMMAND} --build . --config ${CTEST_BUILD_CONFIGURATION} --target install
+          RESULT_VARIABLE ret_var
+          OUTPUT_VARIABLE out_var
+          )
+        IF(NOT ${ret_var} EQUAL 0)
+          MESSAGE("  ERROR : Installing ${EACH_MODULE} returned ${ret_var} Output:${out_var}")
+        ELSE()
+          MESSAGE("  Installed ${EACH_MODULE}.")
+        ENDIF()
+      ENDIF()
     ENDIF()
-  ENDIF()
+  ENDFOREACH()
+ENDFUNCTION()
+
+FUNCTION(GET_CURRENT_BRANCH_FOR_ALL_MODULES)
+  MESSAGE("  Current Branch of Modules :")
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    EXECUTE_PROCESS(WORKING_DIRECTORY ${${EACH_MODULE}_SOURCE_DIRECTORY}
+          COMMAND ${Git_EXECUTABLE} status --short --branch
+          RESULT_VARIABLE ret_var
+          OUTPUT_VARIABLE out_var
+          )
+    IF(${ret_var} EQUAL 0)
+      STRING(REGEX REPLACE "\n.*" "" CURRENT_BRANCH ${out_var})
+      STRING(REGEX REPLACE "## " "" CURRENT_BRANCH ${CURRENT_BRANCH})
+      MESSAGE("    ${EACH_MODULE} : ${CURRENT_BRANCH}")
+      SET(${EACH_MODULE}_CURRENT_BRANCH ${CURRENT_BRANCH} PARENT_SCOPE)
+    ELSEIF()
+      SET(${EACH_MODULE}_CURRENT_BRANCH unknown PARENT_SCOPE)
+    ENDIF()
+  ENDFOREACH()
+MESSAGE("================================================================================")
+ENDFUNCTION()
+
+FUNCTION(SET_BUILD_NAME_FOR_ALL_MODULES)
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    SET(${EACH_MODULE}_BUILD_NAME "${CTEST_BUILD_NAME} (${CTEST_BUILD_CONFIGURATION}-${${EACH_MODULE}_CURRENT_BRANCH} v${SCRIPT_VERSION})" PARENT_SCOPE)
   ENDFOREACH()
 ENDFUNCTION()
 ###############################################################################
 # TEST                                                                        #
 ###############################################################################
+GET_CURRENT_BRANCH_FOR_ALL_MODULES()
+SET_BUILD_NAME_FOR_ALL_MODULES()
+
 IF("${DASHBOARD_MODEL}" STREQUAL "Continuous") ### DASHBOARD_MODEL Continuous
   WHILE(1)
     MESSAGE("Starting Continuous test now...")
@@ -526,11 +589,22 @@ ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Nightly") ### DASHBOARD_MODEL Nightly
     RUN_TEST_ONCE(${EACH_MODULE})
   ENDFOREACH()
   MESSAGE("Nightly test completed. Exiting the script now...")
-ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Experimental")  ### DASHBOARD_MODEL Experimental
+ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Experimental") ### DASHBOARD_MODEL Experimental
   MESSAGE("Starting Experimental test now...")
   FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
     SET_FORCE_TEST_FOR_ALL_MODULE(${EACH_MODULE} 1)
     RUN_TEST_ONCE(${EACH_MODULE})
   ENDFOREACH()
   MESSAGE("Experimental test completed. Exiting the script now...")
+ELSEIF("${DASHBOARD_MODEL}" STREQUAL "Weekly") ### DASHBOARD_MODEL Weekly Memory Check
+  MESSAGE("Starting Weekly Memory Check test now...")
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    CHECK_UPDATE_STATUS_FOR_MODULE(${EACH_MODULE})
+  ENDFOREACH()
+  MESSAGE("Updated all Modules. Will start tests now...")
+  FOREACH(EACH_MODULE ${ALL_MODULE_LIST})
+    SET_FORCE_TEST_FOR_ALL_MODULE(${EACH_MODULE} 1)
+    RUN_TEST_ONCE(${EACH_MODULE})
+  ENDFOREACH()
+  MESSAGE("Weekly memory check test completed. Exiting the script now...")
 ENDIF()
