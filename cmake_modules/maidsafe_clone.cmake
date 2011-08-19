@@ -116,20 +116,28 @@ FUNCTION(CONFIGURE_AND_MAKE_REPO REPO)
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build . --config Debug --target ${TARGET_INSTALL}
                   WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_DEBUG_DIR}"
                   RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-  IF(NOT RES_VAR EQUAL 1)
+  # Use existence of export file as indicator of success as RESULT_VARIABLE is indeed variable for MSVC!
+  FIND_FILE(COMMON_DEBUG_EXPORT_CMAKE NAMES maidsafe_common-debug.cmake PATHS ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe)
+  IF(NOT COMMON_DEBUG_EXPORT_CMAKE)
     MESSAGE(">> Error installing ${REPO} in Debug mode.")
     MESSAGE("  ${ERR_VAR}")
     IF(${REPO} MATCHES MaidSafe-Common)
+      FILE(REMOVE ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe/maidsafe_common.cmake
+                  ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe/maidsafe_common-debug.cmake)
       MESSAGE(FATAL_ERROR "\n\n\nFailed to install MaidSafe-Common.  Terminating.\n\n")
     ENDIF()
   ENDIF()
   EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build . --config Release --target ${TARGET_INSTALL}
                   WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/${BUILD_RELEASE_DIR}"
                   RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
-  IF(NOT RES_VAR EQUAL 1)
+  FIND_FILE(COMMON_RELEASE_EXPORT_CMAKE NAMES maidsafe_common-release.cmake PATHS ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe)
+  IF(NOT COMMON_RELEASE_EXPORT_CMAKE)
     MESSAGE(">> Error installing ${REPO} in Release mode.")
     MESSAGE("  ${ERR_VAR}")
     IF(${REPO} MATCHES MaidSafe-Common)
+      FILE(REMOVE ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe/maidsafe_common.cmake
+                  ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe/maidsafe_common-debug.cmake
+                  ${REPOSITORIES_ROOT_DIR}/MaidSafe-Common/installed/share/maidsafe/maidsafe_common-release.cmake)
       MESSAGE(FATAL_ERROR "\n\n\nFailed to install MaidSafe-Common.  Terminating.\n\n")
     ENDIF()
   ENDIF()
