@@ -133,6 +133,7 @@ ENDIF()
 # All other libraries search                                                                      #
 ###################################################################################################
 IF(UNIX)
+  SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /usr/lib/i386-linux-gnu/ /usr/lib/x86_64-linux-gnu/)
   SET(CMAKE_THREAD_PREFER_PTHREAD true)
   FIND_PACKAGE(Threads REQUIRED)
   SET(SYS_LIB ${CMAKE_THREAD_LIBS_INIT})
