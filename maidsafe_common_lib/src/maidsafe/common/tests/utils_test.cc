@@ -508,10 +508,10 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   // Ensure we're able to cope with error cases
   fs::path *empty_path(new fs::path);
   CleanupTest(empty_path);
-  EXPECT_EQ(NULL, empty_path);
+  EXPECT_TRUE(NULL == empty_path);
   fs::path *non_existent(new fs::path(std::string(100, 'a')));
   CleanupTest(non_existent);
-  EXPECT_EQ(NULL, non_existent);
+  EXPECT_TRUE(NULL == non_existent);
 }
 
 }  // namespace test
