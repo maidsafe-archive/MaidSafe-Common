@@ -51,6 +51,15 @@ IF(UNIX)
       src/common/linux/guid_creator.cc
       src/common/linux/http_upload.cc
       src/common/md5.c
+      src/common/dwarf_cfi_to_module.cc
+      src/common/dwarf_cu_to_module.cc
+      src/common/dwarf_line_to_module.cc
+      src/common/dwarf/bytereader.cc
+      src/common/dwarf/dwarf2reader.cc
+      src/common/module.cc
+      src/common/language.cc
+      src/common/linux/elf_symbols_to_module.cc
+      src/common/stabs_to_module.cc
     )
   ENDIF()
 ELSEIF(WIN32)
