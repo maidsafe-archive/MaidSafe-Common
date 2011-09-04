@@ -104,7 +104,7 @@ ENDIF()
 INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE})
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/build ${PROJECT_SOURCE_DIR}/../cmake_modules)
 INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX}/share/maidsafe/maidsafe_third_party.cmake)
-INCLUDE_DIRECTORIES(SYSTEM ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
+SET(MaidSafeCommon_INCLUDE_DIR ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
 
 ###################################################################################################
 # Standard setup                                                                                  #
