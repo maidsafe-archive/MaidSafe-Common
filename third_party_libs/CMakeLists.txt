@@ -38,7 +38,7 @@
 #==============================================================================#
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.4 FATAL_ERROR)
 
 PROJECT(BuildThirdPartyLibs)
 
@@ -432,6 +432,96 @@ APPEND_TO_EXPORT_FILE("SET_TARGET_PROPERTIES(glog_static PROPERTIES")
 APPEND_TO_EXPORT_FILE("                        IMPORTED_CONFIGURATIONS \"RELEASE;DEBUG\"")
 APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_RELEASE \"${Glog_LIBRARY_RELEASE_INSTALLED}\"")
 APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Glog_LIBRARY_DEBUG_INSTALLED}\")\n")
+
+###################################################################################################
+# Google Breakpad                                                                                 #
+###################################################################################################
+IF((${BUILD_TARGET} MATCHES "BREAKPAD") OR (${BUILD_TARGET} MATCHES "ALL"))
+  MESSAGE("-- Building Google Breakpad Client")
+  MESSAGE("     This may take a few minutes...")
+  SET(BREAKPAD_BUILD_DIR ${CURRENT_DIR}/build_breakpad)
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${BREAKPAD_BUILD_DIR})
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../src/google-breakpad -G ${CMAKE_GENERATOR} WORKING_DIRECTORY ${BREAKPAD_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+  SET(BREAKPAD_OUTVAR "${OUTVAR}")
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build . --config Debug WORKING_DIRECTORY ${BREAKPAD_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+  SET(BREAKPAD_OUTVAR "${BREAKPAD_OUTVAR}${SEPARATOR}${OUTVAR}")
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} --build . --config Release WORKING_DIRECTORY ${BREAKPAD_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+  SET(BREAKPAD_OUTVAR "${BREAKPAD_OUTVAR}${SEPARATOR}${OUTVAR}")
+  IF(WIN32)
+    SET(BREAKPAD_HEADERS
+          client/windows/handler/exception_handler.h
+          client/windows/common/ipc_protocol.h
+          client/windows/crash_generation/crash_generation_client.h
+          common/windows/string_utils-inl.h)
+  ELSEIF(UNIX)
+    IF(APPLE)
+      SET(BREAKPAD_HEADERS
+            client/mac/handler/exception_handler.h
+            client/mac/crash_generation/crash_generation_client.h
+            common/mac/MachIPC.h)
+    ELSE()
+      SET(BREAKPAD_HEADERS
+            client/linux/handler/exception_handler.h
+            client/linux/android_ucontext.h
+            client/linux/crash_generation/crash_generation_client.h
+            client/linux/minidump_writer/minidump_writer.h)
+    ENDIF()
+  ENDIF()
+  SET(BREAKPAD_HEADERS ${BREAKPAD_HEADERS}
+        google_breakpad/common/breakpad_types.h
+        google_breakpad/common/minidump_cpu_amd64.h
+        google_breakpad/common/minidump_cpu_arm.h
+        google_breakpad/common/minidump_cpu_ppc.h
+        google_breakpad/common/minidump_cpu_ppc64.h
+        google_breakpad/common/minidump_cpu_sparc.h
+        google_breakpad/common/minidump_cpu_x86.h
+        google_breakpad/common/minidump_exception_linux.h
+        google_breakpad/common/minidump_exception_mac.h
+        google_breakpad/common/minidump_exception_solaris.h
+        google_breakpad/common/minidump_exception_win32.h
+        google_breakpad/common/minidump_format.h
+        processor/scoped_ptr.h)
+  EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E make_directory ${BREAKPAD_BUILD_DIR}/include/breakpad OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+  FOREACH(BREAKPAD_HEADER ${BREAKPAD_HEADERS})
+    GET_FILENAME_COMPONENT(INSTALL_PATH ${BREAKPAD_BUILD_DIR}/include/breakpad/${BREAKPAD_HEADER} PATH)
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${CURRENT_DIR}/src/google-breakpad/src/${BREAKPAD_HEADER} ${INSTALL_PATH} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+  ENDFOREACH()
+ENDIF()
+
+FIND_LIBRARY(Breakpad_LIBRARY_RELEASE NAMES breakpad PATHS ${CURRENT_DIR}/build_breakpad
+               PATH_SUFFIXES Release NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_LIBRARY(Breakpad_LIBRARY_DEBUG NAMES breakpad PATHS ${CURRENT_DIR}/build_breakpad
+               PATH_SUFFIXES Debug NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_PATH(Breakpad_INCLUDE_DIR breakpad/google_breakpad/common/minidump_format.h PATHS ${CURRENT_DIR}/build_breakpad/include
+            NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+
+IF(NOT Breakpad_LIBRARY_RELEASE OR NOT Breakpad_LIBRARY_DEBUG OR NOT Breakpad_INCLUDE_DIR)
+  MESSAGE(FATAL_ERROR "${BREAKPAD_OUTVAR}")
+ENDIF()
+
+MESSAGE("-- Found Google Breakpad Client")
+GET_FILENAME_COMPONENT(Breakpad_LIBRARY_RELEASE_NAME ${Breakpad_LIBRARY_RELEASE} NAME)
+GET_FILENAME_COMPONENT(Breakpad_LIBRARY_DEBUG_NAME ${Breakpad_LIBRARY_DEBUG} NAME)
+SET(Breakpad_LIBRARY_RELEASE_INSTALLED ${LIB_PREFIX_RELEASE}${Breakpad_LIBRARY_RELEASE_NAME})
+SET(Breakpad_LIBRARY_DEBUG_INSTALLED ${LIB_PREFIX_DEBUG}${Breakpad_LIBRARY_DEBUG_NAME})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Breakpad_LIBRARY_RELEASE} ${LIB_PREFIX_RELEASE})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Breakpad_LIBRARY_DEBUG} ${LIB_PREFIX_DEBUG})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${Breakpad_INCLUDE_DIR} ${INC_DIR})
+MESSAGE("-- Installed ${Breakpad_LIBRARY_RELEASE_INSTALLED}")
+MESSAGE("-- Installed ${Breakpad_LIBRARY_DEBUG_INSTALLED}")
+FILE(GLOB_RECURSE HEADERS ${INC_DIR} "${INC_DIR}breakpad/*")
+FOREACH(HEADER ${HEADERS})
+  MESSAGE("-- Installed ${HEADER}")
+ENDFOREACH()
+
+APPEND_TO_EXPORT_FILE("ADD_LIBRARY(breakpad_static STATIC IMPORTED)")
+APPEND_TO_EXPORT_FILE("SET_TARGET_PROPERTIES(breakpad_static PROPERTIES")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_CONFIGURATIONS \"RELEASE;DEBUG\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_RELEASE \"${Breakpad_LIBRARY_RELEASE_INSTALLED}\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Breakpad_LIBRARY_DEBUG_INSTALLED}\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE \"${Breakpad_LIBRARY_RELEASE_INSTALLED}\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LINK_INTERFACE_LIBRARIES_DEBUG \"${Breakpad_LIBRARY_DEBUG_INSTALLED}\")\n")
+
 
 
 UNSET(BUILD_TARGET CACHE)
