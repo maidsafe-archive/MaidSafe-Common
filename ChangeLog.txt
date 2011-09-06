@@ -1,0 +1,33 @@
+v0.10.02 (WIP)
+--------------
+
+
+v0.10.01
+--------
+* Added Google Breakpad client files to third_party_libs.
+* Added extra default library search dirs for Linux.
+* Added openmp flags and GDB flags to standard flags for UNIX.
+* Updated CMake clone script for better Common detection handling.
+* Updated CMake clone script to checkout to "next" branch.
+* Improved MemCheck handling.  Added a valgrind suppressions file.
+* Obtain git branch name in DashBoard script.
+* Added weekly dashboard test and added parameter for memory check options.
+* Moved CMake utility functions to separate file.
+* Old protobuf .pb.cc and .pb.h files are now automatically removed from the
+  source tree during the CMake configure stage.
+* Removed unnecessary MSVC compiler flags.
+* Increased compiler warning levels.
+* Require Python version below 3 for style checking.
+
+v0.10.00
+--------
+* Dashboard script now more resilient to failures in projects being tested.
+* Changed dashboard script to disable coverage and increase timeouts when
+  running memory check.
+* Added utility methods for conversion from bytes into SI units.
+* Added GetMaidSafeVersion utility method.
+* Fixed find_boost module as per patch supplied by Marenz.
+* Fixed memory leak in CleanupTest.
+* Upgraded cryptopp to match svn rev 529.
+* Added ability to set environment variable COVERAGE=ON in Linux to force
+  Experimental builds to run coverage.
