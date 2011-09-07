@@ -50,10 +50,12 @@ FUNCTION(HELP_OUTPUT MSG)
   SET(HELP "${HELP}Other options:\n")
   SET(HELP "${HELP}  -D ALL_REPOSITORIES=<semi-colon separated list of repos>\n")
   SET(HELP "${HELP}  -D BRANCH=<branch name> (master or next)\n")
+  SET(HELP "${HELP}  -D GENERATOR=<generator name> (e.g. \"Unix Makefiles\")\n")
   SET(HELP "${HELP}Note: All -D options must be listed BEFORE -P maidsafe_clone.cmake\n")
   SET(HELP "${HELP}Examples:\n")
   SET(HELP "${HELP}  cmake -D ALL_REPOSITORIES=MaidSafe-Common\;MaidSafe-Encrypt -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n")
   SET(HELP "${HELP}  cmake -D BRANCH=next -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n")
+  SET(HELP "${HELP}  cmake -D GENERATOR=\"CodeBlocks - Unix Makefiles\" -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n")
   SET(HELP "${HELP}  cmake -D REPOSITORIES_ROOT_DIR=\"/dev/nightly\" -P maidsafe_clone.cmake\n\n")
   MESSAGE(FATAL_ERROR ${HELP})
 ENDFUNCTION()
@@ -61,9 +63,15 @@ ENDFUNCTION()
 FUNCTION(CONFIGURE_AND_MAKE_REPO REPO)
   MESSAGE(">> Configuring ${REPO}")
   IF(WIN32)
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../..
-                    WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}"
-                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(GENERATOR)
+      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -G ${GENERATOR} ../..
+                      WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}"
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    ELSE()
+      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../..
+                      WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}"
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    ENDIF()
     IF(NOT RES_VAR EQUAL 0)
       MESSAGE(">> Error configuring ${REPO}")
       MESSAGE("  ${ERR_VAR}")
@@ -73,9 +81,15 @@ FUNCTION(CONFIGURE_AND_MAKE_REPO REPO)
       RETURN()
     ENDIF()
   ELSE()
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../../..
-                    WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Debug"
-                    RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    IF(GENERATOR)
+      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -G ${GENERATOR} ../../..
+                      WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Debug"
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    ELSE()
+      EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} ../../..
+                      WORKING_DIRECTORY "${REPOSITORIES_ROOT_DIR}/${REPO}/${COMMON_BUILD_DIR}/Debug"
+                      RESULT_VARIABLE RES_VAR OUTPUT_VARIABLE OUT_VAR ERROR_VARIABLE ERR_VAR)
+    ENDIF()
     IF(NOT RES_VAR EQUAL 0)
       MESSAGE(">> Error configuring ${REPO} in Debug mode.")
       MESSAGE("  ${ERR_VAR}")
