@@ -49,100 +49,101 @@ namespace maidsafe {
 namespace crash_report {
 
 #ifdef WIN32
-  bool DumpCallback(const wchar_t* dump_path,
-                    const wchar_t* minidump_id,
-                    void* context,
-                    EXCEPTION_POINTERS* /*exinfo*/,
-                    MDRawAssertionInfo* /*assertion*/,
-                    bool succeeded) {
-    ProjectInfo* project = reinterpret_cast<ProjectInfo*>(context);
-    std::wstring full_dump_name = dump_path;
-    full_dump_name += L"\\";
-    full_dump_name += minidump_id;
-    full_dump_name += L".dmp";
-    fs::path full_dump_path(full_dump_name);
-    int current_modulepath_length = 0;
-    int max_path_length = MAX_PATH;
-    TCHAR *current_path = new TCHAR[max_path_length];
-    while (current_modulepath_length <= max_path_length) {
-      current_modulepath_length = GetModuleFileName(
-                                          NULL, current_path, max_path_length);
-      if (current_modulepath_length >= max_path_length) {
-        max_path_length *= 2;
-        delete [] current_path;
-        current_path = new TCHAR[max_path_length];
-      } else if (current_modulepath_length == 0) {
-        DLOG(ERROR) << "Cannot Retrieve Current Path";
-        break;
-      } else {
-        break;
-      }
-    }
-    std::string current_directory(
-                              fs::path(current_path).parent_path().string());
-    delete [] current_path;
-    if (fs::is_regular_file(current_directory + "\\CrashReporter.exe")) {
-      std::string command = current_directory + "\\CrashReporter.exe " +
-                            full_dump_path.string() + " " + project->name +
-                            " " +
-                            boost::lexical_cast<std::string>(project->version);
-      std::system(command.c_str());
+bool DumpCallback(const wchar_t* dump_path,
+                  const wchar_t* minidump_id,
+                  void* context,
+                  EXCEPTION_POINTERS* /*exinfo*/,
+                  MDRawAssertionInfo* /*assertion*/,
+                  bool succeeded) {
+  ProjectInfo* project = reinterpret_cast<ProjectInfo*>(context);
+  std::wstring full_dump_name = dump_path;
+  full_dump_name += L"\\";
+  full_dump_name += minidump_id;
+  full_dump_name += L".dmp";
+  fs::path full_dump_path(full_dump_name);
+  int current_modulepath_length = 0;
+  int max_path_length = MAX_PATH;
+  TCHAR *current_path = new TCHAR[max_path_length];
+  while (current_modulepath_length <= max_path_length) {
+    current_modulepath_length = GetModuleFileName(
+                                        NULL, current_path, max_path_length);
+    if (current_modulepath_length >= max_path_length) {
+      max_path_length *= 2;
+      delete [] current_path;
+      current_path = new TCHAR[max_path_length];
+    } else if (current_modulepath_length == 0) {
+      LOG(ERROR) << "Cannot Retrieve Current Path";
+      break;
     } else {
-      DLOG(ERROR) << "Crash Reporter Not Found.";
+      break;
     }
-    return succeeded;
   }
+  std::string current_directory(
+                            fs::path(current_path).parent_path().string());
+  delete [] current_path;
+  if (fs::is_regular_file(current_directory + "\\CrashReporter.exe")) {
+    std::string command = current_directory + "\\CrashReporter.exe " +
+                          full_dump_path.string() + " " + project->name +
+                          " " +
+                          boost::lexical_cast<std::string>(project->version);
+    std::system(command.c_str());
+  } else {
+    LOG(ERROR) << "Crash Reporter Not Found.";
+  }
+  return succeeded;
+}
 #else
-  static bool DumpCallback(const char* dump_path,
-                           const char* minidump_id,
-                           void* context,
-                           bool succeeded) {
-    ProjectInfo* project = reinterpret_cast<ProjectInfo*>(context);
-    std::string full_dump_name = dump_path;
-    full_dump_name += "/";
-    full_dump_name += minidump_id;
-    full_dump_name += ".dmp";
-    int current_modulepath_length = 0;
-    int max_path_length = PATH_MAX;
-    char *current_path = new char[max_path_length];
-    while (current_modulepath_length <= max_path_length) {
-      current_modulepath_length = readlink("/proc/self/exe",
-                                            current_path, PATH_MAX);
-      if (current_modulepath_length >= max_path_length) {
-        max_path_length *= 2;
-        delete [] current_path;
-        current_path = new char[max_path_length];
-      } else if (current_modulepath_length == 0) {
-        DLOG(ERROR) << "Cannot Retrieve Current Path";
-        break;
-      } else {
-        break;
-      }
-    }
-    std::string current_directory(
-                              fs::path(current_path).parent_path().string());
-    delete [] current_path;
-    if (fs::is_regular_file(current_directory + "/CrashReporter")) {
-      std::string command = current_directory + "/CrashReporter "
-                                          + full_dump_name;
-      std::system(command.c_str());
-    } else if (fs::is_regular_file(current_directory + "/CrashReporter")) {
-      std::string command = current_directory + "/CrashReporter " +
-                            full_dump_name + " " + project->name + " " +
-                            boost::lexical_cast<std::string>(project->version);
-      std::system(command.c_str());
+bool DumpCallback(const char* dump_path,
+                  const char* minidump_id,
+                  void* context,
+                  bool succeeded) {
+  ProjectInfo* project = reinterpret_cast<ProjectInfo*>(context);
+  std::string full_dump_name = dump_path;
+  full_dump_name += "/";
+  full_dump_name += minidump_id;
+  full_dump_name += ".dmp";
+  int current_modulepath_length = 0;
+  int max_path_length = PATH_MAX;
+  char *current_path = new char[max_path_length];
+  while (current_modulepath_length <= max_path_length) {
+    current_modulepath_length = readlink("/proc/self/exe",
+                                          current_path, PATH_MAX);
+    if (current_modulepath_length >= max_path_length) {
+      max_path_length *= 2;
+      delete [] current_path;
+      current_path = new char[max_path_length];
+    } else if (current_modulepath_length == 0) {
+      LOG(ERROR) << "Cannot Retrieve Current Path";
+      break;
     } else {
-      DLOG(ERROR) << "Crash Reporter Not Found.";
+      break;
     }
-    return succeeded;
   }
+  std::string current_directory(
+                            fs::path(current_path).parent_path().string());
+  delete [] current_path;
+  if (fs::is_regular_file(current_directory + "/CrashReporter")) {
+    std::string command = current_directory + "/CrashReporter " +
+                          full_dump_name + " " + project->name + " " +
+                          boost::lexical_cast<std::string>(project->version);
+    std::system(command.c_str());
+  } else if (fs::is_regular_file(current_directory + "/CrashReporter-d")) {
+    std::string command = current_directory + "/CrashReporter-d " +
+                          full_dump_name + " " + project->name + " " +
+                          boost::lexical_cast<std::string>(project->version);
+    std::system(command.c_str());
+  } else {
+    LOG(ERROR) << "Crash Reporter Not Found.";
+  }
+  return succeeded;
+}
 #endif
 
 ProjectInfo::ProjectInfo(std::string project_name,
                          std::string project_version)
-    : name(project_name),
-      version(project_version) {}
+    : version(project_version),
+      name(project_name) {}
 
-}  // namespace crypto
+}  // namespace crash_report
 
 }  // namespace maidsafe

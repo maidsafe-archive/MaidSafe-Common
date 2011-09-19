@@ -60,23 +60,23 @@ namespace maidsafe {
 namespace crash_report {
 
 #ifdef WIN32
-  bool DumpCallback(const wchar_t* dump_path,
-                    const wchar_t* minidump_id,
-                    void* context,
-                    EXCEPTION_POINTERS* /*exinfo*/,
-                    MDRawAssertionInfo* /*assertion*/,
-                    bool succeeded);
+bool DumpCallback(const wchar_t* dump_path,
+                  const wchar_t* minidump_id,
+                  void* context,
+                  EXCEPTION_POINTERS* /*exinfo*/,
+                  MDRawAssertionInfo* /*assertion*/,
+                  bool succeeded);
 #else
-  static bool DumpCallback(const char* dump_path,
-                           const char* minidump_id,
-                           void* context,
-                           bool succeeded);
+bool DumpCallback(const char* dump_path,
+                  const char* minidump_id,
+                  void* context,
+                  bool succeeded);
 #endif
 
 struct ProjectInfo {
+  ProjectInfo(std::string project_name, std::string project_version);
   std::string version;
   std::string name;
-  ProjectInfo(std::string project_name, std::string project_version);
 };
 
 }   // namespace crash_report
