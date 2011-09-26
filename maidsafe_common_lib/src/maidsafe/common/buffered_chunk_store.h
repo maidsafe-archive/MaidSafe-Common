@@ -45,7 +45,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/asio.hpp"
-#include "boost/asio/basic_deadline_timer.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/token_functions.hpp"
@@ -71,18 +70,6 @@ namespace fs = boost::filesystem;
 namespace arg = std::placeholders;
 namespace maidsafe {
 
-struct ChunkDetails {
-  ChunkDetails(const std::string &chunk_name,
-               const boost::posix_time::ptime &expire_time)
-      : name(chunk_name),
-        expiry_time(expire_time) {}
-  std::string name;
-  boost::posix_time::ptime expiry_time;
-};
-const boost::posix_time::minutes kCleanupTimer(30);
-/**
- * Manages storage and retrieval of chunks using in-memory data structures.
- */
 class BufferedChunkStore: public ChunkStore {
  public:
   typedef std::function<std::string(fs::path)> FileHashFunc;
@@ -93,16 +80,11 @@ class BufferedChunkStore: public ChunkStore {
       : ChunkStore(reference_counting),
         shared_mutex_(),
         asio_service_(asio_service),
-        cleanup_timer_(asio_service_),
         file_hash_func_(file_hash_func),
         memory_hash_func_(memory_hash_func),
         memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func_)),
         file_chunk_store_(new FileChunkStore(false, file_hash_func_)),
-        chunk_details_() {
-    cleanup_timer_.expires_from_now(kCleanupTimer);
-      cleanup_timer_.async_wait(std::bind(
-          &BufferedChunkStore::CleanExpiredChunks, this, arg::_1));
-  }
+        chunk_names_() {}
   ~BufferedChunkStore() {}
 
   /**
@@ -198,6 +180,56 @@ class BufferedChunkStore: public ChunkStore {
   std::uintmax_t Size(const std::string &name) const;
 
   /**
+   * Retrieves the maximum storage capacity available to FileChunkStore.
+   *
+   * A capacity of zero (0) equals infinite storage space.
+   * @return Capacity in bytes
+   */
+  std::uintmax_t Capacity() const;
+
+
+  /**
+   * Sets the maximum storage capacity available to FilesChunkStore.
+   *
+   * A capacity of zero (0) equals infinite storage space. The capacity must
+   * always be at least as high as the total size of already stored chunks.
+   * @param capacity Capacity in bytes
+   */
+  void SetCapacity(const std::uintmax_t &capacity);
+
+  /**
+   * Checks whether the FileChunkStore has enough capacity to store a 
+   * chunk of the given size.
+   * @return True if required size vacant
+   */
+  bool Vacant(const std::uintmax_t &required_size) const;
+
+  /**
+   * Retrieves the maximum storage capacity available to MemoryChunkStore.
+   *
+   * A capacity of zero (0) equals infinite storage space.
+   * @return Capacity in bytes
+   */
+  std::uintmax_t MemoryCapacity() const;
+
+
+  /**
+   * Sets the maximum storage capacity available to MemoryChunkStore.
+   *
+   * A capacity of zero (0) equals infinite storage space. The capacity must
+   * always be at least as high as the total size of already stored chunks.
+   * @param capacity Capacity in bytes
+   */
+  void SetMemoryCapacity(const std::uintmax_t &capacity);
+
+  /**
+   * Checks whether the memoryChunkStore has enough capacity to store a 
+   * chunk of the given size.
+   * @return True if required size vacant
+   */
+  bool VacantMemory(const std::uintmax_t &required_size) const;
+
+  /**
    * Retrieves the number of references to a chunk.
    *
    * If reference counting is enabled, this returns the number of (virtual)
@@ -229,8 +261,6 @@ class BufferedChunkStore: public ChunkStore {
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
-  void CleanExpiredChunks(const boost::system::error_code &ec);
-  bool CompareChunkName(const ChunkDetails &chunk_detail) const;
   void StoreInFile(const std::string &name, const std::string &contents);
   void StoreInFile(const std::string &name, const fs::path &source_file_name,
                    bool delete_source_file);
@@ -240,13 +270,12 @@ class BufferedChunkStore: public ChunkStore {
   typedef boost::upgrade_to_unique_lock<boost::shared_mutex>
       UpgradeToUniqueLock;
   mutable boost::shared_mutex shared_mutex_;
-  boost::asio::deadline_timer cleanup_timer_;
   boost::asio::io_service &asio_service_;
   FileHashFunc file_hash_func_;
   MemoryHashFunc memory_hash_func_;
   std::shared_ptr<ChunkStore> memory_chunk_store_;
   std::shared_ptr<ChunkStore> file_chunk_store_;
-  mutable std::list<ChunkDetails> chunk_details_;
+  mutable std::list<std::string> chunk_names_;
 };
 
 }  //  namespace maidsafe
