@@ -83,7 +83,8 @@ class BufferedChunkStore: public ChunkStore {
         file_hash_func_(file_hash_func),
         memory_hash_func_(memory_hash_func),
         memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func_)),
-        file_chunk_store_(new FileChunkStore(false, file_hash_func_)),
+        file_chunk_store_(new FileChunkStore(reference_counting,
+                                             file_hash_func_)),
         chunk_names_() {}
   ~BufferedChunkStore() {}
 
