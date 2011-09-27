@@ -264,7 +264,7 @@ class BufferedChunkStore: public ChunkStore {
 
   void StoreInFile(const std::string &name, const std::string &contents);
   void StoreInFile(const std::string &name, const fs::path &source_file_name,
-                   bool delete_source_file);
+                   const bool &delete_source_file);
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
   typedef boost::unique_lock<boost::shared_mutex> UniqueLock;

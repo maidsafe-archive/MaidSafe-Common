@@ -81,8 +81,11 @@ bool BufferedChunkStore::Store(const std::string &name,
   if (content.size() > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0)
     return false;
-  asio_service_.post(std::bind(&BufferedChunkStore::StoreInFile, this, name,
-                               content));
+  asio_service_.post(std::bind(
+      ((void(BufferedChunkStore::*)(
+          const std::string&,
+          const std::string&))&BufferedChunkStore::StoreInFile), this, name,
+          content));
   return true;
 }
 bool BufferedChunkStore::StoreCached(const std::string &name,
@@ -138,8 +141,11 @@ bool BufferedChunkStore::Store(const std::string &name,
   if (chunk_size > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0)
     return false;
-  asio_service_.post(std::bind(&BufferedChunkStore::StoreInFile, this, name,
-                               source_file_name, delete_source_file));
+  asio_service_.post(std::bind(
+      ((void(BufferedChunkStore::*)(
+          const std::string&, const fs::path&,
+          const bool&))&BufferedChunkStore::StoreInFile), this, name,
+          source_file_name, delete_source_file));
   return true;
 }
 
@@ -262,7 +268,7 @@ void BufferedChunkStore::StoreInFile(const std::string &name,
 }
 void BufferedChunkStore::StoreInFile(const std::string &name,
                                      const fs::path &source_file_name,
-                                     bool delete_source_file) {
+                                     const bool &delete_source_file) {
   bool result = file_chunk_store_->Store(name, source_file_name, false);
   UpgradeLock upgrade_lock(shared_mutex_);
   boost::system::error_code ec;
