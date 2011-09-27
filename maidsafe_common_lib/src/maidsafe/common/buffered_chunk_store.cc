@@ -27,6 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/buffered_chunk_store.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -81,11 +82,31 @@ bool BufferedChunkStore::Store(const std::string &name,
   if (content.size() > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0)
     return false;
+  {
+    UpgradeLock upgrade_lock(shared_mutex_);
+    auto it = std::find(chunk_names_.begin(), chunk_names_.end(), name);
+    if (it == chunk_names_.end()) {
+      if ((content.size() > memory_chunk_store_->Capacity()) &&
+          (memory_chunk_store_->Capacity() > 0)) {
+        DLOG(ERROR) << "Store -"
+                    << "not able to store chunk in memory for chunk -"
+                    << name;
+      } else {
+        UpgradeToUniqueLock unique_lock(upgrade_lock);
+        while (!memory_chunk_store_->Vacant(content.size()) &&
+            !chunk_names_.empty()) {
+          memory_chunk_store_->Delete(chunk_names_.back());
+          chunk_names_.pop_back();
+        }
+        if (memory_chunk_store_->Store(name, content))
+          chunk_names_.push_front(name);
+      }
+    }
+  }
   asio_service_.post(std::bind(
-      ((void(BufferedChunkStore::*)(
-          const std::string&,
-          const std::string&))&BufferedChunkStore::StoreInFile), this, name,
-          content));
+      static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
+                  (const std::string&, const std::string&)>(
+          &BufferedChunkStore::StoreInFile), this, name, content));
   return true;
 }
 bool BufferedChunkStore::StoreCached(const std::string &name,
@@ -141,11 +162,32 @@ bool BufferedChunkStore::Store(const std::string &name,
   if (chunk_size > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0)
     return false;
+  {
+    UpgradeLock upgrade_lock(shared_mutex_);
+    auto it = std::find(chunk_names_.begin(), chunk_names_.end(), name);
+    if (it == chunk_names_.end()) {
+      if ((chunk_size > memory_chunk_store_->Capacity()) &&
+          (memory_chunk_store_->Capacity() > 0)) {
+        DLOG(ERROR) << "Store -"
+                    << "not able to store chunk in memory for chunk -"
+                    << name;
+      } else {
+        UpgradeToUniqueLock unique_lock(upgrade_lock);
+        while (!memory_chunk_store_->Vacant(chunk_size) &&
+            !chunk_names_.empty()) {
+          memory_chunk_store_->Delete(chunk_names_.back());
+          chunk_names_.pop_back();
+        }
+        if (memory_chunk_store_->Store(name, source_file_name, false))
+          chunk_names_.push_front(name);
+      }
+    }
+  }
   asio_service_.post(std::bind(
-      ((void(BufferedChunkStore::*)(
-          const std::string&, const fs::path&,
-          const bool&))&BufferedChunkStore::StoreInFile), this, name,
-          source_file_name, delete_source_file));
+      static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
+                  (const std::string&, const fs::path &, bool)>(
+          &BufferedChunkStore::StoreInFile), this, name, source_file_name,
+          delete_source_file));
   return true;
 }
 
@@ -248,45 +290,11 @@ void BufferedChunkStore::Clear() {
 
 void BufferedChunkStore::StoreInFile(const std::string &name,
                                      const std::string &contents) {
-  bool result = file_chunk_store_->Store(name, contents);
-  UpgradeLock upgrade_lock(shared_mutex_);
-  auto it = std::find(chunk_names_.begin(), chunk_names_.end(), name);
-  if ((result) && (it == chunk_names_.end())) {
-    if ((contents.size() > memory_chunk_store_->Capacity()) &&
-        (memory_chunk_store_->Capacity() > 0))
-      return;
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
-    while (!memory_chunk_store_->Vacant(contents.size()) &&
-        !chunk_names_.empty()) {
-      if (!memory_chunk_store_->Delete(chunk_names_.back()))
-        return;
-      chunk_names_.pop_back();
-    }
-    chunk_names_.push_front(name);
-    memory_chunk_store_->Store(name, contents);
-  }
+  file_chunk_store_->Store(name, contents);
 }
 void BufferedChunkStore::StoreInFile(const std::string &name,
                                      const fs::path &source_file_name,
-                                     const bool &delete_source_file) {
-  bool result = file_chunk_store_->Store(name, source_file_name, false);
-  UpgradeLock upgrade_lock(shared_mutex_);
-  boost::system::error_code ec;
-  uintmax_t chunk_size(fs::file_size(source_file_name, ec));
-  auto it = std::find(chunk_names_.begin(), chunk_names_.end(), name);
-  if ((result) && (it == chunk_names_.end())) {
-    if ((chunk_size > memory_chunk_store_->Capacity()) &&
-        (memory_chunk_store_->Capacity() > 0))
-      return;
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
-    while (!memory_chunk_store_->Vacant(chunk_size) &&
-        !chunk_names_.empty()) {
-      if (!memory_chunk_store_->Delete(chunk_names_.back()))
-        return;
-      chunk_names_.pop_back();
-    }
-    chunk_names_.push_front(name);
-    memory_chunk_store_->Store(name, source_file_name, delete_source_file);
-  }
+                                     bool delete_source_file) {
+  file_chunk_store_->Store(name, source_file_name, delete_source_file);
 }
 }  // namespace maidsafe
