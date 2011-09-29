@@ -158,6 +158,7 @@ extern bool FLAGS_ms_logging_user;
 extern bool FLAGS_ms_logging_benchmark;
 
 extern bool FLAGS_ms_logging_common;
+extern bool FLAGS_ms_logging_transport;
 extern bool FLAGS_ms_logging_encrypt;
 extern bool FLAGS_ms_logging_dht;
 extern bool FLAGS_ms_logging_pki;
