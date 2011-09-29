@@ -79,8 +79,8 @@ bool BufferedChunkStore::Get(const std::string &name,
 
 bool BufferedChunkStore::Store(const std::string &name,
                                const std::string &content) {
-  if (content.size() > file_chunk_store_->Capacity() &&
-      file_chunk_store_->Capacity() > 0)
+  if ((content.size() > file_chunk_store_->Capacity() &&
+      file_chunk_store_->Capacity() > 0) || (content.empty()) || (name.empty()))
     return false;
   {
     UpgradeLock upgrade_lock(shared_mutex_);
@@ -159,8 +159,8 @@ bool BufferedChunkStore::Store(const std::string &name,
                                bool delete_source_file) {
   boost::system::error_code ec;
   uintmax_t chunk_size(fs::file_size(source_file_name, ec));
-  if (chunk_size > file_chunk_store_->Capacity() &&
-      file_chunk_store_->Capacity() > 0)
+  if ((chunk_size > file_chunk_store_->Capacity() &&
+      file_chunk_store_->Capacity() > 0) || (ec) || (name.empty()))
     return false;
   {
     UpgradeLock upgrade_lock(shared_mutex_);
@@ -228,6 +228,10 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
 }
 
 bool BufferedChunkStore::Has(const std::string &name) const {
+  return file_chunk_store_->Has(name);
+}
+
+bool BufferedChunkStore::HasCached(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
   auto it = std::find(chunk_names_.begin(), chunk_names_.end(), name);
   if (it != chunk_names_.end()) {
@@ -244,11 +248,16 @@ std::uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   return file_chunk_store_->Size(name);
 }
 
+std::uintmax_t BufferedChunkStore::CacheSize(const std::string &name) const {
+  SharedLock shared_lock(shared_mutex_);
+  return memory_chunk_store_->Size(name);
+}
+
 std::uintmax_t BufferedChunkStore::Capacity() const {
   return file_chunk_store_->Capacity();
 }
 
-std::uintmax_t BufferedChunkStore::MemoryCapacity() const {
+std::uintmax_t BufferedChunkStore::CacheCapacity() const {
   SharedLock shared_lock(shared_mutex_);
   return memory_chunk_store_->Capacity();
 }
@@ -257,7 +266,7 @@ void BufferedChunkStore::SetCapacity(const std::uintmax_t &capacity) {
   file_chunk_store_->SetCapacity(capacity);
 }
 
-void BufferedChunkStore::SetMemoryCapacity(const std::uintmax_t &capacity) {
+void BufferedChunkStore::SetCacheCapacity(const std::uintmax_t &capacity) {
   UniqueLock unique_lock(shared_mutex_);
   memory_chunk_store_->SetCapacity(capacity);
 }
@@ -266,7 +275,7 @@ bool BufferedChunkStore::Vacant(const std::uintmax_t &required_size) const {
   return file_chunk_store_->Vacant(required_size);
 }
 
-bool BufferedChunkStore::VacantMemory(
+bool BufferedChunkStore::VacantCache(
     const std::uintmax_t &required_size) const {
   SharedLock shared_lock(shared_mutex_);
   return memory_chunk_store_->Vacant(required_size);
@@ -276,16 +285,37 @@ std::uintmax_t BufferedChunkStore::Count(const std::string &name) const {
   return file_chunk_store_->Count(name);
 }
 
+std::uintmax_t BufferedChunkStore::CacheCount(const std::string &name) const {
+  SharedLock shared_lock(shared_mutex_);
+  return memory_chunk_store_->Count(name);
+}
+
 std::uintmax_t BufferedChunkStore::Count() const {
   return file_chunk_store_->Count();
+}
+
+std::uintmax_t BufferedChunkStore::CacheCount() const {
+  SharedLock shared_lock(shared_mutex_);
+  return chunk_names_.size();
 }
 
 bool BufferedChunkStore::Empty() const {
   return file_chunk_store_->Empty();
 }
 
+bool BufferedChunkStore::CacheEmpty() const {
+  SharedLock shared_lock(shared_mutex_);
+  return chunk_names_.empty();
+}
+
 void BufferedChunkStore::Clear() {
   file_chunk_store_->Clear();
+}
+
+void BufferedChunkStore::ClearCache() {
+  UniqueLock unique_lock(shared_mutex_);
+  chunk_names_.clear();
+  memory_chunk_store_->Clear();
 }
 
 void BufferedChunkStore::StoreInFile(const std::string &name,

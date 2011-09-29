@@ -88,6 +88,10 @@ class BufferedChunkStore: public ChunkStore {
         chunk_names_() {}
   ~BufferedChunkStore() {}
 
+bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
+  return reinterpret_cast<FileChunkStore*>(
+      file_chunk_store_.get())->Init(storage_location, dir_depth);
+}
   /**
    * Retrieves a chunk's content as a string.
    * @param name Chunk name
@@ -165,12 +169,20 @@ class BufferedChunkStore: public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
+   * Checks if a chunk exists in Memory.
+   * @param name Chunk name
+   * @return True if chunk exists
+   */
+  bool HasCached(const std::string &name) const;
+
+  /**
    * Validates a chunk, i.e. confirms if the name matches the content's hash.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
    * @return True if chunk valid
    */
+
   bool Validate(const std::string &name) const;
 
   /**
@@ -179,6 +191,13 @@ class BufferedChunkStore: public ChunkStore {
    * @return Size in bytes
    */
   std::uintmax_t Size(const std::string &name) const;
+
+  /**
+   * Retrieves the size of a chunk from MemoryChunkStore.
+   * @param name Chunk name
+   * @return Size in bytes
+   */
+  std::uintmax_t CacheSize(const std::string &name) const;
 
   /**
    * Retrieves the maximum storage capacity available to FileChunkStore.
@@ -211,7 +230,7 @@ class BufferedChunkStore: public ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t MemoryCapacity() const;
+  std::uintmax_t CacheCapacity() const;
 
 
   /**
@@ -221,14 +240,14 @@ class BufferedChunkStore: public ChunkStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetMemoryCapacity(const std::uintmax_t &capacity);
+  void SetCacheCapacity(const std::uintmax_t &capacity);
 
   /**
    * Checks whether the memoryChunkStore has enough capacity to store a 
    * chunk of the given size.
    * @return True if required size vacant
    */
-  bool VacantMemory(const std::uintmax_t &required_size) const;
+  bool VacantCache(const std::uintmax_t &required_size) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -242,10 +261,27 @@ class BufferedChunkStore: public ChunkStore {
   std::uintmax_t Count(const std::string &name) const;
 
   /**
+   * Retrieves the number of references to a chunk.
+   *
+   * If reference counting is enabled, this returns the number of (virtual)
+   * copies of a chunk in the MemoryChunkStore. Otherwise it would return 1 if the
+   * chunks exists, or 0 if it doesn't.
+   * @param name Chunk name
+   * @return Reference count
+   */
+  std::uintmax_t CacheCount(const std::string &name) const;
+
+  /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
   std::uintmax_t Count() const;
+
+  /**
+   * Retrieves the number of chunks held by MemoryChunkStore.
+   * @return Chunk count
+   */
+  std::uintmax_t CacheCount() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
@@ -254,9 +290,20 @@ class BufferedChunkStore: public ChunkStore {
   bool Empty() const;
 
   /**
+   * Checks if any chunks are held by MemoryChunkStore.
+   * @return True if no chunks stored
+   */
+  bool CacheEmpty() const;
+
+  /**
    * Deletes all stored chunks.
    */
   void Clear();
+
+  /**
+   * Deletes all stored chunks for Memory.
+   */
+  void ClearCache();
 
  private:
   BufferedChunkStore(const BufferedChunkStore&);
