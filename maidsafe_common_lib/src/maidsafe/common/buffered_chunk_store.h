@@ -80,11 +80,9 @@ class BufferedChunkStore: public ChunkStore {
       : ChunkStore(reference_counting),
         shared_mutex_(),
         asio_service_(asio_service),
-        file_hash_func_(file_hash_func),
-        memory_hash_func_(memory_hash_func),
-        memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func_)),
+        memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func)),
         file_chunk_store_(new FileChunkStore(reference_counting,
-                                             file_hash_func_)),
+                                             file_hash_func)),
         chunk_names_() {}
   ~BufferedChunkStore() {}
 
@@ -319,8 +317,6 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
       UpgradeToUniqueLock;
   mutable boost::shared_mutex shared_mutex_;
   boost::asio::io_service &asio_service_;
-  FileHashFunc file_hash_func_;
-  MemoryHashFunc memory_hash_func_;
   std::shared_ptr<ChunkStore> memory_chunk_store_;
   std::shared_ptr<ChunkStore> file_chunk_store_;
   mutable std::list<std::string> chunk_names_;

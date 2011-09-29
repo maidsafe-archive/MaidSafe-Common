@@ -192,25 +192,15 @@ bool BufferedChunkStore::Store(const std::string &name,
 }
 
 bool BufferedChunkStore::Delete(const std::string &name) {
-  UniqueLock unique_lock(shared_mutex_);
+  bool file_delete_result = file_chunk_store_->Delete(name);
+  UpgradeLock upgrade_lock(shared_mutex_);
   auto it = std::find(chunk_names_.begin(), chunk_names_.end(), name);
   if (it != chunk_names_.end()) {
+    UpgradeToUniqueLock unique_lock(upgrade_lock);
     chunk_names_.erase(it);
-    if (file_chunk_store_->Has(name))
-      return file_chunk_store_->Delete(name);
-
-    return memory_chunk_store_->Delete(name);
-  } else {
-    unique_lock.unlock();
-    std::string contents = file_chunk_store_->Get(name);
-    bool delete_result = file_chunk_store_->Delete(name);
-    if (contents != "") {
-      unique_lock.lock();
-      chunk_names_.push_front(name);
-      memory_chunk_store_->Store(name, contents);
-    }
-    return delete_result;
+    memory_chunk_store_->Delete(name);
   }
+  return file_delete_result;
 }
 
 bool BufferedChunkStore::MoveTo(const std::string &name,
