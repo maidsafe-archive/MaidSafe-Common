@@ -106,6 +106,22 @@ bool BufferedChunkStore::Store(const std::string &name,
       }
     }
   }
+  std::string chunk_to_delete;
+  bool no_space(false);
+  while (!file_chunk_store_->Vacant(content.size())) {
+    {
+      UniqueLock unique_lock(shared_mutex_);
+      if (undesirable_chunk_names_.empty()) {
+        no_space = true;
+        break;
+      }
+      chunk_to_delete = *(undesirable_chunk_names_.begin());
+      undesirable_chunk_names_.pop_front();
+    }
+    Delete(chunk_to_delete);
+  }
+  if (no_space)
+    return false;
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
                   (const std::string&, const std::string&)>(
@@ -189,6 +205,22 @@ bool BufferedChunkStore::Store(const std::string &name,
       }
     }
   }
+  std::string chunk_to_delete;
+  bool no_space(false);
+  while (!file_chunk_store_->Vacant(chunk_size)) {
+    {
+      UniqueLock unique_lock(shared_mutex_);
+      if (undesirable_chunk_names_.empty()) {
+        no_space = true;
+        break;
+      }
+      chunk_to_delete = *(undesirable_chunk_names_.begin());
+      undesirable_chunk_names_.pop_front();
+    }
+    Delete(chunk_to_delete);
+  }
+  if (no_space)
+    return false;
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
                   (const std::string&, const fs::path &, bool)>(
@@ -334,6 +366,11 @@ void BufferedChunkStore::ClearCache() {
   memory_chunk_store_->Clear();
 }
 
+void BufferedChunkStore::MarkForDeletion(const std::string &name) {
+  UniqueLock unique_lock(shared_mutex_);
+  undesirable_chunk_names_.push_back(name);
+}
+
 void BufferedChunkStore::StoreInFile(const std::string &name,
                                      const std::string &contents) {
   file_chunk_store_->Store(name, contents);
@@ -344,6 +381,7 @@ void BufferedChunkStore::StoreInFile(const std::string &name,
     transient_chunk_names_.erase(it);
   cond_var_any_.notify_one();
 }
+
 void BufferedChunkStore::StoreInFile(const std::string &name,
                                      const fs::path &source_file_name,
                                      bool delete_source_file) {

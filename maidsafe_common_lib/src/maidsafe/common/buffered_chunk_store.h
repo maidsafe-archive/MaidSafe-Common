@@ -86,6 +86,7 @@ class BufferedChunkStore: public ChunkStore {
                                              file_hash_func)),
         chunk_names_(),
         transient_chunk_names_(),
+        undesirable_chunk_names_(),
         cond_var_any_() {}
   ~BufferedChunkStore() {}
 
@@ -306,6 +307,8 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
    */
   void ClearCache();
 
+  void MarkForDeletion(const std::string &name);
+
  private:
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
@@ -325,6 +328,7 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   mutable std::list<std::string> chunk_names_;
   // List contain info about chunks being copied to file_chunk_store
   mutable std::list<std::string> transient_chunk_names_;
+  mutable std::list<std::string> undesirable_chunk_names_;
   mutable boost::condition_variable_any cond_var_any_;
 };
 
