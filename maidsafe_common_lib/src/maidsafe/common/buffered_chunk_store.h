@@ -50,6 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/token_functions.hpp"
 #include "boost/thread/shared_mutex.hpp"
 #include "boost/thread/locks.hpp"
+#include "boost/thread/condition_variable.hpp"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -83,7 +84,9 @@ class BufferedChunkStore: public ChunkStore {
         memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func)),
         file_chunk_store_(new FileChunkStore(reference_counting,
                                              file_hash_func)),
-        chunk_names_() {}
+        chunk_names_(),
+        transient_chunk_names_(),
+        cond_var_any_() {}
   ~BufferedChunkStore() {}
 
 bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
@@ -320,6 +323,9 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   std::shared_ptr<ChunkStore> memory_chunk_store_;
   std::shared_ptr<ChunkStore> file_chunk_store_;
   mutable std::list<std::string> chunk_names_;
+  // List contain info about chunks being copied to file_chunk_store
+  mutable std::list<std::string> transient_chunk_names_;
+  mutable boost::condition_variable_any cond_var_any_;
 };
 
 }  //  namespace maidsafe
