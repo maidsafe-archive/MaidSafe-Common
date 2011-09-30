@@ -1,4 +1,4 @@
-/* Copyright (c) 2009 maidsafe.net limited
+/* Copyright (c) 2011 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -26,19 +26,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/breakpad.h"
-
-#ifdef __MSVC__
-#  pragma warning(push, 1)
-#  pragma warning(disable: 4702)
-#endif
-
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
-
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
-
+#include "boost/scoped_array.hpp"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
 
@@ -56,39 +46,34 @@ bool DumpCallback(const wchar_t* dump_path,
                   MDRawAssertionInfo* /*assertion*/,
                   bool succeeded) {
   ProjectInfo* project = reinterpret_cast<ProjectInfo*>(context);
-  std::wstring full_dump_name = dump_path;
-  full_dump_name += L"\\";
-  full_dump_name += minidump_id;
-  full_dump_name += L".dmp";
-  fs::path full_dump_path(full_dump_name);
+  fs::path full_dump_path(dump_path);
+  full_dump_path /= (std::wstring(minidump_id) + L".dmp");
   int current_modulepath_length = 0;
   int max_path_length = MAX_PATH;
-  TCHAR *current_path = new TCHAR[max_path_length];
+  boost::scoped_array<TCHAR> current_path(new TCHAR[max_path_length]);
   while (current_modulepath_length <= max_path_length) {
-    current_modulepath_length = GetModuleFileName(
-                                        NULL, current_path, max_path_length);
+    current_modulepath_length = GetModuleFileName(NULL, current_path.get(),
+                                                  max_path_length);
     if (current_modulepath_length >= max_path_length) {
       max_path_length *= 2;
-      delete [] current_path;
-      current_path = new TCHAR[max_path_length];
+      current_path.reset(new TCHAR[max_path_length]);
     } else if (current_modulepath_length == 0) {
-      LOG(ERROR) << "Cannot Retrieve Current Path";
+      DLOG(ERROR) << "Cannot Retrieve Current Path";
       break;
     } else {
       break;
     }
   }
-  std::string current_directory(
-                            fs::path(current_path).parent_path().string());
-  delete [] current_path;
-  if (fs::is_regular_file(current_directory + "\\CrashReporter.exe")) {
-    std::string command = current_directory + "\\CrashReporter.exe " +
+  fs::path current_directory(fs::path(current_path.get()).parent_path());
+  fs::path crash_reporter(current_directory / "CrashReporter.exe");
+  if (fs::is_regular_file(crash_reporter)) {
+    std::string command = crash_reporter.string() + " " +
                           full_dump_path.string() + " " + project->name +
                           " " +
                           boost::lexical_cast<std::string>(project->version);
     std::system(command.c_str());
   } else {
-    LOG(ERROR) << "Crash Reporter Not Found.";
+    DLOG(ERROR) << "Crash Reporter Not Found.";
   }
   return succeeded;
 }
@@ -98,49 +83,45 @@ bool DumpCallback(const char* dump_path,
                   void* context,
                   bool succeeded) {
   ProjectInfo* project = reinterpret_cast<ProjectInfo*>(context);
-  std::string full_dump_name = dump_path;
-  full_dump_name += "/";
-  full_dump_name += minidump_id;
-  full_dump_name += ".dmp";
+  fs::path full_dump_path(dump_path);
+  full_dump_path /= (std::string(minidump_id) + ".dmp");
   int current_modulepath_length = 0;
   int max_path_length = PATH_MAX;
-  char *current_path = new char[max_path_length];
+  boost::scoped_array<char> current_path(new char[max_path_length]);
   while (current_modulepath_length <= max_path_length) {
-    current_modulepath_length = readlink("/proc/self/exe",
-                                          current_path, PATH_MAX);
+    current_modulepath_length = readlink("/proc/self/exe", current_path,
+                                         PATH_MAX);
     if (current_modulepath_length >= max_path_length) {
       max_path_length *= 2;
-      delete [] current_path;
-      current_path = new char[max_path_length];
+      current_path.reset(new char[max_path_length]);
     } else if (current_modulepath_length == 0) {
-      LOG(ERROR) << "Cannot Retrieve Current Path";
+      DLOG(ERROR) << "Cannot Retrieve Current Path";
       break;
     } else {
       break;
     }
   }
-  std::string current_directory(
-                            fs::path(current_path).parent_path().string());
-  delete [] current_path;
-  if (fs::is_regular_file(current_directory + "/CrashReporter")) {
-    std::string command = current_directory + "/CrashReporter " +
-                          full_dump_name + " " + project->name + " " +
+  fs::path current_directory(fs::path(current_path.get()).parent_path());
+  fs::path crash_reporter(current_directory / "CrashReporter");
+  fs::path crash_reporter_debug(current_directory / "CrashReporter-d");
+  if (fs::is_regular_file(crash_reporter)) {
+    std::string command = crash_reporter.string() + " " +
+                          full_dump_path.string() + " " + project->name + " " +
                           boost::lexical_cast<std::string>(project->version);
     std::system(command.c_str());
-  } else if (fs::is_regular_file(current_directory + "/CrashReporter-d")) {
-    std::string command = current_directory + "/CrashReporter-d " +
-                          full_dump_name + " " + project->name + " " +
+  } else if (fs::is_regular_file(crash_reporter_debug)) {
+    std::string command = crash_reporter_debug.string() + " " +
+                          full_dump_path.string() + " " + project->name + " " +
                           boost::lexical_cast<std::string>(project->version);
     std::system(command.c_str());
   } else {
-    LOG(ERROR) << "Crash Reporter Not Found.";
+    DLOG(ERROR) << "Crash Reporter Not Found.";
   }
   return succeeded;
 }
 #endif
 
-ProjectInfo::ProjectInfo(std::string project_name,
-                         std::string project_version)
+ProjectInfo::ProjectInfo(std::string project_name, std::string project_version)
     : version(project_version),
       name(project_name) {}
 
