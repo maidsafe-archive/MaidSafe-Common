@@ -172,6 +172,9 @@ TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_te
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
 IF(MSVC)
+  # C4996 'Function call with parameters that may be unsafe' caused by std::copy in crypto::XOR
+  # Disabled as per advice at https://svn.boost.org/trac/boost/wiki/Guidelines/WarningsGuidelines
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4996")
   SET_TARGET_PROPERTIES(maidsafe_common_static PROPERTIES
                           STATIC_LIBRARY_FLAGS_RELEASE "/LTCG")
   SET_TARGET_PROPERTIES(TESTcommon TESTboost PROPERTIES
