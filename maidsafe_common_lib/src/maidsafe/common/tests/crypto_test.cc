@@ -68,9 +68,8 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
   const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations1(5);
-  const std::string kKnownDerived1(DecodeFromHex("0a89927670e292af98080a3"
-      "c3e2bdee4289b768de74570f9f470282756390fe36de6da2cbc407f4ecf6a9f62ef6249c"
-      "c"));
+  const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac29693853dc6"
+      "6c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
   EXPECT_EQ(kKnownDerived1, SecurePassword(kKnownPassword1,
             kKnownSalt1, kKnownIterations1));
   const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974"
@@ -78,9 +77,8 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
       "74697469657320766961206e2d3120656e746974656568656568656573"));
   const std::string kKnownSalt2(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations2(500);
-  const std::string kKnownDerived2(DecodeFromHex("ecae5ed132d15bac4c67cc5"
-      "de7c4a5559ca448334bdf9dc8f2b9aa86a363ddaaf7b431a8456e51582508c74405dba27"
-      "9"));
+  const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598bb94524"
+      "7391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e05c3ffc14d7fd8511c840"));
   EXPECT_EQ(kKnownDerived2, SecurePassword(kKnownPassword2,
             kKnownSalt2, kKnownIterations2));
 }

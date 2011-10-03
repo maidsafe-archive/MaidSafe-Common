@@ -85,17 +85,20 @@ std::string XOR(const std::string &first, const std::string &second) {
 
 std::string SecurePassword(const std::string &password,
                            const std::string &salt,
-                           const uint32_t &pin) {
-  if (password.empty() || salt.empty() || pin == 0)
+                           const uint32_t &pin,
+                           const std::string &label) {
+  if (password.empty() || salt.empty() || pin == 0 || label.empty())
     return "";
-  byte purpose = 0;  // unused in this pbkdf implementation
-  uint16_t iter = (pin % 1000) + 1000;
+  uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
+  byte purpose = 0;  // unused in this pbkdf implementation
+  CryptoPP::SecByteBlock context(salt.size() + label.size());
+  memcpy(&context[0], salt.data(), salt.size());
+  memcpy(&context[salt.size()], label.data(), label.size());
   pbkdf.DeriveKey(derived, derived.size(), purpose,
                   reinterpret_cast<const byte*>(password.data()),
-                  password.size(), reinterpret_cast<const byte*>(salt.data()),
-                  salt.size(), iter);
+                  password.size(), context.data(), context.size(), iter);
   std::string derived_password;
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
