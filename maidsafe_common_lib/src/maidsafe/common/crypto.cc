@@ -35,7 +35,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/scoped_array.hpp"
-#include "boost/thread/mutex.hpp"
 #include "cryptopp/gzip.h"
 #include "cryptopp/hex.h"
 #include "cryptopp/aes.h"
@@ -59,12 +58,10 @@ namespace crypto {
 namespace {
   
   CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
-    static CryptoPP::AutoSeededX917RNG<CryptoPP::AES>  rng;
-    return rng;
+      static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
+      return rng;
   }
   
-  boost::mutex g_srandom_number_generator_mutex;
-
 }  // Unnamed namespace
 
 
@@ -134,7 +131,7 @@ std::string SymmEncrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "failed encryption" <<  e.what();
     return "";
   }
 }
@@ -175,7 +172,6 @@ std::string AsymEncrypt(const std::string &input,
     CryptoPP::StringSource key(public_key, true);
     CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(key);
     std::string result;
-    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::PK_EncryptorFilter(
         g_srandom_number_generator(), encryptor,
         new CryptoPP::StringSink(result)));
@@ -196,7 +192,6 @@ std::string AsymDecrypt(const std::string &input,
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(key);
     std::string result;
-    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::PK_DecryptorFilter(
         g_srandom_number_generator(), decryptor,
         new CryptoPP::StringSink(result)));
@@ -214,7 +209,6 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Signer signer(key);
     std::string result;
-    boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(
         g_srandom_number_generator(), signer, new CryptoPP::StringSink(result)));
     return result;
@@ -281,13 +275,14 @@ std::string Uncompress(const std::string &input) {
 }
 
 CryptoPP::Integer RandomNumber(size_t bit_count) {
-  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
   return CryptoPP::Integer(g_srandom_number_generator(), bit_count);
 }
 
 void RandomBlock(byte *output, size_t size) {
-  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
+#pragma omp critical
+  { // NOLINT (dirvine)
   g_srandom_number_generator().GenerateBlock(output, size);
+  }
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
