@@ -26,7 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/crypto.h"
-
+#include <omp.h>
 #include <memory>
 
 #ifdef __MSVC__
@@ -57,9 +57,13 @@ namespace maidsafe {
 namespace crypto {
 
 namespace {
-
-CryptoPP::AutoSeededX917RNG<CryptoPP::AES> g_srandom_number_generator;
-boost::mutex g_srandom_number_generator_mutex;
+  
+  CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
+    static CryptoPP::AutoSeededX917RNG<CryptoPP::AES>  rng;
+    return rng;
+  }
+  
+  boost::mutex g_srandom_number_generator_mutex;
 
 }  // Unnamed namespace
 
@@ -173,7 +177,7 @@ std::string AsymEncrypt(const std::string &input,
     std::string result;
     boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::PK_EncryptorFilter(
-        g_srandom_number_generator, encryptor,
+        g_srandom_number_generator(), encryptor,
         new CryptoPP::StringSink(result)));
     return result;
   }
@@ -194,7 +198,7 @@ std::string AsymDecrypt(const std::string &input,
     std::string result;
     boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::PK_DecryptorFilter(
-        g_srandom_number_generator, decryptor,
+        g_srandom_number_generator(), decryptor,
         new CryptoPP::StringSink(result)));
     return result;
   }
@@ -212,7 +216,7 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     std::string result;
     boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(
-        g_srandom_number_generator, signer, new CryptoPP::StringSink(result)));
+        g_srandom_number_generator(), signer, new CryptoPP::StringSink(result)));
     return result;
   }
   catch(const CryptoPP::Exception &e) {
@@ -278,12 +282,12 @@ std::string Uncompress(const std::string &input) {
 
 CryptoPP::Integer RandomNumber(size_t bit_count) {
   boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
-  return CryptoPP::Integer(g_srandom_number_generator, bit_count);
+  return CryptoPP::Integer(g_srandom_number_generator(), bit_count);
 }
 
 void RandomBlock(byte *output, size_t size) {
   boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
-  g_srandom_number_generator.GenerateBlock(output, size);
+  g_srandom_number_generator().GenerateBlock(output, size);
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
