@@ -58,8 +58,8 @@ namespace crypto {
 namespace {
 
   CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
-      static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
-      return rng;
+    static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
+    return rng;
   }
   
 }  // Unnamed namespace

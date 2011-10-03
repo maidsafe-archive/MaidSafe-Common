@@ -250,8 +250,6 @@ std::string CorruptData(const std::string &input) {
 }
 
 TEST(CryptoTest, BEH_SymmEncrypt) {
-  #pragma omp parallel
-  { // NOLINT (dirvine)
     // Set up data
     const std::string kKey(DecodeFromHex("0a89927670e292af98080a3c3e2bdee4"
                                         "289b768de74570f9f470282756390fe3"));
@@ -285,7 +283,6 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
     EXPECT_TRUE(SymmEncrypt(kUnencrypted, kKey, "").empty());
     EXPECT_TRUE(SymmDecrypt(kEncrypted, "", kIV).empty());
     EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
-  }
 }
 
 TEST(CryptoTest, BEH_AsymEncrypt) {
