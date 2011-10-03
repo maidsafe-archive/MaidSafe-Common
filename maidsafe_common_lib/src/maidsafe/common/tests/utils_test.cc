@@ -25,10 +25,10 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <omp.h>
 #include <algorithm>
 #include <cstdlib>
 #include <set>
-#include <omp.h>
 
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
@@ -192,9 +192,9 @@ TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
-  #pragma omp parallel num_threads(thread_count)
-  { // NOLINT (dirvine)
-  test::GenerateRandomStrings(string_count, string_size);
+#pragma omp parallel num_threads(thread_count)
+  {  // NOLINT (dirvine)
+    test::GenerateRandomStrings(string_count, string_size);
   }
 }
 
@@ -202,8 +202,8 @@ TEST(UtilsTest, BEH_SRandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
-  #pragma omp parallel num_threads(thread_count)
-  { // NOLINT (dirvine)
+#pragma omp parallel num_threads(thread_count)
+  {  // NOLINT (dirvine)
     test::GenerateSRandomStrings(string_count, string_size);
   }
 }

@@ -57,13 +57,13 @@ namespace maidsafe {
 namespace crypto {
 
 namespace {
-  
-  CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
-    static CryptoPP::AutoSeededX917RNG<CryptoPP::AES>  rng;
-    return rng;
-  }
-  
-  boost::mutex g_srandom_number_generator_mutex;
+
+CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
+  static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
+  return rng;
+}
+
+boost::mutex g_srandom_number_generator_mutex;
 
 }  // Unnamed namespace
 
@@ -216,7 +216,8 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     std::string result;
     boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
     CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(
-        g_srandom_number_generator(), signer, new CryptoPP::StringSink(result)));
+                           g_srandom_number_generator(), signer,
+                           new CryptoPP::StringSink(result)));
     return result;
   }
   catch(const CryptoPP::Exception &e) {
