@@ -311,7 +311,10 @@ void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
   CryptoPP::RandomPool rand_pool;
   boost::scoped_array<byte> seed(new byte[key_size]);
   RandomBlock(seed.get(), key_size);
+  {
+  boost::mutex::scoped_lock rng_lock(keygen_mutex);  
   rand_pool.IncorporateEntropy(seed.get(), key_size);
+  }
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
   CryptoPP::StringSink private_key(private_key_);
   decryptor.DEREncode(private_key);
