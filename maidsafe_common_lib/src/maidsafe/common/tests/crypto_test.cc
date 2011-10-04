@@ -349,7 +349,7 @@ TEST(CryptoTest, BEH_AsymSign) {
     const std::string kAnotherPrivateKey(rsakp.private_key());
     EXPECT_NE(kPublicKey, kAnotherPublicKey);
     EXPECT_NE(kPrivateKey, kAnotherPrivateKey);
-    const std::string kTestData(SRandomString(99999));
+    const std::string kTestData(RandomString(99999));
     const std::string kBadPublicKey(
         kPublicKey.substr(0, kPublicKey.size() - 1));
     const std::string kBadPrivateKey(

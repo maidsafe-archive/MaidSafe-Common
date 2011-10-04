@@ -196,6 +196,7 @@ TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   {  // NOLINT (dirvine)
     test::GenerateRandomStrings(string_count, string_size);
   }
+  --thread_count; // to satisfy compiler
 }
 
 TEST(UtilsTest, BEH_SRandomStringMultiThread) {
@@ -206,6 +207,7 @@ TEST(UtilsTest, BEH_SRandomStringMultiThread) {
   {  // NOLINT (dirvine)
     test::GenerateSRandomStrings(string_count, string_size);
   }
+  --thread_count; // to satisfy compiler
 }
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {

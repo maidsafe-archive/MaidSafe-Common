@@ -43,6 +43,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/integer.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/osrng.h"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -50,6 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/version.h"
+#include <cryptopp/rsa.h>
 
 #if MAIDSAFE_COMMON_VERSION != 1002
 #  error This API is not compatible with the installed library.\
@@ -264,11 +267,37 @@ class RsaKeyPair {
   /** Generates a pair of RSA keys of given size.
    *  @param key_size size in bits of the keys. */
   void GenerateKeys(const uint16_t &key_size);
-
  private:
   std::string public_key_;
   std::string private_key_;
 };
+
+struct RSAkeys {
+public:
+  RSAkeys &operator =(const RSAkeys &) = delete;
+  RSAkeys (const RSAkeys&) = delete;
+  RSAkeys() : priv_key(), pub_key() {}
+  CryptoPP::RSA::PrivateKey priv_key;
+  CryptoPP::RSA::PublicKey pub_key;
+};
+
+class RSA {
+  RSA &operator =(const RSA &) = delete;
+  RSA (const RSA&) = delete;
+  RSA() {}
+  bool GenerateKeyPair(RSAkeys& keypair);
+  bool Sign(std::string &data,
+       std::string &signature,
+       CryptoPP::PublicKey &pub_key);
+  bool CheckSignature(std::string &data,
+                 std::string &signature,
+                 CryptoPP::PublicKey &pub_key);
+  std::string Encrypt(std::string data, CryptoPP::PublicKey &pub_key);
+  std::string Decrypt(std::string data, CryptoPP::PrivateKey &priv_key);
+ private:
+
+};
+
 
 }   // namespace crypto
 

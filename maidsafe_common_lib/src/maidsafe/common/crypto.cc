@@ -61,6 +61,7 @@ namespace {
 
 boost::mutex rng_mutex;
 boost::mutex keygen_mutex;
+boost::mutex rsasign_mutex;
 
 CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
   static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
@@ -222,6 +223,7 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     DLOG(WARNING) << " empty key or input";
     return "";
     }
+
   try {
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Signer signer(key);
@@ -304,10 +306,7 @@ void RandomBlock(byte *output, size_t size) {
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
-// TODO FIXME (dirvine)  is this needed ??
-//  boost::mutex::scoped_lock rng_lock(keygen_mutex);
-  private_key_.clear();
-  public_key_.clear();
+  ClearKeys();
   CryptoPP::RandomPool rand_pool;
   boost::scoped_array<byte> seed(new byte[key_size]);
   RandomBlock(seed.get(), key_size);
