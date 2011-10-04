@@ -57,11 +57,11 @@ namespace crypto {
 
 namespace {
 
-  CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
-    static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
-    return rng;
-  }
-  
+CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
+  static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
+  return rng;
+}
+
 }  // Unnamed namespace
 
 
@@ -76,9 +76,8 @@ std::string XOR(const std::string &first, const std::string &second) {
   std::copy(second.begin(), second.end(), second_char.get());
 
   boost::scoped_array<char> buffer(new char[common_size]);
-  for (size_t i = 0; i < common_size; ++i) {
+  for (size_t i = 0; i < common_size; ++i)
     buffer[i] = first_char[i] ^ second_char[i];
-  }
 
   std::string result(buffer.get(), common_size);
   return result;
@@ -131,7 +130,7 @@ std::string SymmEncrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "failed encryption" <<  e.what();
+    DLOG(ERROR) << "Failed symmetric encryption: " << e.what();
     return "";
   }
 }
@@ -161,7 +160,7 @@ std::string SymmDecrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "Failed symmetric decryption: " << e.what();
     return "";
   }
 }
@@ -178,7 +177,7 @@ std::string AsymEncrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "Failed asymmetric encryption: " << e.what();
     return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
            AsymEncrypt(input, public_key) : "";
   }
@@ -198,7 +197,7 @@ std::string AsymDecrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "Failed asymmetric decryption: " << e.what();
     return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
            AsymDecrypt(input, private_key) : "";
   }
@@ -215,7 +214,7 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "Failed asymmetric signing: " << e.what();
     return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
            AsymSign(input, private_key) : "";
   }
@@ -241,7 +240,7 @@ bool AsymCheckSig(const std::string &input_data,
     return verifier_filter->GetLastResult();
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Crypto::AsymCheckSig - " << e.what();
+    DLOG(ERROR) << "Error validating asymmetric signature: " << e.what();
     return false;
   }
 }
@@ -257,7 +256,7 @@ std::string Compress(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "Failed compressing: " << e.what();
     return "";
   }
 }
@@ -270,7 +269,7 @@ std::string Uncompress(const std::string &input) {
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    DLOG(ERROR) << "Failed uncompressing: " << e.what();
     return "";
   }
 }
@@ -281,8 +280,8 @@ CryptoPP::Integer RandomNumber(size_t bit_count) {
 
 void RandomBlock(byte *output, size_t size) {
 #pragma omp critical
-  { // NOLINT (dirvine)
-  g_srandom_number_generator().GenerateBlock(output, size);
+  {  // NOLINT (dirvine)
+    g_srandom_number_generator().GenerateBlock(output, size);
   }
 }
 
