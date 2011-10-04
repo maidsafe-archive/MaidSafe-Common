@@ -58,6 +58,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/memory_chunk_store.h"
+#include "maidsafe/common/threadsafe_chunk_store.h"
 #include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/version.h"
 
@@ -69,21 +70,25 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace fs = boost::filesystem;
 namespace arg = std::placeholders;
+
 namespace maidsafe {
 
 class BufferedChunkStore: public ChunkStore {
  public:
-  typedef std::function<std::string(fs::path)> FileHashFunc;
-  typedef std::function<std::string(std::string)> MemoryHashFunc;
-  BufferedChunkStore(bool reference_counting, FileHashFunc file_hash_func,
-                     MemoryHashFunc memory_hash_func,
+  // typedef std::function<std::string(fs::path)> FileHashFunc;
+  // typedef std::function<std::string(std::string)> MemoryHashFunc;
+  BufferedChunkStore(bool reference_counting,
                      boost::asio::io_service &asio_service)
       : ChunkStore(reference_counting),
         shared_mutex_(),
         asio_service_(asio_service),
-        memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func)),
-        file_chunk_store_(new FileChunkStore(reference_counting,
-                                             file_hash_func)),
+        memory_chunk_store_(new MemoryChunkStore(
+            false, std::bind(&crypto::Hash<crypto::SHA512>, arg::_1))),
+        chunk_store_(new FileChunkStore(
+            reference_counting, std::bind(&crypto::HashFile<crypto::SHA512>,
+                                          arg::_1))),
+        file_chunk_store_(new ThreadsafeChunkStore(reference_counting,
+                                                   chunk_store_)),
         chunk_names_(),
         transient_chunk_names_(),
         undesirable_chunk_names_(),
@@ -92,7 +97,7 @@ class BufferedChunkStore: public ChunkStore {
 
 bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   return reinterpret_cast<FileChunkStore*>(
-      file_chunk_store_.get())->Init(storage_location, dir_depth);
+      chunk_store_.get())->Init(storage_location, dir_depth);
 }
   /**
    * Retrieves a chunk's content as a string.
@@ -195,11 +200,23 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   std::uintmax_t Size(const std::string &name) const;
 
   /**
+   * Retrieves the total size of the stored chunks.
+   * @return Size in bytes
+   */
+  std::uintmax_t Size() const;
+
+  /**
    * Retrieves the size of a chunk from MemoryChunkStore.
    * @param name Chunk name
    * @return Size in bytes
    */
   std::uintmax_t CacheSize(const std::string &name) const;
+
+  /**
+   * Retrieves the total size of the stored chunks.
+   * @return Size in bytes
+   */
+  std::uintmax_t CacheSize() const;
 
   /**
    * Retrieves the maximum storage capacity available to FileChunkStore.
@@ -314,8 +331,8 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
   void StoreInFile(const std::string &name, const std::string &contents);
-  void StoreInFile(const std::string &name, const fs::path &source_file_name,
-                   bool delete_source_file);
+  /*void StoreInFile(const std::string &name, const fs::path &source_file_name,
+                   bool delete_source_file); */
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
   typedef boost::unique_lock<boost::shared_mutex> UniqueLock;
@@ -324,6 +341,7 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   mutable boost::shared_mutex shared_mutex_;
   boost::asio::io_service &asio_service_;
   std::shared_ptr<ChunkStore> memory_chunk_store_;
+  std::shared_ptr<ChunkStore> chunk_store_;
   std::shared_ptr<ChunkStore> file_chunk_store_;
   mutable std::list<std::string> chunk_names_;
   // List contain info about chunks being copied to file_chunk_store

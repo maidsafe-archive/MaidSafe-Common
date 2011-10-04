@@ -79,6 +79,23 @@ bool BufferedChunkStore::Get(const std::string &name,
 
 bool BufferedChunkStore::Store(const std::string &name,
                                const std::string &content) {
+  {
+    //  Check whether chunk already exist or not
+    bool exist_already(false);
+    SharedLock shared_lock(shared_mutex_);
+    auto it = std::find(transient_chunk_names_.begin(),
+        transient_chunk_names_.end(), name);
+    if (it != transient_chunk_names_.end())
+      exist_already = true;
+    else
+      exist_already = file_chunk_store_->Has(name);
+    if (exist_already) {
+      shared_lock.unlock();
+      if (!content.empty())
+        file_chunk_store_->Store(name, content);
+      return true;
+    }
+  }
   if ((content.size() > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0) || (content.empty()) || (name.empty()))
     return false;
@@ -176,6 +193,24 @@ bool BufferedChunkStore::StoreCached(const std::string &name,
 bool BufferedChunkStore::Store(const std::string &name,
                                const fs::path &source_file_name,
                                bool delete_source_file) {
+  std::string content;
+  ReadFile(source_file_name, &content);
+  {
+    //  Check whether chunk already exist or not
+    bool exist_already(false);
+    SharedLock shared_lock(shared_mutex_);
+    auto it = std::find(transient_chunk_names_.begin(),
+        transient_chunk_names_.end(), name);
+    if (it != transient_chunk_names_.end())
+      exist_already = true;
+    else
+      exist_already = file_chunk_store_->Has(name);
+    if (exist_already) {
+      shared_lock.unlock();
+      file_chunk_store_->Store(name, source_file_name, delete_source_file);
+      return true;
+    }
+  }
   boost::system::error_code ec;
   uintmax_t chunk_size(fs::file_size(source_file_name, ec));
   if ((chunk_size > file_chunk_store_->Capacity() &&
@@ -197,7 +232,8 @@ bool BufferedChunkStore::Store(const std::string &name,
           memory_chunk_store_->Delete(chunk_names_.back());
           chunk_names_.pop_back();
         }
-        if (memory_chunk_store_->Store(name, source_file_name, false)) {
+        if (memory_chunk_store_->Store(name, source_file_name,
+            delete_source_file)) {
           chunk_names_.push_front(name);
           //  Add info for chunk still being copied to file_chunk_store
           transient_chunk_names_.push_back(name);
@@ -223,9 +259,8 @@ bool BufferedChunkStore::Store(const std::string &name,
     return false;
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
-                  (const std::string&, const fs::path &, bool)>(
-          &BufferedChunkStore::StoreInFile), this, name, source_file_name,
-          delete_source_file));
+                  (const std::string&, const std::string&)>(
+          &BufferedChunkStore::StoreInFile), this, name, content));
   return true;
 }
 
@@ -263,6 +298,11 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
 }
 
 bool BufferedChunkStore::Has(const std::string &name) const {
+  SharedLock shared_lock(shared_mutex_);
+  auto it = std::find(transient_chunk_names_.begin(),
+      transient_chunk_names_.end(), name);
+  if (it != transient_chunk_names_.end())
+    return true;
   return file_chunk_store_->Has(name);
 }
 
@@ -281,7 +321,9 @@ bool BufferedChunkStore::Validate(const std::string &name) const {
 
 std::uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
-  if (memory_chunk_store_->Has(name)) {
+  auto it = std::find(transient_chunk_names_.begin(),
+      transient_chunk_names_.end(), name);
+  if (it != transient_chunk_names_.end()) {
     return memory_chunk_store_->Size(name);
   } else {
     shared_lock.unlock();
@@ -289,9 +331,25 @@ std::uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   }
 }
 
+std::uintmax_t BufferedChunkStore::Size() const {
+  SharedLock shared_lock(shared_mutex_);
+  std::uintmax_t size = file_chunk_store_->Size();
+  auto it = transient_chunk_names_.begin();
+  while (it != transient_chunk_names_.end()) {
+    size += CacheSize((*it));
+    ++it;
+  }
+  return size;
+}
+
 std::uintmax_t BufferedChunkStore::CacheSize(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
   return memory_chunk_store_->Size(name);
+}
+
+std::uintmax_t BufferedChunkStore::CacheSize() const {
+  SharedLock shared_lock(shared_mutex_);
+  return memory_chunk_store_->Size();
 }
 
 std::uintmax_t BufferedChunkStore::Capacity() const {
@@ -324,11 +382,13 @@ bool BufferedChunkStore::VacantCache(
 
 std::uintmax_t BufferedChunkStore::Count(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
-  if (memory_chunk_store_->Has(name)) {
+  auto it = std::find(transient_chunk_names_.begin(),
+      transient_chunk_names_.end(), name);
+  if (it != transient_chunk_names_.end()) {
     return memory_chunk_store_->Count(name);
   } else {
     shared_lock.unlock();
-    return file_chunk_store_->Count();
+    return file_chunk_store_->Count(name);
   }
 }
 
@@ -348,7 +408,8 @@ std::uintmax_t BufferedChunkStore::CacheCount() const {
 }
 
 bool BufferedChunkStore::Empty() const {
-  return file_chunk_store_->Empty();
+  SharedLock shared_lock(shared_mutex_);
+  return file_chunk_store_->Empty() && transient_chunk_names_.empty();
 }
 
 bool BufferedChunkStore::CacheEmpty() const {
@@ -363,6 +424,7 @@ void BufferedChunkStore::Clear() {
 void BufferedChunkStore::ClearCache() {
   UniqueLock unique_lock(shared_mutex_);
   chunk_names_.clear();
+  transient_chunk_names_.clear();
   memory_chunk_store_->Clear();
 }
 
@@ -382,7 +444,7 @@ void BufferedChunkStore::StoreInFile(const std::string &name,
   cond_var_any_.notify_one();
 }
 
-void BufferedChunkStore::StoreInFile(const std::string &name,
+/*void BufferedChunkStore::StoreInFile(const std::string &name,
                                      const fs::path &source_file_name,
                                      bool delete_source_file) {
   file_chunk_store_->Store(name, source_file_name, delete_source_file);
@@ -392,5 +454,5 @@ void BufferedChunkStore::StoreInFile(const std::string &name,
   if (it != transient_chunk_names_.end())
     transient_chunk_names_.erase(it);
   cond_var_any_.notify_one();
-}
+}*/
 }  // namespace maidsafe
