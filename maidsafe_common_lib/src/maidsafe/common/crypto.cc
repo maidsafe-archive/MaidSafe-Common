@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include <omp.h>
 #include <memory>
+#include <algorithm>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -98,8 +99,8 @@ std::string SecurePassword(const std::string &password,
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
   byte purpose = 0;  // unused in this pbkdf implementation
   CryptoPP::SecByteBlock context(salt.size() + label.size());
-  memcpy(&context[0], salt.data(), salt.size());
-  memcpy(&context[salt.size()], label.data(), label.size());
+  std::copy_n(salt.data(), salt.size(), &context[0]);
+  std::copy_n(label.data(),  label.size(), &context[salt.size()]);
   pbkdf.DeriveKey(derived, derived.size(), purpose,
                   reinterpret_cast<const byte*>(password.data()),
                   password.size(), context.data(), context.size(), iter);
@@ -143,8 +144,11 @@ std::string SymmDecrypt(const std::string &input,
                         const std::string &key,
                         const std::string &initialisation_vector) {
   if (key.size() < AES256_KeySize ||
-      initialisation_vector.size() < AES256_IVSize)
+      initialisation_vector.size() < AES256_IVSize ||
+     input.empty()) {
+    DLOG(WARNING) << " undersized key or  iv or input";
     return "";
+  }
 
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -300,7 +304,8 @@ void RandomBlock(byte *output, size_t size) {
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
-// TODO FIXME (dirvine)  boost::mutex::scoped_lock rng_lock(keygen_mutex);
+// TODO FIXME (dirvine)  is this needed ??
+//  boost::mutex::scoped_lock rng_lock(keygen_mutex);
   private_key_.clear();
   public_key_.clear();
   CryptoPP::RandomPool rand_pool;

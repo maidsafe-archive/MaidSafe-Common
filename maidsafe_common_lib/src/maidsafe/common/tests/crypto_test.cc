@@ -294,7 +294,7 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
 
 TEST(CryptoTest, BEH_AsymEncrypt) {
   // Set up data
-#pragma omp parallel
+  #pragma omp parallel
   { // NOLINT (dirvine)
     
     RsaKeyPair rsakp;
@@ -333,7 +333,7 @@ TEST(CryptoTest, BEH_AsymEncrypt) {
     // Check using invalid input data size (> 470 chars)
     const std::string kInvalidData(kUnencrypted + "A");
     EXPECT_TRUE(AsymEncrypt(kInvalidData, kPublicKey).empty());
-}
+  }
 }
 
 TEST(CryptoTest, BEH_AsymSign) {
