@@ -296,8 +296,10 @@ TEST(CryptoTest, BEH_AsymEncrypt) {
   // Set up data
 #pragma omp parallel
   { // NOLINT (dirvine)
+    
     RsaKeyPair rsakp;
     rsakp.GenerateKeys(4096);
+    
     const std::string kPublicKey(rsakp.public_key());
     const std::string kPrivateKey(rsakp.private_key());
     rsakp.GenerateKeys(4096);

@@ -133,7 +133,7 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
 }
 
 bool MemoryChunkStore::Has(const std::string &name) const {
-  return chunks_.count(name) > 0;
+  return chunks_.find(name) != chunks_.end();
 }
 
 bool MemoryChunkStore::Validate(const std::string &name) const {

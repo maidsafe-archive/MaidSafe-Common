@@ -59,6 +59,7 @@ namespace crypto {
 namespace {
 
 boost::mutex rng_mutex;
+boost::mutex keygen_mutex;
 
 CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
   static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
@@ -170,6 +171,10 @@ std::string SymmDecrypt(const std::string &input,
 
 std::string AsymEncrypt(const std::string &input,
                         const std::string &public_key) {
+  if (input.empty() || public_key.empty()) {
+    DLOG(WARNING) << " empty key or input";
+    return "";
+  }
   try {
     CryptoPP::StringSource key(public_key, true);
     CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(key);
@@ -188,8 +193,10 @@ std::string AsymEncrypt(const std::string &input,
 
 std::string AsymDecrypt(const std::string &input,
                         const std::string &private_key) {
-  if (input.empty())
+  if (input.empty() || private_key.empty()) {
+    DLOG(WARNING) << " empty key or input";
     return "";
+  }
   try {
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(key);
@@ -207,6 +214,10 @@ std::string AsymDecrypt(const std::string &input,
 }
 
 std::string AsymSign(const std::string &input, const std::string &private_key) {
+    if (input.empty() || private_key.empty()) {
+    DLOG(WARNING) << " empty key or input";
+    return "";
+    }
   try {
     CryptoPP::StringSource key(private_key, true);
     CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Signer signer(key);
@@ -289,18 +300,17 @@ void RandomBlock(byte *output, size_t size) {
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
+// TODO FIXME (dirvine)  boost::mutex::scoped_lock rng_lock(keygen_mutex);
   private_key_.clear();
   public_key_.clear();
   CryptoPP::RandomPool rand_pool;
   boost::scoped_array<byte> seed(new byte[key_size]);
   RandomBlock(seed.get(), key_size);
   rand_pool.IncorporateEntropy(seed.get(), key_size);
-
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
   CryptoPP::StringSink private_key(private_key_);
   decryptor.DEREncode(private_key);
   private_key.MessageEnd();
-
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(decryptor);
   CryptoPP::StringSink public_key(public_key_);
   encryptor.DEREncode(public_key);
