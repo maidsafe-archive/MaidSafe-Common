@@ -47,6 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef __MSVC__
 #  pragma warning(pop)
 #endif
+#include "boost/thread/mutex.hpp"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
@@ -56,6 +57,8 @@ namespace maidsafe {
 namespace crypto {
 
 namespace {
+
+boost::mutex rng_mutex;
 
 CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
   static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
@@ -275,14 +278,14 @@ std::string Uncompress(const std::string &input) {
 }
 
 CryptoPP::Integer RandomNumber(size_t bit_count) {
+  boost::mutex::scoped_lock rng_lock(rng_mutex);
   return CryptoPP::Integer(g_srandom_number_generator(), bit_count);
 }
 
 void RandomBlock(byte *output, size_t size) {
-#pragma omp critical
-  {  // NOLINT (dirvine)
+  boost::mutex::scoped_lock rng_lock(rng_mutex);
     g_srandom_number_generator().GenerateBlock(output, size);
-  }
+  
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
