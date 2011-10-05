@@ -70,7 +70,13 @@ boost::mutex random_number_generator_mutex;
 bool RSA::GenerateKeyPair(std::shared_ptr<RSAkeys> keypair)
 {
   CryptoPP::InvertibleRSAFunction parameters;
+  try {
   parameters.GenerateRandomWithKeySize(rng(), 4096);
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed Generating keypair: " << e.what();
+    return false;
+  }
   CryptoPP::RSA::PrivateKey priv_key(parameters);
   CryptoPP::RSA::PublicKey pub_key(parameters);
   keypair->priv_key = priv_key;
@@ -84,6 +90,10 @@ std::string RSA::Encrypt(const std::string& data,
 {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
+    return "";
+  }
+  if (!pub_key.Validate(rng(),0)) {
+    DLOG(ERROR) << " Bad public key ";
     return "";
   }
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(pub_key);
@@ -176,11 +186,17 @@ bool RSA::CheckSignature(const std::string& data,
   }
   
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(pub_key);
-
+  try {
   return verifier.VerifyMessage(reinterpret_cast<const byte *>(data.c_str()),
                              data.size(),
                              reinterpret_cast<const byte *>(signature.c_str()),
                              signature.size());
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed signature check: " << e.what();
+    return false;
+  }
+  return true;
 }
 
 
