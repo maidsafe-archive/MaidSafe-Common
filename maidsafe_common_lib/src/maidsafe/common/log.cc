@@ -29,6 +29,7 @@ bool FLAGS_ms_logging_user = true;
 bool FLAGS_ms_logging_benchmark = true;
 
 bool FLAGS_ms_logging_common = true;
+bool FLAGS_ms_logging_transport = true;
 bool FLAGS_ms_logging_encrypt = true;
 bool FLAGS_ms_logging_dht = true;
 bool FLAGS_ms_logging_pki = true;
