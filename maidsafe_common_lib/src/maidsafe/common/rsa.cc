@@ -1,0 +1,191 @@
+/* Copyright (c) 2009 maidsafe.net limited
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+    * Neither the name of the maidsafe.net limited nor the names of its
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#include "maidsafe/common/rsa.h"
+
+#include <memory>
+
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#  pragma warning(disable: 4702)
+#endif
+
+#include "boost/scoped_array.hpp"
+#include "boost/thread/mutex.hpp"
+#include "cryptopp/hex.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/modes.h"
+#include "cryptopp/rsa.h"
+#include "cryptopp/osrng.h"
+#include "cryptopp/pssr.h"
+#include "cryptopp/cryptlib.h"
+#include "boost/assert.hpp"
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/platform_config.h"
+#include <boost/concept_check.hpp>
+
+namespace maidsafe {
+
+namespace rsa {
+
+namespace {
+
+CryptoPP::RandomNumberGenerator &rng() {
+  static CryptoPP::AutoSeededRandomPool random_number_generator;
+  return random_number_generator;
+ }
+
+boost::mutex random_number_generator_mutex;
+
+}  // Unnamed namespace
+
+bool RSA::GenerateKeyPair(std::shared_ptr<RSAkeys> keypair)
+{
+  CryptoPP::InvertibleRSAFunction parameters;
+  parameters.GenerateRandomWithKeySize(rng(), 4096);
+  CryptoPP::RSA::PrivateKey priv_key(parameters);
+  CryptoPP::RSA::PublicKey pub_key(parameters);
+  keypair->priv_key = priv_key;
+  keypair->pub_key = pub_key;
+  return (keypair->priv_key.Validate(rng(), 2) &&
+          keypair->pub_key.Validate(rng(), 2));
+}
+
+std::string RSA::Encrypt(const std::string& data,
+                         const CryptoPP::PublicKey& pub_key)
+{
+  if (data.empty()) {
+    DLOG(ERROR) << " No data ";
+    return "";
+  }
+  CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(pub_key);
+  std::string cipher;
+  CryptoPP::StringSource(data, true,
+    new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
+      new CryptoPP::StringSink( cipher )
+    ) // PK_EncryptorFilter
+      ); // StringSource
+  if (data == cipher) {
+    DLOG(ERROR) << " failed encryption ";
+    return "";
+  }
+  return cipher;
+}
+
+std::string RSA::Decrypt(const std::string& data,
+                         const CryptoPP::PrivateKey& priv_key)
+{
+  if (data.empty()) {
+    DLOG(ERROR) << " No data ";
+    return "";
+  }
+  if (!priv_key.Validate(rng(),0)) {
+    DLOG(ERROR) << " Bad private key ";
+    return "";
+  }
+   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(priv_key);
+   std::string recovered;
+   try {
+   CryptoPP::StringSource(data, true,
+    new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
+      new CryptoPP::StringSink(recovered)
+     ) // PK_DecryptorFilter
+      ); // StringSource
+   } catch (CryptoPP::Exception &e) {
+     DLOG(ERROR) << "decryption failed";
+     e.what();
+     return "";
+   }
+   if (data == recovered) {
+    DLOG(ERROR) << " failed decryption ";
+    return "";
+   }
+   return recovered;
+}
+
+bool RSA::Sign(const std::string& data,
+               std::shared_ptr< std::string > signature,
+               const CryptoPP::PrivateKey& priv_key)
+{
+  if (!priv_key.Validate(rng(),0)) {
+    DLOG(ERROR) << " Bad private key ";
+    return false;
+  }
+  if (data.empty()) {
+    DLOG(ERROR) << " No data ";
+    return false;
+  }
+  
+  CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(priv_key);
+  try {
+    CryptoPP::StringSource(data, true, new CryptoPP::SignerFilter(
+                               rng(), signer,
+                      new CryptoPP::StringSink(*signature)));
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed asymmetric signing: " << e.what();
+    return false;
+  }
+  return true;
+}
+
+
+bool RSA::CheckSignature(const std::string& data,
+                         const std::string& signature,
+                         const CryptoPP::PublicKey& pub_key)
+{
+  if (!pub_key.Validate(rng(),0)) {
+    DLOG(ERROR) << " Bad public key ";
+    return false;
+  }
+  if (data.empty()) {
+    DLOG(ERROR) << " No data ";
+    return false;
+  }
+  if (signature.empty()) {
+    DLOG(ERROR) << " No Signature ";
+    return false;
+  }
+  
+  CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(pub_key);
+
+  return verifier.VerifyMessage(reinterpret_cast<const byte *>(data.c_str()),
+                             data.size(),
+                             reinterpret_cast<const byte *>(signature.c_str()),
+                             signature.size());
+}
+
+
+
+
+}  // namespace rsa
+
+}  // namespace maidsafe
