@@ -33,7 +33,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 
-
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
@@ -196,7 +195,7 @@ TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   {  // NOLINT (dirvine)
     test::GenerateRandomStrings(string_count, string_size);
   }
-  --thread_count; // to satisfy compiler
+  --thread_count;  // to satisfy compiler
 }
 
 TEST(UtilsTest, BEH_SRandomStringMultiThread) {
@@ -207,7 +206,7 @@ TEST(UtilsTest, BEH_SRandomStringMultiThread) {
   {  // NOLINT (dirvine)
     test::GenerateSRandomStrings(string_count, string_size);
   }
-  --thread_count; // to satisfy compiler
+  --thread_count;  // to satisfy compiler
 }
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {
