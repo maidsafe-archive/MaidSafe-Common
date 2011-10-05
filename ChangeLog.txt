@@ -1,5 +1,17 @@
-v0.10.02 (WIP)
+v0.10.03 (WIP)
 --------------
+
+
+v0.10.02
+--------
+* Added securifier and tests.
+* Improved performance of crypto::XOR function.
+* Added MaidSafe-Transport logging.
+* Added reference_counting for file chunk store.
+* Implemented BufferedChunkStore for coupling file and memory chunk stores.
+* Added Breakpad callBack function handlers.
+* Now running dashboard script for LIFSTUFF & LIFESTUFF_GUI.
+* Added CMake generator handling to clone script.
 
 
 v0.10.01

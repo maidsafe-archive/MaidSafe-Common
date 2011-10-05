@@ -43,7 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1002
+#if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -158,6 +158,7 @@ extern bool FLAGS_ms_logging_user;
 extern bool FLAGS_ms_logging_benchmark;
 
 extern bool FLAGS_ms_logging_common;
+extern bool FLAGS_ms_logging_transport;
 extern bool FLAGS_ms_logging_encrypt;
 extern bool FLAGS_ms_logging_dht;
 extern bool FLAGS_ms_logging_pki;

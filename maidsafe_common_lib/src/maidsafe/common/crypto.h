@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
 #include <string>
+#include <algorithm>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -50,7 +51,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1002
+#if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -75,8 +76,8 @@ typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
 const uint16_t AES256_KeySize = 32;  /**< size in bytes. */
-const uint16_t  AES256_IVSize = 16;  /**< size in bytes. */
-const uint16_t  kMaxCompressionLevel = 9;
+const uint16_t AES256_IVSize = 16;  /**< size in bytes. */
+const uint16_t kMaxCompressionLevel = 9;
 
 /** XOR one string with another.
  *  The function performs an bitwise XOR on each char of first with the
