@@ -27,33 +27,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/securifier.h"
 #include <algorithm>
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/crypto.h"
 
 namespace maidsafe {
 
-Securifier::Securifier(const std::string &signing_public_key_id,
-                       const std::string &signing_public_key,
-                       const std::string &signing_private_key,
-                       const std::string &asymmetric_decryption_public_key_id,
-                       const std::string &asymmetric_decryption_public_key,
-                       const std::string &asymmetric_decryption_private_key)
-    : kSigningKeyId_(signing_public_key_id),
-      kSigningPublicKey_(signing_public_key),
-      kSigningPrivateKey_(signing_private_key),
-      kAsymmetricDecryptionKeyId_(asymmetric_decryption_public_key_id),
-      kAsymmetricDecryptionPublicKey_(asymmetric_decryption_public_key),
-      kAsymmetricDecryptionPrivateKey_(asymmetric_decryption_private_key),
-      parameters_() {}
+  Securifier::Securifier(rsa::RSAkeys &sign_keys, rsa::RSAkeys &decrypt_keys)
+  : sign_keys_(sign_keys),
+    decrypt_keys_(decrypt_keys),
+    parameters_() {}
 
-Securifier::Securifier(const std::string &public_key_id,
-                       const std::string &public_key,
-                       const std::string &private_key)
-    : kSigningKeyId_(public_key_id),
-      kSigningPublicKey_(public_key),
-      kSigningPrivateKey_(private_key),
-      kAsymmetricDecryptionKeyId_(public_key_id),
-      kAsymmetricDecryptionPublicKey_(public_key),
-      kAsymmetricDecryptionPrivateKey_(private_key),
+      Securifier::Securifier(rsa::RSAkeys &keys)
+    : sign_keys_(keys),
+      decrypt_keys_(keys),
       parameters_() {}
 
 Securifier::~Securifier() {}
@@ -74,7 +60,10 @@ std::vector<std::string> Securifier::parameters() const {
 }
 
 std::string Securifier::Sign(const std::string &value) const {
-  return crypto::AsymSign(value, kSigningPrivateKey_);
+  std::shared_ptr<std::string> result;
+  if(rsa_.Sign(value, result, sign_keys_.priv_key))
+    return *result;
+  return "";
 }
 
 std::string Securifier::SignWithParameters(const std::string &value) const {
@@ -139,28 +128,14 @@ std::string Securifier::AsymmetricDecrypt(
   return crypto::AsymDecrypt(encrypted_value, kAsymmetricDecryptionPrivateKey_);
 }
 
-std::string Securifier::kSigningKeyId() const {
+std::string Securifier::kSigningKeys() const {
   return kSigningKeyId_;
 }
 
-std::string Securifier::kSigningPublicKey() const {
-  return kSigningPublicKey_;
-}
-
-std::string Securifier::kSigningPrivateKey() const {
-  return kSigningPrivateKey_;
-}
-
-std::string Securifier::kAsymmetricDecryptionKeyId() const {
+std::string Securifier::kAsymmetricDecryptionKeys() const {
   return kAsymmetricDecryptionKeyId_;
 }
 
-std::string Securifier::kAsymmetricDecryptionPublicKey() const {
-  return kAsymmetricDecryptionPublicKey_;
-}
 
-std::string Securifier::kAsymmetricDecryptionPrivateKey() const {
-  return kAsymmetricDecryptionPrivateKey_;
-}
 
 }  // namespace maidsafe

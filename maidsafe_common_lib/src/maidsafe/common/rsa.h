@@ -65,12 +65,14 @@ namespace rsa {
 
 struct RSAkeys {
  public:
-  RSAkeys() : priv_key(), pub_key() {}
+  RSAkeys() : identity(), priv_key(), pub_key(), validator() {}
+  std::string identity;  
   CryptoPP::RSA::PrivateKey priv_key;
   CryptoPP::RSA::PublicKey pub_key;
- private:
-  RSAkeys &operator=(const RSAkeys&);
-  RSAkeys(const RSAkeys&);
+  std::string validator;  // certificate, additional signature etc. 
+//  private:
+//   RSAkeys &operator=(const RSAkeys&);
+//   RSAkeys(const RSAkeys&);
 };
 
 class RSA {
@@ -91,7 +93,7 @@ class RSA {
  private:
   RSA &operator=(const RSA&);
   RSA(const RSA&);
-  uint16_t key_size_; // no setters and getters as we don't give options
+  uint16_t key_size_;  // no setters and getters as we don't give options
 };
 
 

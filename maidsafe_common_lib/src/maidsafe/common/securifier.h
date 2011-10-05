@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <string>
 #include <vector>
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1003
@@ -50,34 +51,19 @@ class Securifier {
  public:
 
   /** Constructor where keys for signing and decrypting are different.
-   *  @param[in] signing_public_key_id ID of public key of pair used to sign the
-   *             data.
-   *  @param[in] signing_public_key Public key of pair used to sign the data.
-   *  @param[in] signing_private_key Private key used to sign the data.
-   *  @param[in] asymmetric_decryption_public_key_id ID of public key of pair
+   *  @param[in] signing_key ID and keys pair used to sign the data.
+   *  @param[in] asymmetric_decryption_key ID of public key of pair
    *             used to asymmetrically decrypt the data.
-   *  @param[in] asymmetric_decryption_public_key Public key of pair used to
-   *             asymmetrically decrypt the data.
-   *  @param[in] asymmetric_decryption_private_key Private key used to
-   *             asymmetrically decrypt the data. */
-  Securifier(const std::string &signing_public_key_id,
-             const std::string &signing_public_key,
-             const std::string &signing_private_key,
-             const std::string &asymmetric_decryption_public_key_id,
-             const std::string &asymmetric_decryption_public_key,
-             const std::string &asymmetric_decryption_private_key);
+ */
+  Securifier(rsa::RSAkeys &sign_keys,
+             rsa::RSAkeys &decrypt_keys);
 
   /** Constructor where keys for signing and decrypting are the same.
-   *  @param[in] public_key_id ID of public key of pair used to sign and
+   *  @param[in] keys ID of public key of pair used to sign and
    *             asymmetrically decrypt the data.
-   *  @param[in] public_key Public key of pair used to sign and
-   *             asymmetrically decrypt the data.
-   *  @param[in] private_key Private key used to sign and asymmetrically decrypt
-   *             the data. */
-  Securifier(const std::string &public_key_id,
-             const std::string &public_key,
-             const std::string &private_key);
-
+ */
+  Securifier(rsa::RSAkeys &keys);
+  
   /** Destructor. */
   virtual ~Securifier();
 
@@ -159,9 +145,7 @@ class Securifier {
    *  @return true if all tested data is valid, else false. */
   virtual bool ValidateWithParameters(const std::string &value,
                                       const std::string &value_signature,
-                                      const std::string &public_key_id,
-                                      const std::string &public_key,
-                                      const std::string &public_key_validation,
+                                      const rsa::RSAkeys & keys,
                                       const std::string &kademlia_key) const;
 
   /** Asymmetrically decrypts the value using kAsymmetricDecryptionPrivateKey_.
@@ -172,23 +156,18 @@ class Securifier {
 
   // @{
   /** Getters for cryptographic keys. */
-  std::string kSigningKeyId() const;
-  std::string kSigningPublicKey() const;
-  std::string kSigningPrivateKey() const;
-  std::string kAsymmetricDecryptionKeyId() const;
-  std::string kAsymmetricDecryptionPublicKey() const;
-  std::string kAsymmetricDecryptionPrivateKey() const;
+  rsa::RSAkeys kSigningKeys() const;
+  rsa::RSAkeys kAsymmetricDecryptionKeys() const;
   // @}
 
  protected:
-  const std::string kSigningKeyId_, kSigningPublicKey_, kSigningPrivateKey_;
-  const std::string kAsymmetricDecryptionKeyId_;
-  const std::string kAsymmetricDecryptionPublicKey_;
-  const std::string kAsymmetricDecryptionPrivateKey_;
+  const rsa::RSAkeys sign_keys_;
+  const rsa::RSAkeys decrypt_keys_;
   std::vector<std::string> parameters_;
 
  private:
   Securifier& operator=(Securifier const&);
+  rsa::RSA rsa_;
 };
 
 }  // namespace maidsafe
