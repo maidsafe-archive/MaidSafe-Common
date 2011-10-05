@@ -176,6 +176,7 @@ ENDIF()
 IF(NOT ALL_REPOSITORIES)
   SET(ALL_REPOSITORIES
         MaidSafe-Common
+        MaidSafe-Transport
         MaidSafe-Encrypt
         MaidSafe-DHT
         PKI
@@ -187,6 +188,7 @@ IF(NOT ALL_REPOSITORIES)
         LifeStuff-GUI
         SigmoidCore
         SigmoidPro
+        MaidSafe-Breakpad
 #        Deduplicator-Gauge
         )
 ENDIF()
@@ -196,6 +198,7 @@ SET(NON_INSTALL_REPOSITORIES
       LifeStuff-GUI
       SigmoidCore
       SigmoidPro
+      MaidSafe-Breakpad
 #        Deduplicator-Gauge
       )
 

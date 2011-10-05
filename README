@@ -1,2 +1,1 @@
-To build the third party libs, create a folder anywhere, then run:
-  cmake <path to third_party_libs/CMakeLists.txt>
+To build the libraries, see https://github.com/maidsafe/MaidSafe-Common/wiki/Developer-Build-Instructions
