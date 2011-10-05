@@ -1,4 +1,4 @@
-/* Copyright (c) 2009 maidsafe.net limited
+/* Copyright (c) 2011 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -28,22 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_BREAKPAD_H_
 #define MAIDSAFE_COMMON_BREAKPAD_H_
 
-#include <cstdint>
 #include <string>
-
-#ifdef __MSVC__
-#  pragma warning(push, 1)
-#endif
 
 #ifdef WIN32
 #  include "breakpad/client/windows/handler/exception_handler.h"
 #else
 #  include "breakpad/client/linux/handler/exception_handler.h"
-#endif
-
-#ifdef __MSVC__
-#  pragma warning(pop)
-#  pragma warning(disable: 4505)
 #endif
 
 #include "maidsafe/common/version.h"
@@ -52,7 +42,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
-
 
 
 namespace maidsafe {
@@ -79,7 +68,7 @@ struct ProjectInfo {
   std::string name;
 };
 
-}   // namespace crash_report
+}  // namespace crash_report
 
 }  // namespace maidsafe
 
