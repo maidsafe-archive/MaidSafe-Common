@@ -89,7 +89,8 @@ bool DumpCallback(const char* dump_path,
   int max_path_length = PATH_MAX;
   boost::scoped_array<char> current_path(new char[max_path_length]);
   while (current_modulepath_length <= max_path_length) {
-    current_modulepath_length = readlink("/proc/self/exe", current_path,
+    current_modulepath_length = readlink("/proc/self/exe",
+                                         current_path.get(),
                                          PATH_MAX);
     if (current_modulepath_length >= max_path_length) {
       max_path_length *= 2;
@@ -108,12 +109,16 @@ bool DumpCallback(const char* dump_path,
     std::string command = crash_reporter.string() + " " +
                           full_dump_path.string() + " " + project->name + " " +
                           boost::lexical_cast<std::string>(project->version);
-    std::system(command.c_str());
+    int result(std::system(command.c_str()));
+    if (result != 0)
+      DLOG(ERROR) << "Crash Reporter execution failed.";
   } else if (fs::is_regular_file(crash_reporter_debug)) {
     std::string command = crash_reporter_debug.string() + " " +
                           full_dump_path.string() + " " + project->name + " " +
                           boost::lexical_cast<std::string>(project->version);
-    std::system(command.c_str());
+    int result(std::system(command.c_str()));
+    if (result != 0)
+      DLOG(ERROR) << "Crash Reporter Debug execution failed.";
   } else {
     DLOG(ERROR) << "Crash Reporter Not Found.";
   }
