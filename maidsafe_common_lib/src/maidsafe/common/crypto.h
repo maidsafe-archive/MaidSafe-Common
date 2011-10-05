@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
+#  pragma warning(disable: 4702)
 #endif
 
 #include "boost/filesystem/path.hpp"
@@ -41,6 +42,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/integer.h"
+#include "cryptopp/pubkey.h"
+#include "cryptopp/rsa.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
 #include "cryptopp/aes.h"
@@ -52,7 +55,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/version.h"
-#include <cryptopp/rsa.h>
 
 #if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
@@ -273,29 +275,30 @@ class RsaKeyPair {
 };
 
 struct RSAkeys {
-public:
-  RSAkeys &operator =(const RSAkeys &) = delete;
-  RSAkeys (const RSAkeys&) = delete;
+ public:
   RSAkeys() : priv_key(), pub_key() {}
   CryptoPP::RSA::PrivateKey priv_key;
   CryptoPP::RSA::PublicKey pub_key;
+ private:
+  RSAkeys &operator=(const RSAkeys&);
+  RSAkeys(const RSAkeys&);
 };
 
 class RSA {
-  RSA &operator =(const RSA &) = delete;
-  RSA (const RSA&) = delete;
+ public:
   RSA() {}
-  bool GenerateKeyPair(RSAkeys& keypair);
+  bool GenerateKeyPair(RSAkeys &keypair);
   bool Sign(std::string &data,
-       std::string &signature,
-       CryptoPP::PublicKey &pub_key);
+            std::string &signature,
+            CryptoPP::PublicKey &pub_key);
   bool CheckSignature(std::string &data,
-                 std::string &signature,
-                 CryptoPP::PublicKey &pub_key);
+                      std::string &signature,
+                      CryptoPP::PublicKey &pub_key);
   std::string Encrypt(std::string data, CryptoPP::PublicKey &pub_key);
   std::string Decrypt(std::string data, CryptoPP::PrivateKey &priv_key);
  private:
-
+  RSA &operator=(const RSA&);
+  RSA(const RSA&);
 };
 
 
