@@ -26,7 +26,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/crypto.h"
-#include <omp.h>
 #include <memory>
 #include <algorithm>
 
