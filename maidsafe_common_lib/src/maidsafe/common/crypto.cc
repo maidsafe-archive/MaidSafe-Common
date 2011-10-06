@@ -55,18 +55,6 @@ namespace maidsafe {
 
 namespace crypto {
 
-namespace {
-
-boost::mutex g_rng_mutex, g_keygen_mutex;
-
-CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
-  static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
-  return rng;
-}
-
-}  // Unnamed namespace
-
-
 std::string XOR(const std::string &first, const std::string &second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
@@ -176,97 +164,6 @@ std::string SymmDecrypt(const std::string &input,
   }
 }
 
-std::string AsymEncrypt(const std::string &input,
-                        const std::string &public_key) {
-  if (input.empty() || public_key.empty()) {
-    DLOG(WARNING) << "Empty key or input.";
-    return "";
-  }
-  try {
-    CryptoPP::StringSource key(public_key, true);
-    CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(key);
-    std::string result;
-    CryptoPP::StringSource(input, true, new CryptoPP::PK_EncryptorFilter(
-        g_srandom_number_generator(), encryptor,
-        new CryptoPP::StringSink(result)));
-    return result;
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed asymmetric encryption: " << e.what();
-    return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
-           AsymEncrypt(input, public_key) : "";
-  }
-}
-
-std::string AsymDecrypt(const std::string &input,
-                        const std::string &private_key) {
-  if (input.empty() || private_key.empty()) {
-    DLOG(WARNING) << "Empty key or input.";
-    return "";
-  }
-  try {
-    CryptoPP::StringSource key(private_key, true);
-    CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(key);
-    std::string result;
-    CryptoPP::StringSource(input, true, new CryptoPP::PK_DecryptorFilter(
-        g_srandom_number_generator(), decryptor,
-        new CryptoPP::StringSink(result)));
-    return result;
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed asymmetric decryption: " << e.what();
-    return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
-           AsymDecrypt(input, private_key) : "";
-  }
-}
-
-std::string AsymSign(const std::string &input, const std::string &private_key) {
-  if (input.empty() || private_key.empty()) {
-    DLOG(WARNING) << "Empty key or input.";
-    return "";
-  }
-
-  try {
-    CryptoPP::StringSource key(private_key, true);
-    CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Signer signer(key);
-    std::string result;
-    CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(
-                           g_srandom_number_generator(), signer,
-                           new CryptoPP::StringSink(result)));
-    return result;
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed asymmetric signing: " << e.what();
-    return (e.GetErrorType() == CryptoPP::Exception::IO_ERROR) ?
-           AsymSign(input, private_key) : "";
-  }
-}
-
-bool AsymCheckSig(const std::string &input_data,
-                  const std::string &input_signature,
-                  const std::string &public_key) {
-  try {
-    CryptoPP::StringSource key(public_key, true);
-    CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Verifier
-        verifier(key);
-    CryptoPP::StringSource signature_string(input_signature, true);
-    if (signature_string.MaxRetrievable() != verifier.SignatureLength())
-      return false;
-    const std::unique_ptr<CryptoPP::SecByteBlock> kSignature(
-        new CryptoPP::SecByteBlock(verifier.SignatureLength()));
-    signature_string.Get(*kSignature, kSignature->size());
-    CryptoPP::SignatureVerificationFilter *verifier_filter(
-        new CryptoPP::SignatureVerificationFilter(verifier));
-    verifier_filter->Put(*kSignature, verifier.SignatureLength());
-    CryptoPP::StringSource ssource(input_data, true, verifier_filter);
-    return verifier_filter->GetLastResult();
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Error validating asymmetric signature: " << e.what();
-    return false;
-  }
-}
-
 std::string Compress(const std::string &input,
                      const uint16_t &compression_level) {
   if (compression_level > kMaxCompressionLevel)
@@ -294,35 +191,6 @@ std::string Uncompress(const std::string &input) {
     DLOG(ERROR) << "Failed uncompressing: " << e.what();
     return "";
   }
-}
-
-CryptoPP::Integer RandomNumber(size_t bit_count) {
-  boost::mutex::scoped_lock rng_lock(g_rng_mutex);
-  return CryptoPP::Integer(g_srandom_number_generator(), bit_count);
-}
-
-void RandomBlock(byte *output, size_t size) {
-  boost::mutex::scoped_lock rng_lock(g_rng_mutex);
-  g_srandom_number_generator().GenerateBlock(output, size);
-}
-
-void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
-  ClearKeys();
-  CryptoPP::RandomPool rand_pool;
-  boost::scoped_array<byte> seed(new byte[key_size]);
-  RandomBlock(seed.get(), key_size);
-  {
-    boost::mutex::scoped_lock rng_lock(g_keygen_mutex);
-    rand_pool.IncorporateEntropy(seed.get(), key_size);
-  }
-  CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
-  CryptoPP::StringSink private_key(private_key_);
-  decryptor.DEREncode(private_key);
-  private_key.MessageEnd();
-  CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(decryptor);
-  CryptoPP::StringSink public_key(public_key_);
-  encryptor.DEREncode(public_key);
-  public_key.MessageEnd();
 }
 
 }  // namespace crypto

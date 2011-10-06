@@ -135,20 +135,6 @@ std::string BytesToBinarySiUnits(const uint64_t &num) {
   return BytesToSiUnits<BinaryUnit>(num);
 }
 
-int32_t SRandomInt32() {
-  int32_t result(0);
-  bool success = false;
-  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
-  while (!success) {
-    CryptoPP::Integer rand_num(crypto::RandomNumber(32));
-    if (rand_num.IsConvertableToLong()) {
-      result = static_cast<int32_t>(
-               rand_num.AbsoluteValue().ConvertToLong());
-      success = true;
-    }
-  }
-  return result;
-}
 
 int32_t RandomInt32() {
   boost::uniform_int<> uniform_distribution(0,
@@ -159,34 +145,11 @@ int32_t RandomInt32() {
   return uni();
 }
 
-uint32_t SRandomUint32() {
-  return static_cast<uint32_t>(SRandomInt32());
-}
 
 uint32_t RandomUint32() {
   return static_cast<uint32_t>(RandomInt32());
 }
 
-std::string SRandomString(const size_t &length) {
-  std::string random_string;
-  random_string.reserve(length);
-  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
-  while (random_string.size() < length) {
-#ifdef MAIDSAFE_APPLE
-     size_t iter_length = (length - random_string.size()) < 65536U ?
-                          (length - random_string.size()) : 65536U;
-#else
-    size_t iter_length = std::min(length - random_string.size(), size_t(65536));
-#endif
-    boost::scoped_array<byte> random_bytes(new byte[iter_length]);
-    crypto::RandomBlock(random_bytes.get(), iter_length);
-    std::string random_substring;
-    CryptoPP::StringSink string_sink(random_substring);
-    string_sink.Put(random_bytes.get(), iter_length);
-    random_string += random_substring;
-  }
-  return random_string;
-}
 
 std::string RandomString(const size_t &length) {
   boost::uniform_int<> uniform_distribution(0, 255);
