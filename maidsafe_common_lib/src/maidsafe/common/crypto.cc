@@ -26,7 +26,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/crypto.h"
-#include <omp.h>
 #include <memory>
 #include <algorithm>
 
@@ -58,9 +57,7 @@ namespace crypto {
 
 namespace {
 
-boost::mutex rng_mutex;
-boost::mutex keygen_mutex;
-boost::mutex rsasign_mutex;
+boost::mutex g_rng_mutex, g_keygen_mutex;
 
 CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
   static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
@@ -72,8 +69,10 @@ CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
 
 std::string XOR(const std::string &first, const std::string &second) {
   size_t common_size(first.size());
-  if ((common_size != second.size()) || (common_size == 0))
+  if ((common_size != second.size()) || (common_size == 0)) {
+    DLOG(WARNING) << "Size mismatch or zero.";
     return "";
+  }
 
   boost::scoped_array<char> first_char(new char[common_size]);
   std::copy(first.begin(), first.end(), first_char.get());
@@ -92,8 +91,10 @@ std::string SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin,
                            const std::string &label) {
-  if (password.empty() || salt.empty() || pin == 0 || label.empty())
+  if (password.empty() || salt.empty() || pin == 0 || label.empty()) {
+    DLOG(WARNING) << "Invalid parameter.";
     return "";
+  }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
@@ -114,8 +115,10 @@ std::string SymmEncrypt(const std::string &input,
                         const std::string &key,
                         const std::string &initialisation_vector) {
   if (key.size() < AES256_KeySize ||
-      initialisation_vector.size() < AES256_IVSize)
+      initialisation_vector.size() < AES256_IVSize) {
+    DLOG(WARNING) << "Undersized key or IV.";
     return "";
+  }
 
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -145,8 +148,8 @@ std::string SymmDecrypt(const std::string &input,
                         const std::string &initialisation_vector) {
   if (key.size() < AES256_KeySize ||
       initialisation_vector.size() < AES256_IVSize ||
-     input.empty()) {
-    DLOG(WARNING) << " undersized key or  iv or input";
+      input.empty()) {
+    DLOG(WARNING) << "Undersized key or IV or input.";
     return "";
   }
 
@@ -176,7 +179,7 @@ std::string SymmDecrypt(const std::string &input,
 std::string AsymEncrypt(const std::string &input,
                         const std::string &public_key) {
   if (input.empty() || public_key.empty()) {
-    DLOG(WARNING) << " empty key or input";
+    DLOG(WARNING) << "Empty key or input.";
     return "";
   }
   try {
@@ -198,7 +201,7 @@ std::string AsymEncrypt(const std::string &input,
 std::string AsymDecrypt(const std::string &input,
                         const std::string &private_key) {
   if (input.empty() || private_key.empty()) {
-    DLOG(WARNING) << " empty key or input";
+    DLOG(WARNING) << "Empty key or input.";
     return "";
   }
   try {
@@ -218,10 +221,10 @@ std::string AsymDecrypt(const std::string &input,
 }
 
 std::string AsymSign(const std::string &input, const std::string &private_key) {
-    if (input.empty() || private_key.empty()) {
-    DLOG(WARNING) << " empty key or input";
+  if (input.empty() || private_key.empty()) {
+    DLOG(WARNING) << "Empty key or input.";
     return "";
-    }
+  }
 
   try {
     CryptoPP::StringSource key(private_key, true);
@@ -294,14 +297,13 @@ std::string Uncompress(const std::string &input) {
 }
 
 CryptoPP::Integer RandomNumber(size_t bit_count) {
-  boost::mutex::scoped_lock rng_lock(rng_mutex);
+  boost::mutex::scoped_lock rng_lock(g_rng_mutex);
   return CryptoPP::Integer(g_srandom_number_generator(), bit_count);
 }
 
 void RandomBlock(byte *output, size_t size) {
-  boost::mutex::scoped_lock rng_lock(rng_mutex);
-    g_srandom_number_generator().GenerateBlock(output, size);
-  
+  boost::mutex::scoped_lock rng_lock(g_rng_mutex);
+  g_srandom_number_generator().GenerateBlock(output, size);
 }
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
@@ -310,8 +312,8 @@ void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
   boost::scoped_array<byte> seed(new byte[key_size]);
   RandomBlock(seed.get(), key_size);
   {
-  boost::mutex::scoped_lock rng_lock(keygen_mutex);  
-  rand_pool.IncorporateEntropy(seed.get(), key_size);
+    boost::mutex::scoped_lock rng_lock(g_keygen_mutex);
+    rand_pool.IncorporateEntropy(seed.get(), key_size);
   }
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
   CryptoPP::StringSink private_key(private_key_);

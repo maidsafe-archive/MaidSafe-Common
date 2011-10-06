@@ -254,17 +254,17 @@ std::string CorruptData(const std::string &input) {
 }
 
 TEST(CryptoTest, BEH_SymmEncrypt) {
-  #pragma omp parallel
-  { // NOLINT (dirvine) 
+#pragma omp parallel
+  {  // NOLINT (dirvine)
     // Set up data
     const std::string kKey(DecodeFromHex("0a89927670e292af98080a3c3e2bdee4"
-					"289b768de74570f9f470282756390fe3"));
+          "289b768de74570f9f470282756390fe3"));
     const std::string kIV(DecodeFromHex("92af98080a3c3e2bdee4289b768de7af"));
     const std::string kUnencrypted(DecodeFromHex("8b4a84c8f409d8c8b4a8e70f4"
-	"9867c63661f2b31d6e4c984a6a01b2r15e48a47bc46af231d2b146e54a87db43f51c2a"
-	"5"));
+    "9867c63661f2b31d6e4c984a6a01b2r15e48a47bc46af231d2b146e54a87db43f51c2a"
+    "5"));
     const std::string kEncrypted(DecodeFromHex("441f907b71a14c2f482c4d1fef6"
-	"1f3d7ffc0f14953f4f575601803feed5d10a3387c273f9a92b2ceb4d9236167d707"));
+    "1f3d7ffc0f14953f4f575601803feed5d10a3387c273f9a92b2ceb4d9236167d707"));
     const std::string kBadKey(CorruptData(kKey));
     const std::string kBadIV(CorruptData(kIV));
     const std::string kBadUnencrypted(CorruptData(kUnencrypted));
@@ -289,17 +289,16 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
     EXPECT_TRUE(SymmEncrypt(kUnencrypted, kKey, "").empty());
     EXPECT_TRUE(SymmDecrypt(kEncrypted, "", kIV).empty());
     EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
-    }
+  }
 }
 
 TEST(CryptoTest, BEH_AsymEncrypt) {
   // Set up data
-  #pragma omp parallel
-  { // NOLINT (dirvine)
-    
+#pragma omp parallel
+  {  // NOLINT (dirvine)
     RsaKeyPair rsakp;
     rsakp.GenerateKeys(4096);
-    
+
     const std::string kPublicKey(rsakp.public_key());
     const std::string kPrivateKey(rsakp.private_key());
     rsakp.GenerateKeys(4096);
