@@ -274,35 +274,7 @@ class RsaKeyPair {
   std::string private_key_;
 };
 
-struct RSAkeys {
- public:
-  RSAkeys() : priv_key(), pub_key() {}
-  CryptoPP::RSA::PrivateKey priv_key;
-  CryptoPP::RSA::PublicKey pub_key;
- private:
-  RSAkeys &operator=(const RSAkeys&);
-  RSAkeys(const RSAkeys&);
-};
-
-class RSA {
- public:
-  RSA() {}
-  bool GenerateKeyPair(RSAkeys &keypair);
-  bool Sign(std::string &data,
-            std::string &signature,
-            CryptoPP::PublicKey &pub_key);
-  bool CheckSignature(std::string &data,
-                      std::string &signature,
-                      CryptoPP::PublicKey &pub_key);
-  std::string Encrypt(std::string data, CryptoPP::PublicKey &pub_key);
-  std::string Decrypt(std::string data, CryptoPP::PrivateKey &priv_key);
- private:
-  RSA &operator=(const RSA&);
-  RSA(const RSA&);
-};
-
-
-}   // namespace crypto
+}  // namespace crypto
 
 }  // namespace maidsafe
 
