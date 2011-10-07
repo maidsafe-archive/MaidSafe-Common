@@ -80,22 +80,25 @@ class Securifier {
 
   /** Signs the value using kSigningPrivateKey_.
    *  @param[in] value value to be signed.
-   *  @return signature. */
-  virtual std::string Sign(const std::string &value) const;
+   *  @return kCommonReturnCode */
+  virtual int Sign(const std::string &value,
+                   std::string *signature) const;
 
   /** Signs the value using kSigningPrivateKey_, but may incorporate data from
    *  parameters_ in the signing process.
    *  @param[in] value value to be signed.
-   *  @return signature. */
-  virtual std::string SignWithParameters(const std::string &value) const;
+   *  @return kCommonReturnCode. */
+  virtual int SignWithParameters(const std::string &value,
+                                         std::string *signature) const;
 
   /** Asymmetrically encrypts the value using recipient_public_key_.
    *  @param[in] value value to be encrypted.
    *  @param[in] recipient_public_key Public key used to asymmetrically encrypt
    *             data.
-   *  @return encrypted value. */
-  virtual std::string AsymmetricEncrypt(
+   *  @return kCommonReturnCode. */
+  virtual int AsymmetricEncrypt(
       const std::string &value,
+      std::string *cipher,
       const std::string &recipient_public_key) const;
 
   /** Retrieve the public key and the public key validation certificate.
@@ -150,9 +153,10 @@ class Securifier {
 
   /** Asymmetrically decrypts the value using kAsymmetricDecryptionPrivateKey_.
    *  @param[in] encrypted_value value encrypted with recipient's public_key.
-   *  @return decrypted value. */
-  virtual std::string AsymmetricDecrypt(
-      const std::string &encrypted_value) const;
+   *  @return kCommonReturnCode. */
+  virtual int AsymmetricDecrypt(
+      const std::string &encrypted_value,
+      std::string *data) const;
 
   // @{
   /** Getters for cryptographic keys. */

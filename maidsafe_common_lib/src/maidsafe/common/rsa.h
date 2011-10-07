@@ -63,12 +63,15 @@ namespace maidsafe {
 
 namespace rsa {
 
+  typedef CryptoPP::RSA::PrivateKey PrivateKey;
+  typedef CryptoPP::RSA::PublicKey PublicKey;
+  
 struct RSAkeys {
  public:
   RSAkeys() : identity(), priv_key(), pub_key(), validator() {}
   std::string identity;  
-  CryptoPP::RSA::PrivateKey priv_key;
-  CryptoPP::RSA::PublicKey pub_key;
+  PrivateKey priv_key;
+  PublicKey pub_key;
   std::string validator;  // certificate, additional signature etc. 
 //  private:
 //   RSAkeys &operator=(const RSAkeys&);
@@ -78,17 +81,17 @@ struct RSAkeys {
 class RSA {
  public:
    RSA() : key_size_(4096) {}
-  bool GenerateKeyPair(std::shared_ptr<RSAkeys> keypair);
-  bool Sign(const std::string &data,
-            std::shared_ptr<std::string> signature,
-            const CryptoPP::PrivateKey &priv_key);
-  bool CheckSignature(const std::string &data,
+  int GenerateKeyPair(RSAkeys *keypair) const;
+  int Sign(const std::string &data,
+            std::string *signature,
+           const PrivateKey &priv_key) const;
+  int CheckSignature(const std::string &data,
                       const std::string &signature,
-                      const CryptoPP::PublicKey &pub_key);
-  std::string Encrypt(const std::string &data,
-                      const CryptoPP::PublicKey &pub_key);
-  std::string Decrypt(const std::string &data,
-                      const CryptoPP::PrivateKey &priv_key);
+                     const PublicKey &pub_key) const;
+  int Encrypt(const std::string &data, std::string *result,
+              const PublicKey &pub_key) const;
+  int Decrypt(const std::string &data, std::string *result,
+              const PrivateKey &priv_key) const;
 
  private:
   RSA &operator=(const RSA&);

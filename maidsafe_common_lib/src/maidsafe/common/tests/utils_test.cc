@@ -51,11 +51,6 @@ void GenerateRandomStrings(const int &string_count,
     RandomString(string_size);
 }
 
-void GenerateSRandomStrings(const int &string_count,
-                           const size_t &string_size) {
-  for (int i = 0; i < string_count; ++i)
-    SRandomString(string_size);
-}
 
 TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
   EXPECT_EQ("0 B", BytesToDecimalSiUnits(0U));
@@ -198,16 +193,6 @@ TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   --thread_count;  // to satisfy compiler
 }
 
-TEST(UtilsTest, BEH_SRandomStringMultiThread) {
-  int thread_count(20);
-  int string_count(1000);
-  size_t string_size(4096);
-#pragma omp parallel num_threads(thread_count)
-  {  // NOLINT (dirvine)
-    test::GenerateSRandomStrings(string_count, string_size);
-  }
-  --thread_count;  // to satisfy compiler
-}
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {
   std::set<std::string>random_strings;
@@ -216,19 +201,6 @@ TEST(UtilsTest, BEH_RandomStringGenerator) {
   for (size_t j = 10; j< 100; ++j) {
     for (size_t i = 0; i < kCount; ++i) {
       random_strings.insert(RandomString(j));
-    }
-    EXPECT_GE(kMaxDuplicates, kCount - random_strings.size());
-    random_strings.clear();
-  }
-}
-
-TEST(UtilsTest, BEH_SRandomStringGenerator) {
-  std::set<std::string>random_strings;
-  const size_t kCount(100);
-  const size_t kMaxDuplicates(1);
-  for (size_t j = 10; j< 100; ++j) {
-    for (size_t i = 0; i < kCount; ++i) {
-      random_strings.insert(SRandomString(j));
     }
     EXPECT_GE(kMaxDuplicates, kCount - random_strings.size());
     random_strings.clear();
@@ -309,7 +281,7 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
   EXPECT_TRUE(DecodeFromHex("").empty());
   EXPECT_TRUE(DecodeFromHex("{").empty());
   for (int i = 0; i < 1000; ++i) {
-    std::string original = SRandomString(100);
+    std::string original = RandomString(100);
     std::string encoded = EncodeToHex(original);
     EXPECT_EQ(200U, encoded.size());
     std::string decoded = DecodeFromHex(encoded);
@@ -330,7 +302,7 @@ TEST(UtilsTest, BEH_Base64EncodeDecode) {
   EXPECT_TRUE(DecodeFromBase64("").empty());
   EXPECT_TRUE(DecodeFromBase64("{").empty());
   for (int i = 0; i < 1000; ++i) {
-    std::string original = SRandomString(100);
+    std::string original = RandomString(100);
     std::string encoded = EncodeToBase64(original);
     EXPECT_EQ(136U, encoded.size()) << "Encoding failed.";
     std::string decoded = DecodeFromBase64(encoded);
@@ -348,7 +320,7 @@ TEST(UtilsTest, BEH_Base32EncodeDecode) {
   EXPECT_TRUE(DecodeFromBase32("").empty());
   EXPECT_TRUE(DecodeFromBase32("{").empty());
   for (int i = 0; i < 1000; ++i) {
-    std::string original = SRandomString(100);
+    std::string original = RandomString(100);
     std::string encoded = EncodeToBase32(original);
     EXPECT_EQ(160U, encoded.size()) << "Encoding failed.";
     std::string decoded = DecodeFromBase32(encoded);
@@ -365,20 +337,6 @@ TEST(UtilsTest, BEH_TimeFunctions) {
   EXPECT_EQ(s, ms / 1000) << "s vs. ms failed.";
   EXPECT_EQ(s, ns / 1000000000) << "s vs. ns failed.";
   EXPECT_EQ(ms, ns / 1000000) << "ms vs. ns failed.";
-}
-
-TEST(UtilsTest, BEH_SRandomNumberGen) {
-  std::set<int32_t>random_ints;
-  std::set<uint32_t>random_uints;
-  const size_t kCount(10000);
-  // look for less than 0.05% duplicates
-  const size_t kMaxDuplicates(kCount / 2000);
-  for (size_t i = 0; i < kCount; ++i) {
-    random_ints.insert(SRandomInt32());
-    random_uints.insert(SRandomUint32());
-  }
-  EXPECT_GE(kMaxDuplicates, kCount - random_ints.size());
-  EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
 }
 
 TEST(UtilsTest, BEH_RandomNumberGen) {

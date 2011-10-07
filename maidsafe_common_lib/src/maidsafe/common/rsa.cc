@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/common/return_codes.h"
 
 #include <memory>
 
@@ -50,13 +51,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
-#include <boost/concept_check.hpp>
+
 
 namespace maidsafe {
 
 namespace rsa {
 
-namespace {
+// namespace {
 
 CryptoPP::RandomNumberGenerator &rng() {
   static CryptoPP::AutoSeededRandomPool random_number_generator;
@@ -65,9 +66,9 @@ CryptoPP::RandomNumberGenerator &rng() {
 
 boost::mutex random_number_generator_mutex;
 
-}  // Unnamed namespace
+// }  // Unnamed namespace
 
-bool RSA::GenerateKeyPair(std::shared_ptr<RSAkeys> keypair)
+int RSA::GenerateKeyPair(RSAkeys *keypair) const
 {
   CryptoPP::InvertibleRSAFunction parameters;
   try {
@@ -75,83 +76,85 @@ bool RSA::GenerateKeyPair(std::shared_ptr<RSAkeys> keypair)
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed Generating keypair: " << e.what();
-    return false;
+    return CommonReturnCode::kKeyGenerationError;
   }
   CryptoPP::RSA::PrivateKey priv_key(parameters);
   CryptoPP::RSA::PublicKey pub_key(parameters);
   keypair->priv_key = priv_key;
   keypair->pub_key = pub_key;
-  return (keypair->priv_key.Validate(rng(), 2) &&
-          keypair->pub_key.Validate(rng(), 2));
+  if (keypair->priv_key.Validate(rng(), 2) &&
+          keypair->pub_key.Validate(rng(), 2))
+    return CommonReturnCode::kSuccess;
+  else
+    return CommonReturnCode::kGeneralError;
 }
 
-std::string RSA::Encrypt(const std::string& data,
-                         const CryptoPP::PublicKey& pub_key)
+int RSA::Encrypt(const std::string& data, std::string *result,
+                 const PublicKey& pub_key) const
 {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
-    return "";
+    return CommonReturnCode::kDataEmpty;
   }
   if (!pub_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad public key ";
-    return "";
+    return CommonReturnCode::kInvalidPublicKey;
   }
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(pub_key);
-  std::string cipher;
   CryptoPP::StringSource(data, true,
     new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-      new CryptoPP::StringSink( cipher )
+      new CryptoPP::StringSink(*result)
     ) // PK_EncryptorFilter
       ); // StringSource
-  if (data == cipher) {
+  if (data == *result) {
     DLOG(ERROR) << " failed encryption ";
-    return "";
+    return  CommonReturnCode::kRSAEncryptError;
   }
-  return cipher;
+  return CommonReturnCode::kSuccess;
 }
 
-std::string RSA::Decrypt(const std::string& data,
-                         const CryptoPP::PrivateKey& priv_key)
+int RSA::Decrypt(const std::string& data, std::string *result,
+                 const PrivateKey& priv_key) const
 {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
-    return "";
+    return CommonReturnCode::kDataEmpty;
   }
   if (!priv_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad private key ";
-    return "";
+    return CommonReturnCode::kInvalidPrivateKey;
   }
    CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(priv_key);
    std::string recovered;
    try {
    CryptoPP::StringSource(data, true,
     new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
-      new CryptoPP::StringSink(recovered)
+      new CryptoPP::StringSink(*result)
      ) // PK_DecryptorFilter
       ); // StringSource
    } catch (CryptoPP::Exception &e) {
      DLOG(ERROR) << "decryption failed";
      e.what();
-     return "";
+     return CommonReturnCode::kRSADecryptError;
    }
-   if (data == recovered) {
+   if (data == *result) {
     DLOG(ERROR) << " failed decryption ";
-    return "";
+    return CommonReturnCode::kRSADecryptError;
    }
-   return recovered;
+   return CommonReturnCode::kSuccess;
 }
 
-bool RSA::Sign(const std::string& data,
-               std::shared_ptr< std::string > signature,
-               const CryptoPP::PrivateKey& priv_key)
+int RSA::Sign(const std::string& data,
+               std::string  *signature,
+              const PrivateKey& priv_key) const
 {
   if (!priv_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad private key ";
-    return false;
+    return CommonReturnCode::kInvalidPrivateKey;
   }
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
-    return false;
+    return CommonReturnCode::kDataEmpty;
   }
   
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(priv_key);
@@ -162,41 +165,44 @@ bool RSA::Sign(const std::string& data,
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed asymmetric signing: " << e.what();
-    return false;
+    return CommonReturnCode::kRSASigningError;
   }
-  return true;
+  return CommonReturnCode::kSuccess;
 }
 
 
-bool RSA::CheckSignature(const std::string& data,
+int RSA::CheckSignature(const std::string& data,
                          const std::string& signature,
-                         const CryptoPP::PublicKey& pub_key)
+                        const PublicKey& pub_key) const
 {
   if (!pub_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad public key ";
-    return false;
+    return CommonReturnCode::kInvalidPublicKey;
   }
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
-    return false;
+    return CommonReturnCode::kDataEmpty;
   }
   if (signature.empty()) {
     DLOG(ERROR) << " No Signature ";
-    return false;
+    return CommonReturnCode::kRSASignatureEmpty;
   }
   
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(pub_key);
   try {
-  return verifier.VerifyMessage(reinterpret_cast<const byte *>(data.c_str()),
+    if (verifier.VerifyMessage(reinterpret_cast<const byte *>(data.c_str()),
                              data.size(),
                              reinterpret_cast<const byte *>(signature.c_str()),
-                             signature.size());
+                             signature.size()))
+      return CommonReturnCode::kSuccess;
+     else
+       return CommonReturnCode::kRSAInvalidsignature;
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed signature check: " << e.what();
-    return false;
+    return CommonReturnCode::kRSAInvalidsignature;
   }
-  return true;
+  return CommonReturnCode::kSuccess;
 }
 
 
