@@ -89,9 +89,8 @@ class BufferedChunkStore: public ChunkStore {
                                           arg::_1))),
         file_chunk_store_(new ThreadsafeChunkStore(reference_counting,
                                                    chunk_store_)),
-        chunk_names_(),
-        transient_chunk_names_(),
-        undesirable_chunk_names_(),
+        cached_chunk_names_(),
+        removable_chunk_names_(),
         cond_var_any_() {}
   ~BufferedChunkStore() {}
 
@@ -330,9 +329,8 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
-  void StoreInFile(const std::string &name, const std::string &contents);
-  /*void StoreInFile(const std::string &name, const fs::path &source_file_name,
-                   bool delete_source_file); */
+  void CopyingChunkInFile(const std::string &name);
+
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
   typedef boost::unique_lock<boost::shared_mutex> UniqueLock;
@@ -343,10 +341,9 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   std::shared_ptr<ChunkStore> memory_chunk_store_;
   std::shared_ptr<ChunkStore> chunk_store_;
   std::shared_ptr<ChunkStore> file_chunk_store_;
-  mutable std::list<std::string> chunk_names_;
+  mutable std::list<std::string> cached_chunk_names_;
   // List contain info about chunks being copied to file_chunk_store
-  mutable std::list<std::string> transient_chunk_names_;
-  mutable std::list<std::string> undesirable_chunk_names_;
+  mutable std::list<std::string> removable_chunk_names_;
   mutable boost::condition_variable_any cond_var_any_;
 };
 
