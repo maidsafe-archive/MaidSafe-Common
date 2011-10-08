@@ -50,6 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
+#include "maidsafe/common/return_codes.h"
 
 namespace maidsafe {
 
@@ -75,13 +76,14 @@ std::string XOR(const std::string &first, const std::string &second) {
   return result;
 }
 
-std::string SecurePassword(const std::string &password,
+int SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin,
+                           std::string *derived_password,
                            const std::string &label) {
   if (password.empty() || salt.empty() || pin == 0 || label.empty()) {
     DLOG(WARNING) << "Invalid parameter.";
-    return "";
+    return CommonReturnCode::kGeneralError ;
   }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
@@ -93,10 +95,9 @@ std::string SecurePassword(const std::string &password,
   pbkdf.DeriveKey(derived, derived.size(), purpose,
                   reinterpret_cast<const byte*>(password.data()),
                   password.size(), context.data(), context.size(), iter);
-  std::string derived_password;
-  CryptoPP::StringSink string_sink(derived_password);
+  CryptoPP::StringSink string_sink(*derived_password);
   string_sink.Put(derived, derived.size());
-  return derived_password;
+  return CommonReturnCode::kSuccess;
 }
 
 std::string SymmEncrypt(const std::string &input,

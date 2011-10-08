@@ -36,19 +36,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4702)
 #endif
-#include "cryptopp/filters.h"
-#include "cryptopp/integer.h"
+
 #include "cryptopp/pubkey.h"
-#include "cryptopp/rsa.h"
-#include "cryptopp/sha.h"
-#include "cryptopp/aes.h"
+
+#include "maidsafe/common/crypto.h" // for RNG temporally
 #ifdef __MSVC__
 #  pragma warning(pop)
 #  pragma warning(disable: 4505)
 #endif
 
 #include "maidsafe/common/version.h"
-#include "maidsafe/common/asymmetric_crypto.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
@@ -58,29 +55,37 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-  typedef CryptoPP::RSA::PrivateKey PrivateKey;
-  typedef CryptoPP::RSA::PublicKey PublicKey;
-
+  typedef std::string PrivateKey;
+  typedef std::string PublicKey;
   
-class RSA: public AsymmetricCrypto {
+struct AsymmKeys {
  public:
-   RSA() : key_size_(4096) {}
-  virtual ~RSA() {}
-  virtual int GenerateKeyPair(AsymmKeys *keypair) const;
+  AsymmKeys() : identity(), priv_key(), pub_key(), validator() {}
+  std::string identity;  
+  PrivateKey priv_key;
+  PublicKey pub_key;
+  std::string validator;  // certificate, additional signature etc. 
+};
+
+class AsymmetricCrypto {
+ public:
+   AsymmetricCrypto() : key_size_() {}
+  virtual ~AsymmetricCrypto() {}
+  virtual int GenerateKeyPair(AsymmKeys *keypair) const = 0;
   virtual int Sign(const std::string &data,
             std::string *signature,
-           const PrivateKey &priv_key) const;
+           const PrivateKey &priv_key) const = 0;
   virtual int CheckSignature(const std::string &data,
                       const std::string &signature,
-                     const PublicKey &pub_key) const;
+                     const PublicKey &pub_key) const = 0;
   virtual int Encrypt(const std::string &data, std::string *result,
-              const PublicKey &pub_key) const;
+              const PublicKey &pub_key) const = 0;
   virtual int Decrypt(const std::string &data, std::string *result,
-              const PrivateKey &priv_key) const;
+              const PrivateKey &priv_key) const = 0;
 
  private:
-  RSA &operator=(const RSA&);
-  RSA(const RSA&);
+  AsymmetricCrypto &operator=(const AsymmetricCrypto&);
+  AsymmetricCrypto(const AsymmetricCrypto&);
   uint16_t key_size_;  // no setters and getters as we don't give options
 };
 
