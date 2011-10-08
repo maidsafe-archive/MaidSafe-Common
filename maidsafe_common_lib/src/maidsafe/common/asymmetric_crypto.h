@@ -25,8 +25,8 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_RSA_H_
-#define MAIDSAFE_COMMON_RSA_H_
+#ifndef MAIDSAFE_COMMON_ASYMM_H_
+#define MAIDSAFE_COMMON_ASYMM_H_
 
 #include <cstdint>
 #include <string>
@@ -91,4 +91,4 @@ class AsymmetricCrypto {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_RSA_H_
+#endif  // MAIDSAFE_COMMON_ASYMM_H_

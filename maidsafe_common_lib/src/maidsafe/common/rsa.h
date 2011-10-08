@@ -58,8 +58,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-  typedef CryptoPP::RSA::PrivateKey PrivateKey;
-  typedef CryptoPP::RSA::PublicKey PublicKey;
+
+  static_cast<CryptoPP::RSA::PublicKey>(AsymmKeys::PublicKey);
+  static_cast<CryptoPP::RSA::PrivateKey>(AsymmKeys::PrivateKey);
+
 
   
 class RSA: public AsymmetricCrypto {
