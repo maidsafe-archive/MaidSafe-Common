@@ -55,8 +55,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-  typedef std::string PrivateKey;
-  typedef std::string PublicKey;
+  typedef CryptoPP::RSA::PrivateKey PrivateKey;
+  typedef CryptoPP::RSA::PublicKey PublicKey;
   
 struct AsymmKeys {
  public:

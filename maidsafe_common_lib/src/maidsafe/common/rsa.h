@@ -58,17 +58,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-
-  static_cast<CryptoPP::RSA::PublicKey>(AsymmKeys::PublicKey);
-  static_cast<CryptoPP::RSA::PrivateKey>(AsymmKeys::PrivateKey);
-
-
+struct RSAkeys : public AsymmKeys {};
   
 class RSA: public AsymmetricCrypto {
  public:
    RSA() : key_size_(4096) {}
   virtual ~RSA() {}
-  virtual int GenerateKeyPair(AsymmKeys *keypair) const;
+  virtual int GenerateKeyPair(RSAkeys *keypair) const;
   virtual int Sign(const std::string &data,
             std::string *signature,
            const PrivateKey &priv_key) const;
