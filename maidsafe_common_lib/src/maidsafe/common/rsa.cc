@@ -55,7 +55,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-namespace rsa {
 
 // namespace {
 
@@ -204,10 +203,5 @@ int RSA::CheckSignature(const std::string& data,
   }
   return CommonReturnCode::kSuccess;
 }
-
-
-
-
-}  // namespace rsa
 
 }  // namespace maidsafe

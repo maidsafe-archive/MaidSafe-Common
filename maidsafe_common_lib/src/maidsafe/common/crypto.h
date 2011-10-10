@@ -103,10 +103,11 @@ std::string XOR(const std::string &first, const std::string &second);
  *  @param salt salt.
  *  @param pin PIN from which the number of iterations is derived.
  *  @param label additional data to provide distinct input data to PBKDF
- *  @return The derived key. */
-std::string SecurePassword(const std::string &password,
+ *  @return CommonReturnCode */
+int SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin,
+                           std::string *derived_password,
                            const std::string &label = kMaidSafeVersionLabel);
 
 /** Hash function operating on a string.
