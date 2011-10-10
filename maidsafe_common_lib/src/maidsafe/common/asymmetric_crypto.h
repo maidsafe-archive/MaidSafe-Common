@@ -39,7 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "cryptopp/pubkey.h"
 
-#include "maidsafe/common/crypto.h" // for RNG temporally
 #ifdef __MSVC__
 #  pragma warning(pop)
 #  pragma warning(disable: 4505)
@@ -55,39 +54,40 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-  typedef CryptoPP::RSA::PrivateKey PrivateKey;
-  typedef CryptoPP::RSA::PublicKey PublicKey;
+  typedef std::string Signature, PlainText, CipherText;
   
-struct AsymmKeys {
- public:
-  AsymmKeys() : identity(), priv_key(), pub_key(), validator() {}
-  std::string identity;  
-  PrivateKey priv_key;
-  PublicKey pub_key;
-  std::string validator;  // certificate, additional signature etc. 
-};
-
+  
+template<class Keys>
 class AsymmetricCrypto {
+
  public:
-   AsymmetricCrypto() : key_size_() {}
-  virtual ~AsymmetricCrypto() {}
-  virtual int GenerateKeyPair(AsymmKeys *keypair) const = 0;
-  virtual int Sign(const std::string &data,
+  AsymmetricCrypto()  {}
+  ~AsymmetricCrypto() {}
+  typedef typename Keys::PrivateKey PrivateKey;
+  typedef typename Keys::PublicKey PublicKey;
+  
+  int GenerateKeyPair(Keys *keypair) const;
+  int Sign(const std::string &data,
             std::string *signature,
-           const PrivateKey &priv_key) const = 0;
-  virtual int CheckSignature(const std::string &data,
-                      const std::string &signature,
-                     const PublicKey &pub_key) const = 0;
-  virtual int Encrypt(const std::string &data, std::string *result,
-              const PublicKey &pub_key) const = 0;
-  virtual int Decrypt(const std::string &data, std::string *result,
-              const PrivateKey &priv_key) const = 0;
+           const PrivateKey &priv_key) const;
+  int CheckSignature(const std::string &plain_text,
+                     const std::string &signature,
+                     const PublicKey &pub_key) const;
+  int Encrypt(const PlainText &plain_text, std::string *result,
+              const PublicKey &pub_key) const;
+  int Decrypt(const std::string &data, std::string *result,
+              const PrivateKey &priv_key) const;
 
  private:
   AsymmetricCrypto &operator=(const AsymmetricCrypto&);
   AsymmetricCrypto(const AsymmetricCrypto&);
-  uint16_t key_size_;  // no setters and getters as we don't give options
+ 
 };
+
+
+
+
+
 
 }  // namespace maidsafe
 

@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/common/asymmetric_crypto.h"
 #include "maidsafe/common/return_codes.h"
 
 #include <memory>
@@ -56,22 +57,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace maidsafe {
 
 
-// namespace {
+namespace {
 
 CryptoPP::RandomNumberGenerator &rng() {
   static CryptoPP::AutoSeededRandomPool random_number_generator;
   return random_number_generator;
  }
-
-boost::mutex random_number_generator_mutex;
-
-// }  // Unnamed namespace
-
-int RSA::GenerateKeyPair(RSAkeys *keypair) const
+}  // Unnamed namespace
+  
+template<>
+int AsymmetricCrypto<RSAKeys>::GenerateKeyPair(RSAKeys *keypair) const
 {
   CryptoPP::InvertibleRSAFunction parameters;
   try {
-  parameters.GenerateRandomWithKeySize(rng(), 4096);
+  parameters.GenerateRandomWithKeySize(rng(), RSAKeys::KeySize);
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed Generating keypair: " << e.what();
@@ -88,7 +87,9 @@ int RSA::GenerateKeyPair(RSAkeys *keypair) const
     return CommonReturnCode::kGeneralError;
 }
 
-int RSA::Encrypt(const std::string& data, std::string *result,
+
+template<>
+int AsymmetricCrypto<RSAKeys>::Encrypt(const std::string& data, std::string *result,
                  const PublicKey& pub_key) const
 {
   if (data.empty()) {
@@ -103,7 +104,7 @@ int RSA::Encrypt(const std::string& data, std::string *result,
   CryptoPP::StringSource(data, true,
     new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
       new CryptoPP::StringSink(*result)
-    ) // PK_EncryptorFilter
+    ) // PK_EncryptorFilterint GenerateKeyPair(RSAkeys* keypair) const
       ); // StringSource
   if (data == *result) {
     DLOG(ERROR) << " failed encryption ";
@@ -112,7 +113,8 @@ int RSA::Encrypt(const std::string& data, std::string *result,
   return CommonReturnCode::kSuccess;
 }
 
-int RSA::Decrypt(const std::string& data, std::string *result,
+template<>
+int AsymmetricCrypto<RSAKeys>::Decrypt(const std::string& data, std::string *result,
                  const PrivateKey& priv_key) const
 {
   if (data.empty()) {
@@ -143,7 +145,8 @@ int RSA::Decrypt(const std::string& data, std::string *result,
    return CommonReturnCode::kSuccess;
 }
 
-int RSA::Sign(const std::string& data,
+template<>
+int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
                std::string  *signature,
               const PrivateKey& priv_key) const
 {
@@ -170,7 +173,8 @@ int RSA::Sign(const std::string& data,
 }
 
 
-int RSA::CheckSignature(const std::string& data,
+template<>
+int AsymmetricCrypto<RSAKeys>::CheckSignature(const std::string& data,
                          const std::string& signature,
                         const PublicKey& pub_key) const
 {

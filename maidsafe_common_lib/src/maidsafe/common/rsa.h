@@ -28,27 +28,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_RSA_H_
 #define MAIDSAFE_COMMON_RSA_H_
 
-#include <cstdint>
 #include <string>
-#include <algorithm>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4702)
 #endif
-#include "cryptopp/filters.h"
-#include "cryptopp/integer.h"
-#include "cryptopp/pubkey.h"
 #include "cryptopp/rsa.h"
-#include "cryptopp/sha.h"
-#include "cryptopp/aes.h"
 #ifdef __MSVC__
 #  pragma warning(pop)
 #  pragma warning(disable: 4505)
 #endif
 
 #include "maidsafe/common/version.h"
-#include "maidsafe/common/asymmetric_crypto.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
@@ -57,30 +49,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace maidsafe {
-
-struct RSAkeys : public AsymmKeys {};
-  
-class RSA: public AsymmetricCrypto {
+struct RSAKeys {
  public:
-   RSA() : key_size_(4096) {}
-  virtual ~RSA() {}
-  virtual int GenerateKeyPair(RSAkeys *keypair) const;
-  virtual int Sign(const std::string &data,
-            std::string *signature,
-           const PrivateKey &priv_key) const;
-  virtual int CheckSignature(const std::string &data,
-                      const std::string &signature,
-                     const PublicKey &pub_key) const;
-  virtual int Encrypt(const std::string &data, std::string *result,
-              const PublicKey &pub_key) const;
-  virtual int Decrypt(const std::string &data, std::string *result,
-              const PrivateKey &priv_key) const;
-
- private:
-  RSA &operator=(const RSA&);
-  RSA(const RSA&);
-  uint16_t key_size_;  // no setters and getters as we don't give options
+  typedef CryptoPP::RSA::PrivateKey PrivateKey;
+  typedef CryptoPP::RSA::PublicKey PublicKey;
+  typedef std::string ValidationToken, Identity;
+  enum { KeySize = 4096 };
+  RSAKeys() : identity(), priv_key(), pub_key(), validation_token() {}
+  Identity identity;
+  PrivateKey priv_key;
+  PublicKey pub_key;
+  ValidationToken validation_token;  // certificate, additional signature etc.
+  
 };
+  
+  
 
 }  // namespace maidsafe
 
