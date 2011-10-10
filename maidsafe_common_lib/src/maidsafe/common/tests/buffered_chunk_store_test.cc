@@ -122,6 +122,15 @@ class BufferedChunkStoreTest: public testing::Test {
   std::shared_ptr<ChunkStore> ref_chunk_store_;
 };
 
+TEST_F(BufferedChunkStoreTest, BEH_Init) {
+  EXPECT_EQ(0, this->chunk_store_->Size());
+  EXPECT_EQ(0, this->chunk_store_->Capacity());
+  EXPECT_EQ(0, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Empty());
+  EXPECT_FALSE(this->chunk_store_->Has(""));
+  EXPECT_FALSE(this->chunk_store_->Has("something"));
+}
+
 TEST_F(BufferedChunkStoreTest, BEH_Get) {
   std::string content(RandomString(100));
   std::string name(crypto::Hash<crypto::SHA512>(content));
