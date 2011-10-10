@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
 #include "cryptopp/osrng.h"
+#include "cryptopp/pssr.h"
 #include "cryptopp/pwdbased.h"
 #include "cryptopp/cryptlib.h"
 
@@ -50,7 +51,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
-#include <cryptopp/pssr.h>
 
 namespace maidsafe {
 
@@ -325,7 +325,8 @@ void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
     CryptoPP::StringSink public_key(public_key_);
     encryptor.DEREncode(public_key);
     public_key.MessageEnd();
-  } catch(const CryptoPP::Exception &e) {
+  }
+  catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << e.what();
   }
 }
