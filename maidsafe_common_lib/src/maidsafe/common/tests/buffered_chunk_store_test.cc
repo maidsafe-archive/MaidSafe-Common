@@ -159,6 +159,27 @@ TEST_F(BufferedChunkStoreTest, BEH_Get) {
   EXPECT_FALSE(this->chunk_store_->Get(name, ""));
 }
 
+TEST_F(BufferedChunkStoreTest, BEH_Validate) {
+  std::string content1(RandomString(123)), content2(RandomString(213));
+  std::string name1(crypto::Hash<crypto::SHA512>(content1)),
+              name2(crypto::Hash<crypto::Tiger>(content2));
+
+  EXPECT_FALSE(this->chunk_store_->Validate(""));
+  EXPECT_FALSE(this->chunk_store_->Validate(name1));
+  EXPECT_FALSE(this->chunk_store_->Validate(name2));
+
+  ASSERT_TRUE(this->chunk_store_->Store(name1, content1));
+  ASSERT_TRUE(this->chunk_store_->Store(name2, content2));
+
+  EXPECT_TRUE(this->chunk_store_->Validate(name1));
+  EXPECT_FALSE(this->chunk_store_->Validate(name2));
+
+  ASSERT_TRUE(this->chunk_store_->Delete(name1));
+  ASSERT_TRUE(this->chunk_store_->Store(name1, "this won't validate"));
+  EXPECT_FALSE(this->chunk_store_->Validate(name1));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+}
+
 }  // namespace test
 
 }  // namespace maidsafe
