@@ -122,8 +122,8 @@ bool BufferedChunkStore::Store(const std::string &name,
     return false;
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
-                  (const std::string&)>(
-          &BufferedChunkStore::CopyingChunkInFile), this, name));
+                  (const std::string&, const bool&)>(
+          &BufferedChunkStore::CopyingChunkInFile), this, name, false));
   return true;
 }
 bool BufferedChunkStore::StoreCached(const std::string &name,
@@ -232,8 +232,8 @@ bool BufferedChunkStore::Store(const std::string &name,
     return false;
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
-                  (const std::string&)>(
-          &BufferedChunkStore::CopyingChunkInFile), this, name));
+                  (const std::string&, const bool&)>(
+          &BufferedChunkStore::CopyingChunkInFile), this, name, true));
   return true;
 }
 
@@ -259,23 +259,27 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 
 bool BufferedChunkStore::MoveTo(const std::string &name,
                                 ChunkStore *sink_chunk_store) {
-  if (file_chunk_store_->Has(name))
-      return file_chunk_store_->MoveTo(name, sink_chunk_store);
-  UpgradeLock upgrade_lock(shared_mutex_);
+  bool chunk_moved(false);
+  UniqueLock unique_lock(shared_mutex_);
   auto it = std::find(cached_chunk_names_.begin(), cached_chunk_names_.end(),
                       name);
   if (it != cached_chunk_names_.end()) {
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
     cached_chunk_names_.erase(it);
-    return memory_chunk_store_->MoveTo(name, sink_chunk_store);
+    chunk_moved = memory_chunk_store_->MoveTo(name, sink_chunk_store);
+    unique_lock.unlock();
+    file_chunk_store_->Delete(name);
+  } else {
+    unique_lock.unlock();
+    if (file_chunk_store_->Has(name))
+      chunk_moved = file_chunk_store_->MoveTo(name, sink_chunk_store);
   }
-  return false;
+  return chunk_moved;
 }
 
 bool BufferedChunkStore::Has(const std::string &name) const {
-  SharedLock shared_lock(shared_mutex_);
-  if (memory_chunk_store_->Has(name))
-    return true;
+  // SharedLock shared_lock(shared_mutex_);
+  // if (memory_chunk_store_->Has(name))
+    // return true;
   return file_chunk_store_->Has(name);
 }
 
@@ -391,13 +395,21 @@ void BufferedChunkStore::MarkForDeletion(const std::string &name) {
   removable_chunk_names_.push_back(name);
 }
 
-void BufferedChunkStore::CopyingChunkInFile(const std::string &name) {
-  SharedLock shared_lock(shared_mutex_);
-  std::string content = memory_chunk_store_->Get(name);
-  shared_lock.unlock();
-  if (!content.empty())
+void BufferedChunkStore::CopyingChunkInFile(const std::string &name,
+                                            const bool &store_from_file) {
+  UpgradeLock upgrade_lock(shared_mutex_);
+  if (store_from_file) {
+    fs::path path(EncodeToBase32(name));
+    memory_chunk_store_->Get(name, path);
+    upgrade_lock.unlock();
+    file_chunk_store_->Store(name, path, true);
+  } else {
+    std::string content = memory_chunk_store_->Get(name);
+    upgrade_lock.unlock();
     file_chunk_store_->Store(name, content);
-  UniqueLock unique_lock(shared_mutex_);
+  }
+  upgrade_lock.lock();
+  UpgradeToUniqueLock unique_lock(upgrade_lock);
   cached_chunk_names_.push_front(name);
   cond_var_any_.notify_one();
 }

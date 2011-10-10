@@ -329,7 +329,7 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
-  void CopyingChunkInFile(const std::string &name);
+  void CopyingChunkInFile(const std::string &name, const bool &store_from_file);
 
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
