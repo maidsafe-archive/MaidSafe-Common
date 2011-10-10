@@ -89,8 +89,10 @@ int AsymmetricCrypto<RSAKeys>::GenerateKeyPair(RSAKeys *keypair) const
 
 
 template<>
-int AsymmetricCrypto<RSAKeys>::Encrypt(const std::string& data, std::string *result,
-                 const PublicKey& pub_key) const
+int AsymmetricCrypto<RSAKeys>::Encrypt(const PlainText &data,
+                                       const PublicKey &pub_key,
+                                       CipherText *result
+                                       ) const
 {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
@@ -114,8 +116,9 @@ int AsymmetricCrypto<RSAKeys>::Encrypt(const std::string& data, std::string *res
 }
 
 template<>
-int AsymmetricCrypto<RSAKeys>::Decrypt(const std::string& data, std::string *result,
-                 const PrivateKey& priv_key) const
+int AsymmetricCrypto<RSAKeys>::Decrypt(const CipherText &data,
+                                       const PrivateKey& priv_key,
+                                       PlainText *result) const
 {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
@@ -147,8 +150,8 @@ int AsymmetricCrypto<RSAKeys>::Decrypt(const std::string& data, std::string *res
 
 template<>
 int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
-               std::string  *signature,
-              const PrivateKey& priv_key) const
+                                    const PrivateKey& priv_key,
+                                    std::string  *signature) const
 {
   if (!priv_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad private key ";
@@ -174,9 +177,9 @@ int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
 
 
 template<>
-int AsymmetricCrypto<RSAKeys>::CheckSignature(const std::string& data,
-                         const std::string& signature,
-                        const PublicKey& pub_key) const
+int AsymmetricCrypto<RSAKeys>::CheckSignature(const PlainText &data,
+                                              const Signature &signature,
+                                              const PublicKey &pub_key) const
 {
   if (!pub_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad public key ";

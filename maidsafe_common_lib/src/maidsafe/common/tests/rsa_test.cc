@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/omp.h"
+#include "maidsafe/common/asymmetric_crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -34,20 +35,19 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-namespace rsa {
-
 namespace test {
 
 class RSATest : public testing::Test {
  public:
-  RSATest() : rsa_test_(), key_one_(), key_two_() {
+  RSATest(std::shared_ptr<AsymmetricCrypto<RSAKeys> >asymm)
+          : rsa_test_(asymm), key_one_(), key_two_() {
     rsa_test_.GenerateKeyPair(&key_one_);
     rsa_test_.GenerateKeyPair(&key_two_);
   }
   
   ~RSATest() {}
  protected:
-  RSA rsa_test_;
+  AsymmetricCrypto<RSAKeys> rsa_test_;
   RSAkeys key_one_;
   RSAkeys key_two_;
 };
@@ -148,7 +148,5 @@ TEST_F(RSATest, BEH_SignValidate) {
 }
 
 }  // namespace test
-
-}  // namespace rsa
 
 }  // namespace maidsafe

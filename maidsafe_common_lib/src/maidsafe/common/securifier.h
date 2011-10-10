@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <string>
 #include <vector>
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/asymmetric_crypto.h"
 #include "maidsafe/common/version.h"
 
@@ -45,62 +46,85 @@ namespace maidsafe {
 typedef std::function<void(const std::string&, const std::string&)>
         GetPublicKeyAndValidationCallback;
 
-/** Base class used to cryptographically secure and validate values and
- *  messages. */
+/// Base class used to cryptographically secure and validate values and
+///  messages.
 template <typename Keys>
-
 class Securifier {
  public:
 
 
-  Securifier(std::shared_ptr<AsymmetricCrypto<Keys>> asymm);
+  Securifier(std::shared_ptr<AsymmetricCrypto<Keys> >asymm) : asymm_(asymm) {}
 
   virtual ~Securifier();
 
-  virtual int Sign(const std::string &value,
-                   std::string *signature) const;
+  virtual int Sign(const PlainText &value,
+                   Signature *signature) const;
 
   virtual int AsymmetricEncrypt(
-      const std::string &value,
-      std::string *cipher,
-      const std::string &recipient_public_key) const;
+                                const PlainText &value,
+                                const typename Keys::PublicKey &public_key,
+                                CipherText *cipher) const;
 
-  virtual void GetPublicKeyAndValidation(const Keys::Identity &public_key_id,
-                              Keys::PublicKey *public_key,
-                              Keys::ValidationToken *public_key_validation);
+  virtual void GetPublicKeyAndValidation(const typename Keys::Identity &id,
+                                  typename Keys::PublicKey *public_key,
+                                  typename  Keys::ValidationToken *validation);
 
   virtual void GetPublicKeyAndValidation(
-      const std::string &public_key_id,
-      GetPublicKeyAndValidationCallback callback);
+      const  typename Keys::Identity &public_key_id,
+      GetPublicKeyAndValidationCallback callback) const;
 
-  virtual bool Validate(const std::string &value,
-                        const std::string &value_signature,
-                        const std::string &public_key_id,
-                        const std::string &public_key,
-                        const std::string &public_key_validation,
-                        const std::string &kademlia_key) const;
-
-  
+  virtual bool Validate(const PlainText &plain_text,
+                        const Signature &signature,
+                        const typename Keys::PublicKey &public_key
+                        ) const;
+                                       
   virtual int AsymmetricDecrypt(
-      const std::string &encrypted_value,
-      std::string *data) const;
-
+      const CipherText &encrypted_value,
+      PlainText *data) const;
 
  private:
   Securifier& operator=(Securifier const&);
-  AsymmetricCrypto Asymm_;
+  AsymmetricCrypto<Keys> asymm_;
 };
 
 template<typename Keys>
-int Securifier::Sign(const std::string &value, std::string *result) const {
-  return Asymm_->Sign(value, result, sign_keys_.priv_key);
+int Securifier<Keys>::Sign(const PlainText &value, Signature *result)
+                                                               const {
+  return asymm_->Sign(value, result, asymm_->Keys.PublicKey);
+}
+
+template<typename Keys>
+int Securifier<Keys>::AsymmetricEncrypt(
+                                        const PlainText &plain_text,
+                                        const typename Keys::PublicKey &key,
+                                        CipherText *cipher_text) const {
+  return asymm_->Encrypt(plain_text, key, cipher_text);
+}
+
+template<typename Keys>
+int Securifier<Keys>::AsymmetricDecrypt(const CipherText &encrypted_value,
+                                        PlainText *data) const {
+  return  asymm_->Decrypt(encrypted_value, data);
 }
 
 
+template<typename Keys>
+void Securifier<Keys>::GetPublicKeyAndValidation(
+    const typename Keys::Identity &id,
+    GetPublicKeyAndValidationCallback callback) const {
+  callback("", "");
+}
 
-
-
-
+template<typename Keys>
+bool Securifier<Keys>::Validate(const PlainText &plain_text,
+                                const Signature &signature,
+                                const typename Keys::PublicKey &public_key
+                               ) const {
+  if (0 == asymm_->CheckSignature(plain_text, signature, public_key))
+    return true;
+  else
+    return false;
+}
 
 }  // namespace maidsafe
 

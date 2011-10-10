@@ -32,63 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-  Securifier::Securifier(std::shared_ptr<AsymmetricCrypto> Asymm,
-                         const AsymmKeys &keys)
-  : sign_keys_(sign_keys),
-    decrypt_keys_(decrypt_keys),
-    parameters_() {}
 
-
-
-Securifier::~Securifier() {}
-
-
-int Securifier::Sign(const std::string &value, std::string *result) const {
-  return Asymm_->Sign(value, result, sign_keys_.priv_key);
-}
-
-
-std::string Securifier::AsymmetricEncrypt(
-    const std::string &value,
-    const std::string &recipient_public_key) const {
-  return crypto::AsymEncrypt(value, recipient_public_key);
-}
-
-void Securifier::GetPublicKeyAndValidation(const std::string &/*public_key_id*/,
-                                           std::string *public_key,
-                                           std::string *public_key_validation) {
-  if (public_key)
-    public_key->clear();
-  if (public_key_validation)
-    public_key_validation->clear();
-}
-
-void Securifier::GetPublicKeyAndValidation(
-    const std::string &/*public_key_id*/,
-    GetPublicKeyAndValidationCallback callback) {
-  callback("", "");
-}
-
-bool Securifier::Validate(const std::string &value,
-                          const std::string &value_signature,
-                          const std::string &/*public_key_id*/,
-                          const std::string &public_key,
-                          const std::string &/*public_key_validation*/,
-                          const std::string &/*kademlia_key*/) const {
-  if (!public_key.empty())
-    return crypto::AsymCheckSig(value, value_signature, public_key);
-  else
-    return true;
-}
-
-std::string Securifier::AsymmetricDecrypt(
-    const std::string &encrypted_value) const {
-  return crypto::AsymDecrypt(encrypted_value, kAsymmetricDecryptionPrivateKey_);
-}
-
-std::string Securifier::kKeys() const {
-  return Keys.Identity;
-}
 
 
 

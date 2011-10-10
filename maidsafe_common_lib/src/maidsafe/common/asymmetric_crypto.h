@@ -67,16 +67,23 @@ class AsymmetricCrypto {
   typedef typename Keys::PublicKey PublicKey;
   
   int GenerateKeyPair(Keys *keypair) const;
-  int Sign(const std::string &data,
-            std::string *signature,
-           const PrivateKey &priv_key) const;
-  int CheckSignature(const std::string &plain_text,
-                     const std::string &signature,
+  
+  int Sign(const PlainText &data,
+           const PrivateKey &priv_key,
+           Signature *signature) const;
+           
+  int CheckSignature(const PlainText &plain_text,
+                     const Signature &signature,
                      const PublicKey &pub_key) const;
-  int Encrypt(const PlainText &plain_text, std::string *result,
-              const PublicKey &pub_key) const;
-  int Decrypt(const std::string &data, std::string *result,
-              const PrivateKey &priv_key) const;
+                     
+  int Encrypt(const PlainText &plain_text,
+              const PublicKey &pub_key,
+               CipherText *result ) const;
+              
+  int Decrypt(const CipherText &data,
+              const PrivateKey &priv_key,
+              PlainText *result
+              ) const;
 
  private:
   AsymmetricCrypto &operator=(const AsymmetricCrypto&);

@@ -47,12 +47,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     Please update the MaidSafe-Common library.
 #endif
 
-
 namespace maidsafe {
+  
 struct RSAKeys {
  public:
-  typedef CryptoPP::RSA::PrivateKey PrivateKey;
-  typedef CryptoPP::RSA::PublicKey PublicKey;
+  typedef typename CryptoPP::RSA::PrivateKey PrivateKey;
+  typedef typename CryptoPP::RSA::PublicKey PublicKey;
   typedef std::string ValidationToken, Identity;
   enum { KeySize = 4096 };
   RSAKeys() : identity(), priv_key(), pub_key(), validation_token() {}
@@ -63,8 +63,6 @@ struct RSAKeys {
   
 };
   
-  
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_RSA_H_
