@@ -50,6 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/platform_config.h"
+#include <cryptopp/pssr.h>
 
 namespace maidsafe {
 
@@ -228,7 +229,7 @@ std::string AsymSign(const std::string &input, const std::string &private_key) {
 
   try {
     CryptoPP::StringSource key(private_key, true);
-    CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Signer signer(key);
+    CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(key);
     std::string result;
     CryptoPP::StringSource(input, true, new CryptoPP::SignerFilter(
                            g_srandom_number_generator(), signer,
@@ -247,7 +248,7 @@ bool AsymCheckSig(const std::string &input_data,
                   const std::string &public_key) {
   try {
     CryptoPP::StringSource key(public_key, true);
-    CryptoPP::RSASS<CryptoPP::PKCS1v15, CryptoPP::SHA512>::Verifier
+    CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier
         verifier(key);
     CryptoPP::StringSource signature_string(input_signature, true);
     if (signature_string.MaxRetrievable() != verifier.SignatureLength())
@@ -308,21 +309,25 @@ void RandomBlock(byte *output, size_t size) {
 
 void RsaKeyPair::GenerateKeys(const uint16_t &key_size) {
   ClearKeys();
-  CryptoPP::RandomPool rand_pool;
-  boost::scoped_array<byte> seed(new byte[key_size]);
-  RandomBlock(seed.get(), key_size);
-  {
-    boost::mutex::scoped_lock rng_lock(g_keygen_mutex);
-    rand_pool.IncorporateEntropy(seed.get(), key_size);
+  try {
+    CryptoPP::RandomPool rand_pool;
+    boost::scoped_array<byte> seed(new byte[key_size]);
+    RandomBlock(seed.get(), key_size);
+    {
+      boost::mutex::scoped_lock rng_lock(g_keygen_mutex);
+      rand_pool.IncorporateEntropy(seed.get(), key_size);
+    }
+    CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
+    CryptoPP::StringSink private_key(private_key_);
+    decryptor.DEREncode(private_key);
+    private_key.MessageEnd();
+    CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(decryptor);
+    CryptoPP::StringSink public_key(public_key_);
+    encryptor.DEREncode(public_key);
+    public_key.MessageEnd();
+  } catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << e.what();
   }
-  CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(rand_pool, key_size);
-  CryptoPP::StringSink private_key(private_key_);
-  decryptor.DEREncode(private_key);
-  private_key.MessageEnd();
-  CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(decryptor);
-  CryptoPP::StringSink public_key(public_key_);
-  encryptor.DEREncode(public_key);
-  public_key.MessageEnd();
 }
 
 }  // namespace crypto
