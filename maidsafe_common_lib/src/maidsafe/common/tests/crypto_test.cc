@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/return_codes.h"
 
 namespace fs = boost::filesystem;
 
@@ -60,22 +61,27 @@ TEST(CryptoTest, BEH_Obfuscation) {
   const std::string kKnown2("\x5a\xa5");
   EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2));
 }
-// TODO FIXME - update to new signature
-/*
+
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 #pragma omp parallel
   {  // NOLINT (dirvine)
-    EXPECT_TRUE(SecurePassword("", "salt", 100).empty());
-    EXPECT_TRUE(SecurePassword("password", "", 100).empty());
-    EXPECT_TRUE(SecurePassword("password", "salt", 0).empty());
+    std::string password;
+    EXPECT_EQ(CommonReturnCode::kGeneralError,
+              SecurePassword("", "salt", 100, &password));
+    EXPECT_EQ(CommonReturnCode::kGeneralError,
+              SecurePassword("password", "", 100, &password));
+    EXPECT_EQ(CommonReturnCode::kGeneralError,
+              SecurePassword("password", "salt", 0, &password));
     const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
     const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
     const uint32_t kKnownIterations1(5);
     const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac29693"
         "853dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e"
         "4f162e0"));
-    EXPECT_EQ(kKnownDerived1, SecurePassword(kKnownPassword1,
-              kKnownSalt1, kKnownIterations1));
+    EXPECT_EQ(CommonReturnCode::kSuccess,
+              SecurePassword(kKnownPassword1,
+              kKnownSalt1, kKnownIterations1, &password));
+    EXPECT_EQ(kKnownDerived1, password);
     const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974"
         "696573206d75737420636f6d6d756e69636174652077697468206f74686572206e"
         "2d656e74697469657320766961206e2d3120656e746974656568656568656573"));
@@ -84,10 +90,11 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
     const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598b"
         "b945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e05c3ffc14d7fd8"
         "511c840"));
-    EXPECT_EQ(kKnownDerived2, SecurePassword(kKnownPassword2,
-              kKnownSalt2, kKnownIterations2));
+    EXPECT_EQ(CommonReturnCode::kSuccess, SecurePassword(kKnownPassword2,
+              kKnownSalt2, kKnownIterations2, &password));
+    EXPECT_EQ(kKnownDerived2, password);
   }
-}*/
+}
 
 struct HashTestData {
   HashTestData(const std::string &input_data,

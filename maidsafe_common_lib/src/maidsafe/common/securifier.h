@@ -94,8 +94,7 @@ int Securifier<Keys>::Sign(const PlainText &value, Signature *result)
 }
 
 template<typename Keys>
-int Securifier<Keys>::AsymmetricEncrypt(
-                                        const PlainText &plain_text,
+int Securifier<Keys>::AsymmetricEncrypt(const PlainText &plain_text,
                                         const typename Keys::PublicKey &key,
                                         CipherText *cipher_text) const {
   return asymm_->Encrypt(plain_text, key, cipher_text);
