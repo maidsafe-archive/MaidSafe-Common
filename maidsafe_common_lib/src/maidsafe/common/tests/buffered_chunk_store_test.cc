@@ -53,12 +53,42 @@ class BufferedChunkStoreTest: public testing::Test {
         alt_chunk_store_(),
         ref_chunk_store_() {
     work_.reset(new boost::asio::io_service::work(asio_service_));
-    for (int i = 0; i < 7; ++i)
+    for (int i = 0; i < 1; ++i)
       t_group_.create_thread(std::bind(static_cast<
           std::size_t(boost::asio::io_service::*)()>
              (&boost::asio::io_service::run), &asio_service_));
   }
   ~BufferedChunkStoreTest() {}
+  void DeleteOperation(const std::string &name_mem,
+                       const std::string &name_file) {
+    EXPECT_FALSE(this->chunk_store_->Empty());
+    EXPECT_EQ(2, this->chunk_store_->Count());
+    EXPECT_EQ(579, this->chunk_store_->Size());
+    EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+    EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+    EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
+    EXPECT_TRUE(this->chunk_store_->Has(name_file));
+    EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+    EXPECT_EQ(456, this->chunk_store_->Size(name_file));
+
+    // Delete existing chunks
+    EXPECT_TRUE(this->chunk_store_->Delete(name_file));
+    EXPECT_FALSE(this->chunk_store_->Has(name_file));
+    EXPECT_EQ(0, this->chunk_store_->Count(name_file));
+    EXPECT_EQ(0, this->chunk_store_->Size(name_file));
+    EXPECT_TRUE(this->chunk_store_->Get(name_file).empty());
+    EXPECT_EQ(1, this->chunk_store_->Count());
+    EXPECT_EQ(123, this->chunk_store_->Size());
+    EXPECT_TRUE(this->chunk_store_->Delete(name_mem));
+    EXPECT_FALSE(this->chunk_store_->Has(name_mem));
+    EXPECT_EQ(0, this->chunk_store_->Count(name_mem));
+    EXPECT_EQ(0, this->chunk_store_->Size(name_mem));
+    EXPECT_TRUE(this->chunk_store_->Get(name_mem).empty());
+
+    EXPECT_TRUE(this->chunk_store_->Empty());
+    EXPECT_EQ(0, this->chunk_store_->Count());
+    EXPECT_EQ(0, this->chunk_store_->Size());
+  }
  protected:
   void SetUp() {
     fs::create_directories(chunk_dir_);
@@ -192,6 +222,54 @@ TEST_F(BufferedChunkStoreTest, BEH_SmallName) {
   EXPECT_FALSE(this->chunk_store_->Has("x"));
   EXPECT_TRUE(this->alt_chunk_store_->Has("x"));
   EXPECT_FALSE(this->alt_chunk_store_->Validate("x"));
+}
+
+TEST_F(BufferedChunkStoreTest, BEH_Delete) {
+  std::string content(RandomString(123));
+  std::string name_mem(crypto::Hash<crypto::SHA512>(content));
+  fs::path path(*this->test_dir_ / "chunk.dat");
+  this->CreateRandomFile(path, 456);
+  std::string name_file(crypto::HashFile<crypto::SHA512>(path));
+  ASSERT_NE(name_mem, name_file);
+
+  // invalid input
+  EXPECT_FALSE(this->chunk_store_->Delete(""));
+
+  // non-existing chunk
+  EXPECT_TRUE(this->chunk_store_->Delete(name_mem));
+
+  ASSERT_TRUE(this->chunk_store_->Store(name_mem, content));
+  ASSERT_TRUE(this->chunk_store_->Store(name_file, path, true));
+  asio_service_.post(std::bind(&BufferedChunkStoreTest::DeleteOperation, this,
+                               name_mem, name_file));
+  /*
+  EXPECT_FALSE(this->chunk_store_->Empty());
+  EXPECT_EQ(2, this->chunk_store_->Count());
+  EXPECT_EQ(579, this->chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(456, this->chunk_store_->Size(name_file));
+
+  // Delete existing chunks
+  EXPECT_TRUE(this->chunk_store_->Delete(name_file));
+  EXPECT_FALSE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(0, this->chunk_store_->Size(name_file));
+  EXPECT_TRUE(this->chunk_store_->Get(name_file).empty());
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_EQ(123, this->chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Delete(name_mem));
+  EXPECT_FALSE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(0, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(0, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Get(name_mem).empty());
+
+  EXPECT_TRUE(this->chunk_store_->Empty());
+  EXPECT_EQ(0, this->chunk_store_->Count());
+  EXPECT_EQ(0, this->chunk_store_->Size()); */
 }
 
 }  // namespace test

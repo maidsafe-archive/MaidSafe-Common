@@ -238,13 +238,13 @@ bool BufferedChunkStore::Store(const std::string &name,
 }
 
 bool BufferedChunkStore::Delete(const std::string &name) {
-  {
+  /*{
     UniqueLock unique_lock(shared_mutex_);
     while (std::find(cached_chunk_names_.begin(),
                      cached_chunk_names_.end(), name) ==
         cached_chunk_names_.end())
       cond_var_any_.wait(unique_lock);
-  }
+  }*/
   bool file_delete_result = file_chunk_store_->Delete(name);
   UpgradeLock upgrade_lock(shared_mutex_);
   auto it = std::find(cached_chunk_names_.begin(), cached_chunk_names_.end(),
@@ -411,7 +411,7 @@ void BufferedChunkStore::CopyingChunkInFile(const std::string &name,
   upgrade_lock.lock();
   UpgradeToUniqueLock unique_lock(upgrade_lock);
   cached_chunk_names_.push_front(name);
-  cond_var_any_.notify_one();
+  // cond_var_any_.notify_one();
 }
 
 }  // namespace maidsafe
