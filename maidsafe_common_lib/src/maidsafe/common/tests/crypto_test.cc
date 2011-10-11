@@ -90,6 +90,7 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
     const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598b"
         "b945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e05c3ffc14d7fd8"
         "511c840"));
+    password.clear();
     EXPECT_EQ(CommonReturnCode::kSuccess, SecurePassword(kKnownPassword2,
               kKnownSalt2, kKnownIterations2, &password));
     EXPECT_EQ(kKnownDerived2, password);
