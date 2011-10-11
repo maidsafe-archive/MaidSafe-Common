@@ -25,10 +25,9 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <functional>
 #include <memory>
-#include "boost/filesystem.hpp"
 #include "maidsafe/common/tests/chunk_store_api_test.h"
+#include "maidsafe/common/hashable_chunk_validation.h"
 #include "maidsafe/common/memory_chunk_store.h"
 
 namespace maidsafe {
@@ -39,8 +38,9 @@ template <> template <class HashType>
 void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
     const fs::path&) {
-  chunk_store->reset(new MemoryChunkStore(reference_counting, std::bind(
-      &crypto::Hash<HashType>, std::placeholders::_1)));
+  chunk_store->reset(new MemoryChunkStore(
+      reference_counting,
+      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));
 }
 
 INSTANTIATE_TYPED_TEST_CASE_P(Memory, ChunkStoreTest, MemoryChunkStore);
