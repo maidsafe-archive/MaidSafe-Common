@@ -36,23 +36,24 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 namespace test {
-template <typename Keys>
+
 class RSATest : public testing::Test {
  public:
-  RSATest(std::shared_ptr<AsymmetricCrypto<RSAKeys> >asymm)
-          : rsa_test_(asymm), key_one_(), key_two_() {
+  RSATest()
+          : rsa_test_(), key_one_(), key_two_() {
+
     rsa_test_.GenerateKeyPair(&key_one_);
     rsa_test_.GenerateKeyPair(&key_two_);
   }
   
   ~RSATest() {}
  protected:
-  AsymmetricCrypto<Keys> rsa_test_;
+  AsymmetricCrypto<RSAKeys> rsa_test_;
   RSAKeys key_one_;
   RSAKeys key_two_;
 };
 
-  
+
 TEST(RSAKeGenTest, BEH_RsaKeyPair) {
 #pragma omp parallel
   { // NOLINT (dirvine)
@@ -62,12 +63,12 @@ TEST(RSAKeGenTest, BEH_RsaKeyPair) {
               rsa.GenerateKeyPair(&keys));
   }   
 }
-/*
+
+
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   #pragma omp parallel
   { // NOLINT (dirvine)
 
-    RSA rsa;
     const std::string plain_data(RandomString(470));
     std::string recovered_data("");
     std::string recovered_data_other("");
@@ -77,16 +78,16 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     const std::string plain_data_other(RandomString(470));
     // Encryption and decryption
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa.Encrypt(plain_data,
-                         &recovered_data,
-                         key_one_.pub_key));
+              rsa_test_.Encrypt(plain_data,
+                         key_one_.pub_key,
+                         &recovered_data));
     
     EXPECT_NE(plain_data, recovered_data);
     
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa.Decrypt(recovered_data,
-                          &recovered_data_other,
-                          key_one_.priv_key));
+              rsa_test_.Decrypt(recovered_data,
+                          key_one_.priv_key,
+                          &recovered_data_other));
     EXPECT_EQ(plain_data, recovered_data_other);
 
    
@@ -95,16 +96,16 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     EXPECT_NE(recovered_data, plain_data);
 
     EXPECT_EQ(CommonReturnCode::kDataEmpty,
-              rsa.Encrypt(empty_data, &recovered_data, key_one_.pub_key));
+              rsa_test_.Encrypt(empty_data, key_one_.pub_key, &recovered_data));
     
     EXPECT_EQ(CommonReturnCode::kDataEmpty,
-              rsa.Decrypt(empty_data, &empty_data, key_one_.priv_key));
+              rsa_test_.Decrypt(empty_data, key_one_.priv_key, &empty_data));
 
     EXPECT_EQ(CommonReturnCode::kInvalidPrivateKey,
-              rsa.Decrypt(plain_data, &recovered_data, empty_priv_key));
+              rsa_test_.Decrypt(plain_data, empty_priv_key, &recovered_data));
 
     EXPECT_EQ(CommonReturnCode::kInvalidPublicKey,
-              rsa.Encrypt(plain_data, &recovered_data, empty_pub_key));
+              rsa_test_.Encrypt(plain_data, empty_pub_key, &recovered_data));
   }
 }
 
@@ -112,7 +113,7 @@ TEST_F(RSATest, BEH_SignValidate) {
   #pragma omp parallel
   { // NOLINT (dirvine)
     // Set up data
-    RSA rsa;
+;
     CryptoPP::RSA::PrivateKey empty_priv_key;
     CryptoPP::RSA::PublicKey empty_pub_key;
     std::string empty_data;
@@ -122,31 +123,33 @@ TEST_F(RSATest, BEH_SignValidate) {
     std::string signature;
     
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa.Sign(data, &signature, key_one_.priv_key));
+              rsa_test_.Sign(data, key_one_.priv_key, &signature));
     
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa.CheckSignature(data, signature , key_one_.pub_key));
+              rsa_test_.CheckSignature(data, signature, key_one_.pub_key));
     
     EXPECT_EQ(CommonReturnCode::kDataEmpty ,
-              rsa.Sign(empty_data, &signature, key_one_.priv_key));
+              rsa_test_.Sign(empty_data, key_one_.priv_key, &signature));
     
     EXPECT_EQ(CommonReturnCode::kDataEmpty ,
-              rsa.CheckSignature(empty_data, signature , key_one_.pub_key));
+              rsa_test_.CheckSignature(empty_data,
+                                       signature,
+                                       key_one_.pub_key));
     
     EXPECT_EQ(CommonReturnCode::kInvalidPrivateKey ,
-              rsa.Sign(data, &signature, empty_priv_key));
+              rsa_test_.Sign(data, empty_priv_key, &signature));
     
     EXPECT_EQ(CommonReturnCode::kInvalidPublicKey ,
-              rsa.CheckSignature(data, signature , empty_pub_key));
+              rsa_test_.CheckSignature(data, signature , empty_pub_key));
     
     EXPECT_EQ(CommonReturnCode::kRSASignatureEmpty ,
-              rsa.CheckSignature(data, empty_signature , key_one_.pub_key));
+              rsa_test_.CheckSignature(data, empty_signature , key_one_.pub_key));
     
     EXPECT_EQ(CommonReturnCode::kRSAInvalidsignature ,
-              rsa.CheckSignature(data, bad_signature , key_one_.pub_key));
+              rsa_test_.CheckSignature(data, bad_signature , key_one_.pub_key));
   }
 }
-*/
+
 }  // namespace test
 
 }  // namespace maidsafe
