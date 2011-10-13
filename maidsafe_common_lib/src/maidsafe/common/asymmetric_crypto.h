@@ -55,14 +55,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace maidsafe {
 
   typedef std::string Signature, PlainText, CipherText;
-  
+  typedef std::function<void(const std::string&, const std::string&)>
+        GetPublicKeyAndValidationCallback;
   
 template<class Keys>
 class AsymmetricCrypto {
-
  public:
   AsymmetricCrypto()  {}
-  ~AsymmetricCrypto() {}
+  virtual ~AsymmetricCrypto() {}
   typedef typename Keys::PrivateKey PrivateKey;
   typedef typename Keys::PublicKey PublicKey;
   
@@ -84,7 +84,16 @@ class AsymmetricCrypto {
               const PrivateKey &priv_key,
               PlainText *result
               ) const;
+              
+  virtual void GetPublicKeyAndValidation(
+      const  typename Keys::Identity &public_key_id,
+      GetPublicKeyAndValidationCallback callback) const;
 
+  virtual bool Validate(const PlainText &plain_text,
+                        const Signature &signature,
+                        const typename Keys::PublicKey &public_key
+                        ) const;
+                               
  private:
   AsymmetricCrypto &operator=(const AsymmetricCrypto&);
   AsymmetricCrypto(const AsymmetricCrypto&);

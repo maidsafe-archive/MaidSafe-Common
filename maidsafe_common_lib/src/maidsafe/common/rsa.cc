@@ -92,8 +92,7 @@ template<>
 int AsymmetricCrypto<RSAKeys>::Encrypt(const PlainText &data,
                                        const PublicKey &pub_key,
                                        CipherText *result
-                                       ) const
-{
+                                       ) const {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
     return CommonReturnCode::kDataEmpty;
@@ -118,8 +117,7 @@ int AsymmetricCrypto<RSAKeys>::Encrypt(const PlainText &data,
 template<>
 int AsymmetricCrypto<RSAKeys>::Decrypt(const CipherText &data,
                                        const PrivateKey& priv_key,
-                                       PlainText *result) const
-{
+                                       PlainText *result) const {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
     return CommonReturnCode::kDataEmpty;
@@ -151,8 +149,7 @@ int AsymmetricCrypto<RSAKeys>::Decrypt(const CipherText &data,
 template<>
 int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
                                     const PrivateKey& priv_key,
-                                    std::string  *signature) const
-{
+                                    std::string  *signature) const {
   if (!priv_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad private key ";
     return CommonReturnCode::kInvalidPrivateKey;
@@ -179,8 +176,7 @@ int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
 template<>
 int AsymmetricCrypto<RSAKeys>::CheckSignature(const PlainText &data,
                                               const Signature &signature,
-                                              const PublicKey &pub_key) const
-{
+                                              const PublicKey &pub_key) const {
   if (!pub_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad public key ";
     return CommonReturnCode::kInvalidPublicKey;
@@ -209,6 +205,24 @@ int AsymmetricCrypto<RSAKeys>::CheckSignature(const PlainText &data,
     return CommonReturnCode::kRSAInvalidsignature;
   }
   return CommonReturnCode::kSuccess;
+}
+
+template<>
+void AsymmetricCrypto<RSAKeys>::GetPublicKeyAndValidation(
+    const RSAKeys::Identity &/*id*/,
+    GetPublicKeyAndValidationCallback callback) const {
+  callback("", "");
+}
+
+template<>
+bool AsymmetricCrypto<RSAKeys>::Validate(const PlainText &plain_text,
+                                const Signature &signature,
+                                const RSAKeys::PublicKey &public_key
+                               ) const {
+  if (0 == CheckSignature(plain_text, signature, public_key))
+    return true;
+  else
+    return false;
 }
 
 }  // namespace maidsafe

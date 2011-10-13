@@ -80,6 +80,7 @@ typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
+
 const uint16_t AES256_KeySize = 32;  /**< size in bytes. */
 const uint16_t AES256_IVSize = 16;  /**< size in bytes. */
 const uint16_t kMaxCompressionLevel = 9;
