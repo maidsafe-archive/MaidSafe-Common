@@ -132,8 +132,8 @@ bool BufferedChunkStore::Store(const std::string &name,
 
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
-                  (const std::string&, const bool&)>(
-          &BufferedChunkStore::CopyingChunkInFile), this, name, false));
+                  (const std::string&)>(
+          &BufferedChunkStore::CopyingChunkInFile), this, name));
   return true;
 }
 bool BufferedChunkStore::StoreCached(const std::string &name,
@@ -251,8 +251,8 @@ bool BufferedChunkStore::Store(const std::string &name,
 
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
-                  (const std::string&, const bool&)>(
-          &BufferedChunkStore::CopyingChunkInFile), this, name, true));
+                  (const std::string&)>(
+          &BufferedChunkStore::CopyingChunkInFile), this, name));
   return true;
 }
 
@@ -409,23 +409,14 @@ void BufferedChunkStore::MarkForDeletion(const std::string &name) {
   removable_chunk_names_.push_back(name);
 }
 
-void BufferedChunkStore::CopyingChunkInFile(const std::string &name,
-                                            const bool &store_from_file) {
+void BufferedChunkStore::CopyingChunkInFile(const std::string &name) {
   UpgradeLock upgrade_lock(shared_mutex_);
-  if (store_from_file) {
-    fs::path path(EncodeToBase32(name));
-    memory_chunk_store_->Get(name, path);
-    upgrade_lock.unlock();
-    file_chunk_store_->Store(name, path, true);
-  } else {
-    std::string content = memory_chunk_store_->Get(name);
-    upgrade_lock.unlock();
-    file_chunk_store_->Store(name, content);
-  }
+  std::string content = memory_chunk_store_->Get(name);
+  upgrade_lock.unlock();
+  file_chunk_store_->Store(name, content);
   upgrade_lock.lock();
   UpgradeToUniqueLock unique_lock(upgrade_lock);
   cached_chunk_names_.push_front(name);
-  // cond_var_any_.notify_one();
 }
 
 }  // namespace maidsafe

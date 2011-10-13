@@ -90,8 +90,7 @@ class BufferedChunkStore: public ChunkStore {
         file_chunk_store_(new ThreadsafeChunkStore(reference_counting,
                                                    chunk_store_)),
         cached_chunk_names_(),
-        removable_chunk_names_(),
-        cond_var_any_() {}
+        removable_chunk_names_() {}
   ~BufferedChunkStore() {}
 
 bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
@@ -329,7 +328,7 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
-  void CopyingChunkInFile(const std::string &name, const bool &store_from_file);
+  void CopyingChunkInFile(const std::string &name);
 
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
@@ -344,7 +343,6 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   mutable std::list<std::string> cached_chunk_names_;
   // List contain info about chunks being copied to file_chunk_store
   mutable std::list<std::string> removable_chunk_names_;
-  mutable boost::condition_variable_any cond_var_any_;
 };
 
 }  //  namespace maidsafe
