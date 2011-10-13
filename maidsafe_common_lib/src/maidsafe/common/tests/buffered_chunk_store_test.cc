@@ -766,6 +766,106 @@ TEST_F(BufferedChunkStoreTest, BEH_References) {
   EXPECT_EQ(2, this->ref_chunk_store_->Count());
 }
 
+TEST_F(BufferedChunkStoreTest, BEH_StoreCached) {
+  std::string content(RandomString(123));
+  std::string name_mem(crypto::Hash<crypto::SHA512>(content));
+  fs::path path(*this->test_dir_ / "chunk.dat");
+  this->CreateRandomFile(path, 456);
+  std::string name_file(crypto::HashFile<crypto::SHA512>(path));
+  ASSERT_NE(name_mem, name_file);
+  std::shared_ptr<BufferedChunkStore> chunk_store(new BufferedChunkStore(
+      false, asio_service_));
+  // invalid input
+  EXPECT_FALSE(chunk_store->StoreCached(name_mem, ""));
+  EXPECT_FALSE(chunk_store->StoreCached("", content));
+  EXPECT_FALSE(chunk_store->StoreCached(name_file, "", false));
+  EXPECT_FALSE(chunk_store->StoreCached(name_file, *this->test_dir_ / "fail",
+                                        false));
+  EXPECT_FALSE(chunk_store->StoreCached("", path, false));
+  EXPECT_TRUE(chunk_store->CacheEmpty());
+  EXPECT_EQ(0, chunk_store->CacheCount());
+  EXPECT_EQ(0, chunk_store->CacheSize());
+  EXPECT_FALSE(chunk_store->CacheHas(name_mem));
+  EXPECT_EQ(0, chunk_store->CacheCount(name_mem));
+  EXPECT_EQ(0, chunk_store->CacheSize(name_mem));
+  EXPECT_FALSE(chunk_store->CacheHas(name_file));
+  EXPECT_EQ(0, chunk_store->CacheCount(name_file));
+  EXPECT_EQ(0, chunk_store->CacheSize(name_file));
+
+  // store from string
+  EXPECT_TRUE(chunk_store->StoreCached(name_mem, content));
+  EXPECT_FALSE(chunk_store->CacheEmpty());
+  EXPECT_EQ(1, chunk_store->CacheCount());
+  EXPECT_EQ(123, chunk_store->CacheSize());
+  EXPECT_TRUE(chunk_store->CacheHas(name_mem));
+  EXPECT_EQ(1, chunk_store->CacheCount(name_mem));
+  EXPECT_EQ(123, chunk_store->CacheSize(name_mem));
+  EXPECT_FALSE(chunk_store->CacheHas(name_file));
+  EXPECT_EQ(0, chunk_store->CacheCount(name_file));
+  EXPECT_EQ(0, chunk_store->CacheSize(name_file));
+
+  ASSERT_EQ(name_mem,
+            crypto::Hash<crypto::SHA512>(chunk_store->Get(name_mem)));
+
+  // store from file
+  EXPECT_TRUE(chunk_store->StoreCached(name_file, path, false));
+  EXPECT_FALSE(chunk_store->CacheEmpty());
+  EXPECT_EQ(2, chunk_store->CacheCount());
+  EXPECT_EQ(579, chunk_store->CacheSize());
+  EXPECT_TRUE(chunk_store->CacheHas(name_mem));
+  EXPECT_EQ(1, chunk_store->CacheCount(name_mem));
+  EXPECT_EQ(123, chunk_store->CacheSize(name_mem));
+  EXPECT_TRUE(chunk_store->CacheHas(name_file));
+  EXPECT_EQ(1, chunk_store->CacheCount(name_file));
+  EXPECT_EQ(456, chunk_store->CacheSize(name_file));
+
+  ASSERT_EQ(name_file,
+            crypto::Hash<crypto::SHA512>(chunk_store->Get(name_file)));
+
+  fs::path new_path(*this->test_dir_ / "chunk2.dat");
+  this->CreateRandomFile(new_path, 333);
+  std::string new_name(crypto::HashFile<crypto::SHA512>(new_path));
+
+  // overwrite existing, should be ignored
+  EXPECT_TRUE(chunk_store->StoreCached(name_mem, ""));
+  EXPECT_TRUE(chunk_store->StoreCached(name_mem, RandomString(222)));
+  EXPECT_TRUE(chunk_store->StoreCached(name_file, "", false));
+  EXPECT_TRUE(chunk_store->StoreCached(name_file, new_path, false));
+  EXPECT_FALSE(chunk_store->CacheEmpty());
+  EXPECT_EQ(2, chunk_store->CacheCount());
+  EXPECT_EQ(579, chunk_store->CacheSize());
+  EXPECT_TRUE(chunk_store->CacheHas(name_mem));
+  EXPECT_EQ(1, chunk_store->CacheCount(name_mem));
+  EXPECT_EQ(123, chunk_store->CacheSize(name_mem));
+  EXPECT_TRUE(chunk_store->CacheHas(name_file));
+  EXPECT_EQ(1, chunk_store->CacheCount(name_file));
+  EXPECT_EQ(456, chunk_store->CacheSize(name_file));
+
+  ASSERT_EQ(name_mem,
+            crypto::Hash<crypto::SHA512>(chunk_store->Get(name_mem)));
+  ASSERT_EQ(name_file,
+            crypto::Hash<crypto::SHA512>(chunk_store->Get(name_file)));
+
+  // delete input file (existing chunk)
+  EXPECT_FALSE(chunk_store->StoreCached("", path, true));
+  EXPECT_TRUE(fs::exists(path));
+  EXPECT_TRUE(chunk_store->StoreCached(name_mem, path, true));
+  EXPECT_FALSE(fs::exists(path));
+
+  // delete input file (new chunk)
+  EXPECT_TRUE(chunk_store->StoreCached(new_name, new_path, true));
+  EXPECT_EQ(new_name,
+            crypto::Hash<crypto::SHA512>(chunk_store->Get(new_name)));
+  EXPECT_FALSE(fs::exists(path));
+  EXPECT_TRUE(chunk_store->StoreCached(new_name, new_path, true));
+  EXPECT_FALSE(chunk_store->CacheEmpty());
+  EXPECT_EQ(3, chunk_store->CacheCount());
+  EXPECT_EQ(912, chunk_store->CacheSize());
+  EXPECT_TRUE(chunk_store->CacheHas(new_name));
+  EXPECT_EQ(1, chunk_store->CacheCount(new_name));
+  EXPECT_EQ(333, chunk_store->CacheSize(new_name));
+}
+
 }  // namespace test
 
 }  // namespace maidsafe

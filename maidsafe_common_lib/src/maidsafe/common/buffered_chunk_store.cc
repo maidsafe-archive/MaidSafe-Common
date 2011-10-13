@@ -152,8 +152,10 @@ bool BufferedChunkStore::StoreCached(const std::string &name,
         return false;
       cached_chunk_names_.pop_back();
     }
-    cached_chunk_names_.push_front(name);
-    return memory_chunk_store_->Store(name, content);
+    if (memory_chunk_store_->Store(name, content))
+      cached_chunk_names_.push_front(name);
+    else
+      return false;
   }
   return true;
 }
@@ -176,11 +178,18 @@ bool BufferedChunkStore::StoreCached(const std::string &name,
         return false;
       cached_chunk_names_.pop_back();
     }
-    cached_chunk_names_.push_front(name);
-    return memory_chunk_store_->Store(name, source_file_name,
-                                      delete_source_file);
+    if (memory_chunk_store_->Store(name, source_file_name,
+                                      delete_source_file)) {
+      cached_chunk_names_.push_front(name);
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    if (delete_source_file)
+      fs::remove(source_file_name, ec);
+    return true;
   }
-  return true;
 }
 
 bool BufferedChunkStore::Store(const std::string &name,
@@ -296,10 +305,12 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
 }
 
 bool BufferedChunkStore::Has(const std::string &name) const {
-  // SharedLock shared_lock(shared_mutex_);
-  // if (memory_chunk_store_->Has(name))
-    // return true;
   return file_chunk_store_->Has(name);
+}
+
+bool BufferedChunkStore::CacheHas(const std::string &name) const {
+  SharedLock shared_lock(shared_mutex_);
+  return memory_chunk_store_->Has(name);
 }
 
 bool BufferedChunkStore::HasCached(const std::string &name) const {

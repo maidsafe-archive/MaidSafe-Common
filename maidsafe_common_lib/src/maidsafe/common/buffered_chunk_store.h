@@ -174,6 +174,13 @@ bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
   bool Has(const std::string &name) const;
 
   /**
+   * Checks if a chunk exists.
+   * @param name Chunk name
+   * @return True if chunk exists
+   */
+  bool CacheHas(const std::string &name) const;
+
+  /**
    * Checks if a chunk exists in Memory.
    * @param name Chunk name
    * @return True if chunk exists
