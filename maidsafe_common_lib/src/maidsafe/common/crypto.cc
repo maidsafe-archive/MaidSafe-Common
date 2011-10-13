@@ -85,7 +85,7 @@ int SecurePassword(const std::string &password,
     DLOG(WARNING) << "Invalid parameter.";
     return CommonReturnCode::kGeneralError ;
   }
-  uint16_t iter = (pin % 500000) + 500000;
+  uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
   byte purpose = 0;  // unused in this pbkdf implementation
