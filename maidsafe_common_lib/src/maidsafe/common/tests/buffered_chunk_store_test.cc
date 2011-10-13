@@ -108,8 +108,9 @@ class BufferedChunkStoreTest: public testing::Test {
     EXPECT_EQ(0, chunk_store_->Size());
   }
 
-  bool StoreDone(const std::string &name) {
-    return chunk_store_->Has(name);
+  bool StoreDone(const std::string &name,
+                 std::shared_ptr<ChunkStore> chunk_store) {
+    return chunk_store->Has(name);
   }
  protected:
   void SetUp() {
@@ -222,12 +223,16 @@ TEST_F(BufferedChunkStoreTest, BEH_Validate) {
 
   ASSERT_TRUE(this->chunk_store_->Store(name1, content1));
   ASSERT_TRUE(this->chunk_store_->Store(name2, content2));
+  while (!StoreDone(name2, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
 
   EXPECT_TRUE(this->chunk_store_->Validate(name1));
   EXPECT_FALSE(this->chunk_store_->Validate(name2));
 
   ASSERT_TRUE(this->chunk_store_->Delete(name1));
   ASSERT_TRUE(this->chunk_store_->Store(name1, "this won't validate"));
+  while (!StoreDone(name1, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
   EXPECT_FALSE(this->chunk_store_->Validate(name1));
   EXPECT_TRUE(this->chunk_store_->Has(name1));
 }
@@ -237,10 +242,13 @@ TEST_F(BufferedChunkStoreTest, BEH_SmallName) {
   EXPECT_EQ(0, this->chunk_store_->Count("x"));
   EXPECT_TRUE(this->chunk_store_->Get("x").empty());
   EXPECT_TRUE(this->chunk_store_->Store("x", "dummy"));
+  while (!StoreDone("x", chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
   // EXPECT_TRUE(this->chunk_store_->Has("x"));
   EXPECT_EQ(1, this->chunk_store_->Count("x"));
   EXPECT_EQ("dummy", this->chunk_store_->Get("x"));
   EXPECT_TRUE(this->chunk_store_->MoveTo("x", this->alt_chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(10));
   EXPECT_FALSE(this->chunk_store_->Has("x"));
   EXPECT_TRUE(this->alt_chunk_store_->Has("x"));
   EXPECT_FALSE(this->alt_chunk_store_->Validate("x"));
@@ -333,7 +341,7 @@ TEST_F(BufferedChunkStoreTest, BEH_Store) {
 
   // store from string
   EXPECT_TRUE(this->chunk_store_->Store(name_mem, content));
-  while (!StoreDone(name_mem))
+  while (!StoreDone(name_mem, chunk_store_))
     Sleep(boost::posix_time::milliseconds(1));
   EXPECT_FALSE(this->chunk_store_->Empty());
   EXPECT_EQ(1, this->chunk_store_->Count());
@@ -350,7 +358,7 @@ TEST_F(BufferedChunkStoreTest, BEH_Store) {
 
   // store from file
   EXPECT_TRUE(this->chunk_store_->Store(name_file, path, false));
-  while (!StoreDone(name_file))
+  while (!StoreDone(name_file, chunk_store_))
     Sleep(boost::posix_time::milliseconds(1));
   EXPECT_FALSE(this->chunk_store_->Empty());
   EXPECT_EQ(2, this->chunk_store_->Count());
@@ -374,7 +382,7 @@ TEST_F(BufferedChunkStoreTest, BEH_Store) {
   EXPECT_TRUE(this->chunk_store_->Store(name_mem, RandomString(222)));
   EXPECT_TRUE(this->chunk_store_->Store(name_file, "", false));
   EXPECT_TRUE(this->chunk_store_->Store(name_file, new_path, false));
-  while (!StoreDone(name_file))
+  while (!StoreDone(name_file, chunk_store_))
     Sleep(boost::posix_time::milliseconds(1));
   EXPECT_FALSE(this->chunk_store_->Empty());
   EXPECT_EQ(2, this->chunk_store_->Count());
@@ -399,13 +407,13 @@ TEST_F(BufferedChunkStoreTest, BEH_Store) {
 
   // delete input file (new chunk)
   EXPECT_TRUE(this->chunk_store_->Store(new_name, new_path, true));
-  while (!StoreDone(new_name))
+  while (!StoreDone(new_name, chunk_store_))
     Sleep(boost::posix_time::milliseconds(1));
   EXPECT_EQ(new_name,
             crypto::Hash<crypto::SHA512>(this->chunk_store_->Get(new_name)));
   EXPECT_FALSE(fs::exists(path));
   EXPECT_TRUE(this->chunk_store_->Store(new_name, new_path, true));
-  while (!StoreDone(new_name))
+  while (!StoreDone(new_name, chunk_store_))
     Sleep(boost::posix_time::milliseconds(1));
   EXPECT_FALSE(this->chunk_store_->Empty());
   EXPECT_EQ(3, this->chunk_store_->Count());
@@ -414,6 +422,344 @@ TEST_F(BufferedChunkStoreTest, BEH_Store) {
   EXPECT_EQ(1, this->chunk_store_->Count(new_name));
   EXPECT_EQ(333, this->chunk_store_->Size(new_name));
 }
+
+TEST_F(BufferedChunkStoreTest, BEH_Capacity) {
+  std::string content1(RandomString(100));
+  std::string name1(crypto::Hash<crypto::SHA512>(content1));
+  std::string content2(RandomString(50));
+  std::string name2(crypto::Hash<crypto::SHA512>(content2));
+  std::string content3(RandomString(25));
+  std::string name3(crypto::Hash<crypto::SHA512>(content3));
+
+  EXPECT_EQ(0, this->chunk_store_->Capacity());
+  EXPECT_TRUE(this->chunk_store_->Vacant(0));
+  EXPECT_TRUE(this->chunk_store_->Vacant(123456789));
+  this->chunk_store_->SetCapacity(125);
+  EXPECT_EQ(125, this->chunk_store_->Capacity());
+  EXPECT_TRUE(this->chunk_store_->Vacant(125));
+  EXPECT_FALSE(this->chunk_store_->Vacant(126));
+
+  // store #1, space to 100
+  EXPECT_TRUE(this->chunk_store_->Vacant(content1.size()));
+  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+
+  // try storing #2, 25 over limit
+  EXPECT_FALSE(this->chunk_store_->Vacant(content2.size()));
+  EXPECT_FALSE(this->chunk_store_->Store(name2, content2));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+
+  // store #3, space to 125, which equals limit
+  EXPECT_TRUE(this->chunk_store_->Vacant(content3.size()));
+  EXPECT_TRUE(this->chunk_store_->Store(name3, content3));
+  while (!StoreDone(name3, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_EQ(125, this->chunk_store_->Size());
+
+  this->chunk_store_->SetCapacity(150);
+
+  // try storing #2, again 25 over limit
+  EXPECT_FALSE(this->chunk_store_->Vacant(content2.size()));
+  EXPECT_FALSE(this->chunk_store_->Store(name2, content2));
+  EXPECT_EQ(125, this->chunk_store_->Size());
+
+  // delete #3, space to 100
+  EXPECT_TRUE(this->chunk_store_->Delete(name3));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+
+  // store #2, space to 150, which equals limit
+  EXPECT_TRUE(this->chunk_store_->Vacant(content2.size()));
+  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
+  while (!StoreDone(name2, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_EQ(150, this->chunk_store_->Size());
+
+  // store #1 again, nothing changes
+  EXPECT_FALSE(this->chunk_store_->Vacant(content1.size()));
+  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_EQ(150, this->chunk_store_->Size());
+
+  // can't reduce capacity as space is taken
+  EXPECT_EQ(150, this->chunk_store_->Capacity());
+  this->chunk_store_->SetCapacity(125);
+  EXPECT_EQ(150, this->chunk_store_->Capacity());
+
+  EXPECT_TRUE(this->alt_chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, alt_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->alt_chunk_store_->Store(name3, content3));
+  while (!StoreDone(name3, alt_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+
+  // moving #1 succeeds since it already exists
+  EXPECT_FALSE(this->chunk_store_->Vacant(content1.size()));
+  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->alt_chunk_store_->Has(name1));
+
+  // moving #3 fails since we are full
+  EXPECT_FALSE(this->chunk_store_->Vacant(content3.size()));
+  EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name3, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->chunk_store_->Has(name3));
+  EXPECT_TRUE(this->alt_chunk_store_->Has(name3));
+
+  // delete #1, space to 50
+  EXPECT_TRUE(this->chunk_store_->Delete(name1));
+  EXPECT_EQ(50, this->chunk_store_->Size());
+
+  // moving #3 succeeds now
+  EXPECT_TRUE(this->chunk_store_->Vacant(content3.size()));
+  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name3, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_TRUE(this->chunk_store_->Has(name3));
+  EXPECT_FALSE(this->alt_chunk_store_->Has(name3));
+  EXPECT_EQ(75, this->chunk_store_->Size());
+
+  // reducing capacity succeeds now
+  EXPECT_EQ(150, this->chunk_store_->Capacity());
+  this->chunk_store_->SetCapacity(125);
+  EXPECT_EQ(125, this->chunk_store_->Capacity());
+}
+
+TEST_F(BufferedChunkStoreTest, BEH_MoveTo) {
+  std::string content1(RandomString(100));
+  std::string name1(crypto::Hash<crypto::SHA512>(content1));
+  std::string content2(RandomString(50));
+  std::string name2(crypto::Hash<crypto::SHA512>(content2));
+  std::string content3(RandomString(25));
+  std::string name3(crypto::Hash<crypto::SHA512>(content3));
+
+  // ( | )  ->  (1 2 | 2 3)
+  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
+  while (!StoreDone(name2, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_EQ(2, this->chunk_store_->Count());
+  EXPECT_EQ(150, this->chunk_store_->Size());
+  EXPECT_TRUE(this->alt_chunk_store_->Store(name2, content2));
+  EXPECT_TRUE(this->alt_chunk_store_->Store(name3, content3));
+  while (!StoreDone(name3, alt_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_EQ(2, this->alt_chunk_store_->Count());
+  EXPECT_EQ(75, this->alt_chunk_store_->Size());
+
+  // (1 2 | 2 3)  ->  (1 | 2 3)
+  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(10));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(0, this->chunk_store_->Count(name2));
+  EXPECT_EQ(0, this->chunk_store_->Size(name2));
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_EQ(100, this->chunk_store_->Size());
+  EXPECT_TRUE(this->alt_chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->alt_chunk_store_->Count(name2));
+  EXPECT_EQ(50, this->alt_chunk_store_->Size(name2));
+  EXPECT_EQ(2, this->alt_chunk_store_->Count());
+  EXPECT_EQ(75, this->alt_chunk_store_->Size());
+
+  // (1 | 2 3)  ->  (1 2 | 3)
+  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_TRUE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->chunk_store_->Count(name2));
+  EXPECT_EQ(50, this->chunk_store_->Size(name2));
+  EXPECT_EQ(2, this->chunk_store_->Count());
+  EXPECT_EQ(150, this->chunk_store_->Size());
+  EXPECT_FALSE(this->alt_chunk_store_->Has(name2));
+  EXPECT_EQ(0, this->alt_chunk_store_->Count(name2));
+  EXPECT_EQ(0, this->alt_chunk_store_->Size(name2));
+  EXPECT_EQ(1, this->alt_chunk_store_->Count());
+  EXPECT_EQ(25, this->alt_chunk_store_->Size());
+
+  // (1 2 | 3)  ->  (1 2 3 | )
+  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name3, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_TRUE(this->chunk_store_->Has(name3));
+  EXPECT_EQ(1, this->chunk_store_->Count(name3));
+  EXPECT_EQ(25, this->chunk_store_->Size(name3));
+  EXPECT_EQ(3, this->chunk_store_->Count());
+  EXPECT_EQ(175, this->chunk_store_->Size());
+  EXPECT_FALSE(this->alt_chunk_store_->Has(name3));
+  EXPECT_EQ(0, this->alt_chunk_store_->Count(name3));
+  EXPECT_EQ(0, this->alt_chunk_store_->Size(name3));
+  EXPECT_EQ(0, this->alt_chunk_store_->Count());
+  EXPECT_EQ(0, this->alt_chunk_store_->Size());
+  EXPECT_TRUE(this->alt_chunk_store_->Empty());
+
+  // failures
+  EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(10));
+  EXPECT_FALSE(this->chunk_store_->MoveTo("", this->alt_chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(10));
+  EXPECT_FALSE(this->chunk_store_->MoveTo(name1, NULL));
+}
+
+/*TEST_F(BufferedChunkStoreTest, BEH_References) {
+  std::string content1(RandomString(100));
+  std::string name1(crypto::Hash<crypto::SHA512>(content1));
+  std::string content2(RandomString(50));
+  std::string name2(crypto::Hash<crypto::SHA512>(content2));
+  fs::path path(*this->test_dir_ / "chunk.dat");
+  this->CreateRandomFile(path, 25);
+  std::string name3(crypto::HashFile<crypto::SHA512>(path));
+
+  // add chunk twice, reference counting disabled
+  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Store(name1, ""));
+  while (!StoreDone(name1, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Delete(name1));
+  EXPECT_FALSE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->chunk_store_->Size(name1));
+  EXPECT_EQ(0, this->chunk_store_->Size());
+  EXPECT_EQ(0, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Empty());
+
+  // test failures
+  EXPECT_TRUE(this->ref_chunk_store_->Get("").empty());
+  EXPECT_TRUE(this->ref_chunk_store_->Get(name1).empty());
+  EXPECT_FALSE(this->ref_chunk_store_->Get("", *this->test_dir_ / "dummy"));
+  EXPECT_FALSE(this->ref_chunk_store_->Get(name1, ""));
+  EXPECT_FALSE(this->ref_chunk_store_->Get(name1, *this->test_dir_ / "dummy"));
+  EXPECT_FALSE(this->ref_chunk_store_->Store("", "dummy"));
+  EXPECT_FALSE(this->ref_chunk_store_->Store(name1, ""));
+  EXPECT_FALSE(this->ref_chunk_store_->Store("", path, false));
+  EXPECT_FALSE(this->ref_chunk_store_->Delete(""));
+  EXPECT_FALSE(this->ref_chunk_store_->MoveTo("", this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->ref_chunk_store_->Has(""));
+  EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(""));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size(""));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size(name1));
+  EXPECT_FALSE(this->ref_chunk_store_->Validate(""));
+  EXPECT_FALSE(this->ref_chunk_store_->Validate(name1));
+
+  // add chunk twice, reference counting enabled
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, ref_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
+  EXPECT_TRUE(this->ref_chunk_store_->Validate(name1));
+  EXPECT_EQ(content1, this->ref_chunk_store_->Get(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size());
+  EXPECT_EQ(1, this->ref_chunk_store_->Count());
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, ""));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size());
+  EXPECT_EQ(1, this->ref_chunk_store_->Count());
+  EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size());
+  EXPECT_EQ(1, this->ref_chunk_store_->Count());
+  EXPECT_FALSE(this->ref_chunk_store_->Empty());
+  EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
+  EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size(name1));
+  EXPECT_EQ(0, this->ref_chunk_store_->Size());
+  EXPECT_EQ(0, this->ref_chunk_store_->Count());
+  EXPECT_TRUE(this->ref_chunk_store_->Empty());
+
+  // adding from file
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name3, path, false));
+  while (!StoreDone(name3, ref_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->ref_chunk_store_->Validate(name3));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name3));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name3, path, true));
+  //while (!StoreDone(name3, ref_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(10));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name3));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name3, content1));
+  //while (!StoreDone(name3, ref_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(10));
+  EXPECT_EQ(3, this->ref_chunk_store_->Count(name3));
+
+  this->ref_chunk_store_->Clear();
+
+  // adding via move
+  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
+  while (!StoreDone(name2, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->ref_chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->Validate(name2));
+  EXPECT_EQ(content2, this->ref_chunk_store_->Get(name2));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name2));
+  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
+  while (!StoreDone(name2, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->ref_chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name2));
+  this->chunk_store_->SetCapacity(10);
+  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name2));
+  this->chunk_store_->SetCapacity(0);
+  EXPECT_TRUE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_TRUE(this->chunk_store_->Has(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+  EXPECT_EQ(0, this->ref_chunk_store_->Count(name2));
+  EXPECT_TRUE(this->chunk_store_->Has(name2));
+  EXPECT_FALSE(this->ref_chunk_store_->Has(name2));
+  EXPECT_TRUE(this->ref_chunk_store_->Empty());
+  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  Sleep(boost::posix_time::milliseconds(100));
+
+  // multiple chunks
+  std::uintmax_t n1((RandomUint32() % 5) + 1), n2((RandomUint32() % 5) + 1);
+  this->ref_chunk_store_->SetCapacity(150);
+  for (std::uintmax_t i = 0; i < n1; ++i)
+    EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
+  for (std::uintmax_t i = 0; i < n2; ++i)
+    EXPECT_TRUE(this->ref_chunk_store_->Store(name2, content2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
+  EXPECT_EQ(n1, this->ref_chunk_store_->Count(name1));
+  EXPECT_EQ(n2, this->ref_chunk_store_->Count(name2));
+  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
+  EXPECT_EQ(50, this->ref_chunk_store_->Size(name2));
+  EXPECT_EQ(150, this->ref_chunk_store_->Size());
+  EXPECT_EQ(2, this->ref_chunk_store_->Count());
+} */
 
 }  // namespace test
 

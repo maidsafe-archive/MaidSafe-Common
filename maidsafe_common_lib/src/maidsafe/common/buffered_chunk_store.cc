@@ -73,37 +73,30 @@ bool BufferedChunkStore::Store(const std::string &name,
     //  Check whether chunk already exist or not
     bool exist_already(false);
     SharedLock shared_lock(shared_mutex_);
-    if (memory_chunk_store_->Has(name))
+    if (memory_chunk_store_->Has(name)) {
       exist_already = true;
-    else
+    } else {
+      shared_lock.unlock();
       exist_already = file_chunk_store_->Has(name);
+    }
     if (exist_already) {
       shared_lock.unlock();
       return file_chunk_store_->Store(name, content);
     }
+
+    //  Check whether cache has capacity to store chunk
+    shared_lock.lock();
+    if ((content.size() > memory_chunk_store_->Capacity()) &&
+          (memory_chunk_store_->Capacity() > 0))
+        return false;
   }
+
+  //  Check whether File Chunk Store has capacity to hold chunk
   if ((content.size() > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0) || (content.empty()) || (name.empty()))
     return false;
-  {
-    UpgradeLock upgrade_lock(shared_mutex_);
-    auto it = std::find(cached_chunk_names_.begin(), cached_chunk_names_.end(),
-                        name);
-    if (it == cached_chunk_names_.end()) {
-      if ((content.size() > memory_chunk_store_->Capacity()) &&
-          (memory_chunk_store_->Capacity() > 0)) {
-        return false;
-      } else {
-        UpgradeToUniqueLock unique_lock(upgrade_lock);
-        while (!memory_chunk_store_->Vacant(content.size()) &&
-            !cached_chunk_names_.empty()) {
-          memory_chunk_store_->Delete(cached_chunk_names_.back());
-          cached_chunk_names_.pop_back();
-        }
-        memory_chunk_store_->Store(name, content);
-      }
-    }
-  }
+
+  //  Try to make space in File Chunk Store to hold new chunk
   std::string chunk_to_delete;
   bool no_space(false);
   while (!file_chunk_store_->Vacant(content.size())) {
@@ -120,6 +113,23 @@ bool BufferedChunkStore::Store(const std::string &name,
   }
   if (no_space)
     return false;
+
+  //  Now First store new chunk in Cache
+  {
+    UpgradeLock upgrade_lock(shared_mutex_);
+    auto it = std::find(cached_chunk_names_.begin(), cached_chunk_names_.end(),
+                        name);
+    if (it == cached_chunk_names_.end()) {
+      UpgradeToUniqueLock unique_lock(upgrade_lock);
+      while (!memory_chunk_store_->Vacant(content.size()) &&
+          !cached_chunk_names_.empty()) {
+        memory_chunk_store_->Delete(cached_chunk_names_.back());
+        cached_chunk_names_.pop_back();
+      }
+      memory_chunk_store_->Store(name, content);
+    }
+  }
+
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
                   (const std::string&, const bool&)>(
@@ -176,44 +186,36 @@ bool BufferedChunkStore::StoreCached(const std::string &name,
 bool BufferedChunkStore::Store(const std::string &name,
                                const fs::path &source_file_name,
                                bool delete_source_file) {
+  boost::system::error_code ec;
+  uintmax_t chunk_size(fs::file_size(source_file_name, ec));
   {
     //  Check whether chunk already exist or not
     bool exist_already(false);
     SharedLock shared_lock(shared_mutex_);
-    if (memory_chunk_store_->Has(name))
+    if (memory_chunk_store_->Has(name)) {
       exist_already = true;
-    else
+    } else {
+      shared_lock.unlock();
       exist_already = file_chunk_store_->Has(name);
+    }
     if (exist_already) {
       shared_lock.unlock();
       return file_chunk_store_->Store(name, source_file_name,
                                       delete_source_file);
     }
+
+    //  Check whether cache has capacity to store chunk
+    if ((chunk_size > memory_chunk_store_->Capacity()) &&
+          (memory_chunk_store_->Capacity() > 0))
+        return false;
   }
-  boost::system::error_code ec;
-  uintmax_t chunk_size(fs::file_size(source_file_name, ec));
+
+  //  Check whether File Chunk Store has capacity to hold chunk
   if ((chunk_size > file_chunk_store_->Capacity() &&
       file_chunk_store_->Capacity() > 0) || (ec) || (name.empty()))
     return false;
-  {
-    UpgradeLock upgrade_lock(shared_mutex_);
-    auto it = std::find(cached_chunk_names_.begin(), cached_chunk_names_.end(),
-                        name);
-    if (it == cached_chunk_names_.end()) {
-      if ((chunk_size > memory_chunk_store_->Capacity()) &&
-          (memory_chunk_store_->Capacity() > 0)) {
-        return false;
-      } else {
-        UpgradeToUniqueLock unique_lock(upgrade_lock);
-        while (!memory_chunk_store_->Vacant(chunk_size) &&
-            !cached_chunk_names_.empty()) {
-          memory_chunk_store_->Delete(cached_chunk_names_.back());
-          cached_chunk_names_.pop_back();
-        }
-        memory_chunk_store_->Store(name, source_file_name, delete_source_file);
-      }
-    }
-  }
+
+  //  Try to make space in File Chunk Store to hold new chunk
   std::string chunk_to_delete;
   bool no_space(false);
   while (!file_chunk_store_->Vacant(chunk_size)) {
@@ -230,6 +232,23 @@ bool BufferedChunkStore::Store(const std::string &name,
   }
   if (no_space)
     return false;
+
+  //  Now First store new chunk in Cache
+  {
+    UpgradeLock upgrade_lock(shared_mutex_);
+    auto it = std::find(cached_chunk_names_.begin(), cached_chunk_names_.end(),
+                        name);
+    if (it == cached_chunk_names_.end()) {
+      UpgradeToUniqueLock unique_lock(upgrade_lock);
+      while (!memory_chunk_store_->Vacant(chunk_size) &&
+          !cached_chunk_names_.empty()) {
+        memory_chunk_store_->Delete(cached_chunk_names_.back());
+        cached_chunk_names_.pop_back();
+      }
+      memory_chunk_store_->Store(name, source_file_name, delete_source_file);
+    }
+  }
+
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)                 // NOLINT (Fraser)
                   (const std::string&, const bool&)>(
@@ -265,9 +284,9 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
                       name);
   if (it != cached_chunk_names_.end()) {
     cached_chunk_names_.erase(it);
-    chunk_moved = memory_chunk_store_->MoveTo(name, sink_chunk_store);
+    memory_chunk_store_->Delete(name);
     unique_lock.unlock();
-    file_chunk_store_->Delete(name);
+    chunk_moved = file_chunk_store_->MoveTo(name, sink_chunk_store);
   } else {
     unique_lock.unlock();
     if (file_chunk_store_->Has(name))
