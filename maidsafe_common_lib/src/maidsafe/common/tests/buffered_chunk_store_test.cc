@@ -599,7 +599,7 @@ TEST_F(BufferedChunkStoreTest, BEH_MoveTo) {
   EXPECT_FALSE(this->chunk_store_->MoveTo(name1, NULL));
 }
 
-/*TEST_F(BufferedChunkStoreTest, BEH_References) {
+TEST_F(BufferedChunkStoreTest, BEH_References) {
   std::string content1(RandomString(100));
   std::string name1(crypto::Hash<crypto::SHA512>(content1));
   std::string content2(RandomString(50));
@@ -692,15 +692,12 @@ TEST_F(BufferedChunkStoreTest, BEH_MoveTo) {
   EXPECT_TRUE(this->ref_chunk_store_->Store(name3, path, false));
   while (!StoreDone(name3, ref_chunk_store_))
     Sleep(boost::posix_time::milliseconds(1));
+
   EXPECT_TRUE(this->ref_chunk_store_->Validate(name3));
   EXPECT_EQ(1, this->ref_chunk_store_->Count(name3));
   EXPECT_TRUE(this->ref_chunk_store_->Store(name3, path, true));
-  //while (!StoreDone(name3, ref_chunk_store_))
-    Sleep(boost::posix_time::milliseconds(10));
   EXPECT_EQ(2, this->ref_chunk_store_->Count(name3));
   EXPECT_TRUE(this->ref_chunk_store_->Store(name3, content1));
-  //while (!StoreDone(name3, ref_chunk_store_))
-    Sleep(boost::posix_time::milliseconds(10));
   EXPECT_EQ(3, this->ref_chunk_store_->Count(name3));
 
   this->ref_chunk_store_->Clear();
@@ -747,10 +744,18 @@ TEST_F(BufferedChunkStoreTest, BEH_MoveTo) {
   // multiple chunks
   std::uintmax_t n1((RandomUint32() % 5) + 1), n2((RandomUint32() % 5) + 1);
   this->ref_chunk_store_->SetCapacity(150);
-  for (std::uintmax_t i = 0; i < n1; ++i)
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, ref_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  for (std::uintmax_t i = 0; i < n1 - 1; ++i)
     EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
-  for (std::uintmax_t i = 0; i < n2; ++i)
+
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name2, content2));
+  while (!StoreDone(name2, ref_chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  for (std::uintmax_t i = 0; i < n2 - 1; ++i)
     EXPECT_TRUE(this->ref_chunk_store_->Store(name2, content2));
+
   EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
   EXPECT_EQ(n1, this->ref_chunk_store_->Count(name1));
@@ -759,7 +764,7 @@ TEST_F(BufferedChunkStoreTest, BEH_MoveTo) {
   EXPECT_EQ(50, this->ref_chunk_store_->Size(name2));
   EXPECT_EQ(150, this->ref_chunk_store_->Size());
   EXPECT_EQ(2, this->ref_chunk_store_->Count());
-} */
+}
 
 }  // namespace test
 

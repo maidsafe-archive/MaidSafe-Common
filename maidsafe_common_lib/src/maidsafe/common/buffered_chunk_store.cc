@@ -368,11 +368,6 @@ bool BufferedChunkStore::VacantCache(
 }
 
 std::uintmax_t BufferedChunkStore::Count(const std::string &name) const {
-  {
-    SharedLock shared_lock(shared_mutex_);
-    if (memory_chunk_store_->Has(name))
-      return memory_chunk_store_->Count(name);
-  }
   return file_chunk_store_->Count(name);
 }
 
