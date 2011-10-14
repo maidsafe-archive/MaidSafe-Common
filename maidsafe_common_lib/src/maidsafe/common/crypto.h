@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
+#  pragma warning(disable: 4702)
 #endif
 
 #include "boost/filesystem/path.hpp"
@@ -41,8 +42,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/integer.h"
+#include "cryptopp/pubkey.h"
+#include "cryptopp/rsa.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/osrng.h"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -79,6 +84,10 @@ const uint16_t AES256_KeySize = 32;  /**< size in bytes. */
 const uint16_t AES256_IVSize = 16;  /**< size in bytes. */
 const uint16_t kMaxCompressionLevel = 9;
 
+static const std::string kMaidSafeVersionLabel1 =
+    "MaidSafe Version 1 Key Derivation";
+static const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
+
 /** XOR one string with another.
  *  The function performs an bitwise XOR on each char of first with the
  *  corresponding char of second.  first and second must have identical size.
@@ -93,10 +102,12 @@ std::string XOR(const std::string &first, const std::string &second);
  *  @param password password.
  *  @param salt salt.
  *  @param pin PIN from which the number of iterations is derived.
+ *  @param label additional data to provide distinct input data to PBKDF
  *  @return The derived key. */
 std::string SecurePassword(const std::string &password,
                            const std::string &salt,
-                           const uint32_t &pin);
+                           const uint32_t &pin,
+                           const std::string &label = kMaidSafeVersionLabel);
 
 /** Hash function operating on a string.
  *  @tparam HashType type of hash function to use (e.g. SHA512)
@@ -258,13 +269,12 @@ class RsaKeyPair {
   /** Generates a pair of RSA keys of given size.
    *  @param key_size size in bits of the keys. */
   void GenerateKeys(const uint16_t &key_size);
-
  private:
   std::string public_key_;
   std::string private_key_;
 };
 
-}   // namespace crypto
+}  // namespace crypto
 
 }  // namespace maidsafe
 

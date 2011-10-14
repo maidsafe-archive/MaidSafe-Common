@@ -25,26 +25,18 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
-#include "maidsafe/common/tests/chunk_store_api_test.h"
-#include "maidsafe/common/hashable_chunk_validation.h"
-#include "maidsafe/common/memory_chunk_store.h"
+#ifndef MAIDSAFE_COMMON_OMP_H_
+#define MAIDSAFE_COMMON_OMP_H_
 
-namespace maidsafe {
+#ifdef MAIDSAFE_OMP_ENABLED
+#  include <omp.h>
+#endif
+#include "maidsafe/common/version.h"
 
-namespace test {
+#if MAIDSAFE_COMMON_VERSION != 1003
+#  error This API is not compatible with the installed library.\
+    Please update the MaidSafe-Common library.
+#endif
 
-template <> template <class HashType>
-void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
-    std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
-    const fs::path&) {
-  chunk_store->reset(new MemoryChunkStore(
-      reference_counting,
-      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));
-}
 
-INSTANTIATE_TYPED_TEST_CASE_P(Memory, ChunkStoreTest, MemoryChunkStore);
-
-}  // namespace test
-
-}  // namespace maidsafe
+#endif  // MAIDSAFE_COMMON_OMP_H_

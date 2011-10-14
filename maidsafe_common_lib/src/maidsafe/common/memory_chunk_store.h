@@ -36,6 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 
 #ifdef __MSVC__
@@ -51,6 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/chunk_store.h"
+#include "maidsafe/common/chunk_validation.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1003
@@ -68,11 +70,10 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  typedef std::function<std::string(std::string)> HashFunc;
-
-  MemoryChunkStore(bool reference_counting, HashFunc hash_func)
+  MemoryChunkStore(bool reference_counting,
+                   std::shared_ptr<ChunkValidation> chunk_validation)
       : ChunkStore(reference_counting),
-        hash_func_(hash_func),
+        chunk_validation_(chunk_validation),
         chunks_() {}
   ~MemoryChunkStore() {}
 
@@ -182,7 +183,7 @@ class MemoryChunkStore: public ChunkStore {
   typedef std::pair<std::uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
-  HashFunc hash_func_;
+  std::shared_ptr<ChunkValidation> chunk_validation_;
   std::map<std::string, ChunkEntry> chunks_;
 };
 

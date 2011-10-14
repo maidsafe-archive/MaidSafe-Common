@@ -31,10 +31,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
-#include "boost/thread.hpp"
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/omp.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
@@ -191,28 +191,22 @@ TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
-  std::vector< std::shared_ptr<boost::thread> > test_threads;
-  for (int i = 0; i < thread_count; ++i) {
-    test_threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(
-        &test::GenerateRandomStrings, string_count, string_size)));
+#pragma omp parallel num_threads(thread_count)
+  {  // NOLINT (dirvine)
+    test::GenerateRandomStrings(string_count, string_size);
   }
-  for (int i = 0; i < thread_count; ++i) {
-    test_threads.at(i)->join();
-  }
+  --thread_count;  // to satisfy compiler
 }
 
 TEST(UtilsTest, BEH_SRandomStringMultiThread) {
   int thread_count(20);
   int string_count(1000);
   size_t string_size(4096);
-  std::vector< std::shared_ptr<boost::thread> > test_threads;
-  for (int i = 0; i < thread_count; ++i) {
-    test_threads.push_back(std::shared_ptr<boost::thread>(new boost::thread(
-        &test::GenerateSRandomStrings, string_count, string_size)));
+#pragma omp parallel num_threads(thread_count)
+  {  // NOLINT (dirvine)
+    test::GenerateSRandomStrings(string_count, string_size);
   }
-  for (int i = 0; i < thread_count; ++i) {
-    test_threads.at(i)->join();
-  }
+  --thread_count;  // to satisfy compiler
 }
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {

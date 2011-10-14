@@ -68,7 +68,7 @@ namespace {
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
-boost::mutex g_random_number_generator_mutex;
+boost::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex;
 
 struct BinaryUnit;
 struct DecimalUnit;
@@ -138,6 +138,7 @@ std::string BytesToBinarySiUnits(const uint64_t &num) {
 int32_t SRandomInt32() {
   int32_t result(0);
   bool success = false;
+  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
   while (!success) {
     CryptoPP::Integer rand_num(crypto::RandomNumber(32));
     if (rand_num.IsConvertableToLong()) {
@@ -169,6 +170,7 @@ uint32_t RandomUint32() {
 std::string SRandomString(const size_t &length) {
   std::string random_string;
   random_string.reserve(length);
+  boost::mutex::scoped_lock lock(g_srandom_number_generator_mutex);
   while (random_string.size() < length) {
 #ifdef MAIDSAFE_APPLE
      size_t iter_length = (length - random_string.size()) < 65536U ?

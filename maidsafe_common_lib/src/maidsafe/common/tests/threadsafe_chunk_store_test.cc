@@ -33,10 +33,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/thread.hpp"
-#include "boost/thread/thread.hpp"
-
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/hashable_chunk_validation.h"
 #include "maidsafe/common/memory_chunk_store.h"
 #include "maidsafe/common/tests/chunk_store_api_test.h"
 #include "maidsafe/common/threadsafe_chunk_store.h"
@@ -54,10 +53,9 @@ template <> template <class HashType>
 void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
     const fs::path&) {
-  std::shared_ptr<MemoryChunkStore> memory_chunk_store;
-  memory_chunk_store.reset(new MemoryChunkStore(
+  std::shared_ptr<MemoryChunkStore> memory_chunk_store(new MemoryChunkStore(
       reference_counting,
-      std::bind(&crypto::Hash<HashType>, std::placeholders::_1)));
+      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));
   chunk_store->reset(new ThreadsafeChunkStore(reference_counting,
                                               memory_chunk_store));
 }
@@ -75,9 +73,9 @@ class ThreadsafeChunkStoreTest : public testing::Test {
         thread_group_(),
         total_chunk_size_(),
         mutex_() {
-    std::shared_ptr<MemoryChunkStore> chunk_store;
-    chunk_store.reset(new MemoryChunkStore(false, std::bind(
-        &crypto::Hash<crypto::SHA512>, std::placeholders::_1)));
+    std::shared_ptr<MemoryChunkStore> chunk_store(new MemoryChunkStore(
+        false, std::shared_ptr<ChunkValidation>(
+            new HashableChunkValidation<crypto::SHA512>)));
     threadsafe_chunk_store_.reset(new ThreadsafeChunkStore(false, chunk_store));
   }
 
@@ -425,8 +423,8 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Clear) {
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_MoveTo) {
-  MemoryChunkStore another_chunk_store(
-      false, std::bind(&crypto::Hash<crypto::SHA512>, std::placeholders::_1));
+  MemoryChunkStore another_chunk_store(false, std::shared_ptr<ChunkValidation>(
+      new HashableChunkValidation<crypto::SHA512>));
   size_t entry_size = this->chunkname_.size();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(i);
@@ -472,8 +470,8 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Misc) {
   }
 
   // Create MoveTo functor
-  MemoryChunkStore another_chunk_store(
-      false, std::bind(&crypto::Hash<crypto::SHA512>, std::placeholders::_1));
+  MemoryChunkStore another_chunk_store(false, std::shared_ptr<ChunkValidation>(
+      new HashableChunkValidation<crypto::SHA512>));
   for (size_t i = 0; i < moveto_chunknames.size(); ++i) {
     functor f1 = std::bind(&ThreadsafeChunkStoreTest::MoveChunk, this,
                            moveto_chunknames[i], &another_chunk_store);
