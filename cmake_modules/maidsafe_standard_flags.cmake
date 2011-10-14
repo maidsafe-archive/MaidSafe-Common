@@ -68,7 +68,12 @@ IF(MSVC)
   # prevents from automatic linking of boost libraries
   ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
 
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /W4 /WX")
+  # EHsc catches C++ exceptions only and tells the compiler to assume that
+  # extern C functions never throw a C++ exception.
+  # Set warning level 4 and treat warnings as errors.
+  # C4351 'new behavior: elements of array 'array' will be default initialized'
+  # unneeded for new code (only applies to code previously compiled with VS 2005).
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /W4 /WX /wd4351")
   SET(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Ot /Oy /GL /D \"NDEBUG\" /MT /Gy /Zi")
   IF(CMAKE_CL_64)
     SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /Zi /TP")
