@@ -76,15 +76,13 @@ namespace maidsafe {
 class BufferedChunkStore: public ChunkStore {
  public:
   BufferedChunkStore(bool reference_counting,
+                     std::shared_ptr<ChunkValidation> chunk_validation,
                      boost::asio::io_service &asio_service)
       : ChunkStore(reference_counting),
         shared_mutex_(),
         asio_service_(asio_service),
-        memory_chunk_store_(new MemoryChunkStore(
-            false, std::bind(&crypto::Hash<crypto::SHA512>, arg::_1))),
-        chunk_store_(new FileChunkStore(
-            reference_counting, std::bind(&crypto::HashFile<crypto::SHA512>,
-                                          arg::_1))),
+        memory_chunk_store_(new MemoryChunkStore(false, chunk_validation)),
+        chunk_store_(new FileChunkStore(reference_counting, chunk_validation)),
         file_chunk_store_(new ThreadsafeChunkStore(reference_counting,
                                                    chunk_store_)),
         cached_chunk_names_(),

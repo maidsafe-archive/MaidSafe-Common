@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/memory_chunk_store.h"
 #include "maidsafe/common/buffered_chunk_store.h"
+#include "maidsafe/common/hashable_chunk_validation.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
@@ -51,6 +52,7 @@ class BufferedChunkStoreTest: public testing::Test {
         asio_service_(),
         work_(),
         t_group_(),
+        chunk_validation_(new HashableChunkValidation<crypto::SHA512>),
         chunk_store_(),
         alt_chunk_store_(),
         ref_chunk_store_() {
@@ -131,8 +133,9 @@ class BufferedChunkStoreTest: public testing::Test {
   void InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
     const fs::path &chunk_dir) {
-    chunk_store->reset(new BufferedChunkStore(reference_counting,
-                                              asio_service_));
+    chunk_store->reset(new BufferedChunkStore(
+        reference_counting, chunk_validation_,
+        asio_service_));
     if (!chunk_dir.empty())
       reinterpret_cast<BufferedChunkStore*>(chunk_store->get())->Init(
           chunk_dir);
@@ -170,6 +173,7 @@ class BufferedChunkStoreTest: public testing::Test {
   boost::asio::io_service asio_service_;
   std::shared_ptr<boost::asio::io_service::work> work_;
   boost::thread_group t_group_;
+  std::shared_ptr<ChunkValidation> chunk_validation_;
   std::shared_ptr<ChunkStore> chunk_store_;
   std::shared_ptr<ChunkStore> alt_chunk_store_;
   std::shared_ptr<ChunkStore> ref_chunk_store_;
@@ -227,7 +231,7 @@ TEST_F(BufferedChunkStoreTest, BEH_Validate) {
     Sleep(boost::posix_time::milliseconds(1));
 
   EXPECT_TRUE(this->chunk_store_->Validate(name1));
-  EXPECT_FALSE(this->chunk_store_->Validate(name2));
+  EXPECT_TRUE(this->chunk_store_->Validate(name2));
 
   ASSERT_TRUE(this->chunk_store_->Delete(name1));
   ASSERT_TRUE(this->chunk_store_->Store(name1, "this won't validate"));
@@ -251,7 +255,7 @@ TEST_F(BufferedChunkStoreTest, BEH_SmallName) {
   Sleep(boost::posix_time::milliseconds(10));
   EXPECT_FALSE(this->chunk_store_->Has("x"));
   EXPECT_TRUE(this->alt_chunk_store_->Has("x"));
-  EXPECT_FALSE(this->alt_chunk_store_->Validate("x"));
+  EXPECT_TRUE(this->alt_chunk_store_->Validate("x"));
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_Delete) {
@@ -774,7 +778,7 @@ TEST_F(BufferedChunkStoreTest, BEH_StoreCached) {
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
   std::shared_ptr<BufferedChunkStore> chunk_store(new BufferedChunkStore(
-      false, asio_service_));
+      false, chunk_validation_, asio_service_));
   // invalid input
   EXPECT_FALSE(chunk_store->StoreCached(name_mem, ""));
   EXPECT_FALSE(chunk_store->StoreCached("", content));
