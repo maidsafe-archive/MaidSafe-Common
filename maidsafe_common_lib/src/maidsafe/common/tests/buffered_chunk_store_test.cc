@@ -866,6 +866,42 @@ TEST_F(BufferedChunkStoreTest, BEH_StoreCached) {
   EXPECT_EQ(333, chunk_store->CacheSize(new_name));
 }
 
+TEST_F(BufferedChunkStoreTest, BEH_StoreWithRemovableChunks) {
+  const uint16_t kChunkCount = 10;
+  std::vector<std::string> chunks;
+  for (auto i = 0; i < kChunkCount; ++i)
+    chunks.push_back(RandomString(64));
+
+  //  Set capacity of Chunk Store
+  chunk_store_->SetCapacity(2570);
+  EXPECT_EQ(uintmax_t(2570), chunk_store_->Capacity());
+
+  //  Store chunks in Chunk Store
+  for (auto it = chunks.begin(); it != chunks.end(); ++it) {
+    reinterpret_cast<BufferedChunkStore*>(
+      this->chunk_store_.get())->MarkForDeletion((*it));
+    EXPECT_TRUE(chunk_store_->Store((*it), RandomString(256)));
+    while (!StoreDone((*it), chunk_store_))
+      Sleep(boost::posix_time::milliseconds(1));
+    EXPECT_TRUE(chunk_store_->Has(*it));
+  }
+  EXPECT_EQ(kChunkCount, chunk_store_->Count());
+  EXPECT_EQ(uintmax_t(2560), chunk_store_->Size());
+  std::string name1(RandomString(64));
+  std::string content1(RandomString(2580));
+
+  //  Trying to store chunk bigger than Chunk Store Capacity
+  EXPECT_FALSE(chunk_store_->Store(name1, content1));
+
+  content1 = RandomString(2560);
+  EXPECT_TRUE(chunk_store_->Store(name1, content1));
+  while (!StoreDone(name1, chunk_store_))
+    Sleep(boost::posix_time::milliseconds(1));
+  EXPECT_TRUE(chunk_store_->Has(name1));
+  EXPECT_EQ(uintmax_t(1), chunk_store_->Count());
+  EXPECT_EQ(uintmax_t(2560), chunk_store_->Size());
+}
+
 }  // namespace test
 
 }  // namespace maidsafe

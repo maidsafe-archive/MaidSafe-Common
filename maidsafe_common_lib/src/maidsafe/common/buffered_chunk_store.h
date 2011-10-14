@@ -75,8 +75,6 @@ namespace maidsafe {
 
 class BufferedChunkStore: public ChunkStore {
  public:
-  // typedef std::function<std::string(fs::path)> FileHashFunc;
-  // typedef std::function<std::string(std::string)> MemoryHashFunc;
   BufferedChunkStore(bool reference_counting,
                      boost::asio::io_service &asio_service)
       : ChunkStore(reference_counting),
