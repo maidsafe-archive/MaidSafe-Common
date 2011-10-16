@@ -23,21 +23,21 @@ IF(UNIX)
     MARK_AS_ADVANCED(COCOA_LIBRARY)
     SET(EXTRA_LIBS crypto ${COCOA_LIBRARY})
     SET(SOURCES ${SOURCES}
-      src/client/mac/handler/breakpad_nlist_64.cc
-      src/client/mac/handler/dynamic_images.cc
-      src/client/mac/handler/exception_handler.cc
-      src/client/mac/handler/minidump_generator.cc
-      src/client/mac/handler/protected_memory_allocator.cc
-      src/common/mac/dump_syms.mm
-      #src/common/mac/dwarf/bytereader.cc
-      #src/common/mac/dwarf/dwarf2reader.cc
-      #src/common/mac/dwarf/functioninfo.cc
-      src/common/mac/file_id.cc
-      src/common/mac/macho_id.cc
-      src/common/mac/macho_utilities.cc
-      src/common/mac/macho_walker.cc
-      src/common/mac/string_utilities.cc
-    )
+	src/client/mac/handler/breakpad_nlist_64.cc
+	src/client/mac/handler/dynamic_images.cc
+	src/client/mac/handler/exception_handler.cc
+	src/client/mac/handler/minidump_generator.cc
+	src/client/mac/handler/protected_memory_allocator.cc
+	src/common/mac/dump_syms.mm
+#	src/common/mac/dwarf/bytereader.cc
+#	src/common/mac/dwarf/dwarf2reader.cc
+#	src/common/mac/dwarf/functioninfo.cc
+	src/common/mac/file_id.cc
+	src/common/mac/macho_id.cc
+	src/common/mac/macho_utilities.cc
+	src/common/mac/macho_walker.cc
+	src/common/mac/string_utilities.cc    
+)
   ELSE()
     SET(SOURCES ${SOURCES}
       src/client/linux/handler/exception_handler.cc
