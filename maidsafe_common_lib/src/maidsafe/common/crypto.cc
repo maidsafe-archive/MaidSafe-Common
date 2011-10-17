@@ -61,7 +61,7 @@ namespace {
 boost::mutex g_rng_mutex, g_keygen_mutex;
 
 CryptoPP::RandomNumberGenerator &g_srandom_number_generator() {
-  static CryptoPP::AutoSeededX917RNG<CryptoPP::AES> rng;
+  static CryptoPP::AutoSeededRandomPool rng;
   return rng;
 }
 
