@@ -152,6 +152,12 @@ class MemoryChunkStore: public ChunkStore {
   std::uintmax_t Size(const std::string &name) const;
 
   /**
+   * Retrieves the total size of the stored chunks.
+   * @return Size in bytes
+   */
+  std::uintmax_t Size() const { return ChunkStore::Size(); }
+
+  /**
    * Retrieves the number of references to a chunk.
    *
    * If reference counting is enabled, this returns the number of (virtual)
