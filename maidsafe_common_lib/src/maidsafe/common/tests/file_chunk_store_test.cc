@@ -39,8 +39,10 @@ namespace test {
 
 template <> template <class HashType>
 void ChunkStoreTest<FileChunkStore>::InitChunkStore(
-    std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
-    const fs::path &chunk_dir) {
+    std::shared_ptr<ChunkStore> *chunk_store,
+    bool reference_counting,
+    const fs::path &chunk_dir,
+    boost::asio::io_service&) {
   chunk_store->reset(new FileChunkStore(
       reference_counting,
       std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));

@@ -51,8 +51,10 @@ namespace test_tscs {
 
 template <> template <class HashType>
 void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
-    std::shared_ptr<ChunkStore> *chunk_store, bool reference_counting,
-    const fs::path&) {
+    std::shared_ptr<ChunkStore> *chunk_store,
+    bool reference_counting,
+    const fs::path&,
+    boost::asio::io_service&) {
   std::shared_ptr<MemoryChunkStore> memory_chunk_store(new MemoryChunkStore(
       reference_counting,
       std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));
