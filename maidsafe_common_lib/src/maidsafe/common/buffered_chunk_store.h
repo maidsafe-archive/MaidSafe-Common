@@ -330,13 +330,13 @@ class BufferedChunkStore: public ChunkStore {
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
-  void AddCachedChunksEntry(const std::string &name);
+  void AddCachedChunksEntry(const std::string &name) const;
   bool DoCacheStore(const std::string &name,
-                    const std::string &content);
+                    const std::string &content) const;
   bool DoCacheStore(const std::string &name,
                     const uintmax_t &size,
                     const fs::path &source_file_name,
-                    bool delete_source_file);
+                    bool delete_source_file) const;
   bool MakeChunkPermanent(const std::string &name, const uintmax_t &size);
   void DoMakeChunkPermanent(const std::string &name);
 
@@ -351,7 +351,7 @@ class BufferedChunkStore: public ChunkStore {
   std::shared_ptr<ChunkValidation> chunk_validation_;
   boost::asio::io_service &asio_service_;
   std::shared_ptr<ChunkStore> internal_perm_chunk_store_;
-  MemoryChunkStore cache_chunk_store_;
+  mutable MemoryChunkStore cache_chunk_store_;
   ThreadsafeChunkStore perm_chunk_store_;
   mutable std::list<std::string> cached_chunks_;
   std::list<std::string> removable_chunks_;

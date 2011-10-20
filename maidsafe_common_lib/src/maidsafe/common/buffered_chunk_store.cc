@@ -52,7 +52,10 @@ std::string BufferedChunkStore::Get(const std::string &name) const {
     return cache_chunk_store_.Get(name);
   } else {
     upgrade_lock.unlock();
-    return perm_chunk_store_.Get(name);
+    std::string content(perm_chunk_store_.Get(name));
+    if (DoCacheStore(name, content))
+      AddCachedChunksEntry(name);
+    return content;
   }
 }
 
@@ -72,7 +75,10 @@ bool BufferedChunkStore::Get(const std::string &name,
     return cache_chunk_store_.Get(name, sink_file_name);
   } else {
     upgrade_lock.unlock();
-    return perm_chunk_store_.Get(name, sink_file_name);
+    std::string content(perm_chunk_store_.Get(name));
+    if (DoCacheStore(name, content))
+      AddCachedChunksEntry(name);
+    return !content.empty() && WriteFile(sink_file_name, content);
   }
 }
 
@@ -328,7 +334,7 @@ void BufferedChunkStore::MarkForDeletion(const std::string &name) {
 }
 
 /// @note Ensure cache mutex is not locked.
-void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) {
+void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
   if (!name.empty()) {
     UniqueLock unique_lock(cache_mutex_);
     auto it = std::find(cached_chunks_.begin(), cached_chunks_.end(), name);
@@ -339,7 +345,7 @@ void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) {
 }
 
 bool BufferedChunkStore::DoCacheStore(const std::string &name,
-                                      const std::string &content) {
+                                      const std::string &content) const {
   if (!chunk_validation_ || !chunk_validation_->ValidName(name))
     return false;
 
@@ -366,7 +372,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
 bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const uintmax_t &size,
                                       const fs::path &source_file_name,
-                                      bool delete_source_file) {
+                                      bool delete_source_file) const {
   if (!chunk_validation_ || !chunk_validation_->ValidName(name))
     return false;
 
