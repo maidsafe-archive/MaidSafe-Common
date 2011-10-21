@@ -65,7 +65,7 @@ class ChunkStoreTest: public testing::Test {
         ref_chunk_store_(),
         tiger_chunk_store_() {
           work_.reset(new boost::asio::io_service::work(asio_service_));
-          for (int i = 0; i < 1; ++i)
+          for (int i = 0; i < 3; ++i)
             thread_group_.create_thread(std::bind(static_cast<
                 std::size_t(boost::asio::io_service::*)()>
                   (&boost::asio::io_service::run), &asio_service_));

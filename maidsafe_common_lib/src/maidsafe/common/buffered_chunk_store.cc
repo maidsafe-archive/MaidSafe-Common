@@ -26,10 +26,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/buffered_chunk_store.h"
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
+
+/**
+ * If the cache is full and there are no more chunks left to delete, this is the
+ * number of chunk transfers to wait for (in Store) before the next check.
+ */
+const int kWaitTransfersForCacheVacantCheck(10);
 
 BufferedChunkStore::~BufferedChunkStore() {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
@@ -359,9 +364,22 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
     return false;
 
   // Make space in cache
-  UpgradeToUniqueLock unique_lock(upgrade_lock);
-  while (!cache_chunk_store_.Vacant(content.size()) &&
-         !cached_chunks_.empty()) {
+  while (!cache_chunk_store_.Vacant(content.size())) {
+    while (cached_chunks_.empty()) {
+      upgrade_lock.unlock();
+      {
+        boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+        if (pending_xfers_ == 0)
+          return false;
+        int limit(kWaitTransfersForCacheVacantCheck);
+        while (pending_xfers_ > 0 && limit > 0) {
+          xfer_cond_var_.wait(xfer_lock);
+          --limit;
+        }
+      }
+      upgrade_lock.lock();
+    }
+    UpgradeToUniqueLock unique_lock(upgrade_lock);
     cache_chunk_store_.Delete(cached_chunks_.back());
     cached_chunks_.pop_back();
   }
@@ -386,8 +404,22 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
     return false;
 
   // Make space in cache
-  UpgradeToUniqueLock unique_lock(upgrade_lock);
-  while (!cache_chunk_store_.Vacant(size) && !cached_chunks_.empty()) {
+  while (!cache_chunk_store_.Vacant(size)) {
+    while (cached_chunks_.empty()) {
+      upgrade_lock.unlock();
+      {
+        boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+        if (pending_xfers_ == 0)
+          return false;
+        int limit(kWaitTransfersForCacheVacantCheck);
+        while (pending_xfers_ > 0 && limit > 0) {
+          xfer_cond_var_.wait(xfer_lock);
+          --limit;
+        }
+      }
+      upgrade_lock.lock();
+    }
+    UpgradeToUniqueLock unique_lock(upgrade_lock);
     cache_chunk_store_.Delete(cached_chunks_.back());
     cached_chunks_.pop_back();
   }

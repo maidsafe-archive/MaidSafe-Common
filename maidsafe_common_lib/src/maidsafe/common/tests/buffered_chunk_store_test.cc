@@ -65,18 +65,43 @@ class BufferedChunkStoreTest: public testing::Test {
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunk_dir_(*test_dir_ / "chunks"),
         asio_service_(),
+        test_asio_service_(),
         work_(),
-        t_group_(),
+        test_work_(),
+        thread_group_(),
+        test_thread_group_(),
         chunk_validation_(new HashableChunkValidation<crypto::SHA512>),
         chunk_store_(new BufferedChunkStore(
-            false, chunk_validation_, asio_service_)) {
+            false, chunk_validation_, asio_service_)),
+        mutex_(),
+        cond_var_(),
+        store_counter_(0) {
     work_.reset(new boost::asio::io_service::work(asio_service_));
-    for (int i = 0; i < 1; ++i)
-      t_group_.create_thread(std::bind(static_cast<
+    test_work_.reset(new boost::asio::io_service::work(test_asio_service_));
+    for (int i = 0; i < 3; ++i) {
+      thread_group_.create_thread(std::bind(static_cast<
           std::size_t(boost::asio::io_service::*)()>
              (&boost::asio::io_service::run), &asio_service_));
+      test_thread_group_.create_thread(std::bind(static_cast<
+          std::size_t(boost::asio::io_service::*)()>
+             (&boost::asio::io_service::run), &test_asio_service_));
+    }
   }
   ~BufferedChunkStoreTest() {}
+
+  void DoStore(const std::string &name, const std::string &content) {
+    EXPECT_TRUE(chunk_store_->Store(name, content));
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    ++store_counter_;
+    cond_var_.notify_one();
+  }
+
+  void WaitForStore(const int &count) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    while (store_counter_ < count)
+      cond_var_.wait(lock);
+  }
+
  protected:
   void SetUp() {
     fs::create_directories(chunk_dir_);
@@ -84,9 +109,12 @@ class BufferedChunkStoreTest: public testing::Test {
   }
 
   void TearDown() {
+    test_work_.reset();
+    test_asio_service_.stop();
+    test_thread_group_.join_all();
     work_.reset();
     asio_service_.stop();
-    t_group_.join_all();
+    thread_group_.join_all();
   }
 
   fs::path CreateRandomFile(const fs::path &file_path,
@@ -120,11 +148,14 @@ class BufferedChunkStoreTest: public testing::Test {
 
   std::shared_ptr<fs::path> test_dir_;
   fs::path chunk_dir_;
-  boost::asio::io_service asio_service_;
-  std::shared_ptr<boost::asio::io_service::work> work_;
-  boost::thread_group t_group_;
+  boost::asio::io_service asio_service_, test_asio_service_;
+  std::shared_ptr<boost::asio::io_service::work> work_, test_work_;
+  boost::thread_group thread_group_, test_thread_group_;
   std::shared_ptr<ChunkValidation> chunk_validation_;
   std::shared_ptr<BufferedChunkStore> chunk_store_;
+  boost::mutex mutex_;
+  boost::condition_variable cond_var_;
+  int store_counter_;
 };
 
 TEST_F(BufferedChunkStoreTest, BEH_CacheInit) {
@@ -427,15 +458,40 @@ TEST_F(BufferedChunkStoreTest, BEH_CacheClear) {
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_WaitForTransfer) {
-  std::string content(RandomString(10240));
+  std::string content(RandomString(256 << 10));
 
+  store_counter_ = 0;
   for (int i = 0; i < 100; ++i)
-    EXPECT_TRUE(chunk_store_->Store(RandomString(64), content));
+//     EXPECT_TRUE(chunk_store_->Store(RandomString(64), content));
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoStore, this, RandomString(64), content));
+  WaitForStore(100);
   chunk_store_->Clear();
 
+  store_counter_ = 0;
   for (int i = 0; i < 100; ++i)
-    EXPECT_TRUE(chunk_store_->Store(RandomString(64), content));
+//     EXPECT_TRUE(chunk_store_->Store(RandomString(64), content));
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoStore, this, RandomString(64), content));
+  WaitForStore(100);
   chunk_store_.reset();
+}
+
+TEST_F(BufferedChunkStoreTest, BEH_CacheFlooding) {
+  std::string content(RandomString(256 << 10));  // 256 KB chunk
+  chunk_store_->SetCacheCapacity(4 << 20);  // 4 MB cache space = 16 chunks
+
+  std::string first(RandomString(64));
+  EXPECT_TRUE(chunk_store_->Store(first, content));
+
+  store_counter_ = 1;
+  for (int i = 1; i < 500; ++i)
+//     EXPECT_TRUE(chunk_store_->Store(RandomString(64), content));
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoStore, this, RandomString(64), content));
+  WaitForStore(500);
+  chunk_store_->Delete(first);
+  EXPECT_EQ(499, chunk_store_->Count());
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_StoreWithRemovableChunks) {
