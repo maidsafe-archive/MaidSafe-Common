@@ -38,7 +38,7 @@ const int kWaitTransfersForCacheVacantCheck(10);
 
 BufferedChunkStore::~BufferedChunkStore() {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
-  while (pending_xfers_ > 0 && !asio_service_.stopped())
+  while (!pending_xfers_.empty() && !asio_service_.stopped())
     xfer_cond_var_.wait(lock);
 }
 
@@ -156,7 +156,7 @@ bool BufferedChunkStore::Delete(const std::string &name) {
   bool file_delete_result(false);
   {
     boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
-    while (pending_xfers_ > 0)
+    while (pending_xfers_.count(name) > 0)
       xfer_cond_var_.wait(xfer_lock);
     file_delete_result = perm_chunk_store_.Delete(name);
     perm_size_ = perm_chunk_store_.Size();
@@ -181,7 +181,7 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
   bool chunk_moved(false);
   {
     boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
-    while (pending_xfers_ > 0)
+    while (pending_xfers_.count(name) > 0)
       xfer_cond_var_.wait(xfer_lock);
     chunk_moved = perm_chunk_store_.MoveTo(name, sink_chunk_store);
     perm_size_ = perm_chunk_store_.Size();
@@ -259,7 +259,7 @@ std::uintmax_t BufferedChunkStore::CacheCapacity() const {
 
 void BufferedChunkStore::SetCapacity(const std::uintmax_t &capacity) {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
-  while (pending_xfers_ > 0)
+  while (!pending_xfers_.empty())
     xfer_cond_var_.wait(lock);
   perm_chunk_store_.SetCapacity(capacity);
   perm_capacity_ = perm_chunk_store_.Capacity();
@@ -286,14 +286,14 @@ std::uintmax_t BufferedChunkStore::Count(const std::string &name) const {
     return 0;
 
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
-  while (pending_xfers_ > 0)
+  while (pending_xfers_.count(name) > 0)
     xfer_cond_var_.wait(lock);
   return perm_chunk_store_.Count(name);
 }
 
 std::uintmax_t BufferedChunkStore::Count() const {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
-  while (pending_xfers_ > 0)
+  while (!pending_xfers_.empty())
     xfer_cond_var_.wait(lock);
   return perm_chunk_store_.Count();
 }
@@ -314,7 +314,7 @@ bool BufferedChunkStore::CacheEmpty() const {
 
 void BufferedChunkStore::Clear() {
   boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
-  while (pending_xfers_ > 0)
+  while (!pending_xfers_.empty())
     xfer_cond_var_.wait(xfer_lock);
   UniqueLock unique_lock(cache_mutex_);
   cached_chunks_.clear();
@@ -369,10 +369,10 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
       upgrade_lock.unlock();
       {
         boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
-        if (pending_xfers_ == 0)
+        if (pending_xfers_.empty())
           return false;
         int limit(kWaitTransfersForCacheVacantCheck);
-        while (pending_xfers_ > 0 && limit > 0) {
+        while (!pending_xfers_.empty() && limit > 0) {
           xfer_cond_var_.wait(xfer_lock);
           --limit;
         }
@@ -409,10 +409,10 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
       upgrade_lock.unlock();
       {
         boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
-        if (pending_xfers_ == 0)
+        if (pending_xfers_.empty())
           return false;
         int limit(kWaitTransfersForCacheVacantCheck);
-        while (pending_xfers_ > 0 && limit > 0) {
+        while (!pending_xfers_.empty() && limit > 0) {
           xfer_cond_var_.wait(xfer_lock);
           --limit;
         }
@@ -438,7 +438,7 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
 
     bool is_new(true);
     if (perm_size_ + size > perm_capacity_) {
-      while (pending_xfers_ > 0)
+      while (!pending_xfers_.empty())
         xfer_cond_var_.wait(lock);
       if (perm_chunk_store_.Has(name)) {
         is_new = false;
@@ -461,7 +461,7 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)(const std::string&)>(    // NOLINT
           &BufferedChunkStore::DoMakeChunkPermanent), this, name));
-  ++pending_xfers_;
+  pending_xfers_.insert(name);
 
   return true;
 }
@@ -481,7 +481,7 @@ void BufferedChunkStore::DoMakeChunkPermanent(const std::string &name) {
   {
     boost::unique_lock<boost::mutex> lock(xfer_mutex_);
     perm_size_ = perm_chunk_store_.Size();
-    --pending_xfers_;
+    pending_xfers_.erase(pending_xfers_.find(name));
     xfer_cond_var_.notify_all();
   }
 }

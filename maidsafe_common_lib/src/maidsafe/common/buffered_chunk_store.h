@@ -36,7 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <functional>
 #include <list>
-#include <map>
+#include <set>
 #include <string>
 
 #ifdef __MSVC__
@@ -91,7 +91,7 @@ class BufferedChunkStore: public ChunkStore {
         perm_chunk_store_(reference_counting, internal_perm_chunk_store_),
         cached_chunks_(),
         removable_chunks_(),
-        pending_xfers_(0),
+        pending_xfers_(),
         perm_capacity_(0),
         perm_size_(0) {}
   ~BufferedChunkStore();
@@ -355,7 +355,7 @@ class BufferedChunkStore: public ChunkStore {
   ThreadsafeChunkStore perm_chunk_store_;
   mutable std::list<std::string> cached_chunks_;
   std::list<std::string> removable_chunks_;
-  size_t pending_xfers_;
+  std::multiset<std::string> pending_xfers_;
   uintmax_t perm_capacity_, perm_size_;
 };
 
