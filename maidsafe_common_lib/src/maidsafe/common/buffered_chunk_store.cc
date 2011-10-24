@@ -149,6 +149,31 @@ bool BufferedChunkStore::CacheStore(const std::string &name,
   return true;
 }
 
+bool BufferedChunkStore::PermanentStore(const std::string &name) {
+  if (name.empty())
+    return false;
+
+  std::string content;
+  {
+    SharedLock shared_lock(cache_mutex_);
+    content = cache_chunk_store_.Get(name);
+  }
+
+  {
+    boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+    RemoveDeletionMarks(name);
+    while (pending_xfers_.count(name) > 0)
+      xfer_cond_var_.wait(xfer_lock);
+    if (perm_chunk_store_.Has(name))
+      return true;
+    if (content.empty() || !perm_chunk_store_.Store(name, content))
+      return false;
+    perm_size_ = perm_chunk_store_.Size();
+  }
+
+  return true;
+}
+
 bool BufferedChunkStore::Delete(const std::string &name) {
   if (name.empty())
     return false;
@@ -211,6 +236,13 @@ bool BufferedChunkStore::CacheHas(const std::string &name) const {
 
   SharedLock shared_lock(cache_mutex_);
   return cache_chunk_store_.Has(name);
+}
+
+bool BufferedChunkStore::PermanentHas(const std::string &name) const {
+  boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+  while (pending_xfers_.count(name) > 0)
+    xfer_cond_var_.wait(xfer_lock);
+  return perm_chunk_store_.Has(name);
 }
 
 bool BufferedChunkStore::Validate(const std::string &name) const {
@@ -431,12 +463,7 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
                                             const uintmax_t &size) {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
 
-  // remove all previous markings for deletion
-  auto it = removable_chunks_.begin();
-  while ((it = std::find(it, removable_chunks_.end(), name)) !=
-         removable_chunks_.end()) {
-      it = removable_chunks_.erase(it);
-  }
+  RemoveDeletionMarks(name);
 
   // Check whether permanent store has capacity to store chunk
   if (perm_capacity_ > 0) {
@@ -490,6 +517,14 @@ void BufferedChunkStore::DoMakeChunkPermanent(const std::string &name) {
     perm_size_ = perm_chunk_store_.Size();
     pending_xfers_.erase(pending_xfers_.find(name));
     xfer_cond_var_.notify_all();
+  }
+}
+
+void BufferedChunkStore::RemoveDeletionMarks(const std::string &name) {
+  auto it = removable_chunks_.begin();
+  while ((it = std::find(it, removable_chunks_.end(), name)) !=
+         removable_chunks_.end()) {
+      it = removable_chunks_.erase(it);
   }
 }
 

@@ -457,6 +457,43 @@ TEST_F(BufferedChunkStoreTest, BEH_CacheClear) {
   EXPECT_EQ(0, chunk_store_->CacheSize());
 }
 
+TEST_F(BufferedChunkStoreTest, BEH_PermanentStore) {
+  std::string content(RandomString(100));
+  std::string name1(RandomString(64)), name2(RandomString(64));
+
+  EXPECT_FALSE(chunk_store_->PermanentStore(""));
+  EXPECT_FALSE(chunk_store_->PermanentStore(name1));
+  EXPECT_FALSE(chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+
+  EXPECT_TRUE(chunk_store_->CacheStore(name1, content));
+  EXPECT_TRUE(chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->CacheHas(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  EXPECT_FALSE(chunk_store_->CacheHas(name2));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name2));
+
+  EXPECT_TRUE(chunk_store_->CacheStore(name2, content));
+  EXPECT_TRUE(chunk_store_->CacheHas(name2));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name2));
+
+  EXPECT_TRUE(chunk_store_->PermanentStore(name2));
+  EXPECT_TRUE(chunk_store_->CacheHas(name2));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name2));
+
+  chunk_store_->CacheClear();
+  EXPECT_EQ(content, chunk_store_->Get(name1));
+  EXPECT_EQ(content, chunk_store_->Get(name2));
+
+  chunk_store_->CacheClear();
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name2));
+}
+
 TEST_F(BufferedChunkStoreTest, BEH_WaitForTransfer) {
   std::string content(RandomString(256 << 10));
 

@@ -131,6 +131,9 @@ class BufferedChunkStore: public ChunkStore {
 
   /**
    * Stores chunk content under the given name permanently.
+   *
+   * This method returns once the chunk is stored in the cache. It will then be
+   * asynchronously written to the file-based permanent store.
    * @param name Chunk name, i.e. hash of the chunk content
    * @param content The chunk's content
    * @return True if chunk could be stored or already existed
@@ -139,6 +142,9 @@ class BufferedChunkStore: public ChunkStore {
 
   /**
    * Stores chunk content under the given name permanently.
+   *
+   * This method returns once the chunk is stored in the cache. It will then be
+   * asynchronously written to the file-based permanent store.
    * @param name Chunk name, i.e. hash of the chunk content
    * @param source_file_name Path to input file
    * @param delete_source_file True if file can be deleted after storing
@@ -167,6 +173,13 @@ class BufferedChunkStore: public ChunkStore {
                   const fs::path &source_file_name,
                   bool delete_source_file);
 
+   /**
+   * Stores an already cached chunk in the permanent store (blocking).
+   * @param name Chunk name, i.e. hash of the chunk content
+   * @return True if chunk could be stored permanently
+   */
+  bool PermanentStore(const std::string &name);
+
   /**
    * Deletes a stored chunk.
    * @param name Chunk name
@@ -184,7 +197,7 @@ class BufferedChunkStore: public ChunkStore {
   bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
 
   /**
-   * Checks if a chunk exists.
+   * Checks if a chunk exists, either in cache or permanent store.
    * @param name Chunk name
    * @return True if chunk exists
    */
@@ -196,6 +209,13 @@ class BufferedChunkStore: public ChunkStore {
    * @return True if chunk exists
    */
   bool CacheHas(const std::string &name) const;
+
+  /**
+   * Checks if a chunk exists in permanent store.
+   * @param name Chunk name
+   * @return True if chunk exists
+   */
+  bool PermanentHas(const std::string &name) const;
 
   /**
    * Validates a chunk using the ChunkValidation object.
@@ -339,6 +359,7 @@ class BufferedChunkStore: public ChunkStore {
                     bool delete_source_file) const;
   bool MakeChunkPermanent(const std::string &name, const uintmax_t &size);
   void DoMakeChunkPermanent(const std::string &name);
+  void RemoveDeletionMarks(const std::string &name);
 
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
