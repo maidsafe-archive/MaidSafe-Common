@@ -431,6 +431,13 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
                                             const uintmax_t &size) {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
 
+  // remove all previous markings for deletion
+  auto it = removable_chunks_.begin();
+  while ((it = std::find(it, removable_chunks_.end(), name)) !=
+         removable_chunks_.end()) {
+      it = removable_chunks_.erase(it);
+  }
+
   // Check whether permanent store has capacity to store chunk
   if (perm_capacity_ > 0) {
     if (size > perm_capacity_)

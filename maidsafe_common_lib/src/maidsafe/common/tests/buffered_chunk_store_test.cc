@@ -506,9 +506,9 @@ TEST_F(BufferedChunkStoreTest, BEH_StoreWithRemovableChunks) {
 
   //  Store chunks in Chunk Store
   for (auto it = chunks.begin(); it != chunks.end(); ++it) {
-    chunk_store_->MarkForDeletion(*it);
     EXPECT_TRUE(chunk_store_->Store(*it, RandomString(256)));
     EXPECT_TRUE(chunk_store_->Has(*it));
+    chunk_store_->MarkForDeletion(*it);
   }
   EXPECT_EQ(kChunkCount, chunk_store_->Count());
   EXPECT_EQ(uintmax_t(2560), chunk_store_->Size());
