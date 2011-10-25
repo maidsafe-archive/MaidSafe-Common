@@ -227,7 +227,7 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
 }
 
 bool BufferedChunkStore::Has(const std::string &name) const {
-  return !name.empty() && (CacheHas(name) || perm_chunk_store_.Has(name));
+  return CacheHas(name) || PermanentHas(name);
 }
 
 bool BufferedChunkStore::CacheHas(const std::string &name) const {
@@ -239,10 +239,17 @@ bool BufferedChunkStore::CacheHas(const std::string &name) const {
 }
 
 bool BufferedChunkStore::PermanentHas(const std::string &name) const {
+  if (name.empty())
+    return false;
+
   boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
   while (pending_xfers_.count(name) > 0)
     xfer_cond_var_.wait(xfer_lock);
-  return perm_chunk_store_.Has(name);
+  std::uintmax_t rem_count(0);
+  for (auto it = removable_chunks_.begin(); it != removable_chunks_.end(); ++it)
+    if (*it == name)
+      ++rem_count;
+  return perm_chunk_store_.Count(name) > rem_count;
 }
 
 bool BufferedChunkStore::Validate(const std::string &name) const {
