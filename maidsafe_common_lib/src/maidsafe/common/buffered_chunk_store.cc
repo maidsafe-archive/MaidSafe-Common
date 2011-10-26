@@ -365,6 +365,9 @@ void BufferedChunkStore::Clear() {
 }
 
 void BufferedChunkStore::CacheClear() {
+  boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+  while (!pending_xfers_.empty())
+    xfer_cond_var_.wait(xfer_lock);
   UniqueLock unique_lock(cache_mutex_);
   cached_chunks_.clear();
   cache_chunk_store_.Clear();

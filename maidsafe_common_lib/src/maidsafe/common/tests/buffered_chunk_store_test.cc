@@ -455,6 +455,13 @@ TEST_F(BufferedChunkStoreTest, BEH_CacheClear) {
   EXPECT_TRUE(chunk_store_->CacheEmpty());
   EXPECT_EQ(0, chunk_store_->CacheCount());
   EXPECT_EQ(0, chunk_store_->CacheSize());
+
+  std::string content(RandomString(100));
+  std::string name(crypto::Hash<crypto::SHA512>(content));
+  EXPECT_TRUE(chunk_store_->Store(name, content));
+  chunk_store_->CacheClear();
+  EXPECT_FALSE(chunk_store_->CacheHas(name));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name));
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_PermanentStore) {
