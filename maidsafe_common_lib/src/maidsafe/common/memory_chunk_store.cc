@@ -116,16 +116,16 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
                               ChunkStore *sink_chunk_store) {
   if (!sink_chunk_store)
     return false;
-  }
+  
 
   auto it = chunks_.find(name);
-  if (it == chunks_.end()) {
+  if (it == chunks_.end()) 
     return false;
-  }
+  
 
-  if (!sink_chunk_store->Store(name, it->second.second)) {
+  if (!sink_chunk_store->Store(name, it->second.second)) 
     return false;
-}
+
   if (!kReferenceCounting || --(it->second.first) == 0) {
     DecreaseSize(it->second.second.size());
     chunks_.erase(it);
