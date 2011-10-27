@@ -40,6 +40,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
 #include "cryptopp/osrng.h"
+#include "cryptopp/pssr.h"
 #include "cryptopp/pwdbased.h"
 #include "cryptopp/cryptlib.h"
 
