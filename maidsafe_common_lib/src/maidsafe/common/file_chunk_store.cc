@@ -127,7 +127,7 @@ bool FileChunkStore::Store(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (name.empty())
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name, true));
@@ -189,7 +189,7 @@ bool FileChunkStore::Store(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (name.empty())
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
     return false;
 
   boost::system::error_code ec;
@@ -399,7 +399,7 @@ bool FileChunkStore::Has(const std::string &name) const {
 }
 
 bool FileChunkStore::Validate(const std::string &name) const {
-  if (!hash_func_)
+  if (!chunk_validation_)
     return false;
 
   if (!IsChunkStoreInitialised())
@@ -417,7 +417,7 @@ bool FileChunkStore::Validate(const std::string &name) const {
     chunk_file.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
 
-  return name == hash_func_(chunk_file);
+  return chunk_validation_->ValidChunk(name, chunk_file);
 }
 
 std::uintmax_t FileChunkStore::Size(const std::string &name) const {
