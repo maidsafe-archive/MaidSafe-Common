@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
 
 #include <cstdint>
-#include <functional>
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -52,6 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/chunk_store.h"
+#include "maidsafe/common/chunk_validation.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1003
@@ -73,11 +74,10 @@ class FileChunkStoreTest_BEH_Methods_Test;
  */
 class FileChunkStore: public ChunkStore {
  public:
-  typedef std::function<std::string(fs::path)> HashFunc;
-
-  FileChunkStore(bool reference_counting, HashFunc hash_func)
+  FileChunkStore(bool reference_counting,
+                 std::shared_ptr<ChunkValidation> chunk_validation)
       : ChunkStore(reference_counting),
-        hash_func_(hash_func),
+        chunk_validation_(chunk_validation),
         initialised_(false),
         storage_location_(),
         chunk_count_(0),
@@ -170,6 +170,12 @@ class FileChunkStore: public ChunkStore {
   std::uintmax_t Size(const std::string &name) const;
 
   /**
+   * Retrieves the total size of the stored chunks.
+   * @return Size in bytes
+   */
+  std::uintmax_t Size() const { return ChunkStore::Size(); }
+
+  /**
    * Retrieves the number of references to a chunk.
    *
    * If reference counting is enabled, this returns the number of (virtual)
@@ -251,7 +257,7 @@ class FileChunkStore: public ChunkStore {
 
   std::uintmax_t GetNumFromString(const std::string &) const;
 
-  HashFunc hash_func_;
+  std::shared_ptr<ChunkValidation> chunk_validation_;
   bool initialised_;
   fs::path storage_location_;
   std::uintmax_t chunk_count_;

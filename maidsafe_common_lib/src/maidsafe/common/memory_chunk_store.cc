@@ -26,7 +26,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/memory_chunk_store.h"
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -50,7 +49,7 @@ bool MemoryChunkStore::Get(const std::string &name,
 
 bool MemoryChunkStore::Store(const std::string &name,
                              const std::string &content) {
-  if (name.empty())
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
     return false;
 
   auto it = chunks_.find(name);
@@ -72,7 +71,7 @@ bool MemoryChunkStore::Store(const std::string &name,
 bool MemoryChunkStore::Store(const std::string &name,
                              const fs::path &source_file_name,
                              bool delete_source_file) {
-  if (name.empty())
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
     return false;
 
   boost::system::error_code ec;
@@ -115,19 +114,16 @@ bool MemoryChunkStore::Delete(const std::string &name) {
 
 bool MemoryChunkStore::MoveTo(const std::string &name,
                               ChunkStore *sink_chunk_store) {
-  if (name.empty() || !sink_chunk_store) {
-    std::cout << " 1 !!!" << std::endl;
+  if (!sink_chunk_store)
     return false;
   }
 
   auto it = chunks_.find(name);
   if (it == chunks_.end()) {
-    std::cout << " 2 !!!" << std::endl;
     return false;
   }
 
   if (!sink_chunk_store->Store(name, it->second.second)) {
-    std::cout << " 3 !!!" << std::endl;
     return false;
 }
   if (!kReferenceCounting || --(it->second.first) == 0) {
@@ -142,14 +138,14 @@ bool MemoryChunkStore::Has(const std::string &name) const {
 }
 
 bool MemoryChunkStore::Validate(const std::string &name) const {
-  if (!hash_func_)
+  if (!chunk_validation_)
     return false;
 
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
 
-  return name == hash_func_(it->second.second);
+  return chunk_validation_->ValidChunk(name, it->second.second);
 }
 
 std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {
