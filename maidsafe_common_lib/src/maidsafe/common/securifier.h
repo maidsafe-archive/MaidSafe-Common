@@ -53,7 +53,8 @@ class Securifier {
  public:
 
 
-  Securifier(std::shared_ptr<AsymmetricCrypto<Keys> >asymm) : asymm_(asymm) {}
+  Securifier(std::shared_ptr<AsymmetricCrypto<RSAKeys>> asymm,
+            std::shared_ptr<RSAKeys> Keys ) : asymm_(asymm) {}
 
   virtual ~Securifier();
 
@@ -84,38 +85,37 @@ class Securifier {
 
  private:
   Securifier& operator=(Securifier const&);
-  AsymmetricCrypto<Keys> asymm_;
+  AsymmetricCrypto<RSAKeys> asymm_;
 };
 
-template<typename Keys>
-int Securifier<Keys>::Sign(const PlainText &value, Signature *result)
+inline int Securifier::Sign(const PlainText &value, Signature *result)
                                                                const {
   return asymm_->Sign(value, result, asymm_->Keys.PublicKey);
 }
 
-template<typename Keys>
-int Securifier<Keys>::AsymmetricEncrypt(const PlainText &plain_text,
+inline int Securifier::AsymmetricEncrypt(const PlainText &plain_text,
                                         const typename Keys::PublicKey &key,
                                         CipherText *cipher_text) const {
   return asymm_->Encrypt(plain_text, key, cipher_text);
 }
 
-template<typename Keys>
-int Securifier<Keys>::AsymmetricDecrypt(const CipherText &encrypted_value,
+inline int Securifier::AsymmetricDecrypt(const CipherText &encrypted_value,
                                         PlainText *data) const {
   return  asymm_->Decrypt(encrypted_value, data);
 }
 
 
-template<typename Keys>
-void Securifier<Keys>::GetPublicKeyAndValidation(
+inline void Securifier::GetPublicKeyAndValidation(
     const typename Keys::Identity &id,
     GetPublicKeyAndValidationCallback callback) const {
   callback("", "");
 }
 
-template<typename Keys>
-bool Securifier<Keys>::Validate(const PlainText &plain_text,
+#include <thread>
+
+std::thread dave;
+
+inline bool Securifier::Validate(const PlainText &plain_text,
                                 const Signature &signature,
                                 const typename Keys::PublicKey &public_key
                                ) const {
