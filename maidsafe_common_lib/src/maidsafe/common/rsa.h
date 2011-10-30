@@ -41,28 +41,60 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/version.h"
-
+#include "maidsafe/common/asymmetric_crypto.h"
 #if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
 
 namespace maidsafe {
+namespace rsa {
   
+typedef CryptoPP::RSA::PrivateKey PrivateKey;
+typedef CryptoPP::RSA::PublicKey PublicKey;
+typedef std::string ValidationToken, Identity, PlainText, Signature, CipherText;
+typedef std::function<void(const std::string&, const std::string&)>
+        GetPublicKeyAndValidationCallback;
+  
+
 struct RSAKeys {
  public:
-  typedef typename CryptoPP::RSA::PrivateKey PrivateKey;
-  typedef typename CryptoPP::RSA::PublicKey PublicKey;
-  typedef std::string ValidationToken, Identity;
   enum { KeySize = 4096 };
   RSAKeys() : identity(), priv_key(), pub_key(), validation_token() {}
   Identity identity;
   PrivateKey priv_key;
   PublicKey pub_key;
   ValidationToken validation_token;  // certificate, additional signature etc.
-  
 };
-  
+
+int GenerateKeyPair(RSAKeys *keypair);
+
+int Sign(const PlainText &data,
+          const PrivateKey &priv_key,
+          Signature *signature);
+
+int CheckSignature(const PlainText &plain_text,
+                   const Signature &signature,
+                   const PublicKey &pub_key);
+
+int Encrypt(const PlainText &plain_text,
+            const PublicKey &pub_key,
+              CipherText *result);
+
+int Decrypt(const CipherText &data,
+            const PrivateKey &priv_key,
+            PlainText *result);
+
+void GetPublicKeyAndValidation(
+    const Identity &public_key_id,
+    GetPublicKeyAndValidationCallback callback);
+
+bool Validate(const PlainText &plain_text,
+              const Signature &signature,
+              const PublicKey &public_key);
+
+
+}  // namespace rsa 
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_RSA_H_

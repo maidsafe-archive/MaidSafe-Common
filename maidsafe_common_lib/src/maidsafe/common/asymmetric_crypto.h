@@ -45,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/version.h"
+#include "maidsafe/common/rsa.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1003
 #  error This API is not compatible with the installed library.\
@@ -97,12 +98,7 @@ class AsymmetricCrypto {
  private:
   AsymmetricCrypto &operator=(const AsymmetricCrypto&);
   AsymmetricCrypto(const AsymmetricCrypto&);
- 
 };
-
-
-
-
 
 
 }  // namespace maidsafe

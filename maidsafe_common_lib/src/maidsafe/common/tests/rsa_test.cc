@@ -26,7 +26,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/omp.h"
-#include "maidsafe/common/asymmetric_crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -34,36 +33,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-
+namespace rsa {
 namespace test {
 
 class RSATest : public testing::Test {
  public:
   RSATest()
-          : rsa_test_(), key_one_(), key_two_() {
+          : key_one_(), key_two_() {
 
-    rsa_test_.GenerateKeyPair(&key_one_);
-    rsa_test_.GenerateKeyPair(&key_two_);
+    GenerateKeyPair(&key_one_);
+    GenerateKeyPair(&key_two_);
   }
   
   ~RSATest() {}
  protected:
-  AsymmetricCrypto<RSAKeys> rsa_test_;
   RSAKeys key_one_;
   RSAKeys key_two_;
 };
 
-
 TEST(RSAKeGenTest, BEH_RsaKeyPair) {
 #pragma omp parallel
   { // NOLINT (dirvine)
-    AsymmetricCrypto<RSAKeys> rsa;
     RSAKeys keys;
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa.GenerateKeyPair(&keys));
+              GenerateKeyPair(&keys));
   }   
 }
-
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   #pragma omp parallel
@@ -78,14 +73,14 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     const std::string plain_data_other(RandomString(470));
     // Encryption and decryption
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa_test_.Encrypt(plain_data,
+             Encrypt(plain_data,
                          key_one_.pub_key,
                          &recovered_data));
     
     EXPECT_NE(plain_data, recovered_data);
     
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa_test_.Decrypt(recovered_data,
+             Decrypt(recovered_data,
                           key_one_.priv_key,
                           &recovered_data_other));
     EXPECT_EQ(plain_data, recovered_data_other);
@@ -96,16 +91,16 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     EXPECT_NE(recovered_data, plain_data);
 
     EXPECT_EQ(CommonReturnCode::kDataEmpty,
-              rsa_test_.Encrypt(empty_data, key_one_.pub_key, &recovered_data));
+             Encrypt(empty_data, key_one_.pub_key, &recovered_data));
     
     EXPECT_EQ(CommonReturnCode::kDataEmpty,
-              rsa_test_.Decrypt(empty_data, key_one_.priv_key, &empty_data));
+             Decrypt(empty_data, key_one_.priv_key, &empty_data));
 
     EXPECT_EQ(CommonReturnCode::kInvalidPrivateKey,
-              rsa_test_.Decrypt(plain_data, empty_priv_key, &recovered_data));
+             Decrypt(plain_data, empty_priv_key, &recovered_data));
 
     EXPECT_EQ(CommonReturnCode::kInvalidPublicKey,
-              rsa_test_.Encrypt(plain_data, empty_pub_key, &recovered_data));
+             Encrypt(plain_data, empty_pub_key, &recovered_data));
   }
 }
 
@@ -123,33 +118,33 @@ TEST_F(RSATest, BEH_SignValidate) {
     std::string signature;
     
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa_test_.Sign(data, key_one_.priv_key, &signature));
+             Sign(data, key_one_.priv_key, &signature));
     
     EXPECT_EQ(CommonReturnCode::kSuccess,
-              rsa_test_.CheckSignature(data, signature, key_one_.pub_key));
+             CheckSignature(data, signature, key_one_.pub_key));
     
     EXPECT_EQ(CommonReturnCode::kDataEmpty ,
-              rsa_test_.Sign(empty_data, key_one_.priv_key, &signature));
+             Sign(empty_data, key_one_.priv_key, &signature));
     
     EXPECT_EQ(CommonReturnCode::kDataEmpty ,
-              rsa_test_.CheckSignature(empty_data,
+             CheckSignature(empty_data,
                                        signature,
                                        key_one_.pub_key));
     
     EXPECT_EQ(CommonReturnCode::kInvalidPrivateKey ,
-              rsa_test_.Sign(data, empty_priv_key, &signature));
+             Sign(data, empty_priv_key, &signature));
     
     EXPECT_EQ(CommonReturnCode::kInvalidPublicKey ,
-              rsa_test_.CheckSignature(data, signature , empty_pub_key));
+             CheckSignature(data, signature , empty_pub_key));
     
     EXPECT_EQ(CommonReturnCode::kRSASignatureEmpty ,
-              rsa_test_.CheckSignature(data, empty_signature , key_one_.pub_key));
+             CheckSignature(data, empty_signature , key_one_.pub_key));
     
     EXPECT_EQ(CommonReturnCode::kRSAInvalidsignature ,
-              rsa_test_.CheckSignature(data, bad_signature , key_one_.pub_key));
+             CheckSignature(data, bad_signature , key_one_.pub_key));
   }
 }
 
 }  // namespace test
-
+}  // namespace rsa
 }  // namespace maidsafe

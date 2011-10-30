@@ -56,7 +56,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-
+namespace rsa {
+  
 namespace {
 
 CryptoPP::RandomNumberGenerator &rng() {
@@ -65,9 +66,7 @@ CryptoPP::RandomNumberGenerator &rng() {
  }
 }  // Unnamed namespace
   
-template<>
-int AsymmetricCrypto<RSAKeys>::GenerateKeyPair(RSAKeys *keypair) const
-{
+int GenerateKeyPair(RSAKeys *keypair) {
   CryptoPP::InvertibleRSAFunction parameters;
   try {
   parameters.GenerateRandomWithKeySize(rng(), RSAKeys::KeySize);
@@ -76,8 +75,8 @@ int AsymmetricCrypto<RSAKeys>::GenerateKeyPair(RSAKeys *keypair) const
     DLOG(ERROR) << "Failed Generating keypair: " << e.what();
     return CommonReturnCode::kKeyGenerationError;
   }
-  CryptoPP::RSA::PrivateKey priv_key(parameters);
-  CryptoPP::RSA::PublicKey pub_key(parameters);
+  PrivateKey priv_key(parameters);
+  PublicKey pub_key(parameters);
   keypair->priv_key = priv_key;
   keypair->pub_key = pub_key;
   if (keypair->priv_key.Validate(rng(), 2) &&
@@ -88,11 +87,10 @@ int AsymmetricCrypto<RSAKeys>::GenerateKeyPair(RSAKeys *keypair) const
 }
 
 
-template<>
-int AsymmetricCrypto<RSAKeys>::Encrypt(const PlainText &data,
-                                       const PublicKey &pub_key,
-                                       CipherText *result
-                                       ) const {
+int Encrypt(const PlainText &data,
+        const PublicKey &pub_key,
+        CipherText *result
+        ) {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
     return CommonReturnCode::kDataEmpty;
@@ -114,10 +112,9 @@ int AsymmetricCrypto<RSAKeys>::Encrypt(const PlainText &data,
   return CommonReturnCode::kSuccess;
 }
 
-template<>
-int AsymmetricCrypto<RSAKeys>::Decrypt(const CipherText &data,
-                                       const PrivateKey& priv_key,
-                                       PlainText *result) const {
+int Decrypt(const CipherText &data,
+        const PrivateKey& priv_key,
+        PlainText *result) {
   if (data.empty()) {
     DLOG(ERROR) << " No data ";
     return CommonReturnCode::kDataEmpty;
@@ -146,10 +143,9 @@ int AsymmetricCrypto<RSAKeys>::Decrypt(const CipherText &data,
    return CommonReturnCode::kSuccess;
 }
 
-template<>
-int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
-                                    const PrivateKey& priv_key,
-                                    std::string  *signature) const {
+int Sign(const std::string& data,
+    const PrivateKey& priv_key,
+    std::string  *signature) {
   if (!priv_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad private key ";
     return CommonReturnCode::kInvalidPrivateKey;
@@ -172,11 +168,9 @@ int AsymmetricCrypto<RSAKeys>::Sign(const std::string& data,
   return CommonReturnCode::kSuccess;
 }
 
-
-template<>
-int AsymmetricCrypto<RSAKeys>::CheckSignature(const PlainText &data,
-                                              const Signature &signature,
-                                              const PublicKey &pub_key) const {
+int CheckSignature(const PlainText &data,
+              const Signature &signature,
+              const PublicKey &pub_key) {
   if (!pub_key.Validate(rng(),0)) {
     DLOG(ERROR) << " Bad public key ";
     return CommonReturnCode::kInvalidPublicKey;
@@ -207,22 +201,22 @@ int AsymmetricCrypto<RSAKeys>::CheckSignature(const PlainText &data,
   return CommonReturnCode::kSuccess;
 }
 
-template<>
-void AsymmetricCrypto<RSAKeys>::GetPublicKeyAndValidation(
-    const RSAKeys::Identity &/*id*/,
-    GetPublicKeyAndValidationCallback callback) const {
+void GetPublicKeyAndValidation(
+    const Identity &/*id*/,
+    GetPublicKeyAndValidationCallback callback) {
   callback("", "");
 }
 
-template<>
-bool AsymmetricCrypto<RSAKeys>::Validate(const PlainText &plain_text,
+bool Validate(const PlainText &plain_text,
                                 const Signature &signature,
-                                const RSAKeys::PublicKey &public_key
-                               ) const {
+                                const PublicKey &public_key
+                               ) {
   if (0 == CheckSignature(plain_text, signature, public_key))
     return true;
   else
     return false;
 }
+
+}  // namespace rsa
 
 }  // namespace maidsafe
