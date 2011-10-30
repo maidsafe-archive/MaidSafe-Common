@@ -35,7 +35,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4702)
 #endif
-
 #include "boost/scoped_array.hpp"
 #include "boost/thread/mutex.hpp"
 #include "cryptopp/hex.h"
@@ -66,10 +65,10 @@ CryptoPP::RandomNumberGenerator &rng() {
  }
 }  // Unnamed namespace
   
-int GenerateKeyPair(RSAKeys *keypair) {
+int GenerateKeyPair(Keys *keypair) {
   CryptoPP::InvertibleRSAFunction parameters;
   try {
-  parameters.GenerateRandomWithKeySize(rng(), RSAKeys::KeySize);
+  parameters.GenerateRandomWithKeySize(rng(), Keys::KeySize);
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed Generating keypair: " << e.what();

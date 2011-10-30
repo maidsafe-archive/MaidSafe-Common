@@ -56,18 +56,17 @@ typedef std::string ValidationToken, Identity, PlainText, Signature, CipherText;
 typedef std::function<void(const std::string&, const std::string&)>
         GetPublicKeyAndValidationCallback;
   
-
-struct RSAKeys {
+struct Keys {
  public:
   enum { KeySize = 4096 };
-  RSAKeys() : identity(), priv_key(), pub_key(), validation_token() {}
+  Keys() : identity(), priv_key(), pub_key(), validation_token() {}
   Identity identity;
   PrivateKey priv_key;
   PublicKey pub_key;
   ValidationToken validation_token;  // certificate, additional signature etc.
 };
 
-int GenerateKeyPair(RSAKeys *keypair);
+int GenerateKeyPair(Keys *keypair);
 
 int Sign(const PlainText &data,
           const PrivateKey &priv_key,
@@ -92,7 +91,6 @@ void GetPublicKeyAndValidation(
 bool Validate(const PlainText &plain_text,
               const Signature &signature,
               const PublicKey &public_key);
-
 
 }  // namespace rsa 
 }  // namespace maidsafe

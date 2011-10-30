@@ -47,14 +47,14 @@ class RSATest : public testing::Test {
   
   ~RSATest() {}
  protected:
-  RSAKeys key_one_;
-  RSAKeys key_two_;
+  Keys key_one_;
+  Keys key_two_;
 };
 
 TEST(RSAKeGenTest, BEH_RsaKeyPair) {
 #pragma omp parallel
   { // NOLINT (dirvine)
-    RSAKeys keys;
+    Keys keys;
     EXPECT_EQ(CommonReturnCode::kSuccess,
               GenerateKeyPair(&keys));
   }   
