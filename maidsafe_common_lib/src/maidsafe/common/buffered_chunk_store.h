@@ -36,7 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <functional>
 #include <list>
-#include <map>
+#include <set>
 #include <string>
 
 #ifdef __MSVC__
@@ -48,8 +48,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem.hpp"
 #include "boost/token_functions.hpp"
+#include "boost/thread/mutex.hpp"
 #include "boost/thread/shared_mutex.hpp"
 #include "boost/thread/locks.hpp"
+#include "boost/thread/condition_variable.hpp"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -57,6 +59,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/memory_chunk_store.h"
+#include "maidsafe/common/threadsafe_chunk_store.h"
 #include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/version.h"
 
@@ -68,25 +71,47 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace fs = boost::filesystem;
 namespace arg = std::placeholders;
+
 namespace maidsafe {
 
 class BufferedChunkStore: public ChunkStore {
  public:
-  typedef std::function<std::string(fs::path)> FileHashFunc;
-  typedef std::function<std::string(std::string)> MemoryHashFunc;
-  BufferedChunkStore(bool reference_counting, FileHashFunc file_hash_func,
-                     MemoryHashFunc memory_hash_func,
+  BufferedChunkStore(bool reference_counting,
+                     std::shared_ptr<ChunkValidation> chunk_validation,
                      boost::asio::io_service &asio_service)
       : ChunkStore(reference_counting),
-        shared_mutex_(),
+        cache_mutex_(),
+        xfer_mutex_(),
+        xfer_cond_var_(),
+        chunk_validation_(chunk_validation),
         asio_service_(asio_service),
-        file_hash_func_(file_hash_func),
-        memory_hash_func_(memory_hash_func),
-        memory_chunk_store_(new MemoryChunkStore(false, memory_hash_func_)),
-        file_chunk_store_(new FileChunkStore(reference_counting,
-                                             file_hash_func_)),
-        chunk_names_() {}
-  ~BufferedChunkStore() {}
+        internal_perm_chunk_store_(new FileChunkStore(reference_counting,
+                                                      chunk_validation_)),
+        cache_chunk_store_(false, chunk_validation_),
+        perm_chunk_store_(reference_counting, internal_perm_chunk_store_),
+        cached_chunks_(),
+        removable_chunks_(),
+        pending_xfers_(),
+        perm_capacity_(0),
+        perm_size_(0) {}
+  ~BufferedChunkStore();
+
+  /**
+   * Initialises the chunk storage directory.
+   *
+   * If the given directory path does not exist, it will be created.
+   * @param storage_location Path to storage directory
+   * @param dir_depth directory depth
+   * @return True if directory exists or could be created
+   */
+  bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
+    if (!reinterpret_cast<FileChunkStore*>(
+          internal_perm_chunk_store_.get())->Init(storage_location, dir_depth))
+      return false;
+    perm_capacity_ = internal_perm_chunk_store_->Capacity();
+    perm_size_ = internal_perm_chunk_store_->Size();
+    return true;
+  }
 
   /**
    * Retrieves a chunk's content as a string.
@@ -105,7 +130,10 @@ class BufferedChunkStore: public ChunkStore {
   bool Get(const std::string &name, const fs::path &sink_file_name) const;
 
   /**
-   * Stores chunk content under the given name in FileChunkStore.
+   * Stores chunk content under the given name permanently.
+   *
+   * This method returns once the chunk is stored in the cache. It will then be
+   * asynchronously written to the file-based permanent store.
    * @param name Chunk name, i.e. hash of the chunk content
    * @param content The chunk's content
    * @return True if chunk could be stored or already existed
@@ -113,7 +141,10 @@ class BufferedChunkStore: public ChunkStore {
   bool Store(const std::string &name, const std::string &content);
 
   /**
-   * Stores chunk content under the given name in FileChunkStore.
+   * Stores chunk content under the given name permanently.
+   *
+   * This method returns once the chunk is stored in the cache. It will then be
+   * asynchronously written to the file-based permanent store.
    * @param name Chunk name, i.e. hash of the chunk content
    * @param source_file_name Path to input file
    * @param delete_source_file True if file can be deleted after storing
@@ -124,23 +155,31 @@ class BufferedChunkStore: public ChunkStore {
              bool delete_source_file);
 
    /**
-   * Stores chunk content under the given name in MemoryChunkStore.
+   * Stores chunk content under the given name in cache.
    * @param name Chunk name, i.e. hash of the chunk content
    * @param content The chunk's content
    * @return True if chunk could be stored or already existed
    */
-  bool StoreCached(const std::string &name, const std::string &content);
+  bool CacheStore(const std::string &name, const std::string &content);
 
   /**
-   * Stores chunk content under the given name in MemoryChunkStore.
+   * Stores chunk content under the given name in cache.
    * @param name Chunk name, i.e. hash of the chunk content
    * @param source_file_name Path to input file
    * @param delete_source_file True if file can be deleted after storing
    * @return True if chunk could be stored or already existed
    */
-  bool StoreCached(const std::string &name,
-                   const fs::path &source_file_name,
-                   bool delete_source_file);
+  bool CacheStore(const std::string &name,
+                  const fs::path &source_file_name,
+                  bool delete_source_file);
+
+   /**
+   * Stores an already cached chunk in the permanent store (blocking).
+   * @param name Chunk name, i.e. hash of the chunk content
+   * @return True if chunk could be stored permanently
+   */
+  bool PermanentStore(const std::string &name);
+
   /**
    * Deletes a stored chunk.
    * @param name Chunk name
@@ -149,8 +188,8 @@ class BufferedChunkStore: public ChunkStore {
   bool Delete(const std::string &name);
 
   /**
-   * Efficiently adds a locally existing chunk to another ChunkStore and
-   * removes it from this one.
+   * Adds a locally existing chunk to another ChunkStore and removes it from
+   * this one.
    * @param name Chunk name
    * @param sink_chunk_store The receiving ChunkStore
    * @return True if operation successful
@@ -158,19 +197,34 @@ class BufferedChunkStore: public ChunkStore {
   bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
 
   /**
-   * Checks if a chunk exists.
+   * Checks if a chunk exists, either in cache or permanent store.
    * @param name Chunk name
    * @return True if chunk exists
    */
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk, i.e. confirms if the name matches the content's hash.
+   * Checks if a chunk exists in cache.
+   * @param name Chunk name
+   * @return True if chunk exists
+   */
+  bool CacheHas(const std::string &name) const;
+
+  /**
+   * Checks if a chunk exists in permanent store.
+   * @param name Chunk name
+   * @return True if chunk exists
+   */
+  bool PermanentHas(const std::string &name) const;
+
+  /**
+   * Validates a chunk using the ChunkValidation object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
    * @return True if chunk valid
    */
+
   bool Validate(const std::string &name) const;
 
   /**
@@ -181,16 +235,35 @@ class BufferedChunkStore: public ChunkStore {
   std::uintmax_t Size(const std::string &name) const;
 
   /**
-   * Retrieves the maximum storage capacity available to FileChunkStore.
+   * Retrieves the total size of the permanently stored chunks.
+   * @return Size in bytes
+   */
+  std::uintmax_t Size() const;
+
+  /**
+   * Retrieves the total size of the cached chunks.
+   * @return Size in bytes
+   */
+  std::uintmax_t CacheSize() const;
+
+  /**
+   * Retrieves the maximum permanent storage capacity available.
    *
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
   std::uintmax_t Capacity() const;
 
+  /**
+   * Retrieves the maximum cache capacity available.
+   *
+   * A capacity of zero (0) equals infinite storage space.
+   * @return Capacity in bytes
+   */
+  std::uintmax_t CacheCapacity() const;
 
   /**
-   * Sets the maximum storage capacity available to FilesChunkStore.
+   * Sets the maximum permanent storage capacity available.
    *
    * A capacity of zero (0) equals infinite storage space. The capacity must
    * always be at least as high as the total size of already stored chunks.
@@ -199,36 +272,27 @@ class BufferedChunkStore: public ChunkStore {
   void SetCapacity(const std::uintmax_t &capacity);
 
   /**
-   * Checks whether the FileChunkStore has enough capacity to store a 
-   * chunk of the given size.
-   * @return True if required size vacant
-   */
-  bool Vacant(const std::uintmax_t &required_size) const;
-
-  /**
-   * Retrieves the maximum storage capacity available to MemoryChunkStore.
-   *
-   * A capacity of zero (0) equals infinite storage space.
-   * @return Capacity in bytes
-   */
-  std::uintmax_t MemoryCapacity() const;
-
-
-  /**
-   * Sets the maximum storage capacity available to MemoryChunkStore.
+   * Sets the maximum cache capacity available.
    *
    * A capacity of zero (0) equals infinite storage space. The capacity must
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetMemoryCapacity(const std::uintmax_t &capacity);
+  void SetCacheCapacity(const std::uintmax_t &capacity);
 
   /**
-   * Checks whether the memoryChunkStore has enough capacity to store a 
-   * chunk of the given size.
+   * Checks whether the permanent storage has enough capacity to store a chunk
+   * of the given size.
    * @return True if required size vacant
    */
-  bool VacantMemory(const std::uintmax_t &required_size) const;
+  bool Vacant(const std::uintmax_t &required_size) const;
+
+  /**
+   * Checks whether the cache has enough capacity to store a chunk of the given
+   * size.
+   * @return True if required size vacant
+   */
+  bool CacheVacant(const std::uintmax_t &required_size) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -242,10 +306,16 @@ class BufferedChunkStore: public ChunkStore {
   std::uintmax_t Count(const std::string &name) const;
 
   /**
-   * Retrieves the number of chunks held by this ChunkStore.
+   * Retrieves the number of chunks held by the permanent store.
    * @return Chunk count
    */
   std::uintmax_t Count() const;
+
+  /**
+   * Retrieves the number of chunks held in cache.
+   * @return Chunk count
+   */
+  std::uintmax_t CacheCount() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
@@ -254,29 +324,60 @@ class BufferedChunkStore: public ChunkStore {
   bool Empty() const;
 
   /**
+   * Checks if any chunks are held in cache.
+   * @return True if no chunks stored
+   */
+  bool CacheEmpty() const;
+
+  /**
    * Deletes all stored chunks.
    */
   void Clear();
+
+  /**
+   * Deletes all cached chunks.
+   */
+  void CacheClear();
+
+  /**
+   * Mark a chunk in the permanent store to be deleted in case there is not
+   * enough space to store a new chunk.
+   * @param name Chunk name
+   */
+  void MarkForDeletion(const std::string &name);
 
  private:
   BufferedChunkStore(const BufferedChunkStore&);
   BufferedChunkStore& operator=(const BufferedChunkStore&);
 
-  void StoreInFile(const std::string &name, const std::string &contents);
-  void StoreInFile(const std::string &name, const fs::path &source_file_name,
-                   bool delete_source_file);
+  void AddCachedChunksEntry(const std::string &name) const;
+  bool DoCacheStore(const std::string &name,
+                    const std::string &content) const;
+  bool DoCacheStore(const std::string &name,
+                    const uintmax_t &size,
+                    const fs::path &source_file_name,
+                    bool delete_source_file) const;
+  bool MakeChunkPermanent(const std::string &name, const uintmax_t &size);
+  void DoMakeChunkPermanent(const std::string &name);
+  void RemoveDeletionMarks(const std::string &name);
+
   typedef boost::shared_lock<boost::shared_mutex> SharedLock;
   typedef boost::upgrade_lock<boost::shared_mutex> UpgradeLock;
   typedef boost::unique_lock<boost::shared_mutex> UniqueLock;
   typedef boost::upgrade_to_unique_lock<boost::shared_mutex>
       UpgradeToUniqueLock;
-  mutable boost::shared_mutex shared_mutex_;
+  mutable boost::shared_mutex cache_mutex_;
+  mutable boost::mutex xfer_mutex_;
+  mutable boost::condition_variable xfer_cond_var_;
+  std::shared_ptr<ChunkValidation> chunk_validation_;
   boost::asio::io_service &asio_service_;
-  FileHashFunc file_hash_func_;
-  MemoryHashFunc memory_hash_func_;
-  std::shared_ptr<ChunkStore> memory_chunk_store_;
-  std::shared_ptr<ChunkStore> file_chunk_store_;
-  mutable std::list<std::string> chunk_names_;
+  std::shared_ptr<ChunkStore> internal_perm_chunk_store_;
+  mutable MemoryChunkStore cache_chunk_store_;
+  ThreadsafeChunkStore perm_chunk_store_;
+  mutable std::list<std::string> cached_chunks_;
+  std::list<std::string> removable_chunks_;
+  std::multiset<std::string> pending_xfers_;
+  uintmax_t perm_capacity_, perm_size_;
 };
 
 }  //  namespace maidsafe

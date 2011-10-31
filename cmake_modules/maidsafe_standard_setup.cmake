@@ -132,7 +132,8 @@ ENDIF()
 ###################################################################################################
 # All other libraries search                                                                      #
 ###################################################################################################
-INCLUDE(FindOpenMP)
+INCLUDE(maidsafe_find_openmp)
+
 IF(UNIX)
   SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /usr/lib/i386-linux-gnu/ /usr/lib/x86_64-linux-gnu/)
   SET(CMAKE_THREAD_PREFER_PTHREAD true)
