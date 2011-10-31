@@ -1235,8 +1235,7 @@ static void logging_fail() {
 #if defined(_DEBUG) && defined(_MSC_VER)
   // When debugging on windows, avoid the obnoxious dialog and make
   // it possible to continue past a LOG(FATAL) in the debugger
-//  _asm int 3
-  DebugBreak();
+  _asm int 3
 #else
   abort();
 #endif

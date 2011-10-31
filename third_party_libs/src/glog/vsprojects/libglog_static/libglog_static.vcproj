@@ -44,7 +44,7 @@
 				PreprocessorDefinitions="GOOGLE_GLOG_DLL_DECL="
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				WarningLevel="3"
 				DebugInformationFormat="4"
 			/>
@@ -105,7 +105,7 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\..\src\windows"
 				PreprocessorDefinitions="GOOGLE_GLOG_DLL_DECL="
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				WarningLevel="3"
 				DebugInformationFormat="3"
