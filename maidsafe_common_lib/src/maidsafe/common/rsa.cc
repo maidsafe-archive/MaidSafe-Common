@@ -36,9 +36,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4702)
 #endif
 #include "boost/scoped_array.hpp"
-#include "boost/thread/mutex.hpp"
-#include "cryptopp/hex.h"
-#include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
 #include "cryptopp/rsa.h"
 #include "cryptopp/osrng.h"
@@ -62,10 +59,23 @@ namespace {
 CryptoPP::RandomNumberGenerator &rng() {
   static CryptoPP::AutoSeededRandomPool random_number_generator;
   return random_number_generator;
- }
+}
+ 
+void EncodeKey(const CryptoPP::BufferedTransformation& bt, std::string *key) {
+    CryptoPP::StringSink name(*key);
+    bt.CopyTo(name);
+    name.MessageEnd();
+} 
+
+void Decode(const std::string& key, CryptoPP::BufferedTransformation *bt) {
+    CryptoPP::StringSource file(key, true /*pumpAll*/);
+    file.TransferTo(*bt);
+    bt->MessageEnd();
+}
+ 
 }  // Unnamed namespace
   
-int GenerateKeyPair(Keys *keypair) {
+int GenerateKeyPair(Keys *keypair) { 
   CryptoPP::InvertibleRSAFunction parameters;
   try {
   parameters.GenerateRandomWithKeySize(rng(), Keys::KeySize);
@@ -200,49 +210,31 @@ int CheckSignature(const PlainText &data,
   return CommonReturnCode::kSuccess;
 }
 
-void EncodePrivateKey(const PrivateKey& key, std::string *priv_key)
-{
+void EncodePrivateKey(const PrivateKey& key, std::string *priv_key) {
     CryptoPP::ByteQueue queue;
     key.DEREncodePrivateKey(queue);
     EncodeKey(queue, priv_key);
 }
 
-void EncodePublicKey(const PublicKey& key, std::string *pub_key)
-{
+void EncodePublicKey(const PublicKey& key, std::string *pub_key) {
     CryptoPP::ByteQueue queue;
     key.DEREncodePublicKey(queue);
     EncodeKey(queue, pub_key);
 }
 
-void EncodeKey(const CryptoPP::BufferedTransformation& bt, std::string *key)
-{
-    CryptoPP::StringSink name(*key);
-    bt.CopyTo(name);
-    name.MessageEnd();
-}
-
-void DecodePrivateKey(std::string& priv_key, PrivateKey *key)
-{
+void DecodePrivateKey(std::string& priv_key, PrivateKey *key) {
     CryptoPP::ByteQueue queue;
     Decode(priv_key, &queue);
     key->BERDecodePrivateKey(queue, false /*paramsPresent*/, queue.MaxRetrievable());
 }
 
-void DecodePublicKey(const std::string& pub_key, PublicKey *key)
-{
+void DecodePublicKey(const std::string& pub_key, PublicKey *key) {
     CryptoPP::ByteQueue queue;
     Decode(pub_key, &queue);
     key->BERDecodePublicKey(queue, false /*paramsPresent*/, queue.MaxRetrievable());
 }
 
-void Decode(const std::string& key, CryptoPP::BufferedTransformation *bt)
-{
-    CryptoPP::StringSource file(key, true /*pumpAll*/);
-    file.TransferTo(*bt);
-    bt->MessageEnd();
-}
-
-bool CheckRoundtrip(PublicKey &public_key, PrivateKey priv_key) {
+bool CheckRoundtrip(const PublicKey &public_key, const PrivateKey &priv_key) {
   return (public_key.GetModulus() != priv_key.GetModulus() ||
           public_key.GetPublicExponent() != priv_key.GetPrivateExponent());
 }
@@ -254,7 +246,6 @@ bool ValidateKey(PrivateKey &priv_key) {
 bool ValidateKey(PublicKey &pub_key) {
   return pub_key.Validate(rng(), 2);
 }
-
 
 void GetPublicKeyAndValidation(
     const Identity &/*id*/,
