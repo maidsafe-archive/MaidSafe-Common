@@ -84,6 +84,27 @@ int Decrypt(const CipherText &data,
             const PrivateKey &priv_key,
             PlainText *result);
 
+void EncodePrivateKey(const PrivateKey& key, std::string *priv_key);
+
+void EncodePublicKey(const PublicKey& key, std::string *pub_key);
+
+void EncodeKey(const CryptoPP::BufferedTransformation& bt, std::string *key);
+
+void DecodePrivateKey(std::string& priv_key, PrivateKey *key);
+
+void DecodePublicKey(const std::string& filename, PublicKey *key);
+
+void Decode(const std::string& filename, CryptoPP::BufferedTransformation *bt);
+
+// check decoded keys were the same as encoded and pub key not replaced with another
+bool CheckRoundtrip(PublicKey &public_key, PrivateKey priv_key);
+
+bool ValidateKey(PrivateKey &priv_key);
+
+bool ValidateKey(PublicKey &pub_key);
+
+
+
 void GetPublicKeyAndValidation(
     const Identity &public_key_id,
     GetPublicKeyAndValidationCallback callback);
