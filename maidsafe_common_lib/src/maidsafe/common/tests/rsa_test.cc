@@ -51,12 +51,23 @@ class RSATest : public testing::Test {
   Keys key_two_;
 };
 
-TEST(RSAKeGenTest, BEH_RsaKeyPair) {
+TEST(RSAKeyGenTest, BEH_RsaKeyPair) {
 #pragma omp parallel
   { // NOLINT (dirvine)
     Keys keys;
     EXPECT_EQ(CommonReturnCode::kSuccess,
               GenerateKeyPair(&keys));
+    EXPECT_TRUE(ValidateKey(keys.pub_key));
+    EXPECT_TRUE(ValidateKey(keys.priv_key));
+    std::string private_key, public_key;
+    PrivateKey priv_key;
+    PublicKey pub_key;
+    EncodePrivateKey(keys.priv_key, &private_key);
+    EncodePublicKey(keys.pub_key, &public_key);
+    DecodePrivateKey(private_key, &priv_key);
+    DecodePublicKey(public_key, &pub_key);
+    EXPECT_TRUE(CheckRoundtrip(pub_key, keys.priv_key));
+    EXPECT_TRUE(CheckRoundtrip(pub_key, priv_key));
   }   
 }
 

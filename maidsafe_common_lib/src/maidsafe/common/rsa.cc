@@ -234,7 +234,7 @@ void DecodePublicKey(const std::string& pub_key, PublicKey *key) {
     key->BERDecodePublicKey(queue, false /*paramsPresent*/, queue.MaxRetrievable());
 }
 
-bool CheckRoundtrip(const PublicKey &public_key, const PrivateKey &priv_key) {
+bool CheckRoundtrip(maidsafe::rsa::PublicKey& public_key, maidsafe::rsa::PrivateKey& priv_key) {
   return (public_key.GetModulus() != priv_key.GetModulus() ||
           public_key.GetPublicExponent() != priv_key.GetPrivateExponent());
 }
