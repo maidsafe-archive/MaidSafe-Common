@@ -51,7 +51,7 @@ class RSATest : public testing::Test {
   Keys key_two_;
 };
 
-TEST(RSAKeyGenTest, BEH_RsaKeyPair) {
+TEST(RSAKeyTest, FUNC_RsaKeyPair) {
 #pragma omp parallel
   { // NOLINT (dirvine)
     Keys keys;
