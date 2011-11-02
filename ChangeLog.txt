@@ -1,5 +1,18 @@
-v0.10.03 (WIP)
+v0.10.04 (WIP)
 --------------
+
+
+v0.10.03
+--------
+* Significant work and testing of BufferedChunkStore.
+* Re-implemented overloaded Size() in derived ChunkStore classes.
+* Added logging to MemoryChunkStore.
+* Replaced X917RNG with RandomPool.
+* Added HexSubstr to utils.
+* Updated clone script to include MaidSafe-Transport and MaidSafe-Breakpad.
+* Added support for OpenMP.
+* Increased min Boost version to 1.47.
+* Disabled C4351 warning for MSVC.
 
 
 v0.10.02
