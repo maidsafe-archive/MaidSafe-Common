@@ -38,7 +38,7 @@ std::string MemoryChunkStore::Get(const std::string &name) const {
     return "";
   }
 
-  return it->second.second;
+  return (*it).second.second;
 }
 
 bool MemoryChunkStore::Get(const std::string &name,
@@ -49,7 +49,7 @@ bool MemoryChunkStore::Get(const std::string &name,
     return false;
   }
 
-  return WriteFile(sink_file_name, it->second.second);
+  return WriteFile(sink_file_name, (*it).second.second);
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
@@ -62,9 +62,9 @@ bool MemoryChunkStore::Store(const std::string &name,
   auto it = chunks_.find(name);
   if (it != chunks_.end()) {
     if (kReferenceCounting) {
-      ++(it->second.first);
+      ++(*it).second.first;
       DLOG(INFO) << "Increased count of chunk " << HexSubstr(name) << " to "
-                 << it->second.first;
+                 << (*it).second.first;
     } else {
       DLOG(INFO) << "Already stored chunk " << HexSubstr(name);
     }
@@ -134,9 +134,9 @@ bool MemoryChunkStore::Store(const std::string &name,
     IncreaseSize(chunk_size);
     DLOG(INFO) << "Stored chunk " << HexSubstr(name);
   } else if (kReferenceCounting) {
-    ++(it->second.first);
+    ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << HexSubstr(name) << " to "
-               << it->second.first;
+               << (*it).second.first;
   }
 
   if (delete_source_file)
@@ -157,16 +157,16 @@ bool MemoryChunkStore::Delete(const std::string &name) {
     return true;
   }
 
-  if (!kReferenceCounting || --(it->second.first) == 0) {
-    DecreaseSize(it->second.second.size());
+  if (!kReferenceCounting || --(*it).second.first == 0) {
+    DecreaseSize((*it).second.second.size());
     chunks_.erase(it);
-    DLOG(INFO) << "Deleted chunk " << HexSubstr(name);
+    return true;
   }
 
 #ifdef DEBUG
-  if (kReferenceCounting && it->second.first != 0) {
+  if (kReferenceCounting && (*it).second.first != 0) {
     DLOG(INFO) << "Decreased count of chunk " << HexSubstr(name) << " to "
-               << it->second.first << " via deletion";
+               << (*it).second.first << " via deletion";
   }
 #endif
 
@@ -186,21 +186,21 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
     return false;
   }
 
-  if (!sink_chunk_store->Store(name, it->second.second)) {
+  if (!sink_chunk_store->Store(name, (*it).second.second)) {
     DLOG(ERROR) << "Failed to store chunk " << HexSubstr(name) << " in sink";
     return false;
   }
 
-  if (!kReferenceCounting || --(it->second.first) == 0) {
-    DecreaseSize(it->second.second.size());
+  if (!kReferenceCounting || --(*it).second.first == 0) {
+    DecreaseSize((*it).second.second.size());
     chunks_.erase(it);
     DLOG(INFO) << "Moved chunk " << HexSubstr(name);
   }
 
 #ifdef DEBUG
-  if (kReferenceCounting && it->second.first != 0) {
+  if (kReferenceCounting && (*it).second.first != 0) {
     DLOG(INFO) << "Decreased count of chunk " << HexSubstr(name) << " to "
-               << it->second.first << " via move";
+               << (*it).second.first << " via move";
   }
 #endif
 
@@ -226,7 +226,7 @@ bool MemoryChunkStore::Validate(const std::string &name) const {
     return false;
   }
 
-  bool valid(chunk_validation_->ValidChunk(name, it->second.second));
+  bool valid(chunk_validation_->ValidChunk(name, (*it).second.second));
   DLOG(INFO) << "Validation result for chunk " << HexSubstr(name) << ": "
              << std::boolalpha << valid;
   return valid;
@@ -237,7 +237,7 @@ std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {
   if (it == chunks_.end())
     return 0;
 
-  return it->second.second.size();
+  return (*it).second.second.size();
 }
 
 std::uintmax_t MemoryChunkStore::Count(const std::string &name) const {
@@ -245,7 +245,7 @@ std::uintmax_t MemoryChunkStore::Count(const std::string &name) const {
   if (it == chunks_.end())
     return 0;
 
-  return it->second.first;
+  return (*it).second.first;
 }
 
 std::uintmax_t MemoryChunkStore::Count() const {

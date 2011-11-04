@@ -277,6 +277,32 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   EXPECT_EQ(333, this->chunk_store_->Size(new_name));
 }
 
+TYPED_TEST_P(ChunkStoreTest, BEH_RepeatedStore) {
+  std::string content1(RandomString(123)), content2(RandomString(123));
+  std::string name_mem1(crypto::Hash<crypto::SHA512>(content1));
+  std::string name_mem2(crypto::Hash<crypto::SHA512>(content2));
+
+  for (uintmax_t i(1); i <= 80; ++i) {
+    EXPECT_TRUE(this->ref_chunk_store_->Store(name_mem1, content1));
+    EXPECT_FALSE(this->ref_chunk_store_->Empty());
+    EXPECT_EQ(1, this->ref_chunk_store_->Count());
+    EXPECT_EQ(123, this->ref_chunk_store_->Size());
+    EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem1));
+  }
+
+  EXPECT_TRUE(this->ref_chunk_store_->Delete(name_mem1));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count());
+  EXPECT_EQ(123, this->ref_chunk_store_->Size());
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem1));
+
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name_mem2, content1));
+  EXPECT_FALSE(this->ref_chunk_store_->Empty());
+  EXPECT_EQ(2, this->ref_chunk_store_->Count());
+  EXPECT_EQ(246, this->ref_chunk_store_->Size());
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem1));
+}
+
 TYPED_TEST_P(ChunkStoreTest, BEH_Delete) {
   std::string content(RandomString(123));
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
@@ -686,6 +712,7 @@ REGISTER_TYPED_TEST_CASE_P(ChunkStoreTest,
                            BEH_Init,
                            BEH_Get,
                            BEH_Store,
+                           BEH_RepeatedStore,
                            BEH_Delete,
                            BEH_MoveTo,
                            BEH_Validate,
