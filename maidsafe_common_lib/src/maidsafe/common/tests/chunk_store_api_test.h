@@ -183,6 +183,8 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   std::string name_mem(crypto::Hash<crypto::SHA512>(content));
   fs::path path(*this->test_dir_ / "chunk.dat");
   this->CreateRandomFile(path, 456);
+  fs::path path_empty(*this->test_dir_ / "empty.dat");
+  this->CreateRandomFile(path_empty, 0);
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
 
@@ -193,6 +195,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   EXPECT_FALSE(this->chunk_store_->Store(name_file, *this->test_dir_ / "fail",
                                          false));
   EXPECT_FALSE(this->chunk_store_->Store("", path, false));
+  EXPECT_FALSE(this->chunk_store_->Store(name_file, path_empty, false));
   EXPECT_TRUE(this->chunk_store_->Empty());
   EXPECT_EQ(0, this->chunk_store_->Count());
   EXPECT_EQ(0, this->chunk_store_->Size());
@@ -560,6 +563,23 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Capacity) {
   EXPECT_EQ(150, this->chunk_store_->Capacity());
   this->chunk_store_->SetCapacity(125);
   EXPECT_EQ(125, this->chunk_store_->Capacity());
+
+  fs::path path(*this->test_dir_ / "chunk.dat");
+  this->CreateRandomFile(path, 100);
+  std::string name_file(crypto::HashFile<crypto::SHA512>(path));
+
+  // try storing file, 50 over limit
+  EXPECT_FALSE(this->chunk_store_->Vacant(100));
+  EXPECT_FALSE(this->chunk_store_->Store(name_file, path, false));
+  EXPECT_FALSE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(75, this->chunk_store_->Size());
+
+  this->chunk_store_->Clear();
+
+  // store file again, succeeds now
+  EXPECT_TRUE(this->chunk_store_->Store(name_file, path, false));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(100, this->chunk_store_->Size());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_References) {

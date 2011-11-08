@@ -65,6 +65,7 @@ class BufferedChunkStoreTest: public testing::Test {
   BufferedChunkStoreTest()
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunk_dir_(*test_dir_ / "chunks"),
+        ref_chunk_dir_(*test_dir_ / "chunks"),
         asio_service_(),
         test_asio_service_(),
         work_(),
@@ -75,6 +76,8 @@ class BufferedChunkStoreTest: public testing::Test {
             new HashableChunkValidation<crypto::SHA512, crypto::Tiger>),
         chunk_store_(new BufferedChunkStore(
             false, chunk_validation_, asio_service_)),
+        ref_chunk_store_(new BufferedChunkStore(
+            true, chunk_validation_, asio_service_)),
         mutex_(),
         cond_var_(),
         store_counter_(0) {
@@ -108,6 +111,8 @@ class BufferedChunkStoreTest: public testing::Test {
   void SetUp() {
     fs::create_directories(chunk_dir_);
     chunk_store_->Init(chunk_dir_);
+    fs::create_directories(ref_chunk_dir_);
+    ref_chunk_store_->Init(ref_chunk_dir_);
   }
 
   void TearDown() {
@@ -149,12 +154,12 @@ class BufferedChunkStoreTest: public testing::Test {
   }
 
   std::shared_ptr<fs::path> test_dir_;
-  fs::path chunk_dir_;
+  fs::path chunk_dir_, ref_chunk_dir_;
   boost::asio::io_service asio_service_, test_asio_service_;
   std::shared_ptr<boost::asio::io_service::work> work_, test_work_;
   boost::thread_group thread_group_, test_thread_group_;
   std::shared_ptr<ChunkValidation> chunk_validation_;
-  std::shared_ptr<BufferedChunkStore> chunk_store_;
+  std::shared_ptr<BufferedChunkStore> chunk_store_, ref_chunk_store_;
   boost::mutex mutex_;
   boost::condition_variable cond_var_;
   int store_counter_;
@@ -501,6 +506,66 @@ TEST_F(BufferedChunkStoreTest, BEH_PermanentStore) {
   chunk_store_->CacheClear();
   EXPECT_TRUE(chunk_store_->PermanentStore(name1));
   EXPECT_TRUE(chunk_store_->PermanentHas(name2));
+
+  chunk_store_->Clear();
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->Has(name1));
+  EXPECT_TRUE(chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->CacheClear();
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(chunk_store_->Has(name1));
+  EXPECT_FALSE(chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
+  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
+
+  ref_chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(ref_chunk_store_->Has(name1));
+  EXPECT_TRUE(ref_chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
+  EXPECT_TRUE(ref_chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
+
+  ref_chunk_store_->CacheClear();
+  ref_chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(ref_chunk_store_->Has(name1));
+  EXPECT_FALSE(ref_chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
+  EXPECT_TRUE(ref_chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
+
+  ref_chunk_store_->Clear();
+  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
+  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
+  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
+  EXPECT_EQ(3, ref_chunk_store_->Count(name1));
+
+  ref_chunk_store_->MarkForDeletion(name1);
+  ref_chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
+
+  ref_chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
+
+  EXPECT_TRUE(ref_chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
+
+  ref_chunk_store_->MarkForDeletion(name1);
+  ref_chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
+
+  ref_chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_WaitForTransfer) {
