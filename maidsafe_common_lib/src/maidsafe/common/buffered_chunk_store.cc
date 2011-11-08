@@ -442,7 +442,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
 
   UpgradeLock upgrade_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return true;
+    return chunk_validation_->Hashable(name);
 
   // Check whether cache has capacity to store chunk
   if (content.size() > cache_chunk_store_.Capacity() &&
@@ -491,7 +491,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
 
   UpgradeLock upgrade_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return true;
+    return chunk_validation_->Hashable(name);
 
   // Check whether cache has capacity to store chunk
   if (size > cache_chunk_store_.Capacity() &&

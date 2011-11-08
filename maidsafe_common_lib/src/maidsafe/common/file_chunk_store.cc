@@ -152,6 +152,8 @@ bool FileChunkStore::Store(const std::string &name,
       return true;
     } else {
       //  chunk already exists
+      if (!chunk_validation_->Hashable(name))
+        return false;
       fs::path old_path(chunk_file), new_path(chunk_file);
       old_path.replace_extension(
           "." + boost::lexical_cast<std::string>(ref_count));
@@ -167,7 +169,7 @@ bool FileChunkStore::Store(const std::string &name,
   } else {
     //  Not using reference counting
     if (Has(name))
-      return true;
+      return chunk_validation_->Hashable(name);
 
     if (content.empty())
       return false;
@@ -224,6 +226,8 @@ bool FileChunkStore::Store(const std::string &name,
       }
     } else {
       //  chunk already exists
+      if (!chunk_validation_->Hashable(name))
+        return false;
       fs::path old_path(chunk_file), new_path(chunk_file);
       old_path.replace_extension(
           "." + boost::lexical_cast<std::string>(ref_count));
@@ -263,6 +267,8 @@ bool FileChunkStore::Store(const std::string &name,
         return true;
       }
     } else {
+      if (!chunk_validation_->Hashable(name))
+        return false;
       if (delete_source_file)
         fs::remove(source_file_name, ec);
       return true;

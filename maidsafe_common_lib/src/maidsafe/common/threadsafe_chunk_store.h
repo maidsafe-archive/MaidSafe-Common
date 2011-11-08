@@ -60,7 +60,7 @@ namespace maidsafe {
  */
 class ThreadsafeChunkStore : public ChunkStore {
  public:
-  ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store)
+  explicit ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store)
       : ChunkStore(false),
         chunk_store_(chunk_store),
         shared_mutex_() {}
