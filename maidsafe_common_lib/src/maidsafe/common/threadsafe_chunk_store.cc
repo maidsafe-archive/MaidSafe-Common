@@ -83,6 +83,11 @@ bool ThreadsafeChunkStore::Validate(const std::string &name) const {
   return chunk_store_->Validate(name);
 }
 
+std::string ThreadsafeChunkStore::Version(const std::string &name) const {
+  SharedLock shared_lock(shared_mutex_);
+  return chunk_store_->Version(name);
+}
+
 std::uintmax_t ThreadsafeChunkStore::Size(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Size(name);

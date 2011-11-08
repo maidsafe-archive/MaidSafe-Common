@@ -420,6 +420,28 @@ bool FileChunkStore::Validate(const std::string &name) const {
   return chunk_validation_->ValidChunk(name, chunk_file);
 }
 
+std::string FileChunkStore::Version(const std::string &name) const {
+  if (!chunk_validation_)
+    return "";
+
+  if (!IsChunkStoreInitialised())
+    return "";
+
+  if (name.empty())
+    return "";
+
+  fs::path chunk_file(ChunkNameToFilePath(name));
+  std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
+  if (ref_count == 0)
+    return "";
+
+  if (kReferenceCounting)
+    chunk_file.replace_extension(
+        "." + boost::lexical_cast<std::string>(ref_count));
+
+  return chunk_validation_->Version(name, chunk_file);
+}
+
 std::uintmax_t FileChunkStore::Size(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return 0;

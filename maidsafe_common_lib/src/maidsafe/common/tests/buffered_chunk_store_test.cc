@@ -43,7 +43,7 @@ namespace maidsafe {
 
 namespace test {
 
-template <> template <class HashType>
+template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<BufferedChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     bool reference_counting,
@@ -51,7 +51,8 @@ void ChunkStoreTest<BufferedChunkStore>::InitChunkStore(
     boost::asio::io_service &asio_service) {
   chunk_store->reset(new BufferedChunkStore(
       reference_counting,
-      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>),
+      std::shared_ptr<ChunkValidation>(
+          new HashableChunkValidation<ValidationType, VersionType>),
       asio_service));
   if (!chunk_dir.empty())
     reinterpret_cast<BufferedChunkStore*>(chunk_store->get())->Init(chunk_dir);
@@ -70,7 +71,8 @@ class BufferedChunkStoreTest: public testing::Test {
         test_work_(),
         thread_group_(),
         test_thread_group_(),
-        chunk_validation_(new HashableChunkValidation<crypto::SHA512>),
+        chunk_validation_(
+            new HashableChunkValidation<crypto::SHA512, crypto::Tiger>),
         chunk_store_(new BufferedChunkStore(
             false, chunk_validation_, asio_service_)),
         mutex_(),

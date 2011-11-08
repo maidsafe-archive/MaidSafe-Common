@@ -232,6 +232,24 @@ bool MemoryChunkStore::Validate(const std::string &name) const {
   return valid;
 }
 
+std::string MemoryChunkStore::Version(const std::string &name) const {
+  if (!chunk_validation_) {
+    DLOG(ERROR) << "No validation available for chunk " << HexSubstr(name);
+    return "";
+  }
+
+  auto it = chunks_.find(name);
+  if (it == chunks_.end()) {
+    DLOG(WARNING) << "Failed to find chunk " << HexSubstr(name);
+    return "";
+  }
+
+  std::string version(chunk_validation_->Version(name, (*it).second.second));
+  DLOG(INFO) << "Version result for chunk " << HexSubstr(name) << ": "
+             << HexSubstr(version);
+  return version;
+}
+
 std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())

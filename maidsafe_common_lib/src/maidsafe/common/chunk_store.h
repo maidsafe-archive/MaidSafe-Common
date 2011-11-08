@@ -52,9 +52,8 @@ namespace maidsafe {
 /**
  * Abstract class to manage storage and retrieval of named data items (chunks).
  *
- * A chunk is a small, content-adressable piece of data. The name has to match
- * the cryptographic hash of the content, otherwise the chunk is deemed invalid.
- * The type of hash function used is chosen by the implementation.
+ * A chunk is a small, content-adressable piece of data that can be validated
+ * using an implementation-specific mechanism.
  *
  * The storage capacity can be limited by setting Capacity to a value greater
  * than zero. If that limit is reached, further Store operations will fail. A
@@ -130,13 +129,20 @@ class ChunkStore : public AlternativeStore {
   virtual bool Has(const std::string &name) const = 0;
 
   /**
-   * Validates a chunk, i.e. confirms if the name matches the content's hash.
+   * Validates a chunk.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
    * @return True if chunk valid
    */
   virtual bool Validate(const std::string &name) const = 0;
+
+  /**
+   * Retrieves the chunk's content version.
+   * @param name Chunk name
+   * @return The chunk version
+   */
+  virtual std::string Version(const std::string &name) const = 0;
 
   /**
    * Retrieves the size of a chunk.

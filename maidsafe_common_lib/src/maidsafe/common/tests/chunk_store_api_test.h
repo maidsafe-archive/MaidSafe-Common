@@ -77,13 +77,13 @@ class ChunkStoreTest: public testing::Test {
     fs::create_directories(alt_chunk_dir_);
     fs::create_directories(ref_chunk_dir_);
     fs::create_directories(tiger_chunk_dir_);
-    InitChunkStore<crypto::SHA512>(
+    InitChunkStore<crypto::SHA512, crypto::Tiger>(
         &chunk_store_, false, chunk_dir_, asio_service_);
-    InitChunkStore<crypto::SHA512>(
+    InitChunkStore<crypto::SHA512, crypto::Tiger>(
         &alt_chunk_store_, false, alt_chunk_dir_, asio_service_);
-    InitChunkStore<crypto::SHA512>(
+    InitChunkStore<crypto::SHA512, crypto::Tiger>(
         &ref_chunk_store_, true, ref_chunk_dir_, asio_service_);
-    InitChunkStore<crypto::Tiger>(
+    InitChunkStore<crypto::Tiger, crypto::Tiger>(
         &tiger_chunk_store_, false, tiger_chunk_dir_, asio_service_);
   }
 
@@ -93,7 +93,7 @@ class ChunkStoreTest: public testing::Test {
     thread_group_.join_all();
   }
 
-  template <class HashType>
+  template <class ValidationType, class VersionType>
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
                       bool reference_counting,
                       const fs::path &chunk_dir,

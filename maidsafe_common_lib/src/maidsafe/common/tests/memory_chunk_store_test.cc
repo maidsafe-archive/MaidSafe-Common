@@ -34,7 +34,7 @@ namespace maidsafe {
 
 namespace test {
 
-template <> template <class HashType>
+template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     bool reference_counting,
@@ -42,7 +42,8 @@ void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
     boost::asio::io_service&) {
   chunk_store->reset(new MemoryChunkStore(
       reference_counting,
-      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));
+      std::shared_ptr<ChunkValidation>(
+          new HashableChunkValidation<ValidationType, VersionType>)));
 }
 
 INSTANTIATE_TYPED_TEST_CASE_P(Memory, ChunkStoreTest, MemoryChunkStore);

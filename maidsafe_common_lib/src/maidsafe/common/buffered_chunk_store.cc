@@ -288,6 +288,20 @@ bool BufferedChunkStore::Validate(const std::string &name) const {
   return perm_chunk_store_.Validate(name);
 }
 
+std::string BufferedChunkStore::Version(const std::string &name) const {
+  if (name.empty()) {
+    DLOG(ERROR) << "Version - Empty name passed.";
+    return "";
+  }
+
+  {
+    SharedLock shared_lock(cache_mutex_);
+    if (cache_chunk_store_.Has(name))
+      return cache_chunk_store_.Version(name);
+  }
+  return perm_chunk_store_.Version(name);
+}
+
 std::uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   if (name.empty()) {
     DLOG(ERROR) << "Size - Empty name passed.";
@@ -518,6 +532,12 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
 bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
                                             const uintmax_t &size) {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+
+  if (!initialised_) {
+    DLOG(ERROR) << "MakeChunkPermanent - Can't make " << HexSubstr(name)
+                << " permanent, not initialised.";
+    return false;
+  }
 
   RemoveDeletionMarks(name);
 

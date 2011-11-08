@@ -37,7 +37,7 @@ namespace maidsafe {
 
 namespace test {
 
-template <> template <class HashType>
+template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<FileChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     bool reference_counting,
@@ -45,7 +45,8 @@ void ChunkStoreTest<FileChunkStore>::InitChunkStore(
     boost::asio::io_service&) {
   chunk_store->reset(new FileChunkStore(
       reference_counting,
-      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>)));
+      std::shared_ptr<ChunkValidation>(
+          new HashableChunkValidation<ValidationType, VersionType>)));
   if (!chunk_dir.empty())
     reinterpret_cast<FileChunkStore*>(chunk_store->get())->Init(chunk_dir);
 }
@@ -58,7 +59,8 @@ class FileChunkStoreTest: public testing::Test {
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunk_dir_(*test_dir_ / "chunks"),
         ref_chunk_dir_(*test_dir_ / "ref_chunks"),
-        chunk_validation_(new HashableChunkValidation<crypto::SHA512>) {}
+        chunk_validation_(
+            new HashableChunkValidation<crypto::SHA512, crypto::Tiger>) {}
   ~FileChunkStoreTest() {}
  protected:
   void SetUp() {

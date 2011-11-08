@@ -74,6 +74,9 @@ namespace arg = std::placeholders;
 
 namespace maidsafe {
 
+/**
+ * Manages storage and retrieval of chunks using a two-tier storage system.
+ */
 class BufferedChunkStore: public ChunkStore {
  public:
   BufferedChunkStore(bool reference_counting,
@@ -88,12 +91,13 @@ class BufferedChunkStore: public ChunkStore {
         internal_perm_chunk_store_(new FileChunkStore(reference_counting,
                                                       chunk_validation_)),
         cache_chunk_store_(false, chunk_validation_),
-        perm_chunk_store_(reference_counting, internal_perm_chunk_store_),
+        perm_chunk_store_(internal_perm_chunk_store_),
         cached_chunks_(),
         removable_chunks_(),
         pending_xfers_(),
         perm_capacity_(0),
-        perm_size_(0) {}
+        perm_size_(0),
+        initialised_(false) {}
   ~BufferedChunkStore();
 
   /**
@@ -110,6 +114,7 @@ class BufferedChunkStore: public ChunkStore {
       return false;
     perm_capacity_ = internal_perm_chunk_store_->Capacity();
     perm_size_ = internal_perm_chunk_store_->Size();
+    initialised_ = true;
     return true;
   }
 
@@ -224,8 +229,14 @@ class BufferedChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-
   bool Validate(const std::string &name) const;
+
+  /**
+   * Retrieves the chunk's content version using the ChunkValidation object.
+   * @param name Chunk name
+   * @return The chunk version
+   */
+  std::string Version(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
@@ -378,6 +389,7 @@ class BufferedChunkStore: public ChunkStore {
   std::list<std::string> removable_chunks_;
   std::multiset<std::string> pending_xfers_;
   uintmax_t perm_capacity_, perm_size_;
+  bool initialised_;
 };
 
 }  //  namespace maidsafe
