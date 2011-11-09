@@ -332,6 +332,20 @@ bool FileChunkStore::Delete(const std::string &name) {
   return false;
 }
 
+bool FileChunkStore::Modify(const std::string &name,
+                            const std::string &content) {
+  name;
+  content;
+  return true;
+}
+
+bool FileChunkStore::Modify(const std::string &name,
+                            const fs::path &source_file_name) const {
+  name;
+  source_file_name;
+  return true;
+}
+
 bool FileChunkStore::MoveTo(const std::string &name,
                             ChunkStore *sink_chunk_store) {
   if (!IsChunkStoreInitialised())

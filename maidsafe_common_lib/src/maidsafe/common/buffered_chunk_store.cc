@@ -212,6 +212,20 @@ bool BufferedChunkStore::Delete(const std::string &name) {
   return file_delete_result;
 }
 
+bool BufferedChunkStore::Modify(const std::string &name,
+                                  const std::string &content) {
+  name;
+  content;
+  return true;
+}
+
+bool BufferedChunkStore::Modify(const std::string &name,
+                                  const fs::path &source_file_name) const {
+  name;
+  source_file_name;
+  return true;
+}
+
 bool BufferedChunkStore::MoveTo(const std::string &name,
                                 ChunkStore *sink_chunk_store) {
   if (name.empty()) {
@@ -408,7 +422,7 @@ void BufferedChunkStore::MarkForDeletion(const std::string &name) {
   }
 }
 
-/// @note Ensure cache mutex is not locked.
+// / @note Ensure cache mutex is not locked.
 void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
   if (!name.empty()) {
     UniqueLock unique_lock(cache_mutex_);

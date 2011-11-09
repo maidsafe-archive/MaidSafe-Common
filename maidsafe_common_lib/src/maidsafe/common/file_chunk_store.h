@@ -138,6 +138,23 @@ class FileChunkStore: public ChunkStore {
   bool Delete(const std::string &name);
 
   /**
+   * Modifies chunk content under the given name.
+   * @param name Chunk name, i.e. hash of the chunk content
+   * @param content The chunk's content
+   * @return True if chunk could be stored or already existed
+   */
+  bool Modify(const std::string &name, const std::string &content);
+
+  /**
+   * Modifies a chunk's content as a file, potentially overwriting an existing
+   * file of the same name.
+   * @param name Chunk name
+   * @param source_file_name Path to output file
+   * @return True if chunk exists and could be written to file.
+   */
+  bool Modify(const std::string &name,
+              const fs::path &source_file_name) const;
+  /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
    * removes it from this one.
    * @param name Chunk name

@@ -67,6 +67,20 @@ bool ThreadsafeChunkStore::Delete(const std::string &name) {
   return chunk_store_->Delete(name);
 }
 
+bool ThreadsafeChunkStore::Modify(const std::string &name,
+                                  const std::string &content) {
+  name;
+  content;
+  return true;
+}
+
+bool ThreadsafeChunkStore::Modify(const std::string &name,
+                                  const fs::path &source_file_name) const {
+  name;
+  source_file_name;
+  return true;
+}
+
 bool ThreadsafeChunkStore::MoveTo(const std::string &name,
                                   ChunkStore *sink_chunk_store) {
   UniqueLock unique_lock(shared_mutex_);

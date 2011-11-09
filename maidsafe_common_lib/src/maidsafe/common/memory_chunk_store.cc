@@ -173,6 +173,20 @@ bool MemoryChunkStore::Delete(const std::string &name) {
   return true;
 }
 
+bool MemoryChunkStore::Modify(const std::string &name,
+                              const std::string &content) {
+  name;
+  content;
+  return true;
+}
+
+bool MemoryChunkStore::Modify(const std::string &name,
+                              const fs::path &source_file_name) const {
+  name;
+  source_file_name;
+  return true;
+}
+
 bool MemoryChunkStore::MoveTo(const std::string &name,
                               ChunkStore *sink_chunk_store) {
   if (!sink_chunk_store) {
