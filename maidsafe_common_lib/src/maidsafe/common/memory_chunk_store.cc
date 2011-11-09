@@ -181,7 +181,7 @@ bool MemoryChunkStore::Modify(const std::string &name,
 }
 
 bool MemoryChunkStore::Modify(const std::string &name,
-                              const fs::path &source_file_name) const {
+                              const fs::path &source_file_name) {
   name;
   source_file_name;
   return true;

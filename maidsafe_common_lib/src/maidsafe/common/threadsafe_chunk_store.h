@@ -113,8 +113,8 @@ class ThreadsafeChunkStore : public ChunkStore {
   /**
    * Modifies chunk content under the given name.
    * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's content
-   * @return True if chunk could be stored or already existed
+   * @param content The chunk's modified content
+   * @return True if chunk has been modified.
    */
   bool Modify(const std::string &name, const std::string &content);
 
@@ -122,11 +122,10 @@ class ThreadsafeChunkStore : public ChunkStore {
    * Modifies a chunk's content as a file, potentially overwriting an existing
    * file of the same name.
    * @param name Chunk name
-   * @param source_file_name Path to output file
-   * @return True if chunk exists and could be written to file.
+   * @param source_file_name Path to modified content file
+   * @return True if chunk has been modified.
    */
-  bool Modify(const std::string &name,
-              const fs::path &source_file_name) const;
+  bool Modify(const std::string &name, const fs::path &source_file_name);
 
   /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
