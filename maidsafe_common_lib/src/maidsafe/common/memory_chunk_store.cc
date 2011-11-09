@@ -175,16 +175,37 @@ bool MemoryChunkStore::Delete(const std::string &name) {
 
 bool MemoryChunkStore::Modify(const std::string &name,
                               const std::string &content) {
-  name;
-  content;
+  if (name.empty())
+    return false;
+  auto it = chunks_.find(name);
+  if (it == chunks_.end())
+    return false;
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+    return false;
+
+  std::string current_content((*it).second.second);
+  std::uintmax_t content_size_difference(
+      content.size() - current_content.size());
+  if (!Vacant(content_size_difference))
+    return false;
+
+  chunks_[name] = ChunkEntry((*it).second.first, content);
+
+  if (content_size_difference > 0)
+    IncreaseSize(content_size_difference);
+  else if (content_size_difference < 0)
+    DecreaseSize(content_size_difference);
   return true;
 }
 
 bool MemoryChunkStore::Modify(const std::string &name,
                               const fs::path &source_file_name) {
-  name;
-  source_file_name;
-  return true;
+  if (source_file_name.empty())
+    return false;
+  std::string content;
+  if (!ReadFile(source_file_name, &content))
+    return false;
+  return Modify(name, content);
 }
 
 bool MemoryChunkStore::MoveTo(const std::string &name,

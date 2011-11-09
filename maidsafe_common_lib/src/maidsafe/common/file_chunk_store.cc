@@ -338,8 +338,7 @@ bool FileChunkStore::Modify(const std::string &name,
     return false;
 
   if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      content.empty())
+      !chunk_validation_->ValidName(name))
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
@@ -386,17 +385,20 @@ bool FileChunkStore::Modify(const std::string &name,
     chunk_file.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
 
+  boost::system::error_code ec1, ec2;
   std::uintmax_t content_size_difference(
-      fs::file_size(source_file_name) - fs::file_size(chunk_file));
+      fs::file_size(source_file_name, ec1) - fs::file_size(chunk_file, ec2));
 
+  if (ec1 || ec2)
+    return false;
   if (!Vacant(content_size_difference))
     return false;
-  boost::system::error_code ec;
+
   fs::copy_file(source_file_name,
                 chunk_file,
                 fs::copy_option::overwrite_if_exists,
-                ec);
-  if (ec)
+                ec1);
+  if (ec1)
     return false;
 
   if (content_size_difference > 0)
