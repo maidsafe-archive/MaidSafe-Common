@@ -213,17 +213,89 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 }
 
 bool BufferedChunkStore::Modify(const std::string &name,
-                                  const std::string &content) {
-  name;
-  content;
-  return true;
+                                const std::string &content) {
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+    return false;
+
+  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  RemoveDeletionMarks(name);
+
+  while (pending_xfers_.count(name) > 0)
+    xfer_cond_var_.wait(lock);
+
+  if (perm_chunk_store_.Has(name)) {
+    std::string current_perm_content(perm_chunk_store_.Get(name));
+    std::uintmax_t content_size_difference(
+        content.size() - current_perm_content.size());
+
+    // Wait For Space in Perm Store
+    while (perm_size_ + content_size_difference > perm_capacity_) {
+      if (removable_chunks_.empty())
+        return false;    // Space cant be Allocated
+      if (perm_chunk_store_.Delete(removable_chunks_.front()))
+        perm_size_ = perm_chunk_store_.Size();
+      removable_chunks_.pop_front();
+    }
+
+    perm_size_ += content_size_difference;
+    if (perm_chunk_store_.Modify(name, content)) {
+      {
+        UpgradeLock upgrade_lock(cache_mutex_);
+        auto it = std::find(cached_chunks_.begin(), cached_chunks_.end(), name);
+        if (it != cached_chunks_.end()) {
+          UpgradeToUniqueLock unique_lock(upgrade_lock);
+          cached_chunks_.erase(it);
+          cache_chunk_store_.Delete(name);
+        }
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    std::string current_cache_content;
+    {
+      UpgradeLock upgrade_lock(cache_mutex_);
+      if (!cache_chunk_store_.Has(name))
+        return false;  // Not in Cache Chunk Store or Perm Store
+      current_cache_content = cache_chunk_store_.Get(name);
+      std::uintmax_t content_size_difference(
+          content.size() - current_cache_content.size());
+
+      // Make space in Cache if Needed
+      while (!cache_chunk_store_.Vacant(content_size_difference)) {
+        while (cached_chunks_.empty()) {
+          upgrade_lock.unlock();
+          {
+            boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+            if (pending_xfers_.empty())
+              return false;
+
+            int limit(kWaitTransfersForCacheVacantCheck);
+            while (!pending_xfers_.empty() && limit > 0) {
+              xfer_cond_var_.wait(xfer_lock);
+              --limit;
+            }
+          }
+          upgrade_lock.lock();
+        }
+        UpgradeToUniqueLock unique_lock(upgrade_lock);
+        cache_chunk_store_.Delete(cached_chunks_.back());
+        cached_chunks_.pop_back();
+      }
+      return cache_chunk_store_.Modify(name, content);
+    }
+  }
 }
 
 bool BufferedChunkStore::Modify(const std::string &name,
-                                  const fs::path &source_file_name) {
-  name;
-  source_file_name;
-  return true;
+                                const fs::path &source_file_name) {
+  if (source_file_name.empty())
+    return false;
+  std::string content;
+  if (!ReadFile(source_file_name, &content))
+    return false;
+  return Modify(name, content);
 }
 
 bool BufferedChunkStore::MoveTo(const std::string &name,
