@@ -224,6 +224,14 @@ std::string DecodeFromBase32(const std::string &base32_input) {
   return non_base32_output;
 }
 
+std::string HexSubstr(const std::string &non_hex) {
+  std::string hex(EncodeToHex(non_hex));
+  if (hex.size() > 16)
+    return (hex.substr(0, 7) + ".." + hex.substr(hex.size() - 7));
+  else
+    return hex;
+}
+
 boost::posix_time::time_duration GetDurationSinceEpoch() {
   return boost::posix_time::microsec_clock::universal_time() - kMaidSafeEpoch;
 }

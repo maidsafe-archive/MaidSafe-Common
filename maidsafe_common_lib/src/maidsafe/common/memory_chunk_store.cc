@@ -27,13 +27,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/memory_chunk_store.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/log.h"
 
 namespace maidsafe {
 
 std::string MemoryChunkStore::Get(const std::string &name) const {
   auto it = chunks_.find(name);
-  if (it == chunks_.end())
+  if (it == chunks_.end()) {
+    DLOG(WARNING) << "Can't get chunk " << HexSubstr(name);
     return "";
+  }
 
   return it->second.second;
 }
@@ -41,54 +44,99 @@ std::string MemoryChunkStore::Get(const std::string &name) const {
 bool MemoryChunkStore::Get(const std::string &name,
                            const fs::path &sink_file_name) const {
   auto it = chunks_.find(name);
-  if (it == chunks_.end())
+  if (it == chunks_.end()) {
+    DLOG(WARNING) << "Can't get chunk " << HexSubstr(name);
     return false;
+  }
 
   return WriteFile(sink_file_name, it->second.second);
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
                              const std::string &content) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
+    DLOG(ERROR) << "Failed to validate chunk " << HexSubstr(name);
     return false;
+  }
 
   auto it = chunks_.find(name);
   if (it != chunks_.end()) {
-    if (kReferenceCounting)
+    if (kReferenceCounting) {
       ++(it->second.first);
+      DLOG(INFO) << "Increased count of chunk " << HexSubstr(name) << " to "
+                 << it->second.first;
+    } else {
+      DLOG(INFO) << "Already stored chunk " << HexSubstr(name);
+    }
     return true;
   }
 
   std::uintmax_t chunk_size(content.size());
-  if (chunk_size == 0 || !Vacant(chunk_size))
+  if (chunk_size == 0) {
+    DLOG(ERROR) << "Chunk " << HexSubstr(name) << " has size 0";
     return false;
+  }
+
+  if (!Vacant(chunk_size)) {
+    DLOG(ERROR) << "Chunk " << HexSubstr(name) << " has size " << chunk_size
+                << " > vacant space";
+    return false;
+  }
 
   chunks_[name] = ChunkEntry(1, content);
   IncreaseSize(chunk_size);
+  DLOG(INFO) << "Stored chunk " << HexSubstr(name);
   return true;
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
                              const fs::path &source_file_name,
                              bool delete_source_file) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
+    DLOG(ERROR) << "Failed to validate chunk " << HexSubstr(name);
     return false;
+  }
 
   boost::system::error_code ec;
   auto it = chunks_.find(name);
   if (it == chunks_.end()) {
     std::uintmax_t chunk_size(fs::file_size(source_file_name, ec));
-    if (ec || chunk_size == 0 || !Vacant(chunk_size))
+    if (ec) {
+      DLOG(ERROR) << "Failed to caclulate size for chunk " << HexSubstr(name)
+                  << ": " << ec.message();
       return false;
+    }
+
+    if (chunk_size == 0) {
+      DLOG(ERROR) << "Chunk " << HexSubstr(name) << " has size 0";
+      return false;
+    }
+
+    if (!Vacant(chunk_size)) {
+      DLOG(ERROR) << "Chunk " << HexSubstr(name) << " has size " << chunk_size
+                  << " > vacant space.";
+      return false;
+    }
 
     std::string content;
-    if (!ReadFile(source_file_name, &content) || content.size() != chunk_size)
+    if (!ReadFile(source_file_name, &content)) {
+      DLOG(ERROR) << "Failed to read file for chunk " << HexSubstr(name);
       return false;
+    }
+
+    if (content.size() != chunk_size) {
+      DLOG(ERROR) << "File content size " << content.size() << " != chunk_size "
+                  << chunk_size << " for chunk " << HexSubstr(name);
+      return false;
+    }
 
     chunks_[name] = ChunkEntry(1, content);
     IncreaseSize(chunk_size);
+    DLOG(INFO) << "Stored chunk " << HexSubstr(name);
   } else if (kReferenceCounting) {
     ++(it->second.first);
+    DLOG(INFO) << "Increased count of chunk " << HexSubstr(name) << " to "
+               << it->second.first;
   }
 
   if (delete_source_file)
@@ -98,54 +146,90 @@ bool MemoryChunkStore::Store(const std::string &name,
 }
 
 bool MemoryChunkStore::Delete(const std::string &name) {
-  if (name.empty())
+  if (name.empty()) {
+    DLOG(ERROR) << "Name empty";
     return false;
+  }
 
   auto it = chunks_.find(name);
-  if (it == chunks_.end())
+  if (it == chunks_.end()) {
+    DLOG(INFO) << "Chunk " << HexSubstr(name) << " already deleted";
     return true;
+  }
 
   if (!kReferenceCounting || --(it->second.first) == 0) {
     DecreaseSize(it->second.second.size());
     chunks_.erase(it);
+    DLOG(INFO) << "Deleted chunk " << HexSubstr(name);
   }
+
+#ifdef DEBUG
+  if (kReferenceCounting && it->second.first != 0) {
+    DLOG(INFO) << "Decreased count of chunk " << HexSubstr(name) << " to "
+               << it->second.first << " via deletion";
+  }
+#endif
+
   return true;
 }
 
 bool MemoryChunkStore::MoveTo(const std::string &name,
                               ChunkStore *sink_chunk_store) {
-  if (!sink_chunk_store)
+  if (!sink_chunk_store) {
+    DLOG(ERROR) << "NULL sink passed for chunk " << HexSubstr(name);
     return false;
-  
+  }
 
   auto it = chunks_.find(name);
-  if (it == chunks_.end()) 
+  if (it == chunks_.end()) {
+    DLOG(WARNING) << "Failed to find chunk " << HexSubstr(name);
     return false;
-  
+  }
 
-  if (!sink_chunk_store->Store(name, it->second.second)) 
+  if (!sink_chunk_store->Store(name, it->second.second)) {
+    DLOG(ERROR) << "Failed to store chunk " << HexSubstr(name) << " in sink";
     return false;
+  }
 
   if (!kReferenceCounting || --(it->second.first) == 0) {
     DecreaseSize(it->second.second.size());
     chunks_.erase(it);
+    DLOG(INFO) << "Moved chunk " << HexSubstr(name);
   }
+
+#ifdef DEBUG
+  if (kReferenceCounting && it->second.first != 0) {
+    DLOG(INFO) << "Decreased count of chunk " << HexSubstr(name) << " to "
+               << it->second.first << " via move";
+  }
+#endif
+
   return true;
 }
 
 bool MemoryChunkStore::Has(const std::string &name) const {
-  return chunks_.find(name) != chunks_.end();
+  bool found(chunks_.find(name) != chunks_.end());
+  DLOG(INFO) << (found ? "Have chunk " : "Do not have chunk ")
+             << HexSubstr(name);
+  return found;
 }
 
 bool MemoryChunkStore::Validate(const std::string &name) const {
-  if (!chunk_validation_)
+  if (!chunk_validation_) {
+    DLOG(ERROR) << "No validation available for chunk " << HexSubstr(name);
     return false;
+  }
 
   auto it = chunks_.find(name);
-  if (it == chunks_.end())
+  if (it == chunks_.end()) {
+    DLOG(WARNING) << "Failed to find chunk " << HexSubstr(name);
     return false;
+  }
 
-  return chunk_validation_->ValidChunk(name, it->second.second);
+  bool valid(chunk_validation_->ValidChunk(name, it->second.second));
+  DLOG(INFO) << "Validation result for chunk " << HexSubstr(name) << ": "
+             << std::boolalpha << valid;
+  return valid;
 }
 
 std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {
