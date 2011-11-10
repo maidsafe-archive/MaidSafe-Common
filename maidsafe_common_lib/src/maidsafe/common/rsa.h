@@ -90,16 +90,14 @@ void EncodePublicKey(const PublicKey& key, std::string *pub_key);
 
 void DecodePrivateKey(std::string& priv_key, PrivateKey *key);
 
-void DecodePublicKey(const std::string& filename, PublicKey *key);
+void DecodePublicKey(const std::string& pub_key, PublicKey *key);
 
-// check decoded keys were the same as encoded and pub key not replaced with another
-bool CheckRoundtrip(PublicKey &public_key, PrivateKey priv_key);
+// check decoded keys were the same as encoded and pub key not replaced
+bool CheckRoundtrip(PublicKey &public_key, PrivateKey &priv_key);
 
 bool ValidateKey(PrivateKey &priv_key);
 
 bool ValidateKey(PublicKey &pub_key);
-
-
 
 void GetPublicKeyAndValidation(
     const Identity &public_key_id,
