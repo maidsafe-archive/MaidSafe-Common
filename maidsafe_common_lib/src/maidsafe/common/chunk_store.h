@@ -260,6 +260,16 @@ class ChunkStore : public AlternativeStore {
       size_ = 0;
   }
 
+  /**
+   * Updates Chunk Store Size After a Modify Operation
+   */
+  void AdjustChunkStoreStats(const std::uintmax_t& content_size_difference) {
+    if (content_size_difference > 0)
+      IncreaseSize(content_size_difference);
+    else if (content_size_difference < 0)
+      DecreaseSize(content_size_difference);
+  }
+
  private:
   ChunkStore(const ChunkStore&);
   ChunkStore& operator=(const ChunkStore&);

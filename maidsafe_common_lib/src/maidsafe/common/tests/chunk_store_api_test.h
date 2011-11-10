@@ -349,6 +349,84 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Delete) {
   EXPECT_EQ(0, this->chunk_store_->Size());
 }
 
+TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
+  std::string content(RandomString(123));
+  std::string name_mem(crypto::Hash<crypto::SHA512>(content));
+  fs::path path(*this->test_dir_ / "chunk.dat");
+  this->CreateRandomFile(path, 456);
+  std::string name_file(crypto::HashFile<crypto::SHA512>(path));
+  ASSERT_NE(name_mem, name_file);
+  std::string modified_content(RandomString(125));
+  fs::path empty_path;
+  std::string modified_name_mem(crypto::Hash<crypto::SHA512>(modified_content));
+  fs::path modified_path(*this->test_dir_ / "chunk-modified.dat");
+  this->CreateRandomFile(modified_path, 460);
+
+  // Store Initial Chunks and Verify Store Operation
+  ASSERT_TRUE(this->chunk_store_->Store(name_mem, content));
+  ASSERT_TRUE(this->chunk_store_->Store(name_file, path, false));
+
+  EXPECT_FALSE(this->chunk_store_->Empty());
+  EXPECT_EQ(2, this->chunk_store_->Count());
+  EXPECT_EQ(579, this->chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(456, this->chunk_store_->Size(name_file));
+
+  // Invalid Calls to Modify
+  EXPECT_FALSE(this->chunk_store_->Modify("", modified_content));
+  EXPECT_FALSE(this->chunk_store_->Modify("", modified_path));
+  EXPECT_FALSE(this->chunk_store_->Modify(name_file, empty_path));
+  EXPECT_FALSE(this->chunk_store_->Modify(modified_name_mem, modified_content));
+  EXPECT_FALSE(this->chunk_store_->Modify(modified_name_mem, modified_path));
+  EXPECT_FALSE(this->chunk_store_->Modify(modified_content, modified_content));
+
+
+  this->chunk_store_->SetCapacity(579);  // Making the Store Full
+  EXPECT_FALSE(this->chunk_store_->Modify(name_mem, modified_content));
+  EXPECT_FALSE(this->chunk_store_->Modify(name_file, modified_path));
+
+
+  this->chunk_store_->SetCapacity(1024);  // Setting Free Space in Storage
+
+  // Valid Calls on Non-Reference Count Store
+  EXPECT_TRUE(this->chunk_store_->Modify(name_mem, modified_content));
+  EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path));
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(125, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(460, this->chunk_store_->Size(name_file));
+  EXPECT_EQ(585, this->chunk_store_->Size());
+
+  // Setting up Reference Count Store Chunks and Verifying
+  ASSERT_TRUE(this->ref_chunk_store_->Store(name_mem, content));
+  ASSERT_TRUE(this->ref_chunk_store_->Store(name_file, path, false));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name_mem, content));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(name_file, path, false));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_mem));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
+  EXPECT_EQ(579, this->ref_chunk_store_->Size());
+
+  // Valid Calls on Reference Count Store
+  this->ref_chunk_store_->SetCapacity(1024);
+  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_mem, modified_content));
+  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_mem));
+  EXPECT_EQ(125, this->ref_chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
+  EXPECT_EQ(460, this->ref_chunk_store_->Size(name_file));
+  EXPECT_EQ(585, this->ref_chunk_store_->Size());
+}
+
 TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
   std::string content1(RandomString(100));
   std::string name1(crypto::Hash<crypto::SHA512>(content1));
@@ -714,6 +792,7 @@ REGISTER_TYPED_TEST_CASE_P(ChunkStoreTest,
                            BEH_Store,
                            BEH_RepeatedStore,
                            BEH_Delete,
+                           BEH_Modify,
                            BEH_MoveTo,
                            BEH_Validate,
                            BEH_Capacity,

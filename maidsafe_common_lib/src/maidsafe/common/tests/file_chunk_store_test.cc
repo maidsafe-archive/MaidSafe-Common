@@ -311,49 +311,6 @@ TEST_F(FileChunkStoreTest, BEH_Delete) {
   EXPECT_TRUE(ref_fcs->Delete("unknownchunk"));
 }
 
-TEST_F(FileChunkStoreTest, BEH_Modify) {
-  std::shared_ptr<FileChunkStore> ref_fcs(
-      new FileChunkStore(true, chunk_validation_));
-  EXPECT_TRUE(ref_fcs->Init(ref_chunk_dir_, 4));
-
-  // Incorrect Calls test
-  EXPECT_FALSE(ref_fcs->Modify("", static_cast<std::string>("something")));
-  EXPECT_FALSE(ref_fcs->Modify("", static_cast<fs::path>("something")));
-  EXPECT_FALSE(ref_fcs->Modify("something", static_cast<std::string>("")));
-  EXPECT_FALSE(ref_fcs->Modify("something", static_cast<fs::path>("")));
-
-
-  // Testing First Instance of Modify with String Input
-  std::string content("mycontent");
-  std::string name(crypto::Hash<crypto::SHA512>(content));
-  EXPECT_TRUE(ref_fcs->Store(name, content));
-  EXPECT_EQ(content.size(), ref_fcs->Size());
-
-  std::string updated_content("updated-mycontent");
-  EXPECT_TRUE(ref_fcs->Modify(name, updated_content));
-  EXPECT_EQ(updated_content.size(), ref_fcs->Size());
-
-  // Testing Second Instance of Modify with File Input
-  std::string new_content("New-content");
-  std::string new_name(crypto::Hash<crypto::SHA512>(new_content));
-  EXPECT_TRUE(ref_fcs->Store(new_name, new_content));
-  EXPECT_EQ(updated_content.size() + new_content.size(), ref_fcs->Size());
-
-  EXPECT_TRUE(ref_fcs->Get(new_name, *test_dir_ / "modified_chunk"));
-  EXPECT_TRUE(ref_fcs->Modify(name, *test_dir_ / "modified_chunk"));
-  EXPECT_EQ(new_content.size() * 2, ref_fcs->Size());
-
-  // Set Maximum Capacity
-  ref_fcs->SetCapacity(new_content.size() * 2);
-  std::string long_content(maidsafe::RandomAlphaNumericString(100));
-
-  // Return False if Modify Would Exceed Capacity
-  EXPECT_FALSE(ref_fcs->Modify(name, long_content));
-
-  // Return True on Modify with Same Content
-  EXPECT_TRUE(ref_fcs->Modify(name, *test_dir_ / "modified_chunk"));
-}
-
 TEST_F(FileChunkStoreTest, BEH_MoveTo) {
   std::shared_ptr<FileChunkStore> fcs(
       new FileChunkStore(false, chunk_validation_));

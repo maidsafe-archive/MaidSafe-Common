@@ -334,66 +334,58 @@ bool FileChunkStore::Delete(const std::string &name) {
 
 bool FileChunkStore::Modify(const std::string &name,
                             const std::string &content) {
-  if (!IsChunkStoreInitialised() || name.empty())
+  if (!IsChunkStoreInitialised())
     return false;
 
   if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name))
+      !chunk_validation_->ValidName(name) ||
+      !Has(name))
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
-  std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-
-  if (kReferenceCounting)
+  if (kReferenceCounting) {
+    std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
     chunk_file.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
-
+  }
   std::string current_content;
   ReadFile(chunk_file, &current_content);
-
   std::uintmax_t content_size_difference(
       content.size() - current_content.size());
-
   if (!Vacant(content_size_difference))
     return false;
+
   if (!WriteFile(chunk_file, content))
     return false;
-
-  if (content_size_difference > 0)
-    IncreaseSize(content_size_difference);
-  else if (content_size_difference < 0)
-    DecreaseSize(content_size_difference);
-  else
-    return true;
+  AdjustChunkStoreStats(content_size_difference);
   SaveChunkStoreState();
   return true;
 }
 
 bool FileChunkStore::Modify(const std::string &name,
                             const fs::path &source_file_name) {
-  if (!IsChunkStoreInitialised() || name.empty())
+  if (!IsChunkStoreInitialised())
     return false;
 
   if (!chunk_validation_ ||
       !chunk_validation_->ValidName(name) ||
-      source_file_name.empty())
+      source_file_name.empty() ||
+      !Has(name))
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
-  std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-  if (kReferenceCounting)
+  if (kReferenceCounting) {
+    std::uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
     chunk_file.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
-
+  }
   boost::system::error_code ec1, ec2;
   std::uintmax_t content_size_difference(
       fs::file_size(source_file_name, ec1) - fs::file_size(chunk_file, ec2));
-
   if (ec1 || ec2)
     return false;
   if (!Vacant(content_size_difference))
     return false;
-
   fs::copy_file(source_file_name,
                 chunk_file,
                 fs::copy_option::overwrite_if_exists,
@@ -401,12 +393,7 @@ bool FileChunkStore::Modify(const std::string &name,
   if (ec1)
     return false;
 
-  if (content_size_difference > 0)
-    IncreaseSize(content_size_difference);
-  else if (content_size_difference < 0)
-    DecreaseSize(content_size_difference);
-  else
-    return true;
+  AdjustChunkStoreStats(content_size_difference);
   SaveChunkStoreState();
   return true;
 }

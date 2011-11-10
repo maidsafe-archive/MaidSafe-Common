@@ -191,10 +191,7 @@ bool MemoryChunkStore::Modify(const std::string &name,
 
   chunks_[name] = ChunkEntry((*it).second.first, content);
 
-  if (content_size_difference > 0)
-    IncreaseSize(content_size_difference);
-  else if (content_size_difference < 0)
-    DecreaseSize(content_size_difference);
+  AdjustChunkStoreStats(content_size_difference);
   return true;
 }
 
