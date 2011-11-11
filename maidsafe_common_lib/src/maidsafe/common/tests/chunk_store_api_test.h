@@ -356,11 +356,17 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   this->CreateRandomFile(path, 456);
   std::string name_file(crypto::HashFile<crypto::SHA512>(path));
   ASSERT_NE(name_mem, name_file);
+  /* Random File Data with more content than original */
   std::string modified_content(RandomString(125));
   fs::path empty_path;
   std::string modified_name_mem(crypto::Hash<crypto::SHA512>(modified_content));
   fs::path modified_path(*this->test_dir_ / "chunk-modified.dat");
   this->CreateRandomFile(modified_path, 460);
+  /* Random File Data with lesser content than mod-1 */
+  std::string modified_content2(RandomString(120));
+  fs::path modified_path2(*this->test_dir_ / "chunk-modified2.dat");
+  this->CreateRandomFile(modified_path2, 455);
+
 
   // Store Initial Chunks and Verify Store Operation
   ASSERT_TRUE(this->chunk_store_->Store(name_mem, content));
@@ -393,6 +399,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   this->chunk_store_->SetCapacity(1024);  // Setting Free Space in Storage
 
   // Valid Calls on Non-Reference Count Store
+  /* Mod Procedure - 1 */
   EXPECT_TRUE(this->chunk_store_->Modify(name_mem, modified_content));
   EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path));
   EXPECT_TRUE(this->chunk_store_->Has(name_mem));
@@ -402,6 +409,17 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(460, this->chunk_store_->Size(name_file));
   EXPECT_EQ(585, this->chunk_store_->Size());
+
+  /* Mod Procedure - 2 */
+  EXPECT_TRUE(this->chunk_store_->Modify(name_mem, modified_content2));
+  EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path2));
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(120, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(455, this->chunk_store_->Size(name_file));
+  EXPECT_EQ(575, this->chunk_store_->Size());
 
   // Setting up Reference Count Store Chunks and Verifying
   ASSERT_TRUE(this->ref_chunk_store_->Store(name_mem, content));
@@ -415,6 +433,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_EQ(579, this->ref_chunk_store_->Size());
 
   // Valid Calls on Reference Count Store
+  /* Mod Procedure - 1 */
   this->ref_chunk_store_->SetCapacity(1024);
   EXPECT_TRUE(this->ref_chunk_store_->Modify(name_mem, modified_content));
   EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path));
@@ -425,6 +444,17 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
   EXPECT_EQ(460, this->ref_chunk_store_->Size(name_file));
   EXPECT_EQ(585, this->ref_chunk_store_->Size());
+
+  /* Mod Procedure - 2 */
+  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_mem, modified_content2));
+  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path2));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_mem));
+  EXPECT_EQ(120, this->ref_chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
+  EXPECT_EQ(455, this->ref_chunk_store_->Size(name_file));
+  EXPECT_EQ(575, this->ref_chunk_store_->Size());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {

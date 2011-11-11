@@ -35,6 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
 #include <string>
+
 #include "boost/filesystem.hpp"
 #include "maidsafe/common/alternative_store.h"
 #include "maidsafe/common/version.h"
@@ -261,12 +262,34 @@ class ChunkStore : public AlternativeStore {
   }
 
   /**
+   * Assess Storage Capacity needed For a Modify Operation
+   */
+  bool AssessSpaceRequirement(const std::uintmax_t& current_size,
+                              const std::uintmax_t& new_size,
+                              bool* increase_size,
+                              std::uintmax_t* adjusting_space) {
+    if (current_size < new_size) {
+      *increase_size = true;
+      *adjusting_space = new_size - current_size;
+      if (!Vacant(*adjusting_space))
+        return false;
+    } else {
+      *increase_size = false;
+      *adjusting_space = current_size - new_size;
+    }
+    return true;
+  }
+
+  /**
    * Updates Chunk Store Size After a Modify Operation
    */
-  void AdjustChunkStoreStats(const std::uintmax_t& content_size_difference) {
-    if (content_size_difference > 0)
+  void AdjustChunkStoreStats(const std::uintmax_t& content_size_difference,
+                             const bool& increase_size) {
+    if (content_size_difference == 0)
+      return;
+    if (increase_size)
       IncreaseSize(content_size_difference);
-    else if (content_size_difference < 0)
+    else
       DecreaseSize(content_size_difference);
   }
 

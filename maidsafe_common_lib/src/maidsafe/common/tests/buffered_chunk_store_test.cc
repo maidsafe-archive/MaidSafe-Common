@@ -75,7 +75,8 @@ class BufferedChunkStoreTest: public testing::Test {
             false, chunk_validation_, asio_service_)),
         mutex_(),
         cond_var_(),
-        store_counter_(0) {
+        store_counter_(0),
+        cache_modify_counter_(0) {
     work_.reset(new boost::asio::io_service::work(asio_service_));
     test_work_.reset(new boost::asio::io_service::work(test_asio_service_));
     for (int i = 0; i < 3; ++i) {
@@ -94,6 +95,29 @@ class BufferedChunkStoreTest: public testing::Test {
     boost::unique_lock<boost::mutex> lock(mutex_);
     ++store_counter_;
     cond_var_.notify_one();
+  }
+
+  void DoCacheStore(const std::string &name, const std::string &content) {
+    EXPECT_TRUE(chunk_store_->CacheStore(name, content));
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    ++store_counter_;
+    cond_var_.notify_one();
+  }
+
+  void DoCacheModify(const std::string &name, const std::string &content) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    EXPECT_TRUE(chunk_store_->Modify(name, content));
+    EXPECT_FALSE(chunk_store_->PermanentHas(name));
+    EXPECT_TRUE(chunk_store_->CacheHas(name));
+    EXPECT_EQ(content, chunk_store_->Get(name));
+    ++cache_modify_counter_;
+    cond_var_.notify_one();
+  }
+
+  void WaitForCacheModify(const int &count) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    while (cache_modify_counter_ < count)
+      cond_var_.wait(lock);
   }
 
   void WaitForStore(const int &count) {
@@ -156,6 +180,7 @@ class BufferedChunkStoreTest: public testing::Test {
   boost::mutex mutex_;
   boost::condition_variable cond_var_;
   int store_counter_;
+  int cache_modify_counter_;
 };
 
 TEST_F(BufferedChunkStoreTest, BEH_CacheInit) {
@@ -569,6 +594,28 @@ TEST_F(BufferedChunkStoreTest, BEH_StoreWithRemovableChunks) {
   EXPECT_EQ(uintmax_t(2560), chunk_store_->Size());
 }
 
+TEST_F(BufferedChunkStoreTest, BEH_ModifyCacheChunks) {
+  std::string modifying_chunk_content(RandomString(120));
+  std::string modifying_chunk_name(
+      crypto::Hash<crypto::SHA512>(modifying_chunk_content));
+  store_counter_ = 0;
+  cache_modify_counter_ = 0;
+  test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoCacheStore,
+        this, modifying_chunk_name, modifying_chunk_content));
+  WaitForStore(1);
+
+  for (int i = 1; i < 100; ++i) {
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoStore,
+        this, RandomString(modifying_chunk_name.size()), RandomString(64)));
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoCacheModify,
+        this, modifying_chunk_name, RandomString(RandomUint32() % 120)));
+  }
+  WaitForStore(100);
+  WaitForCacheModify(99);
+}
 }  // namespace test
 
 }  // namespace maidsafe

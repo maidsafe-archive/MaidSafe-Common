@@ -184,14 +184,17 @@ bool MemoryChunkStore::Modify(const std::string &name,
     return false;
 
   std::string current_content((*it).second.second);
-  std::uintmax_t content_size_difference(
-      content.size() - current_content.size());
-  if (!Vacant(content_size_difference))
-    return false;
 
+  std::uintmax_t content_size_difference;
+  bool increase_size(false);
+  if (!AssessSpaceRequirement(current_content.size(),
+                              content.size(),
+                              &increase_size,
+                              &content_size_difference))
+    return false;
   chunks_[name] = ChunkEntry((*it).second.first, content);
 
-  AdjustChunkStoreStats(content_size_difference);
+  AdjustChunkStoreStats(content_size_difference, increase_size);
   return true;
 }
 

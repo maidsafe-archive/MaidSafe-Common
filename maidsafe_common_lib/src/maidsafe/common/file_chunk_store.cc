@@ -350,14 +350,17 @@ bool FileChunkStore::Modify(const std::string &name,
   }
   std::string current_content;
   ReadFile(chunk_file, &current_content);
-  std::uintmax_t content_size_difference(
-      content.size() - current_content.size());
-  if (!Vacant(content_size_difference))
+  std::uintmax_t content_size_difference;
+  bool increase_size(false);
+  if (!AssessSpaceRequirement(current_content.size(),
+                              content.size(),
+                              &increase_size,
+                              &content_size_difference))
     return false;
 
   if (!WriteFile(chunk_file, content))
     return false;
-  AdjustChunkStoreStats(content_size_difference);
+  AdjustChunkStoreStats(content_size_difference, increase_size);
   SaveChunkStoreState();
   return true;
 }
@@ -380,11 +383,14 @@ bool FileChunkStore::Modify(const std::string &name,
         "." + boost::lexical_cast<std::string>(ref_count));
   }
   boost::system::error_code ec1, ec2;
-  std::uintmax_t content_size_difference(
-      fs::file_size(source_file_name, ec1) - fs::file_size(chunk_file, ec2));
-  if (ec1 || ec2)
+  std::uintmax_t content_size_difference;
+  bool increase_size(false);
+  if (!AssessSpaceRequirement(fs::file_size(chunk_file, ec2),
+                              fs::file_size(source_file_name, ec1),
+                              &increase_size,
+                              &content_size_difference))
     return false;
-  if (!Vacant(content_size_difference))
+  if (ec1 || ec2)
     return false;
   fs::copy_file(source_file_name,
                 chunk_file,
@@ -393,7 +399,7 @@ bool FileChunkStore::Modify(const std::string &name,
   if (ec1)
     return false;
 
-  AdjustChunkStoreStats(content_size_difference);
+  AdjustChunkStoreStats(content_size_difference, increase_size);
   SaveChunkStoreState();
   return true;
 }
