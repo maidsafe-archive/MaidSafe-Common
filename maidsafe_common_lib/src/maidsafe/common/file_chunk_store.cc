@@ -345,6 +345,7 @@ bool FileChunkStore::Modify(const std::string &name,
 
   if (!chunk_validation_ ||
       !chunk_validation_->ValidName(name) ||
+      chunk_validation_->Hashable(name) ||
       !Has(name))
     return false;
 
@@ -379,6 +380,7 @@ bool FileChunkStore::Modify(const std::string &name,
   if (!chunk_validation_ ||
       !chunk_validation_->ValidName(name) ||
       source_file_name.empty() ||
+      chunk_validation_->Hashable(name) ||
       !Has(name))
     return false;
 

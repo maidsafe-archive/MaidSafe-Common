@@ -96,7 +96,8 @@ class BufferedChunkStoreTest: public testing::Test {
   ~BufferedChunkStoreTest() {}
 
   void DoStore(const std::string &name, const std::string &content) {
-    EXPECT_TRUE(chunk_store_->Store(name, content));
+    EXPECT_TRUE(chunk_store_->Store(name, content)) << "Contain?: " <<
+      chunk_store_->Has(name) << " Size:" << name.size();
     boost::unique_lock<boost::mutex> lock(mutex_);
     ++store_counter_;
     cond_var_.notify_one();
@@ -662,11 +663,12 @@ TEST_F(BufferedChunkStoreTest, BEH_StoreWithRemovableChunks) {
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_ModifyCacheChunks) {
-  std::string modifying_chunk_content(RandomString(120));
-  std::string modifying_chunk_name(
-      crypto::Hash<crypto::SHA512>(modifying_chunk_content));
+  std::string modifying_chunk_content(RandomString(100));
+  std::string modifying_chunk_name(RandomString(65));
   store_counter_ = 0;
   cache_modify_counter_ = 0;
+  chunk_store_->SetCacheCapacity(4 << 20);
+  chunk_store_->SetCapacity(4 << 20);
   test_asio_service_.post(std::bind(
         &BufferedChunkStoreTest::DoCacheStore,
         this, modifying_chunk_name, modifying_chunk_content));
@@ -675,7 +677,7 @@ TEST_F(BufferedChunkStoreTest, BEH_ModifyCacheChunks) {
   for (int i = 1; i < 100; ++i) {
     test_asio_service_.post(std::bind(
         &BufferedChunkStoreTest::DoStore,
-        this, RandomString(modifying_chunk_name.size()), RandomString(64)));
+        this, RandomString(64 + i % 2), RandomString(RandomUint32() % 99 + 1)));
     test_asio_service_.post(std::bind(
         &BufferedChunkStoreTest::DoCacheModify,
         this, modifying_chunk_name, RandomString(RandomUint32() % 120)));

@@ -214,7 +214,9 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const std::string &content) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+  if (!chunk_validation_ ||
+      !chunk_validation_->ValidName(name) ||
+      chunk_validation_->Hashable(name))
     return false;
 
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);

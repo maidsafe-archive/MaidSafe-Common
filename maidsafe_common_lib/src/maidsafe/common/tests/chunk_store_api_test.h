@@ -354,15 +354,18 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Delete) {
 
 TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   std::string content(RandomString(123));
-  std::string name_mem(crypto::Hash<crypto::SHA512>(content));
+  std::string non_hash_name(RandomString(65));  // Non Hashable Name
+  std::string hash_name(
+      crypto::Hash<crypto::SHA512>(content));  // Hash Name
   fs::path path(*this->test_dir_ / "chunk.dat");
   this->CreateRandomFile(path, 456);
-  std::string name_file(crypto::HashFile<crypto::SHA512>(path));
-  ASSERT_NE(name_mem, name_file);
+  std::string name_file(RandomString(65));
+  std::string hash_name_file(crypto::HashFile<crypto::SHA512>(path));
+  ASSERT_NE(non_hash_name, name_file);
   /* Random File Data with more content than original */
   std::string modified_content(RandomString(125));
   fs::path empty_path;
-  std::string modified_name_mem(crypto::Hash<crypto::SHA512>(modified_content));
+  std::string modified_non_hash_name(RandomString(66));
   fs::path modified_path(*this->test_dir_ / "chunk-modified.dat");
   this->CreateRandomFile(modified_path, 460);
   /* Random File Data with lesser content than mod-1 */
@@ -372,15 +375,19 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
 
 
   // Store Initial Chunks and Verify Store Operation
-  ASSERT_TRUE(this->chunk_store_->Store(name_mem, content));
+  ASSERT_TRUE(this->chunk_store_->Store(non_hash_name, content));
+  ASSERT_TRUE(this->chunk_store_->Store(hash_name, content));
   ASSERT_TRUE(this->chunk_store_->Store(name_file, path, false));
 
   EXPECT_FALSE(this->chunk_store_->Empty());
-  EXPECT_EQ(2, this->chunk_store_->Count());
-  EXPECT_EQ(579, this->chunk_store_->Size());
-  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
-  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
-  EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
+  EXPECT_EQ(3, this->chunk_store_->Count());
+  EXPECT_EQ(702, this->chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(123, this->chunk_store_->Size(non_hash_name));
+  EXPECT_TRUE(this->chunk_store_->Has(hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(hash_name));
+  EXPECT_EQ(123, this->chunk_store_->Size(hash_name));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(456, this->chunk_store_->Size(name_file));
@@ -389,75 +396,96 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_FALSE(this->chunk_store_->Modify("", modified_content));
   EXPECT_FALSE(this->chunk_store_->Modify("", modified_path));
   EXPECT_FALSE(this->chunk_store_->Modify(name_file, empty_path));
-  EXPECT_FALSE(this->chunk_store_->Modify(modified_name_mem, modified_content));
-  EXPECT_FALSE(this->chunk_store_->Modify(modified_name_mem, modified_path));
+  EXPECT_FALSE(this->chunk_store_->Modify(modified_non_hash_name,
+                                          modified_content));
+  EXPECT_FALSE(this->chunk_store_->Modify(modified_non_hash_name,
+                                          modified_path));
   EXPECT_FALSE(this->chunk_store_->Modify(modified_content, modified_content));
 
-
-  this->chunk_store_->SetCapacity(579);  // Making the Store Full
-  EXPECT_FALSE(this->chunk_store_->Modify(name_mem, modified_content));
+  // Making the Store Full and test Calls to Modify
+  this->chunk_store_->SetCapacity(702);
+  EXPECT_FALSE(this->chunk_store_->Modify(non_hash_name, modified_content));
   EXPECT_FALSE(this->chunk_store_->Modify(name_file, modified_path));
 
+  // Check Modify on Hash Chunk Returns False
+  EXPECT_FALSE(this->chunk_store_->Modify(hash_name, modified_content));
+  EXPECT_FALSE(this->chunk_store_->Modify(hash_name, modified_content2));
 
-  this->chunk_store_->SetCapacity(1024);  // Setting Free Space in Storage
+  // Setting Free Space in Storage
+  this->chunk_store_->SetCapacity(1024);
 
   // Valid Calls on Non-Reference Count Store
   /* Mod Procedure - 1 */
-  EXPECT_TRUE(this->chunk_store_->Modify(name_mem, modified_content));
+  EXPECT_TRUE(this->chunk_store_->Modify(non_hash_name, modified_content));
   EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path));
-  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
-  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
-  EXPECT_EQ(125, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(125, this->chunk_store_->Size(non_hash_name));
+  EXPECT_TRUE(this->chunk_store_->Has(hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(hash_name));
+  EXPECT_EQ(123, this->chunk_store_->Size(hash_name));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(460, this->chunk_store_->Size(name_file));
-  EXPECT_EQ(585, this->chunk_store_->Size());
+  EXPECT_EQ(3, this->chunk_store_->Count());
+  EXPECT_EQ(708, this->chunk_store_->Size());
 
   /* Mod Procedure - 2 */
-  EXPECT_TRUE(this->chunk_store_->Modify(name_mem, modified_content2));
+  EXPECT_TRUE(this->chunk_store_->Modify(non_hash_name, modified_content2));
   EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path2));
-  EXPECT_TRUE(this->chunk_store_->Has(name_mem));
-  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
-  EXPECT_EQ(120, this->chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(120, this->chunk_store_->Size(non_hash_name));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(455, this->chunk_store_->Size(name_file));
-  EXPECT_EQ(575, this->chunk_store_->Size());
+  EXPECT_EQ(698, this->chunk_store_->Size());
 
   // Setting up Reference Count Store Chunks and Verifying
-  ASSERT_TRUE(this->ref_chunk_store_->Store(name_mem, content));
-  ASSERT_TRUE(this->ref_chunk_store_->Store(name_file, path, false));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name_mem, content));
+
+  ASSERT_TRUE(this->ref_chunk_store_->Store(hash_name, content));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(hash_name, content));
+  ASSERT_TRUE(this->ref_chunk_store_->Store(hash_name_file, path, false));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(hash_name_file, path, false));
+  EXPECT_TRUE(this->ref_chunk_store_->Store(non_hash_name, content));
   EXPECT_TRUE(this->ref_chunk_store_->Store(name_file, path, false));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_mem));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(hash_name));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(hash_name));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(hash_name_file));
+  EXPECT_EQ(2, this->ref_chunk_store_->Count(hash_name_file));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
-  EXPECT_EQ(579, this->ref_chunk_store_->Size());
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name_file));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(1158, this->ref_chunk_store_->Size());
+
+  // Check Modify on Hash Chunk Returns False
+  EXPECT_FALSE(this->ref_chunk_store_->Modify(hash_name, modified_content));
+  EXPECT_FALSE(this->ref_chunk_store_->Modify(hash_name_file, modified_path));
 
   // Valid Calls on Reference Count Store
   /* Mod Procedure - 1 */
-  this->ref_chunk_store_->SetCapacity(1024);
-  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_mem, modified_content));
+  this->ref_chunk_store_->SetCapacity(2048);
+  EXPECT_TRUE(this->ref_chunk_store_->Modify(non_hash_name, modified_content));
   EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_mem));
-  EXPECT_EQ(125, this->ref_chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(125, this->ref_chunk_store_->Size(non_hash_name));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name_file));
   EXPECT_EQ(460, this->ref_chunk_store_->Size(name_file));
-  EXPECT_EQ(585, this->ref_chunk_store_->Size());
+  EXPECT_EQ(1164, this->ref_chunk_store_->Size());
 
   /* Mod Procedure - 2 */
-  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_mem, modified_content2));
+  EXPECT_TRUE(this->ref_chunk_store_->Modify(non_hash_name, modified_content2));
   EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_mem));
-  EXPECT_EQ(120, this->ref_chunk_store_->Size(name_mem));
+  EXPECT_TRUE(this->ref_chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(120, this->ref_chunk_store_->Size(non_hash_name));
   EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name_file));
+  EXPECT_EQ(1, this->ref_chunk_store_->Count(name_file));
   EXPECT_EQ(455, this->ref_chunk_store_->Size(name_file));
-  EXPECT_EQ(575, this->ref_chunk_store_->Size());
+  EXPECT_EQ(1154, this->ref_chunk_store_->Size());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {

@@ -187,7 +187,9 @@ bool MemoryChunkStore::Modify(const std::string &name,
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+  if (!chunk_validation_ ||
+      !chunk_validation_->ValidName(name) ||
+      chunk_validation_->Hashable(name))
     return false;
 
   std::string current_content((*it).second.second);
