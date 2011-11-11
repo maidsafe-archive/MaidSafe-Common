@@ -61,6 +61,10 @@ bool MemoryChunkStore::Store(const std::string &name,
 
   auto it = chunks_.find(name);
   if (it != chunks_.end()) {
+    if (!chunk_validation_->Hashable(name)) {
+      DLOG(ERROR) << "Already stored chunk " << HexSubstr(name);
+      return false;
+    }
     if (kReferenceCounting) {
       ++(*it).second.first;
       DLOG(INFO) << "Increased count of chunk " << HexSubstr(name) << " to "
@@ -102,7 +106,7 @@ bool MemoryChunkStore::Store(const std::string &name,
   if (it == chunks_.end()) {
     std::uintmax_t chunk_size(fs::file_size(source_file_name, ec));
     if (ec) {
-      DLOG(ERROR) << "Failed to caclulate size for chunk " << HexSubstr(name)
+      DLOG(ERROR) << "Failed to calvulate size for chunk " << HexSubstr(name)
                   << ": " << ec.message();
       return false;
     }
@@ -133,6 +137,9 @@ bool MemoryChunkStore::Store(const std::string &name,
     chunks_[name] = ChunkEntry(1, content);
     IncreaseSize(chunk_size);
     DLOG(INFO) << "Stored chunk " << HexSubstr(name);
+  } else if (!chunk_validation_->Hashable(name)) {
+      DLOG(ERROR) << "Already stored chunk " << HexSubstr(name);
+      return false;
   } else if (kReferenceCounting) {
     ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << HexSubstr(name) << " to "
@@ -265,6 +272,24 @@ bool MemoryChunkStore::Validate(const std::string &name) const {
   DLOG(INFO) << "Validation result for chunk " << HexSubstr(name) << ": "
              << std::boolalpha << valid;
   return valid;
+}
+
+std::string MemoryChunkStore::Version(const std::string &name) const {
+  if (!chunk_validation_) {
+    DLOG(ERROR) << "No validation available for chunk " << HexSubstr(name);
+    return "";
+  }
+
+  auto it = chunks_.find(name);
+  if (it == chunks_.end()) {
+    DLOG(WARNING) << "Failed to find chunk " << HexSubstr(name);
+    return "";
+  }
+
+  std::string version(chunk_validation_->Version(name, (*it).second.second));
+  DLOG(INFO) << "Version result for chunk " << HexSubstr(name) << ": "
+             << HexSubstr(version);
+  return version;
 }
 
 std::uintmax_t MemoryChunkStore::Size(const std::string &name) const {

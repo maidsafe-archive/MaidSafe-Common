@@ -39,7 +39,7 @@ namespace maidsafe {
 
 namespace test {
 
-template <class HashType>
+template <class ValidationType>
 class HashableChunkValidationTest: public testing::Test {
  public:
   HashableChunkValidationTest()
@@ -76,7 +76,7 @@ class HashableChunkValidationTest: public testing::Test {
     return file_path;
   }
   TestPath test_dir_;
-  HashableChunkValidation<HashType> chunk_validation_;
+  HashableChunkValidation<ValidationType, crypto::Tiger> chunk_validation_;
 };
 
 TYPED_TEST_CASE_P(HashableChunkValidationTest);
@@ -96,6 +96,17 @@ TYPED_TEST_P(HashableChunkValidationTest, BEH_Hashable) {
   EXPECT_TRUE(this->chunk_validation_.Hashable(
       RandomString(TypeParam::DIGESTSIZE)));
   EXPECT_FALSE(this->chunk_validation_.Hashable(
+      RandomString(TypeParam::DIGESTSIZE + 1)));
+}
+
+TYPED_TEST_P(HashableChunkValidationTest, BEH_Modifiable) {
+  EXPECT_FALSE(this->chunk_validation_.Modifiable(""));
+  EXPECT_TRUE(this->chunk_validation_.Modifiable("abc"));
+  EXPECT_FALSE(this->chunk_validation_.Modifiable(
+      crypto::Hash<TypeParam>("test")));
+  EXPECT_FALSE(this->chunk_validation_.Modifiable(
+      RandomString(TypeParam::DIGESTSIZE)));
+  EXPECT_TRUE(this->chunk_validation_.Modifiable(
       RandomString(TypeParam::DIGESTSIZE + 1)));
 }
 
@@ -124,11 +135,38 @@ TYPED_TEST_P(HashableChunkValidationTest, BEH_ValidChunkFile) {
   EXPECT_TRUE(this->chunk_validation_.ValidChunk("test", path));
 }
 
+TYPED_TEST_P(HashableChunkValidationTest, BEH_ChunkStringVersion) {
+  std::string data(RandomString(123));
+  std::string name1(crypto::Hash<TypeParam>(data));
+  std::string name2(RandomString(TypeParam::DIGESTSIZE + 1));
+  std::string version(crypto::Hash<crypto::Tiger>(data));
+
+  EXPECT_TRUE(this->chunk_validation_.Version("", data).empty());
+//   EXPECT_TRUE(this->chunk_validation_.Version(name1, std::string()).empty());
+  EXPECT_EQ(name1, this->chunk_validation_.Version(name1, data));
+  EXPECT_EQ(version, this->chunk_validation_.Version(name2, data));
+}
+
+TYPED_TEST_P(HashableChunkValidationTest, BEH_ChunkFileVersion) {
+  fs::path path(CreateRandomFile(*(this->test_dir_) / "file", 123));
+  std::string name1(crypto::HashFile<TypeParam>(path));
+  std::string name2(RandomString(TypeParam::DIGESTSIZE + 1));
+  std::string version(crypto::HashFile<crypto::Tiger>(path));
+
+  EXPECT_TRUE(this->chunk_validation_.Version("", path).empty());
+//   EXPECT_TRUE(this->chunk_validation_.Version(name1, fs::path()).empty());
+  EXPECT_EQ(name1, this->chunk_validation_.Version(name1, path));
+  EXPECT_EQ(version, this->chunk_validation_.Version(name2, path));
+}
+
 REGISTER_TYPED_TEST_CASE_P(HashableChunkValidationTest,
                            BEH_ValidName,
                            BEH_Hashable,
+                           BEH_Modifiable,
                            BEH_ValidChunkString,
-                           BEH_ValidChunkFile);
+                           BEH_ValidChunkFile,
+                           BEH_ChunkStringVersion,
+                           BEH_ChunkFileVersion);
 
 typedef testing::Types<crypto::SHA1,
                        crypto::SHA256,

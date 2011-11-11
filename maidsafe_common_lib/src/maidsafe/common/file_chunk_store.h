@@ -170,13 +170,20 @@ class FileChunkStore: public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk, i.e. confirms if the name matches the content's hash.
+   * Validates a chunk using the ChunkValidation object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
    * @return True if chunk valid
    */
   bool Validate(const std::string &name) const;
+
+  /**
+   * Retrieves the chunk's content version using the ChunkValidation object.
+   * @param name Chunk name
+   * @return The chunk version
+   */
+  std::string Version(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.

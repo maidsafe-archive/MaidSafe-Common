@@ -60,9 +60,8 @@ namespace maidsafe {
  */
 class ThreadsafeChunkStore : public ChunkStore {
  public:
-  ThreadsafeChunkStore(bool reference_counting,
-                       std::shared_ptr<ChunkStore> chunk_store)
-      : ChunkStore(reference_counting),
+  explicit ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store)
+      : ChunkStore(false),
         chunk_store_(chunk_store),
         shared_mutex_() {}
 
@@ -144,13 +143,20 @@ class ThreadsafeChunkStore : public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk, i.e. confirms if the name matches the content's hash.
+   * Validates a chunk using the ChunkValidation object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
    * @return True if chunk valid
    */
   bool Validate(const std::string &name) const;
+
+  /**
+   * Retrieves the chunk's content version using the ChunkValidation object.
+   * @param name Chunk name
+   * @return The chunk version
+   */
+  std::string Version(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
