@@ -65,7 +65,7 @@ class BufferedChunkStoreTest: public testing::Test {
   BufferedChunkStoreTest()
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunk_dir_(*test_dir_ / "chunks"),
-        ref_chunk_dir_(*test_dir_ / "chunks"),
+        ref_chunk_dir_(*test_dir_ / "ref_chunks"),
         asio_service_(),
         test_asio_service_(),
         work_(),
