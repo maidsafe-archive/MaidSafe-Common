@@ -562,7 +562,12 @@ bool FileChunkStore::Empty() const {
 void FileChunkStore::Clear() {
   info_file_.close();
   ResetChunkCount();
-  fs::remove_all(storage_location_);
+  boost::system::error_code ec;
+  fs::remove_all(storage_location_, ec);
+  if (ec) {
+    DLOG(WARNING) << "Failed to remove " << storage_location_ << ": "
+                  << ec.message();
+  }
   ChunkStore::Clear();
 }
 

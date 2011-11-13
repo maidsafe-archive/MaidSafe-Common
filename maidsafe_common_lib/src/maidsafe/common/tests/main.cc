@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
   google::InitGoogleLogging(argv[0]);
 
   // Choose to direct output to stderr instead of logfiles.
-  FLAGS_logtostderr = false;
+  FLAGS_logtostderr = true;
 
   // Choose to direct output to stderr as well as to logfiles.
   FLAGS_alsologtostderr = false;
