@@ -172,6 +172,9 @@ std::string DecodeFromBase32(const std::string &base32_input);
 // Returns an appreviated hex representation of a hash or other small data.
 std::string HexSubstr(const std::string &non_hex);
 
+// Returns an appreviated Base 32 representation of a hash or other small data.
+std::string Base32Substr(const std::string &non_base32);
+
 // Return the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();
 
