@@ -195,6 +195,7 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
     DecreaseSize((*it).second.second.size());
     chunks_.erase(it);
     DLOG(INFO) << "Moved chunk " << HexSubstr(name);
+    return true;
   }
 
 #ifdef DEBUG
