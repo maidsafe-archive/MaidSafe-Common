@@ -232,13 +232,15 @@ bool BufferedChunkStore::Modify(const std::string &name,
     if (content.size() > current_perm_content.size()) {
       content_size_difference = content.size() - current_perm_content.size();
       increase_size = true;
-      // Wait For Space in Perm Store
-      while (perm_size_ + content_size_difference > perm_capacity_) {
-        if (removable_chunks_.empty())
-          return false;    // Space cant be Allocated
-        if (perm_chunk_store_.Delete(removable_chunks_.front()))
-          perm_size_ = perm_chunk_store_.Size();
-        removable_chunks_.pop_front();
+      if (perm_capacity_ > 0) {  // Check if Perm Chunk Store Size is Infinite
+        // Wait For Space in Perm Store
+        while (perm_size_ + content_size_difference > perm_capacity_) {
+          if (removable_chunks_.empty())
+            return false;    // Space cant be Allocated
+          if (perm_chunk_store_.Delete(removable_chunks_.front()))
+            perm_size_ = perm_chunk_store_.Size();
+          removable_chunks_.pop_front();
+        }
       }
     } else {
       content_size_difference = current_perm_content.size() - content.size();
@@ -300,13 +302,20 @@ bool BufferedChunkStore::Modify(const std::string &name,
 }
 
 bool BufferedChunkStore::Modify(const std::string &name,
-                                const fs::path &source_file_name) {
+                                const fs::path &source_file_name,
+                                bool delete_source_file) {
   if (source_file_name.empty())
     return false;
   std::string content;
   if (!ReadFile(source_file_name, &content))
     return false;
-  return Modify(name, content);
+
+  if (!Modify(name, content))
+    return false;
+  boost::system::error_code ec;
+  if (delete_source_file)
+    fs::remove(source_file_name, ec);
+  return true;
 }
 
 bool BufferedChunkStore::MoveTo(const std::string &name,

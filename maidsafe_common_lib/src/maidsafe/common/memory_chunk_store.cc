@@ -208,13 +208,19 @@ bool MemoryChunkStore::Modify(const std::string &name,
 }
 
 bool MemoryChunkStore::Modify(const std::string &name,
-                              const fs::path &source_file_name) {
+                              const fs::path &source_file_name,
+                              bool delete_source_file) {
   if (source_file_name.empty())
     return false;
   std::string content;
   if (!ReadFile(source_file_name, &content))
     return false;
-  return Modify(name, content);
+  if (!Modify(name, content))
+    return false;
+  boost::system::error_code ec;
+  if (delete_source_file)
+    fs::remove(source_file_name, ec);
+  return true;
 }
 
 bool MemoryChunkStore::MoveTo(const std::string &name,

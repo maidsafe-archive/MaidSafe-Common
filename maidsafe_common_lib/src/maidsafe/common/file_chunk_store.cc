@@ -373,7 +373,8 @@ bool FileChunkStore::Modify(const std::string &name,
 }
 
 bool FileChunkStore::Modify(const std::string &name,
-                            const fs::path &source_file_name) {
+                            const fs::path &source_file_name,
+                            bool delete_source_file) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -409,6 +410,10 @@ bool FileChunkStore::Modify(const std::string &name,
 
   AdjustChunkStoreStats(content_size_difference, increase_size);
   SaveChunkStoreState();
+
+  boost::system::error_code ec;
+  if (delete_source_file)
+    fs::remove(source_file_name, ec);
   return true;
 }
 

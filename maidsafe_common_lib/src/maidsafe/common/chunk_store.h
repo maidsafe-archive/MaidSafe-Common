@@ -128,7 +128,8 @@ class ChunkStore : public AlternativeStore {
    * @return True if chunk has been modified.
    */
   virtual bool Modify(const std::string &name,
-                      const fs::path &source_file_name) = 0;
+                      const fs::path &source_file_name,
+                      bool delete_source_file) = 0;
 
   /**
    * Efficiently adds a locally existing chunk to another ChunkStore and

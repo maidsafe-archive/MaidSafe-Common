@@ -152,7 +152,9 @@ class FileChunkStore: public ChunkStore {
    * @param source_file_name Path to modified content file
    * @return True if chunk has been modified.
    */
-  bool Modify(const std::string &name, const fs::path &source_file_name);
+  bool Modify(const std::string &name,
+              const fs::path &source_file_name,
+              bool delete_source_file);
   /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
    * removes it from this one.
