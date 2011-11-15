@@ -46,11 +46,9 @@ namespace test {
 template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<BufferedChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
-    bool reference_counting,
     const fs::path &chunk_dir,
     boost::asio::io_service &asio_service) {
   chunk_store->reset(new BufferedChunkStore(
-      reference_counting,
       std::shared_ptr<ChunkValidation>(
           new HashableChunkValidation<ValidationType, VersionType>),
       asio_service));
@@ -65,7 +63,6 @@ class BufferedChunkStoreTest: public testing::Test {
   BufferedChunkStoreTest()
       : test_dir_(CreateTestPath("MaidSafe_TestFileChunkStore")),
         chunk_dir_(*test_dir_ / "chunks"),
-        ref_chunk_dir_(*test_dir_ / "ref_chunks"),
         asio_service_(),
         test_asio_service_(),
         work_(),
@@ -74,10 +71,7 @@ class BufferedChunkStoreTest: public testing::Test {
         test_thread_group_(),
         chunk_validation_(
             new HashableChunkValidation<crypto::SHA512, crypto::Tiger>),
-        chunk_store_(new BufferedChunkStore(
-            false, chunk_validation_, asio_service_)),
-        ref_chunk_store_(new BufferedChunkStore(
-            true, chunk_validation_, asio_service_)),
+        chunk_store_(new BufferedChunkStore(chunk_validation_, asio_service_)),
         mutex_(),
         cond_var_(),
         store_counter_(0),
@@ -136,8 +130,6 @@ class BufferedChunkStoreTest: public testing::Test {
   void SetUp() {
     fs::create_directories(chunk_dir_);
     chunk_store_->Init(chunk_dir_);
-    fs::create_directories(ref_chunk_dir_);
-    ref_chunk_store_->Init(ref_chunk_dir_);
   }
 
   void TearDown() {
@@ -150,16 +142,16 @@ class BufferedChunkStoreTest: public testing::Test {
   }
 
   fs::path CreateRandomFile(const fs::path &file_path,
-                            const std::uint64_t &file_size) {
+                            const uint64_t &file_size) {
     fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
                                 std::ios::trunc);
     if (file_size != 0) {
       size_t string_size = (file_size > 100000) ? 100000 :
                           static_cast<size_t>(file_size);
-      std::uint64_t remaining_size = file_size;
+      uint64_t remaining_size = file_size;
       std::string rand_str = RandomString(2 * string_size);
       std::string file_content;
-      std::uint64_t start_pos = 0;
+      uint64_t start_pos = 0;
       while (remaining_size) {
         srand(17);
         start_pos = rand() % string_size;  // NOLINT (Fraser)
@@ -178,13 +170,13 @@ class BufferedChunkStoreTest: public testing::Test {
     return file_path;
   }
 
-  std::shared_ptr<fs::path> test_dir_;
-  fs::path chunk_dir_, ref_chunk_dir_;
+  TestPath test_dir_;
+  fs::path chunk_dir_;
   boost::asio::io_service asio_service_, test_asio_service_;
   std::shared_ptr<boost::asio::io_service::work> work_, test_work_;
   boost::thread_group thread_group_, test_thread_group_;
   std::shared_ptr<ChunkValidation> chunk_validation_;
-  std::shared_ptr<BufferedChunkStore> chunk_store_, ref_chunk_store_;
+  std::shared_ptr<BufferedChunkStore> chunk_store_;
   boost::mutex mutex_;
   boost::condition_variable cond_var_;
   int store_counter_;
@@ -551,47 +543,6 @@ TEST_F(BufferedChunkStoreTest, BEH_PermanentStore) {
   EXPECT_FALSE(chunk_store_->PermanentHas(name1));
   EXPECT_TRUE(chunk_store_->PermanentStore(name1));
   EXPECT_TRUE(chunk_store_->PermanentHas(name1));
-
-  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
-  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
-
-  ref_chunk_store_->MarkForDeletion(name1);
-  EXPECT_TRUE(ref_chunk_store_->Has(name1));
-  EXPECT_TRUE(ref_chunk_store_->CacheHas(name1));
-  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
-  EXPECT_TRUE(ref_chunk_store_->PermanentStore(name1));
-  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
-
-  ref_chunk_store_->CacheClear();
-  ref_chunk_store_->MarkForDeletion(name1);
-  EXPECT_FALSE(ref_chunk_store_->Has(name1));
-  EXPECT_FALSE(ref_chunk_store_->CacheHas(name1));
-  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
-  EXPECT_TRUE(ref_chunk_store_->PermanentStore(name1));
-  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
-
-  ref_chunk_store_->Clear();
-  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
-  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
-  EXPECT_TRUE(ref_chunk_store_->Store(name1, content));
-  EXPECT_EQ(3, ref_chunk_store_->Count(name1));
-
-  ref_chunk_store_->MarkForDeletion(name1);
-  ref_chunk_store_->MarkForDeletion(name1);
-  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
-
-  ref_chunk_store_->MarkForDeletion(name1);
-  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
-
-  EXPECT_TRUE(ref_chunk_store_->PermanentStore(name1));
-  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
-
-  ref_chunk_store_->MarkForDeletion(name1);
-  ref_chunk_store_->MarkForDeletion(name1);
-  EXPECT_TRUE(ref_chunk_store_->PermanentHas(name1));
-
-  ref_chunk_store_->MarkForDeletion(name1);
-  EXPECT_FALSE(ref_chunk_store_->PermanentHas(name1));
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_WaitForTransfer) {

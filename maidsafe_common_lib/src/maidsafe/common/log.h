@@ -65,12 +65,12 @@ namespace google {
 
 #if GOOGLE_STRIP_LOG == 0
 #  define COMPACT_GOOGLE_LOG_INFO(project, separator) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 0) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__)
 #  define LOG_TO_STRING_INFO(project, separator, message) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 0) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__, google::INFO, message)
@@ -81,12 +81,12 @@ namespace google {
 
 #if GOOGLE_STRIP_LOG <= 1
 #  define COMPACT_GOOGLE_LOG_WARNING(project, separator) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 1) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__, google::WARNING)
 #  define LOG_TO_STRING_WARNING(project, separator, message) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 1) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__, google::WARNING, message)
@@ -98,12 +98,12 @@ namespace google {
 
 #if GOOGLE_STRIP_LOG <= 2
 #  define COMPACT_GOOGLE_LOG_ERROR(project, separator) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 2) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__, google::ERROR)
 #  define LOG_TO_STRING_ERROR(project, separator, message) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 2) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__, google::ERROR, message)
@@ -114,12 +114,12 @@ namespace google {
 
 #if GOOGLE_STRIP_LOG <= 3
 #  define COMPACT_GOOGLE_LOG_FATAL(project, separator) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 3) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessageFatal( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__)
 #  define LOG_TO_STRING_FATAL(project, separator, message) \
-          !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
+          (FLAGS_ms_logging_ ## project > 3) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
           std::string((std::string(__FILE__) + #separator + \
           #project)).c_str(), __LINE__, google::FATAL, message)
@@ -154,24 +154,24 @@ namespace google {
 #endif
 }  // google
 
-extern bool FLAGS_ms_logging_user;
-extern bool FLAGS_ms_logging_benchmark;
+extern int FLAGS_ms_logging_user;
+extern int FLAGS_ms_logging_benchmark;
 
-extern bool FLAGS_ms_logging_common;
-extern bool FLAGS_ms_logging_transport;
-extern bool FLAGS_ms_logging_encrypt;
-extern bool FLAGS_ms_logging_dht;
-extern bool FLAGS_ms_logging_pki;
-extern bool FLAGS_ms_logging_passport;
-extern bool FLAGS_ms_logging_pd;
-extern bool FLAGS_ms_logging_lifestuff;
-extern bool FLAGS_ms_logging_lifestuff_gui;
-extern bool FLAGS_ms_logging_file_browser;
-extern bool FLAGS_ms_logging_drive;
+extern int FLAGS_ms_logging_common;
+extern int FLAGS_ms_logging_transport;
+extern int FLAGS_ms_logging_encrypt;
+extern int FLAGS_ms_logging_dht;
+extern int FLAGS_ms_logging_pki;
+extern int FLAGS_ms_logging_passport;
+extern int FLAGS_ms_logging_pd;
+extern int FLAGS_ms_logging_lifestuff;
+extern int FLAGS_ms_logging_lifestuff_gui;
+extern int FLAGS_ms_logging_file_browser;
+extern int FLAGS_ms_logging_drive;
 
-extern bool FLAGS_ms_logging_sigmoid_storage_director;
-extern bool FLAGS_ms_logging_sigmoid_core;
-extern bool FLAGS_ms_logging_sigmoid_pro;
+extern int FLAGS_ms_logging_sigmoid_storage_director;
+extern int FLAGS_ms_logging_sigmoid_core;
+extern int FLAGS_ms_logging_sigmoid_pro;
 
 
 #endif  // MAIDSAFE_COMMON_LOG_H_

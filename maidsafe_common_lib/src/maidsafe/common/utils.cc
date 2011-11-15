@@ -285,7 +285,7 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
   if (!content)
     return false;
   try {
-    std::uintmax_t file_size(fs::file_size(file_path));
+    uintmax_t file_size(fs::file_size(file_path));
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
     if (!file_in.good())
       return false;

@@ -174,7 +174,8 @@ bool BufferedChunkStore::PermanentStore(const std::string &name) {
     if (perm_chunk_store_.Has(name))
       return true;
     if (content.empty() || !perm_chunk_store_.Store(name, content)) {
-      DLOG(ERROR) << "PermanentStore - Could not transfer " << HexSubstr(name);
+      DLOG(ERROR) << "PermanentStore - Could not transfer "
+                  << Base32Substr(name);
       return false;
     }
     perm_size_ = perm_chunk_store_.Size();
@@ -199,7 +200,7 @@ bool BufferedChunkStore::Delete(const std::string &name) {
   }
 
   if (!file_delete_result)
-    DLOG(ERROR) << "Delete - Could not delete " << HexSubstr(name);
+    DLOG(ERROR) << "Delete - Could not delete " << Base32Substr(name);
 
   UpgradeLock upgrade_lock(cache_mutex_);
   auto it = std::find(cached_chunks_.begin(), cached_chunks_.end(), name);
@@ -227,7 +228,7 @@ bool BufferedChunkStore::Modify(const std::string &name,
 
   if (perm_chunk_store_.Has(name)) {
     std::string current_perm_content(perm_chunk_store_.Get(name));
-    std::uintmax_t content_size_difference(0);
+    uintmax_t content_size_difference(0);
     bool increase_size(false);
     if (content.size() > current_perm_content.size()) {
       content_size_difference = content.size() - current_perm_content.size();
@@ -271,7 +272,7 @@ bool BufferedChunkStore::Modify(const std::string &name,
       if (!cache_chunk_store_.Has(name))
         return false;  // Not in Cache Chunk Store or Perm Store
       current_cache_content = cache_chunk_store_.Get(name);
-      std::uintmax_t content_size_difference(0);
+      uintmax_t content_size_difference(0);
       if (content.size() > current_cache_content.size()) {
         content_size_difference = content.size() - current_cache_content.size();
         // Make space in Cache if Needed
@@ -335,7 +336,7 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
   }
 
   if (!chunk_moved) {
-    DLOG(ERROR) << "MoveTo - Could not move " << HexSubstr(name);
+    DLOG(ERROR) << "MoveTo - Could not move " << Base32Substr(name);
     return false;
   }
 
@@ -373,7 +374,7 @@ bool BufferedChunkStore::PermanentHas(const std::string &name) const {
   boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
   while (pending_xfers_.count(name) > 0)
     xfer_cond_var_.wait(xfer_lock);
-  std::uintmax_t rem_count(0);
+  uintmax_t rem_count(0);
   for (auto it = removable_chunks_.begin(); it != removable_chunks_.end(); ++it)
     if (*it == name)
       ++rem_count;
@@ -408,7 +409,7 @@ std::string BufferedChunkStore::Version(const std::string &name) const {
   return perm_chunk_store_.Version(name);
 }
 
-std::uintmax_t BufferedChunkStore::Size(const std::string &name) const {
+uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   if (name.empty()) {
     DLOG(ERROR) << "Size - Empty name passed.";
     return 0;
@@ -422,27 +423,27 @@ std::uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   return perm_chunk_store_.Size(name);
 }
 
-std::uintmax_t BufferedChunkStore::Size() const {
+uintmax_t BufferedChunkStore::Size() const {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   return perm_size_;
 }
 
-std::uintmax_t BufferedChunkStore::CacheSize() const {
+uintmax_t BufferedChunkStore::CacheSize() const {
   SharedLock shared_lock(cache_mutex_);
   return cache_chunk_store_.Size();
 }
 
-std::uintmax_t BufferedChunkStore::Capacity() const {
+uintmax_t BufferedChunkStore::Capacity() const {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   return perm_capacity_;
 }
 
-std::uintmax_t BufferedChunkStore::CacheCapacity() const {
+uintmax_t BufferedChunkStore::CacheCapacity() const {
   SharedLock shared_lock(cache_mutex_);
   return cache_chunk_store_.Capacity();
 }
 
-void BufferedChunkStore::SetCapacity(const std::uintmax_t &capacity) {
+void BufferedChunkStore::SetCapacity(const uintmax_t &capacity) {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   while (!pending_xfers_.empty())
     xfer_cond_var_.wait(lock);
@@ -450,23 +451,23 @@ void BufferedChunkStore::SetCapacity(const std::uintmax_t &capacity) {
   perm_capacity_ = perm_chunk_store_.Capacity();
 }
 
-void BufferedChunkStore::SetCacheCapacity(const std::uintmax_t &capacity) {
+void BufferedChunkStore::SetCacheCapacity(const uintmax_t &capacity) {
   UniqueLock unique_lock(cache_mutex_);
   cache_chunk_store_.SetCapacity(capacity);
 }
 
-bool BufferedChunkStore::Vacant(const std::uintmax_t &required_size) const {
+bool BufferedChunkStore::Vacant(const uintmax_t &required_size) const {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   return perm_capacity_ == 0 || perm_size_ + required_size <= perm_capacity_;
 }
 
 bool BufferedChunkStore::CacheVacant(
-    const std::uintmax_t &required_size) const {
+    const uintmax_t &required_size) const {
   SharedLock shared_lock(cache_mutex_);
   return cache_chunk_store_.Vacant(required_size);
 }
 
-std::uintmax_t BufferedChunkStore::Count(const std::string &name) const {
+uintmax_t BufferedChunkStore::Count(const std::string &name) const {
   if (name.empty()) {
     DLOG(ERROR) << "Count - Empty name passed.";
     return 0;
@@ -478,14 +479,14 @@ std::uintmax_t BufferedChunkStore::Count(const std::string &name) const {
   return perm_chunk_store_.Count(name);
 }
 
-std::uintmax_t BufferedChunkStore::Count() const {
+uintmax_t BufferedChunkStore::Count() const {
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   while (!pending_xfers_.empty())
     xfer_cond_var_.wait(lock);
   return perm_chunk_store_.Count();
 }
 
-std::uintmax_t BufferedChunkStore::CacheCount() const {
+uintmax_t BufferedChunkStore::CacheCount() const {
   SharedLock shared_lock(cache_mutex_);
   return cache_chunk_store_.Count();
 }
@@ -542,7 +543,7 @@ void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
 bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const std::string &content) const {
   if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << HexSubstr(name);
+    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << Base32Substr(name);
     return false;
   }
 
@@ -553,7 +554,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
   // Check whether cache has capacity to store chunk
   if (content.size() > cache_chunk_store_.Capacity() &&
       cache_chunk_store_.Capacity() > 0) {
-    DLOG(ERROR) << "DoCacheStore - Chunk " << HexSubstr(name) << " too big ("
+    DLOG(ERROR) << "DoCacheStore - Chunk " << Base32Substr(name) << " too big ("
                 << BytesToBinarySiUnits(content.size()) << " vs. "
                 << BytesToBinarySiUnits(cache_chunk_store_.Capacity()) << ").";
     return false;
@@ -567,7 +568,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
         boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
         if (pending_xfers_.empty()) {
           DLOG(ERROR) << "DoCacheStore - Can't make space for "
-                      << HexSubstr(name);
+                      << Base32Substr(name);
           return false;
         }
         int limit(kWaitTransfersForCacheVacantCheck);
@@ -591,7 +592,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const fs::path &source_file_name,
                                       bool delete_source_file) const {
   if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << HexSubstr(name);
+    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << Base32Substr(name);
     return false;
   }
 
@@ -602,7 +603,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
   // Check whether cache has capacity to store chunk
   if (size > cache_chunk_store_.Capacity() &&
       cache_chunk_store_.Capacity() > 0) {
-    DLOG(ERROR) << "DoCacheStore - Chunk " << HexSubstr(name) << " too big ("
+    DLOG(ERROR) << "DoCacheStore - Chunk " << Base32Substr(name) << " too big ("
                 << BytesToBinarySiUnits(size) << " vs. "
                 << BytesToBinarySiUnits(cache_chunk_store_.Capacity()) << ").";
     return false;
@@ -616,7 +617,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
         boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
         if (pending_xfers_.empty()) {
           DLOG(ERROR) << "DoCacheStore - Can't make space for "
-                      << HexSubstr(name);
+                      << Base32Substr(name);
           return false;
         }
         int limit(kWaitTransfersForCacheVacantCheck);
@@ -640,7 +641,7 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
 
   if (!initialised_) {
-    DLOG(ERROR) << "MakeChunkPermanent - Can't make " << HexSubstr(name)
+    DLOG(ERROR) << "MakeChunkPermanent - Can't make " << Base32Substr(name)
                 << " permanent, not initialised.";
     return false;
   }
@@ -650,7 +651,7 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
   // Check whether permanent store has capacity to store chunk
   if (perm_capacity_ > 0) {
     if (size > perm_capacity_) {
-      DLOG(ERROR) << "MakeChunkPermanent - Chunk " << HexSubstr(name)
+      DLOG(ERROR) << "MakeChunkPermanent - Chunk " << Base32Substr(name)
                   << " too big (" << BytesToBinarySiUnits(size) << " vs. "
                   << BytesToBinarySiUnits(perm_capacity_) << ").";
       return false;
@@ -667,7 +668,7 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
         while (perm_size_ + size > perm_capacity_) {
           if (removable_chunks_.empty()) {
             DLOG(ERROR) << "MakeChunkPermanent - Can't make space for "
-                        << HexSubstr(name);
+                        << Base32Substr(name);
             return false;
           }
           if (perm_chunk_store_.Delete(removable_chunks_.front()))
@@ -697,13 +698,13 @@ void BufferedChunkStore::DoMakeChunkPermanent(const std::string &name) {
   }
 
   if (content.empty()) {
-    DLOG(ERROR) << "DoMakeChunkPermanent - Could not get " << HexSubstr(name)
+    DLOG(ERROR) << "DoMakeChunkPermanent - Could not get " << Base32Substr(name)
                 << " from cache.";
   } else if (perm_chunk_store_.Store(name, content)) {
     AddCachedChunksEntry(name);
   } else {
     DLOG(ERROR) << "DoMakeChunkPermanent - Could not store "
-                << HexSubstr(name);
+                << Base32Substr(name);
   }
 
   {

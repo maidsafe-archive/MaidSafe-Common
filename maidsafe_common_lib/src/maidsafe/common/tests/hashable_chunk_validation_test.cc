@@ -48,16 +48,16 @@ class HashableChunkValidationTest: public testing::Test {
   ~HashableChunkValidationTest() {}
  protected:
   fs::path CreateRandomFile(const fs::path &file_path,
-                            const std::uint64_t &file_size) {
+                            const uint64_t &file_size) {
     fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
                                 std::ios::trunc);
     if (file_size != 0) {
       size_t string_size = (file_size > 100000) ? 100000 :
                           static_cast<size_t>(file_size);
-      std::uint64_t remaining_size = file_size;
+      uint64_t remaining_size = file_size;
       std::string rand_str = RandomString(2 * string_size);
       std::string file_content;
-      std::uint64_t start_pos = 0;
+      uint64_t start_pos = 0;
       while (remaining_size) {
         srand(17);
         start_pos = rand() % string_size;  // NOLINT (Fraser)

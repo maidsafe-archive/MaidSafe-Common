@@ -55,14 +55,12 @@ class ChunkStoreTest: public testing::Test {
       : test_dir_(CreateTestPath("MaidSafe_TestChunkStore")),
         chunk_dir_(*test_dir_ / "chunks"),
         alt_chunk_dir_(*test_dir_ / "chunks_alt"),
-        ref_chunk_dir_(*test_dir_ / "chunks_ref"),
         tiger_chunk_dir_(*test_dir_ / "chunks_tiger"),
         asio_service_(),
         work_(),
         thread_group_(),
         chunk_store_(),
         alt_chunk_store_(),
-        ref_chunk_store_(),
         tiger_chunk_store_() {
           work_.reset(new boost::asio::io_service::work(asio_service_));
           for (int i = 0; i < 3; ++i)
@@ -75,16 +73,13 @@ class ChunkStoreTest: public testing::Test {
   void SetUp() {
     fs::create_directories(chunk_dir_);
     fs::create_directories(alt_chunk_dir_);
-    fs::create_directories(ref_chunk_dir_);
     fs::create_directories(tiger_chunk_dir_);
     InitChunkStore<crypto::SHA512, crypto::Tiger>(
-        &chunk_store_, false, chunk_dir_, asio_service_);
+        &chunk_store_, chunk_dir_, asio_service_);
     InitChunkStore<crypto::SHA512, crypto::Tiger>(
-        &alt_chunk_store_, false, alt_chunk_dir_, asio_service_);
-    InitChunkStore<crypto::SHA512, crypto::Tiger>(
-        &ref_chunk_store_, true, ref_chunk_dir_, asio_service_);
+        &alt_chunk_store_, alt_chunk_dir_, asio_service_);
     InitChunkStore<crypto::Tiger, crypto::Tiger>(
-        &tiger_chunk_store_, false, tiger_chunk_dir_, asio_service_);
+        &tiger_chunk_store_, tiger_chunk_dir_, asio_service_);
   }
 
   void TearDown() {
@@ -95,21 +90,20 @@ class ChunkStoreTest: public testing::Test {
 
   template <class ValidationType, class VersionType>
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
-                      bool reference_counting,
                       const fs::path &chunk_dir,
                       boost::asio::io_service &asio_service);
 
   fs::path CreateRandomFile(const fs::path &file_path,
-                            const std::uint64_t &file_size) {
+                            const uint64_t &file_size) {
     fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
                                 std::ios::trunc);
     if (file_size != 0) {
       size_t string_size = (file_size > 100000) ? 100000 :
                           static_cast<size_t>(file_size);
-      std::uint64_t remaining_size = file_size;
+      uint64_t remaining_size = file_size;
       std::string rand_str = RandomString(2 * string_size);
       std::string file_content;
-      std::uint64_t start_pos = 0;
+      uint64_t start_pos = 0;
       while (remaining_size) {
         srand(17);
         start_pos = rand() % string_size;  // NOLINT (Fraser)
@@ -128,12 +122,12 @@ class ChunkStoreTest: public testing::Test {
     return file_path;
   }
 
-  std::shared_ptr<fs::path> test_dir_;
-  fs::path chunk_dir_, alt_chunk_dir_, ref_chunk_dir_, tiger_chunk_dir_;
+  TestPath test_dir_;
+  fs::path chunk_dir_, alt_chunk_dir_, tiger_chunk_dir_;
   boost::asio::io_service asio_service_;
   std::shared_ptr<boost::asio::io_service::work> work_;
   boost::thread_group thread_group_;
-  std::shared_ptr<ChunkStore> chunk_store_, alt_chunk_store_, ref_chunk_store_,
+  std::shared_ptr<ChunkStore> chunk_store_, alt_chunk_store_,
                               tiger_chunk_store_;  // mmmm, tiger chunks...
 };
 
@@ -240,7 +234,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   this->CreateRandomFile(new_path, 333);
   std::string new_name(crypto::HashFile<crypto::SHA512>(new_path));
 
-  // overwrite existing, should be ignored
+  // overwrite existing
   EXPECT_TRUE(this->chunk_store_->Store(name_mem, ""));
   EXPECT_TRUE(this->chunk_store_->Store(name_mem, RandomString(222)));
   EXPECT_TRUE(this->chunk_store_->Store(name_file, "", false));
@@ -249,10 +243,10 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   EXPECT_EQ(2, this->chunk_store_->Count());
   EXPECT_EQ(579, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(name_mem));
-  EXPECT_EQ(1, this->chunk_store_->Count(name_mem));
+  EXPECT_EQ(3, this->chunk_store_->Count(name_mem));
   EXPECT_EQ(123, this->chunk_store_->Size(name_mem));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
-  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(3, this->chunk_store_->Count(name_file));
   EXPECT_EQ(456, this->chunk_store_->Size(name_file));
 
   ASSERT_EQ(name_mem,
@@ -276,7 +270,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
   EXPECT_EQ(3, this->chunk_store_->Count());
   EXPECT_EQ(912, this->chunk_store_->Size());
   EXPECT_TRUE(this->chunk_store_->Has(new_name));
-  EXPECT_EQ(1, this->chunk_store_->Count(new_name));
+  EXPECT_EQ(2, this->chunk_store_->Count(new_name));
   EXPECT_EQ(333, this->chunk_store_->Size(new_name));
 }
 
@@ -286,24 +280,24 @@ TYPED_TEST_P(ChunkStoreTest, BEH_RepeatedStore) {
   std::string name_mem2(crypto::Hash<crypto::SHA512>(content2));
 
   for (uintmax_t i(1); i <= 80; ++i) {
-    EXPECT_TRUE(this->ref_chunk_store_->Store(name_mem1, content1));
-    EXPECT_FALSE(this->ref_chunk_store_->Empty());
-    EXPECT_EQ(1, this->ref_chunk_store_->Count());
-    EXPECT_EQ(123, this->ref_chunk_store_->Size());
-    EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem1));
+    EXPECT_TRUE(this->chunk_store_->Store(name_mem1, content1));
+    EXPECT_FALSE(this->chunk_store_->Empty());
+    EXPECT_EQ(1, this->chunk_store_->Count());
+    EXPECT_EQ(123, this->chunk_store_->Size());
+    EXPECT_TRUE(this->chunk_store_->Has(name_mem1));
   }
 
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name_mem1));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_EQ(123, this->ref_chunk_store_->Size());
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem1));
+  EXPECT_TRUE(this->chunk_store_->Delete(name_mem1));
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_EQ(123, this->chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem1));
 
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name_mem2, content1));
-  EXPECT_FALSE(this->ref_chunk_store_->Empty());
-  EXPECT_EQ(2, this->ref_chunk_store_->Count());
-  EXPECT_EQ(246, this->ref_chunk_store_->Size());
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_mem1));
+  EXPECT_TRUE(this->chunk_store_->Store(name_mem2, content1));
+  EXPECT_FALSE(this->chunk_store_->Empty());
+  EXPECT_EQ(2, this->chunk_store_->Count());
+  EXPECT_EQ(246, this->chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem2));
+  EXPECT_TRUE(this->chunk_store_->Has(name_mem1));
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_Delete) {
@@ -442,56 +436,60 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_EQ(455, this->chunk_store_->Size(name_file));
   EXPECT_EQ(698, this->chunk_store_->Size());
 
-  // Setting up Reference Count Store Chunks and Verifying
+  EXPECT_TRUE(this->chunk_store_->Delete(non_hash_name));
+  EXPECT_TRUE(this->chunk_store_->Delete(hash_name));
+  EXPECT_TRUE(this->chunk_store_->Delete(name_file));
 
-  ASSERT_TRUE(this->ref_chunk_store_->Store(hash_name, content));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(hash_name, content));
-  ASSERT_TRUE(this->ref_chunk_store_->Store(hash_name_file, path, false));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(hash_name_file, path, false));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(non_hash_name, content));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name_file, path, true));
+  // Setting up Reference Count Store Chunks and Verifying
+  this->chunk_store_->SetCapacity(2048);
+  ASSERT_TRUE(this->chunk_store_->Store(hash_name, content));
+  EXPECT_TRUE(this->chunk_store_->Store(hash_name, content));
+  ASSERT_TRUE(this->chunk_store_->Store(hash_name_file, path, false));
+  EXPECT_TRUE(this->chunk_store_->Store(hash_name_file, path, false));
+  EXPECT_TRUE(this->chunk_store_->Store(non_hash_name, content));
+  EXPECT_TRUE(this->chunk_store_->Store(name_file, path, true));
   ASSERT_FALSE(fs::exists(path));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(hash_name));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(hash_name));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(hash_name_file));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(hash_name_file));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name_file));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(non_hash_name));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(non_hash_name));
-  EXPECT_EQ(1158, this->ref_chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(hash_name));
+  EXPECT_EQ(2, this->chunk_store_->Count(hash_name));
+  EXPECT_TRUE(this->chunk_store_->Has(hash_name_file));
+  EXPECT_EQ(2, this->chunk_store_->Count(hash_name_file));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_TRUE(this->chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(1158, this->chunk_store_->Size());
 
   // Check Modify on Hash Chunk Returns False
-  EXPECT_FALSE(this->ref_chunk_store_->Modify(hash_name, modified_content));
-  EXPECT_FALSE(this->ref_chunk_store_->Modify(hash_name_file,
+  EXPECT_FALSE(this->chunk_store_->Modify(hash_name, modified_content));
+  EXPECT_FALSE(this->chunk_store_->Modify(hash_name_file,
                                               modified_path,
                                               false));
 
   // Valid Calls on Reference Count Store
   /* Mod Procedure - 1 */
-  this->ref_chunk_store_->SetCapacity(2048);
-  EXPECT_TRUE(this->ref_chunk_store_->Modify(non_hash_name, modified_content));
-  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path, true));
+  this->chunk_store_->SetCapacity(2048);
+  EXPECT_TRUE(this->chunk_store_->Modify(non_hash_name, modified_content));
+  EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path, true));
   ASSERT_FALSE(fs::exists(modified_path));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(non_hash_name));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(non_hash_name));
-  EXPECT_EQ(125, this->ref_chunk_store_->Size(non_hash_name));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name_file));
-  EXPECT_EQ(460, this->ref_chunk_store_->Size(name_file));
-  EXPECT_EQ(1164, this->ref_chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(125, this->chunk_store_->Size(non_hash_name));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(460, this->chunk_store_->Size(name_file));
+  EXPECT_EQ(1164, this->chunk_store_->Size());
 
   /* Mod Procedure - 2 */
-  EXPECT_TRUE(this->ref_chunk_store_->Modify(non_hash_name, modified_content2));
-  EXPECT_TRUE(this->ref_chunk_store_->Modify(name_file, modified_path2, true));
+  EXPECT_TRUE(this->chunk_store_->Modify(non_hash_name, modified_content2));
+  EXPECT_TRUE(this->chunk_store_->Modify(name_file, modified_path2, true));
   ASSERT_FALSE(fs::exists(modified_path2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(non_hash_name));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(non_hash_name));
-  EXPECT_EQ(120, this->ref_chunk_store_->Size(non_hash_name));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name_file));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name_file));
-  EXPECT_EQ(455, this->ref_chunk_store_->Size(name_file));
-  EXPECT_EQ(1154, this->ref_chunk_store_->Size());
+  EXPECT_TRUE(this->chunk_store_->Has(non_hash_name));
+  EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
+  EXPECT_EQ(120, this->chunk_store_->Size(non_hash_name));
+  EXPECT_TRUE(this->chunk_store_->Has(name_file));
+  EXPECT_EQ(1, this->chunk_store_->Count(name_file));
+  EXPECT_EQ(455, this->chunk_store_->Size(name_file));
+  EXPECT_EQ(1154, this->chunk_store_->Size());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
@@ -520,7 +518,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
   EXPECT_EQ(1, this->chunk_store_->Count());
   EXPECT_EQ(100, this->chunk_store_->Size());
   EXPECT_TRUE(this->alt_chunk_store_->Has(name2));
-  EXPECT_EQ(1, this->alt_chunk_store_->Count(name2));
+  EXPECT_EQ(2, this->alt_chunk_store_->Count(name2));
   EXPECT_EQ(50, this->alt_chunk_store_->Size(name2));
   EXPECT_EQ(2, this->alt_chunk_store_->Count());
   EXPECT_EQ(75, this->alt_chunk_store_->Size());
@@ -532,11 +530,11 @@ TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
   EXPECT_EQ(50, this->chunk_store_->Size(name2));
   EXPECT_EQ(2, this->chunk_store_->Count());
   EXPECT_EQ(150, this->chunk_store_->Size());
-  EXPECT_FALSE(this->alt_chunk_store_->Has(name2));
-  EXPECT_EQ(0, this->alt_chunk_store_->Count(name2));
-  EXPECT_EQ(0, this->alt_chunk_store_->Size(name2));
-  EXPECT_EQ(1, this->alt_chunk_store_->Count());
-  EXPECT_EQ(25, this->alt_chunk_store_->Size());
+  EXPECT_TRUE(this->alt_chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->alt_chunk_store_->Count(name2));
+  EXPECT_EQ(50, this->alt_chunk_store_->Size(name2));
+  EXPECT_EQ(2, this->alt_chunk_store_->Count());
+  EXPECT_EQ(75, this->alt_chunk_store_->Size());
 
   // (1 2 | 3)  ->  (1 2 3 | )
   EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name3, this->chunk_store_.get()));
@@ -548,9 +546,9 @@ TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
   EXPECT_FALSE(this->alt_chunk_store_->Has(name3));
   EXPECT_EQ(0, this->alt_chunk_store_->Count(name3));
   EXPECT_EQ(0, this->alt_chunk_store_->Size(name3));
-  EXPECT_EQ(0, this->alt_chunk_store_->Count());
-  EXPECT_EQ(0, this->alt_chunk_store_->Size());
-  EXPECT_TRUE(this->alt_chunk_store_->Empty());
+  EXPECT_EQ(1, this->alt_chunk_store_->Count());
+  EXPECT_EQ(50, this->alt_chunk_store_->Size());
+  EXPECT_FALSE(this->alt_chunk_store_->Empty());
 
   // failures
   EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
@@ -754,112 +752,124 @@ TYPED_TEST_P(ChunkStoreTest, BEH_References) {
   EXPECT_EQ(0, this->chunk_store_->Count());
   EXPECT_TRUE(this->chunk_store_->Empty());
 
+
+
+
+
+
   // test failures
-  EXPECT_TRUE(this->ref_chunk_store_->Get("").empty());
-  EXPECT_TRUE(this->ref_chunk_store_->Get(name1).empty());
-  EXPECT_FALSE(this->ref_chunk_store_->Get("", *this->test_dir_ / "dummy"));
-  EXPECT_FALSE(this->ref_chunk_store_->Get(name1, ""));
-  EXPECT_FALSE(this->ref_chunk_store_->Get(name1, *this->test_dir_ / "dummy"));
-  EXPECT_FALSE(this->ref_chunk_store_->Store("", "dummy"));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name1, ""));
-  EXPECT_FALSE(this->ref_chunk_store_->Store("", path, false));
-  EXPECT_FALSE(this->ref_chunk_store_->Delete(""));
-  EXPECT_FALSE(this->ref_chunk_store_->MoveTo("", this->chunk_store_.get()));
-  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
-  EXPECT_FALSE(this->ref_chunk_store_->Has(""));
-  EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
-  EXPECT_EQ(0, this->ref_chunk_store_->Count(""));
-  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(0, this->ref_chunk_store_->Size(""));
-  EXPECT_EQ(0, this->ref_chunk_store_->Size(name1));
-  EXPECT_FALSE(this->ref_chunk_store_->Validate(""));
-  EXPECT_FALSE(this->ref_chunk_store_->Validate(name1));
+  EXPECT_TRUE(this->chunk_store_->Get("").empty());
+  EXPECT_TRUE(this->chunk_store_->Get(name1).empty());
+  EXPECT_FALSE(this->chunk_store_->Get("", *this->test_dir_ / "dummy"));
+  EXPECT_FALSE(this->chunk_store_->Get(name1, ""));
+  EXPECT_FALSE(this->chunk_store_->Get(name1, *this->test_dir_ / "dummy"));
+  EXPECT_FALSE(this->chunk_store_->Store("", "dummy"));
+  EXPECT_FALSE(this->chunk_store_->Store(name1, ""));
+  EXPECT_FALSE(this->chunk_store_->Store("", path, false));
+  EXPECT_FALSE(this->chunk_store_->Delete(""));
+  EXPECT_FALSE(this->chunk_store_->MoveTo("", this->chunk_store_.get()));
+  EXPECT_FALSE(this->chunk_store_->MoveTo(name1,
+                                          this->tiger_chunk_store_.get()));
+  EXPECT_FALSE(this->chunk_store_->Has(""));
+  EXPECT_FALSE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->chunk_store_->Count(""));
+  EXPECT_EQ(0, this->chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->chunk_store_->Size(""));
+  EXPECT_EQ(0, this->chunk_store_->Size(name1));
+  EXPECT_FALSE(this->chunk_store_->Validate(""));
+  EXPECT_FALSE(this->chunk_store_->Validate(name1));
 
   // add chunk twice, reference counting enabled
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
-  EXPECT_TRUE(this->ref_chunk_store_->Validate(name1));
-  EXPECT_EQ(content1, this->ref_chunk_store_->Get(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size());
-  EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, ""));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size());
-  EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size());
-  EXPECT_EQ(1, this->ref_chunk_store_->Count());
-  EXPECT_FALSE(this->ref_chunk_store_->Empty());
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
-  EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
-  EXPECT_EQ(0, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(0, this->ref_chunk_store_->Size(name1));
-  EXPECT_EQ(0, this->ref_chunk_store_->Size());
-  EXPECT_EQ(0, this->ref_chunk_store_->Count());
-  EXPECT_TRUE(this->ref_chunk_store_->Empty());
+  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_TRUE(this->chunk_store_->Validate(name1));
+  EXPECT_EQ(content1, this->chunk_store_->Get(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Store(name1, ""));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(2, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Delete(name1));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size());
+  EXPECT_EQ(1, this->chunk_store_->Count());
+  EXPECT_FALSE(this->chunk_store_->Empty());
+  EXPECT_TRUE(this->chunk_store_->Delete(name1));
+  EXPECT_FALSE(this->chunk_store_->Has(name1));
+  EXPECT_EQ(0, this->chunk_store_->Count(name1));
+  EXPECT_EQ(0, this->chunk_store_->Size(name1));
+  EXPECT_EQ(0, this->chunk_store_->Size());
+  EXPECT_EQ(0, this->chunk_store_->Count());
+  EXPECT_TRUE(this->chunk_store_->Empty());
 
   // adding from file
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name3, path, false));
-  EXPECT_TRUE(this->ref_chunk_store_->Validate(name3));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name3));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name3, path, true));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name3));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name3, content1));
-  EXPECT_EQ(3, this->ref_chunk_store_->Count(name3));
+  EXPECT_TRUE(this->chunk_store_->Store(name3, path, false));
+  EXPECT_TRUE(this->chunk_store_->Validate(name3));
+  EXPECT_EQ(1, this->chunk_store_->Count(name3));
+  EXPECT_TRUE(this->chunk_store_->Store(name3, path, true));
+  EXPECT_EQ(2, this->chunk_store_->Count(name3));
+  EXPECT_TRUE(this->chunk_store_->Store(name3, content1));
+  EXPECT_EQ(3, this->chunk_store_->Count(name3));
 
-  this->ref_chunk_store_->Clear();
+  this->chunk_store_->Clear();
 
   // adding via move
-  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
-  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->ref_chunk_store_.get()));
-  EXPECT_FALSE(this->chunk_store_->Has(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->Validate(name2));
-  EXPECT_EQ(content2, this->ref_chunk_store_->Get(name2));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name2));
-  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
-  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->ref_chunk_store_.get()));
-  EXPECT_FALSE(this->chunk_store_->Has(name2));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name2));
-  this->chunk_store_->SetCapacity(10);
-  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
-  EXPECT_FALSE(this->chunk_store_->Has(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
-  EXPECT_EQ(2, this->ref_chunk_store_->Count(name2));
-  this->chunk_store_->SetCapacity(0);
-  EXPECT_TRUE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  EXPECT_TRUE(this->tiger_chunk_store_->Store(name2, content2));
+  EXPECT_TRUE(this->tiger_chunk_store_->MoveTo(name2,
+                                               this->chunk_store_.get()));
+  EXPECT_FALSE(this->tiger_chunk_store_->Has(name2));
   EXPECT_TRUE(this->chunk_store_->Has(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
-  EXPECT_EQ(0, this->ref_chunk_store_->Count(name2));
+  EXPECT_TRUE(this->chunk_store_->Validate(name2));
+  EXPECT_EQ(content2, this->chunk_store_->Get(name2));
+  EXPECT_EQ(1, this->chunk_store_->Count(name2));
+  EXPECT_TRUE(this->tiger_chunk_store_->Store(name2, content2));
+  EXPECT_TRUE(this->tiger_chunk_store_->MoveTo(name2,
+                                               this->chunk_store_.get()));
+  EXPECT_FALSE(this->tiger_chunk_store_->Has(name2));
+  EXPECT_EQ(2, this->chunk_store_->Count(name2));
+  this->tiger_chunk_store_->SetCapacity(10);
+  EXPECT_FALSE(this->chunk_store_->MoveTo(name2,
+                                          this->tiger_chunk_store_.get()));
+  EXPECT_FALSE(this->tiger_chunk_store_->Has(name2));
   EXPECT_TRUE(this->chunk_store_->Has(name2));
-  EXPECT_FALSE(this->ref_chunk_store_->Has(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->Empty());
-  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2, this->chunk_store_.get()));
+  EXPECT_EQ(2, this->chunk_store_->Count(name2));
+  this->tiger_chunk_store_->SetCapacity(0);
+  EXPECT_TRUE(this->chunk_store_->MoveTo(name2,
+                                         this->tiger_chunk_store_.get()));
+  EXPECT_TRUE(this->tiger_chunk_store_->Has(name2));
+  EXPECT_TRUE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(1, this->chunk_store_->Count(name2));
+  EXPECT_TRUE(this->chunk_store_->MoveTo(name2,
+                                         this->tiger_chunk_store_.get()));
+  EXPECT_EQ(0, this->chunk_store_->Count(name2));
+  EXPECT_TRUE(this->tiger_chunk_store_->Has(name2));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_TRUE(this->chunk_store_->Empty());
+  EXPECT_FALSE(this->chunk_store_->MoveTo(name2,
+                                          this->tiger_chunk_store_.get()));
 
   // multiple chunks
-  std::uintmax_t n1((RandomUint32() % 5) + 1), n2((RandomUint32() % 5) + 1);
-  this->ref_chunk_store_->SetCapacity(150);
-  for (std::uintmax_t i = 0; i < n1; ++i)
-    EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
-  for (std::uintmax_t i = 0; i < n2; ++i)
-    EXPECT_TRUE(this->ref_chunk_store_->Store(name2, content2));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name1));
-  EXPECT_TRUE(this->ref_chunk_store_->Has(name2));
-  EXPECT_EQ(n1, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(n2, this->ref_chunk_store_->Count(name2));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
-  EXPECT_EQ(50, this->ref_chunk_store_->Size(name2));
-  EXPECT_EQ(150, this->ref_chunk_store_->Size());
-  EXPECT_EQ(2, this->ref_chunk_store_->Count());
+  uintmax_t n1((RandomUint32() % 5) + 1), n2((RandomUint32() % 5) + 1);
+  this->chunk_store_->SetCapacity(150);
+  for (uintmax_t i = 0; i < n1; ++i)
+    EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  for (uintmax_t i = 0; i < n2; ++i)
+    EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
+  EXPECT_TRUE(this->chunk_store_->Has(name1));
+  EXPECT_TRUE(this->chunk_store_->Has(name2));
+  EXPECT_EQ(n1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(n2, this->chunk_store_->Count(name2));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_EQ(50, this->chunk_store_->Size(name2));
+  EXPECT_EQ(150, this->chunk_store_->Size());
+  EXPECT_EQ(2, this->chunk_store_->Count());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_NonHashable) {
@@ -916,50 +926,46 @@ TYPED_TEST_P(ChunkStoreTest, BEH_NonHashable) {
   this->chunk_store_->Clear();
   this->alt_chunk_store_->Clear();
 
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name1, content2));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name1, path, false));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name1));
-  EXPECT_EQ(100, this->ref_chunk_store_->Size(name1));
-  EXPECT_EQ(version1, this->ref_chunk_store_->Version(name1));
+  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
+  EXPECT_FALSE(this->chunk_store_->Store(name1, content1));
+  EXPECT_FALSE(this->chunk_store_->Store(name1, content2));
+  EXPECT_FALSE(this->chunk_store_->Store(name1, path, false));
+  EXPECT_EQ(1, this->chunk_store_->Count(name1));
+  EXPECT_EQ(100, this->chunk_store_->Size(name1));
+  EXPECT_EQ(version1, this->chunk_store_->Version(name1));
 
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name2, content1));
-  EXPECT_FALSE(this->ref_chunk_store_->Store(name2, content2));
-  EXPECT_EQ(1, this->ref_chunk_store_->Count(name2));
-  EXPECT_EQ(25, this->ref_chunk_store_->Size(name2));
-  EXPECT_EQ(version3, this->ref_chunk_store_->Version(name2));
+  EXPECT_TRUE(this->chunk_store_->Store(name2, path, false));
+  EXPECT_FALSE(this->chunk_store_->Store(name2, path, false));
+  EXPECT_FALSE(this->chunk_store_->Store(name2, content1));
+  EXPECT_FALSE(this->chunk_store_->Store(name2, content2));
+  EXPECT_EQ(1, this->chunk_store_->Count(name2));
+  EXPECT_EQ(25, this->chunk_store_->Size(name2));
+  EXPECT_EQ(version3, this->chunk_store_->Version(name2));
 
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
-  EXPECT_FALSE(this->ref_chunk_store_->Has(name1));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name1, path, false));
-  EXPECT_EQ(25, this->ref_chunk_store_->Size(name1));
-  EXPECT_EQ(version3, this->ref_chunk_store_->Version(name1));
+  EXPECT_TRUE(this->chunk_store_->Delete(name1));
+  EXPECT_FALSE(this->chunk_store_->Has(name1));
+  EXPECT_TRUE(this->chunk_store_->Store(name1, path, false));
+  EXPECT_EQ(25, this->chunk_store_->Size(name1));
+  EXPECT_EQ(version3, this->chunk_store_->Version(name1));
 
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name2));
-  EXPECT_FALSE(this->ref_chunk_store_->Has(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->Store(name2, content2));
-  EXPECT_EQ(50, this->ref_chunk_store_->Size(name2));
-  EXPECT_EQ(version2, this->ref_chunk_store_->Version(name2));
+  EXPECT_TRUE(this->chunk_store_->Delete(name2));
+  EXPECT_FALSE(this->chunk_store_->Has(name2));
+  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
+  EXPECT_EQ(50, this->chunk_store_->Size(name2));
+  EXPECT_EQ(version2, this->chunk_store_->Version(name2));
 
   EXPECT_TRUE(this->alt_chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name1,
-                                              this->ref_chunk_store_.get()));
-  EXPECT_EQ(version3, this->ref_chunk_store_->Version(name1));
-  EXPECT_TRUE(this->ref_chunk_store_->Delete(name1));
-  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name1,
-                                             this->ref_chunk_store_.get()));
-  EXPECT_EQ(version1, this->ref_chunk_store_->Version(name1));
+  EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
+  EXPECT_EQ(version3, this->chunk_store_->Version(name1));
+  EXPECT_TRUE(this->chunk_store_->Delete(name1));
+  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
+  EXPECT_EQ(version1, this->chunk_store_->Version(name1));
 
   EXPECT_TRUE(this->alt_chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->ref_chunk_store_->MoveTo(name2,
-                                              this->alt_chunk_store_.get()));
+  EXPECT_FALSE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
   EXPECT_EQ(version3, this->alt_chunk_store_->Version(name2));
   EXPECT_TRUE(this->alt_chunk_store_->Delete(name2));
-  EXPECT_TRUE(this->ref_chunk_store_->MoveTo(name2,
-                                             this->alt_chunk_store_.get()));
+  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
   EXPECT_EQ(version2, this->alt_chunk_store_->Version(name2));
 }
 

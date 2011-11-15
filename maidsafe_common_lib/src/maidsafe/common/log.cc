@@ -25,21 +25,21 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-bool FLAGS_ms_logging_user = true;
-bool FLAGS_ms_logging_benchmark = true;
+int FLAGS_ms_logging_user = 3;
+int FLAGS_ms_logging_benchmark = 3;
 
-bool FLAGS_ms_logging_common = true;
-bool FLAGS_ms_logging_transport = true;
-bool FLAGS_ms_logging_encrypt = true;
-bool FLAGS_ms_logging_dht = true;
-bool FLAGS_ms_logging_pki = true;
-bool FLAGS_ms_logging_passport = true;
-bool FLAGS_ms_logging_pd = true;
-bool FLAGS_ms_logging_lifestuff = true;
-bool FLAGS_ms_logging_lifestuff_gui = true;
-bool FLAGS_ms_logging_file_browser = true;
-bool FLAGS_ms_logging_drive = true;
+int FLAGS_ms_logging_common = 3;
+int FLAGS_ms_logging_transport = 3;
+int FLAGS_ms_logging_encrypt = 3;
+int FLAGS_ms_logging_dht = 3;
+int FLAGS_ms_logging_pki = 3;
+int FLAGS_ms_logging_passport = 3;
+int FLAGS_ms_logging_pd = 3;
+int FLAGS_ms_logging_lifestuff = 3;
+int FLAGS_ms_logging_lifestuff_gui = 3;
+int FLAGS_ms_logging_file_browser = 3;
+int FLAGS_ms_logging_drive = 3;
 
-bool FLAGS_ms_logging_sigmoid_storage_director = true;
-bool FLAGS_ms_logging_sigmoid_core = true;
-bool FLAGS_ms_logging_sigmoid_pro = true;
+int FLAGS_ms_logging_sigmoid_storage_director = 3;
+int FLAGS_ms_logging_sigmoid_core = 3;
+int FLAGS_ms_logging_sigmoid_pro = 3;

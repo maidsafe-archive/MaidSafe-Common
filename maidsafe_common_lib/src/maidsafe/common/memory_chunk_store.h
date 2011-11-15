@@ -70,9 +70,8 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  MemoryChunkStore(bool reference_counting,
-                   std::shared_ptr<ChunkValidation> chunk_validation)
-      : ChunkStore(reference_counting),
+  explicit MemoryChunkStore(std::shared_ptr<ChunkValidation> chunk_validation)
+      : ChunkStore(),
         chunk_validation_(chunk_validation),
         chunks_() {}
   ~MemoryChunkStore() {}
@@ -175,13 +174,13 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name) const;
+  uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() const { return ChunkStore::Size(); }
+  uintmax_t Size() const { return ChunkStore::Size(); }
 
   /**
    * Retrieves the number of references to a chunk.
@@ -192,13 +191,13 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) const;
+  uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  std::uintmax_t Count() const;
+  uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
@@ -212,7 +211,7 @@ class MemoryChunkStore: public ChunkStore {
   void Clear();
 
  private:
-  typedef std::pair<std::uintmax_t, std::string> ChunkEntry;
+  typedef std::pair<uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
   std::shared_ptr<ChunkValidation> chunk_validation_;
