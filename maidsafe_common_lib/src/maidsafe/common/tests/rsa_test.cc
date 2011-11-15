@@ -40,11 +40,10 @@ class RSATest : public testing::Test {
  public:
   RSATest()
           : key_one_(), key_two_() {
-
     GenerateKeyPair(&key_one_);
     GenerateKeyPair(&key_two_);
   }
-  
+
   ~RSATest() {}
  protected:
   Keys key_one_;
@@ -55,7 +54,7 @@ TEST(RSAKeyTest, FUNC_RsaKeyPair) {
 #pragma omp parallel
   { // NOLINT (dirvine)
     Keys keys;
-    EXPECT_EQ(CommonReturnCode::kSuccess,
+    EXPECT_EQ(kSuccess,
               GenerateKeyPair(&keys));
     EXPECT_TRUE(ValidateKey(keys.pub_key));
     EXPECT_TRUE(ValidateKey(keys.priv_key));
@@ -68,13 +67,12 @@ TEST(RSAKeyTest, FUNC_RsaKeyPair) {
     DecodePublicKey(public_key, &pub_key);
     EXPECT_TRUE(CheckRoundtrip(pub_key, keys.priv_key));
     EXPECT_TRUE(CheckRoundtrip(pub_key, priv_key));
-  }   
+  }
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   #pragma omp parallel
   { // NOLINT (dirvine)
-
     const std::string plain_data(RandomString(470));
     std::string recovered_data("");
     std::string recovered_data_other("");
@@ -83,34 +81,34 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     CryptoPP::RSA::PublicKey empty_pub_key;
     const std::string plain_data_other(RandomString(470));
     // Encryption and decryption
-    EXPECT_EQ(CommonReturnCode::kSuccess,
+    EXPECT_EQ(kSuccess,
              Encrypt(plain_data,
                          key_one_.pub_key,
                          &recovered_data));
-    
+
     EXPECT_NE(plain_data, recovered_data);
-    
-    EXPECT_EQ(CommonReturnCode::kSuccess,
+
+    EXPECT_EQ(kSuccess,
              Decrypt(recovered_data,
                           key_one_.priv_key,
                           &recovered_data_other));
     EXPECT_EQ(plain_data, recovered_data_other);
 
-   
+
     EXPECT_EQ(recovered_data_other, plain_data);
-    
+
     EXPECT_NE(recovered_data, plain_data);
 
-    EXPECT_EQ(CommonReturnCode::kDataEmpty,
+    EXPECT_EQ(kDataEmpty,
              Encrypt(empty_data, key_one_.pub_key, &recovered_data));
-    
-    EXPECT_EQ(CommonReturnCode::kDataEmpty,
+
+    EXPECT_EQ(kDataEmpty,
              Decrypt(empty_data, key_one_.priv_key, &empty_data));
 
-    EXPECT_EQ(CommonReturnCode::kInvalidPrivateKey,
+    EXPECT_EQ(kInvalidPrivateKey,
              Decrypt(plain_data, empty_priv_key, &recovered_data));
 
-    EXPECT_EQ(CommonReturnCode::kInvalidPublicKey,
+    EXPECT_EQ(kInvalidPublicKey,
              Encrypt(plain_data, empty_pub_key, &recovered_data));
   }
 }
@@ -119,7 +117,6 @@ TEST_F(RSATest, BEH_SignValidate) {
   #pragma omp parallel
   { // NOLINT (dirvine)
     // Set up data
-;
     CryptoPP::RSA::PrivateKey empty_priv_key;
     CryptoPP::RSA::PublicKey empty_pub_key;
     std::string empty_data;
@@ -127,31 +124,31 @@ TEST_F(RSATest, BEH_SignValidate) {
     std::string bad_signature("bad");
     const std::string data(RandomString(470));
     std::string signature;
-    
-    EXPECT_EQ(CommonReturnCode::kSuccess,
+
+    EXPECT_EQ(kSuccess,
              Sign(data, key_one_.priv_key, &signature));
-    
-    EXPECT_EQ(CommonReturnCode::kSuccess,
+
+    EXPECT_EQ(kSuccess,
              CheckSignature(data, signature, key_one_.pub_key));
-    
-    EXPECT_EQ(CommonReturnCode::kDataEmpty ,
+
+    EXPECT_EQ(kDataEmpty ,
              Sign(empty_data, key_one_.priv_key, &signature));
-    
-    EXPECT_EQ(CommonReturnCode::kDataEmpty ,
+
+    EXPECT_EQ(kDataEmpty ,
              CheckSignature(empty_data,
                                        signature,
                                        key_one_.pub_key));
-    
-    EXPECT_EQ(CommonReturnCode::kInvalidPrivateKey ,
+
+    EXPECT_EQ(kInvalidPrivateKey ,
              Sign(data, empty_priv_key, &signature));
-    
-    EXPECT_EQ(CommonReturnCode::kInvalidPublicKey ,
+
+    EXPECT_EQ(kInvalidPublicKey ,
              CheckSignature(data, signature , empty_pub_key));
-    
-    EXPECT_EQ(CommonReturnCode::kRSASignatureEmpty ,
+
+    EXPECT_EQ(kRSASignatureEmpty ,
              CheckSignature(data, empty_signature , key_one_.pub_key));
-    
-    EXPECT_EQ(CommonReturnCode::kRSAInvalidsignature ,
+
+    EXPECT_EQ(kRSAInvalidsignature ,
              CheckSignature(data, bad_signature , key_one_.pub_key));
   }
 }

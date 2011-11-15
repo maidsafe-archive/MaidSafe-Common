@@ -49,13 +49,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 namespace rsa {
-  
+
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
 typedef CryptoPP::RSA::PublicKey PublicKey;
 typedef std::string ValidationToken, Identity, PlainText, Signature, CipherText;
 typedef std::function<void(const std::string&, const std::string&)>
         GetPublicKeyAndValidationCallback;
-  
+
 struct Keys {
  public:
   enum { KeySize = 4096 };
@@ -88,16 +88,17 @@ void EncodePrivateKey(const PrivateKey& key, std::string *priv_key);
 
 void EncodePublicKey(const PublicKey& key, std::string *pub_key);
 
-void DecodePrivateKey(std::string& priv_key, PrivateKey *key);
+void DecodePrivateKey(const std::string& priv_key, PrivateKey *key);
 
 void DecodePublicKey(const std::string& pub_key, PublicKey *key);
 
 // check decoded keys were the same as encoded and pub key not replaced
-bool CheckRoundtrip(PublicKey &public_key, PrivateKey &priv_key);
+bool CheckRoundtrip(const PublicKey &public_key,
+                    const PrivateKey &priv_key);
 
-bool ValidateKey(PrivateKey &priv_key);
+bool ValidateKey(const PrivateKey &priv_key);
 
-bool ValidateKey(PublicKey &pub_key);
+bool ValidateKey(const PublicKey &pub_key);
 
 void GetPublicKeyAndValidation(
     const Identity &public_key_id,
@@ -107,7 +108,7 @@ bool Validate(const PlainText &plain_text,
               const Signature &signature,
               const PublicKey &public_key);
 
-}  // namespace rsa 
+}  // namespace rsa
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_RSA_H_

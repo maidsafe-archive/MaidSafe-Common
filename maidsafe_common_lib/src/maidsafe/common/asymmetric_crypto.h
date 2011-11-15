@@ -25,8 +25,8 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_ASYMM_H_
-#define MAIDSAFE_COMMON_ASYMM_H_
+#ifndef MAIDSAFE_COMMON_ASYMMETRIC_CRYPTO_H_
+#define MAIDSAFE_COMMON_ASYMMETRIC_CRYPTO_H_
 
 #include <cstdint>
 #include <string>
@@ -44,6 +44,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4505)
 #endif
 
+#include "boost/function.hpp"
 #include "maidsafe/common/version.h"
 #include "maidsafe/common/rsa.h"
 
@@ -58,7 +59,7 @@ namespace maidsafe {
   typedef std::string Signature, PlainText, CipherText;
   typedef std::function<void(const std::string&, const std::string&)>
         GetPublicKeyAndValidationCallback;
-  
+
 template<class Keys>
 class AsymmetricCrypto {
  public:
@@ -66,35 +67,33 @@ class AsymmetricCrypto {
   virtual ~AsymmetricCrypto() {}
   typedef typename Keys::PrivateKey PrivateKey;
   typedef typename Keys::PublicKey PublicKey;
-  
+
   int GenerateKeyPair(Keys *keypair) const;
-  
+
   int Sign(const PlainText &data,
            const PrivateKey &priv_key,
            Signature *signature) const;
-           
+
   int CheckSignature(const PlainText &plain_text,
                      const Signature &signature,
                      const PublicKey &pub_key) const;
-                     
+
   int Encrypt(const PlainText &plain_text,
               const PublicKey &pub_key,
-               CipherText *result ) const;
-              
+               CipherText *result) const;
+
   int Decrypt(const CipherText &data,
               const PrivateKey &priv_key,
-              PlainText *result
-              ) const;
-              
+              PlainText *result) const;
+
   virtual void GetPublicKeyAndValidation(
       const  typename Keys::Identity &public_key_id,
       GetPublicKeyAndValidationCallback callback) const;
 
   virtual bool Validate(const PlainText &plain_text,
                         const Signature &signature,
-                        const typename Keys::PublicKey &public_key
-                        ) const;
-                               
+                        const typename Keys::PublicKey &public_key) const;
+
  private:
   AsymmetricCrypto &operator=(const AsymmetricCrypto&);
   AsymmetricCrypto(const AsymmetricCrypto&);
@@ -103,4 +102,4 @@ class AsymmetricCrypto {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_ASYMM_H_
+#endif  // MAIDSAFE_COMMON_ASYMMETRIC_CRYPTO_H_

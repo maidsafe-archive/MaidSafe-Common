@@ -11,8 +11,8 @@
  *******************************************************************************
  */
 
-#ifndef MAIDSAFE_DRIVE_RETURN_CODES_H_
-#define MAIDSAFE_DRIVE_RETURN_CODES_H_
+#ifndef MAIDSAFE_COMMON_RETURN_CODES_H_
+#define MAIDSAFE_COMMON_RETURN_CODES_H_
 
 #include "maidsafe/common/version.h"
 
@@ -20,9 +20,6 @@
 # error This API is not compatible with the installed library.\
 Please update the library.
 #endif
-
-
-#include "maidsafe/common/version.h"
 
 namespace maidsafe {
 
@@ -44,4 +41,4 @@ enum CommonReturnCode {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DRIVE_RETURN_CODES_H_
+#endif  // MAIDSAFE_COMMON_RETURN_CODES_H_

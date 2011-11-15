@@ -66,11 +66,11 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 #pragma omp parallel
   {  // NOLINT (dirvine)
     std::string password;
-    EXPECT_EQ(CommonReturnCode::kGeneralError,
+    EXPECT_EQ(kGeneralError,
               SecurePassword("", "salt", 100, &password));
-    EXPECT_EQ(CommonReturnCode::kGeneralError,
+    EXPECT_EQ(kGeneralError,
               SecurePassword("password", "", 100, &password));
-    EXPECT_EQ(CommonReturnCode::kGeneralError,
+    EXPECT_EQ(kGeneralError,
               SecurePassword("password", "salt", 0, &password));
     const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
     const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
@@ -79,7 +79,7 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
     "3dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
      password.clear();
 
-    EXPECT_EQ(CommonReturnCode::kSuccess,
+    EXPECT_EQ(kSuccess,
               SecurePassword(kKnownPassword1,
               kKnownSalt1, kKnownIterations1, &password));
 //    std::cout << EncodeToHex(password) << std::endl;
@@ -93,7 +93,7 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
     "dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0c1"
     "999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e"
     "05c3ffc14d7fd8511c840"));
-    EXPECT_EQ(CommonReturnCode::kSuccess, SecurePassword(kKnownPassword2,
+    EXPECT_EQ(kSuccess, SecurePassword(kKnownPassword2,
               kKnownSalt2, kKnownIterations2, &password));
     EXPECT_EQ(kKnownDerived2, password);
   }

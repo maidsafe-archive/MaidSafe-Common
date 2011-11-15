@@ -84,7 +84,7 @@ int SecurePassword(const std::string &password,
                            const std::string &label) {
   if (password.empty() || salt.empty() || pin == 0 || label.empty()) {
     DLOG(WARNING) << "Invalid parameter.";
-    return CommonReturnCode::kGeneralError ;
+    return kGeneralError;
   }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
@@ -98,7 +98,7 @@ int SecurePassword(const std::string &password,
                   password.size(), context.data(), context.size(), iter);
   CryptoPP::StringSink string_sink(*derived_password);
   string_sink.Put(derived, derived.size());
-  return CommonReturnCode::kSuccess;
+  return kSuccess;
 }
 
 std::string SymmEncrypt(const std::string &input,
