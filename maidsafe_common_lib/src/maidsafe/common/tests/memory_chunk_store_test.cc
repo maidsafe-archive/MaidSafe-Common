@@ -37,11 +37,9 @@ namespace test {
 template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
-    bool reference_counting,
     const fs::path&,
     boost::asio::io_service&) {
   chunk_store->reset(new MemoryChunkStore(
-      reference_counting,
       std::shared_ptr<ChunkValidation>(
           new HashableChunkValidation<ValidationType, VersionType>)));
 }

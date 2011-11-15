@@ -52,11 +52,9 @@ namespace test_tscs {
 template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
-    bool reference_counting,
     const fs::path&,
     boost::asio::io_service&) {
   std::shared_ptr<MemoryChunkStore> memory_chunk_store(new MemoryChunkStore(
-      reference_counting,
       std::shared_ptr<ChunkValidation>(
           new HashableChunkValidation<ValidationType, VersionType>)));
   chunk_store->reset(new ThreadsafeChunkStore(memory_chunk_store));
@@ -76,7 +74,7 @@ class ThreadsafeChunkStoreTest : public testing::Test {
         total_chunk_size_(),
         mutex_() {
     std::shared_ptr<MemoryChunkStore> chunk_store(new MemoryChunkStore(
-        false, std::shared_ptr<ChunkValidation>(
+        std::shared_ptr<ChunkValidation>(
             new HashableChunkValidation<crypto::SHA512, crypto::Tiger>)));
     threadsafe_chunk_store_.reset(new ThreadsafeChunkStore(chunk_store));
   }
@@ -244,16 +242,16 @@ class ThreadsafeChunkStoreTest : public testing::Test {
 
  protected:
   fs::path CreateRandomFile(const fs::path &file_path,
-                            const std::uint64_t &file_size) {
+                            const uint64_t &file_size) {
     fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
                                 std::ios::trunc);
     if (file_size != 0) {
       size_t string_size = (file_size > 100000) ? 100000 :
                           static_cast<size_t>(file_size);
-      std::uint64_t remaining_size = file_size;
+      uint64_t remaining_size = file_size;
       std::string rand_str = RandomString(2 * string_size);
       std::string file_content;
-      std::uint64_t start_pos = 0;
+      uint64_t start_pos = 0;
       while (remaining_size) {
         srand(17);
         start_pos = rand() % string_size;  // NOLINT (Fraser)
@@ -425,7 +423,7 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Clear) {
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_MoveTo) {
-  MemoryChunkStore another_chunk_store(false, std::shared_ptr<ChunkValidation>(
+  MemoryChunkStore another_chunk_store(std::shared_ptr<ChunkValidation>(
       new HashableChunkValidation<crypto::SHA512, crypto::Tiger>));
   size_t entry_size = this->chunkname_.size();
   for (size_t i = 0; i < entry_size; ++i) {
@@ -472,7 +470,7 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Misc) {
   }
 
   // Create MoveTo functor
-  MemoryChunkStore another_chunk_store(false, std::shared_ptr<ChunkValidation>(
+  MemoryChunkStore another_chunk_store(std::shared_ptr<ChunkValidation>(
       new HashableChunkValidation<crypto::SHA512, crypto::Tiger>));
   for (size_t i = 0; i < moveto_chunknames.size(); ++i) {
     functor f1 = std::bind(&ThreadsafeChunkStoreTest::MoveChunk, this,

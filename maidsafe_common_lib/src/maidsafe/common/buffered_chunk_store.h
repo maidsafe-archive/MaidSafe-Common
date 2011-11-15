@@ -79,18 +79,16 @@ namespace maidsafe {
  */
 class BufferedChunkStore: public ChunkStore {
  public:
-  BufferedChunkStore(bool reference_counting,
-                     std::shared_ptr<ChunkValidation> chunk_validation,
+  BufferedChunkStore(std::shared_ptr<ChunkValidation> chunk_validation,
                      boost::asio::io_service &asio_service)
-      : ChunkStore(reference_counting),
+      : ChunkStore(),
         cache_mutex_(),
         xfer_mutex_(),
         xfer_cond_var_(),
         chunk_validation_(chunk_validation),
         asio_service_(asio_service),
-        internal_perm_chunk_store_(new FileChunkStore(reference_counting,
-                                                      chunk_validation_)),
-        cache_chunk_store_(false, chunk_validation_),
+        internal_perm_chunk_store_(new FileChunkStore(chunk_validation_)),
+        cache_chunk_store_(chunk_validation_),
         perm_chunk_store_(internal_perm_chunk_store_),
         cached_chunks_(),
         removable_chunks_(),
@@ -260,19 +258,19 @@ class BufferedChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name) const;
+  uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the permanently stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() const;
+  uintmax_t Size() const;
 
   /**
    * Retrieves the total size of the cached chunks.
    * @return Size in bytes
    */
-  std::uintmax_t CacheSize() const;
+  uintmax_t CacheSize() const;
 
   /**
    * Retrieves the maximum permanent storage capacity available.
@@ -280,7 +278,7 @@ class BufferedChunkStore: public ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t Capacity() const;
+  uintmax_t Capacity() const;
 
   /**
    * Retrieves the maximum cache capacity available.
@@ -288,7 +286,7 @@ class BufferedChunkStore: public ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t CacheCapacity() const;
+  uintmax_t CacheCapacity() const;
 
   /**
    * Sets the maximum permanent storage capacity available.
@@ -297,7 +295,7 @@ class BufferedChunkStore: public ChunkStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetCapacity(const std::uintmax_t &capacity);
+  void SetCapacity(const uintmax_t &capacity);
 
   /**
    * Sets the maximum cache capacity available.
@@ -306,21 +304,21 @@ class BufferedChunkStore: public ChunkStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetCacheCapacity(const std::uintmax_t &capacity);
+  void SetCacheCapacity(const uintmax_t &capacity);
 
   /**
    * Checks whether the permanent storage has enough capacity to store a chunk
    * of the given size.
    * @return True if required size vacant
    */
-  bool Vacant(const std::uintmax_t &required_size) const;
+  bool Vacant(const uintmax_t &required_size) const;
 
   /**
    * Checks whether the cache has enough capacity to store a chunk of the given
    * size.
    * @return True if required size vacant
    */
-  bool CacheVacant(const std::uintmax_t &required_size) const;
+  bool CacheVacant(const uintmax_t &required_size) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -331,19 +329,19 @@ class BufferedChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) const;
+  uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by the permanent store.
    * @return Chunk count
    */
-  std::uintmax_t Count() const;
+  uintmax_t Count() const;
 
   /**
    * Retrieves the number of chunks held in cache.
    * @return Chunk count
    */
-  std::uintmax_t CacheCount() const;
+  uintmax_t CacheCount() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.

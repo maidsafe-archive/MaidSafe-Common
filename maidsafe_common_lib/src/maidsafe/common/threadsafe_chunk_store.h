@@ -61,7 +61,7 @@ namespace maidsafe {
 class ThreadsafeChunkStore : public ChunkStore {
  public:
   explicit ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store)
-      : ChunkStore(false),
+      : ChunkStore(),
         chunk_store_(chunk_store),
         shared_mutex_() {}
 
@@ -163,13 +163,13 @@ class ThreadsafeChunkStore : public ChunkStore {
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name) const;
+  uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() const;
+  uintmax_t Size() const;
 
   /**
    * Retrieves the maximum storage capacity available to this ChunkStore.
@@ -177,7 +177,7 @@ class ThreadsafeChunkStore : public ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t Capacity() const;
+  uintmax_t Capacity() const;
 
   /**
    * Sets the maximum storage capacity available to this ChunkStore.
@@ -186,14 +186,14 @@ class ThreadsafeChunkStore : public ChunkStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetCapacity(const std::uintmax_t &capacity);
+  void SetCapacity(const uintmax_t &capacity);
 
   /**
    * Checks whether the ChunkStore has enough capacity to store a chunk of the
    * given size.
    * @return True if required size vacant
    */
-  bool Vacant(const std::uintmax_t &required_size) const;
+  bool Vacant(const uintmax_t &required_size) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -204,13 +204,13 @@ class ThreadsafeChunkStore : public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) const;
+  uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  std::uintmax_t Count() const;
+  uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
