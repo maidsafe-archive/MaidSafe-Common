@@ -182,6 +182,9 @@ bool FileChunkStore::Store(const std::string &name,
     try {
       uintmax_t file_size(fs::file_size(source_file_name, ec));
 
+      if (file_size == 0)
+        return false;
+
       if (!Vacant(file_size))
         return false;
 

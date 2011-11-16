@@ -264,36 +264,6 @@ TEST_F(FileChunkStoreTest, BEH_Capacity) {
   EXPECT_FALSE(fcs_cap->Store(extra_content_chunk_name, path, true));
 }
 
-TEST_F(FileChunkStoreTest, BEH_Misc) {
-  //  create a chunk store without reference counting
-  std::shared_ptr<FileChunkStore> fcs(
-      new FileChunkStore(chunk_validation_));
-
-  EXPECT_TRUE(fcs->Init(chunk_dir_, 5));
-  int count = 10;
-  //  store chunks iteratively
-  for (int i = 0; i < count; ++i) {
-    std::string content(RandomString(500));
-    std::string name(crypto::Hash<crypto::SHA512>(content));
-
-    EXPECT_TRUE(fcs->Store(name, content));
-  }
-
-  std::string content("mycontent");
-  std::string name(crypto::Hash<crypto::SHA512>(content));
-  EXPECT_TRUE(fcs->Store(name, content));
-
-  //  create a ref counted chunk store
-  std::shared_ptr<FileChunkStore> ref_fcs(
-      new FileChunkStore(chunk_validation_));
-  EXPECT_TRUE(ref_fcs->Init(chunk_dir_, 5));
-
-  fs::path path(*test_dir_ / "chunk.dat");
-
-  //  try to retrieve a chunk stored without reference count
-  EXPECT_TRUE(ref_fcs->Get(name).empty());
-}
-
 TEST_F(FileChunkStoreTest, BEH_Delete) {
   std::shared_ptr<FileChunkStore> fcs(
       new FileChunkStore(chunk_validation_));
@@ -359,18 +329,29 @@ TEST_F(FileChunkStoreTest, BEH_Methods) {
 
   fs::path chunk_path = fcs->ChunkNameToFilePath(chunk_name);
   EXPECT_FALSE(fs::exists(chunk_path));
+  chunk_path.replace_extension(".1");
+  EXPECT_FALSE(fs::exists(chunk_path));
   chunk_path = fcs->ChunkNameToFilePath(chunk_name, true);
   EXPECT_TRUE(fs::exists(chunk_path.parent_path()));
   EXPECT_TRUE(fcs->Store(chunk_name, content));
+  EXPECT_FALSE(fs::exists(chunk_path));
+  chunk_path.replace_extension(".1");
+  EXPECT_TRUE(fs::exists(chunk_path));
+  EXPECT_TRUE(fcs->Store(chunk_name, content));
+  EXPECT_FALSE(fs::exists(chunk_path));
+  chunk_path.replace_extension(".2");
   EXPECT_TRUE(fs::exists(chunk_path));
 
   std::string small_cc(RandomString(1));
   std::string small_cn(crypto::Hash<crypto::SHA512>(small_cc));
   fs::path small_cp = fcs->ChunkNameToFilePath(small_cn);
   EXPECT_FALSE(fs::exists(small_cp));
+  small_cp.replace_extension(".1");
+  EXPECT_FALSE(fs::exists(small_cp));
   small_cp  = fcs->ChunkNameToFilePath(small_cn, true);
   EXPECT_TRUE(fs::exists(small_cp.parent_path()));
   EXPECT_TRUE(fcs->Store(small_cn, small_cc));
+  small_cp.replace_extension(".1");
   EXPECT_TRUE(fs::exists(small_cp));
 
   fcs->Clear();
@@ -379,7 +360,6 @@ TEST_F(FileChunkStoreTest, BEH_Methods) {
   chunk_name = crypto::Hash<crypto::SHA512>(content);
 
   EXPECT_TRUE(fcs->Init(chunk_dir_, 4));
-  uintmax_t store_size(0);
 
   //  store chunks
   for (int i = 0; i < 6; ++i) {
@@ -387,28 +367,9 @@ TEST_F(FileChunkStoreTest, BEH_Methods) {
     chunk_name = crypto::Hash<crypto::SHA512>(content);
 
     chunk_path = fcs->ChunkNameToFilePath(chunk_name);
+    chunk_path.replace_extension(".1");
     EXPECT_TRUE(fcs->Store(chunk_name, content));
-
-    store_size += fcs->Size(chunk_name);
-  }
-
-  //  use the same location in another store
-  fcs.reset();
-  {
-    const std::unique_ptr<FileChunkStore> kTempCs(
-        new FileChunkStore(chunk_validation_));
-    EXPECT_TRUE(kTempCs->Init(chunk_dir_, 4));
-    EXPECT_EQ(store_size,
-              kTempCs->RetrieveChunkInfo(kTempCs->storage_location_).second);
-
-    //  test a ref counted chunk store on non ref counted storage
-    const std::unique_ptr<FileChunkStore> kTempRefCs(
-        new FileChunkStore(chunk_validation_));
-    EXPECT_TRUE(kTempRefCs->Init(chunk_dir_, 4));
-    //  ref counted chunk store should not include chunks created
-    //  without ref counting
-    EXPECT_EQ(0, kTempRefCs->RetrieveChunkInfo(
-                      kTempCs->storage_location_).second);
+    EXPECT_TRUE(fs::exists(chunk_path));
   }
 
   //  cause exception in RetrieveChunkInfo

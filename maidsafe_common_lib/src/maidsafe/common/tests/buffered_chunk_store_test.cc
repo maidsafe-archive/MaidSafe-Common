@@ -543,6 +543,29 @@ TEST_F(BufferedChunkStoreTest, BEH_PermanentStore) {
   EXPECT_FALSE(chunk_store_->PermanentHas(name1));
   EXPECT_TRUE(chunk_store_->PermanentStore(name1));
   EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->Clear();
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_EQ(3, chunk_store_->Count(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_WaitForTransfer) {

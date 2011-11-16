@@ -192,7 +192,7 @@ class BufferedChunkStore: public ChunkStore {
 
   /**
    * Modifies chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
+   * @param name Chunk name
    * @param content The chunk's modified content
    * @return True if chunk has been modified.
    */

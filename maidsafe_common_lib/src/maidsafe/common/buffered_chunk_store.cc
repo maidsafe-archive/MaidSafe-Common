@@ -215,10 +215,15 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const std::string &content) {
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      chunk_validation_->Hashable(name))
+  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
+    DLOG(ERROR) << "Modify - Invalid name passed: " << Base32Substr(name);
     return false;
+  }
+
+  if (chunk_validation_->Hashable(name)) {
+    DLOG(ERROR) << "Modify - Hashable chunk passed: " << Base32Substr(name);
+    return false;
+  }
 
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   RemoveDeletionMarks(name);
@@ -236,8 +241,11 @@ bool BufferedChunkStore::Modify(const std::string &name,
       if (perm_capacity_ > 0) {  // Check if Perm Chunk Store Size is Infinite
         // Wait For Space in Perm Store
         while (perm_size_ + content_size_difference > perm_capacity_) {
-          if (removable_chunks_.empty())
-            return false;    // Space cant be Allocated
+          if (removable_chunks_.empty()) {
+            DLOG(ERROR) << "Modify - Can't make space for changes to "
+                        << Base32Substr(name);
+            return false;
+          }
           if (perm_chunk_store_.Delete(removable_chunks_.front()))
             perm_size_ = perm_chunk_store_.Size();
           removable_chunks_.pop_front();
@@ -263,14 +271,18 @@ bool BufferedChunkStore::Modify(const std::string &name,
       }
       return true;
     } else {
+      DLOG(ERROR) << "Modify - Couldn't modify " << Base32Substr(name);
       return false;
     }
   } else {
     std::string current_cache_content;
     {
       UpgradeLock upgrade_lock(cache_mutex_);
-      if (!cache_chunk_store_.Has(name))
-        return false;  // Not in Cache Chunk Store or Perm Store
+      if (!cache_chunk_store_.Has(name)) {
+        DLOG(ERROR) << "Modify - Don't have chunk " << Base32Substr(name);
+        return false;
+      }
+
       current_cache_content = cache_chunk_store_.Get(name);
       uintmax_t content_size_difference(0);
       if (content.size() > current_cache_content.size()) {
@@ -281,8 +293,11 @@ bool BufferedChunkStore::Modify(const std::string &name,
             upgrade_lock.unlock();
             {
               boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
-              if (pending_xfers_.empty())
+              if (pending_xfers_.empty()) {
+                DLOG(ERROR) << "Modify - Can't make space for changes to "
+                            << Base32Substr(name);
                 return false;
+              }
 
               int limit(kWaitTransfersForCacheVacantCheck);
               while (!pending_xfers_.empty() && limit > 0) {
@@ -305,11 +320,19 @@ bool BufferedChunkStore::Modify(const std::string &name,
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const fs::path &source_file_name,
                                 bool delete_source_file) {
-  if (source_file_name.empty())
+  if (source_file_name.empty()) {
+    DLOG(ERROR) << "Modify - No source file passed for " << Base32Substr(name);
     return false;
+  }
+
+  // TODO(Steve) implement optimized Modify for changes from file
+
   std::string content;
-  if (!ReadFile(source_file_name, &content))
+  if (!ReadFile(source_file_name, &content)) {
+    DLOG(ERROR) << "Modify - Couldn't read source file for "
+                << Base32Substr(name);
     return false;
+  }
 
   if (!Modify(name, content))
     return false;
@@ -529,7 +552,7 @@ void BufferedChunkStore::MarkForDeletion(const std::string &name) {
   }
 }
 
-// / @note Ensure cache mutex is not locked.
+/// @note Ensure cache mutex is not locked.
 void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
   if (!name.empty()) {
     UniqueLock unique_lock(cache_mutex_);
