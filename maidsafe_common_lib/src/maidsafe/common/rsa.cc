@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 
-#include "maidsafe/common/asymmetric_crypto.h"
 #include "maidsafe/common/return_codes.h"
 
 #ifdef __MSVC__
@@ -266,6 +265,17 @@ bool Validate(const PlainText &plain_text,
     return true;
   else
     return false;
+}
+
+bool MatchingPublicKeys(const PublicKey &pub_key_one,
+                        const PublicKey &pub_key_two) {
+  std::string enc_key_one;
+  std::string enc_key_two;
+  EncodePublicKey(pub_key_one, &enc_key_one);
+  EncodePublicKey(pub_key_two, &enc_key_two);
+  if (!enc_key_one.empty() && !enc_key_two.empty())
+    return enc_key_one == enc_key_two;
+  return false;
 }
 
 }  // namespace rsa

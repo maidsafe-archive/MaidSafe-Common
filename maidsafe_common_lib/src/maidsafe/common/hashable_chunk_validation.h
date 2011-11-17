@@ -39,7 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1003
+#if MAIDSAFE_COMMON_VERSION != 1004
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -50,12 +50,12 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 /**
- * Abstract class to validate chunks.
+ * Class to validate chunks based on their name.
  *
- * Implementations will need to be aware of different chunk types and their
- * inherent validity.
+ * @tparam ValidationType Type of hashing algo used for validity checks
+ * @tparam VersionType Type of hashing algo used for versioning
  */
-template <class HashType>
+template <class ValidationType, class VersionType>
 class HashableChunkValidation : public ChunkValidation {
  public:
   HashableChunkValidation() : ChunkValidation() {}
@@ -76,7 +76,16 @@ class HashableChunkValidation : public ChunkValidation {
    * @return Whether chunk is hashable.
    */
   bool Hashable(const std::string &name) {
-    return name.size() == size_t(HashType::DIGESTSIZE);
+    return name.size() == size_t(ValidationType::DIGESTSIZE);
+  }
+
+  /**
+   * Checks if a chunk's content can be changed after it's been created.
+   * @param name Chunk name
+   * @return Whether chunk is modifiable.
+   */
+  bool Modifiable(const std::string &name) {
+    return ValidName(name) && !Hashable(name);
   }
 
   /**
@@ -89,7 +98,7 @@ class HashableChunkValidation : public ChunkValidation {
     if (!Hashable(name))
       return ValidName(name);
 
-    return name == crypto::Hash<HashType>(content);
+    return name == crypto::Hash<ValidationType>(content);
   }
 
   /**
@@ -102,7 +111,39 @@ class HashableChunkValidation : public ChunkValidation {
     if (!Hashable(name))
       return ValidName(name);
 
-    return name == crypto::HashFile<HashType>(path);
+    return name == crypto::HashFile<ValidationType>(path);
+  }
+
+  /**
+   * Returns the version of a chunk's contents.
+   * @param name Chunk name
+   * @param content Chunk's content as string
+   * @return The chunk version.
+   */
+  std::string Version(const std::string &name, const std::string &content) {
+    if (Hashable(name))
+      return name;
+
+    if (!ValidName(name))
+      return "";
+
+    return crypto::Hash<VersionType>(content);
+  }
+
+  /**
+   * Returns the version of a chunk's contents.
+   * @param name Chunk name
+   * @param path Path to chunk's content
+   * @return The chunk version.
+   */
+  std::string Version(const std::string &name, const fs::path &path) {
+    if (Hashable(name))
+      return name;
+
+    if (!ValidName(name))
+      return "";
+
+    return crypto::HashFile<VersionType>(path);
   }
 
  private:

@@ -55,7 +55,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/chunk_validation.h"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1003
+#if MAIDSAFE_COMMON_VERSION != 1004
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -70,9 +70,8 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  MemoryChunkStore(bool reference_counting,
-                   std::shared_ptr<ChunkValidation> chunk_validation)
-      : ChunkStore(reference_counting),
+  explicit MemoryChunkStore(std::shared_ptr<ChunkValidation> chunk_validation)
+      : ChunkStore(),
         chunk_validation_(chunk_validation),
         chunks_() {}
   ~MemoryChunkStore() {}
@@ -120,6 +119,25 @@ class MemoryChunkStore: public ChunkStore {
   bool Delete(const std::string &name);
 
   /**
+   * Modifies chunk content under the given name.
+   * @param name Chunk name, i.e. hash of the chunk content
+   * @param content The chunk's modified content
+   * @return True if chunk has been modified.
+   */
+  bool Modify(const std::string &name, const std::string &content);
+
+  /**
+   * Modifies a chunk's content as a file, potentially overwriting an existing
+   * file of the same name.
+   * @param name Chunk name
+   * @param source_file_name Path to modified content file
+   * @return True if chunk has been modified.
+   */
+  bool Modify(const std::string &name,
+              const fs::path &source_file_name,
+              bool delete_source_file);
+
+  /**
    * Efficiently adds a locally existing chunk to another ChunkStore and
    * removes it from this one.
    * @param name Chunk name
@@ -136,7 +154,7 @@ class MemoryChunkStore: public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk, i.e. confirms if the name matches the content's hash.
+   * Validates a chunk using the ChunkValidation object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
@@ -145,17 +163,24 @@ class MemoryChunkStore: public ChunkStore {
   bool Validate(const std::string &name) const;
 
   /**
+   * Retrieves the chunk's content version using the ChunkValidation object.
+   * @param name Chunk name
+   * @return The chunk version
+   */
+  std::string Version(const std::string &name) const;
+
+  /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name) const;
+  uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() const { return ChunkStore::Size(); }
+  uintmax_t Size() const { return ChunkStore::Size(); }
 
   /**
    * Retrieves the number of references to a chunk.
@@ -166,13 +191,13 @@ class MemoryChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) const;
+  uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by this ChunkStore.
    * @return Chunk count
    */
-  std::uintmax_t Count() const;
+  uintmax_t Count() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
@@ -186,7 +211,7 @@ class MemoryChunkStore: public ChunkStore {
   void Clear();
 
  private:
-  typedef std::pair<std::uintmax_t, std::string> ChunkEntry;
+  typedef std::pair<uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
   std::shared_ptr<ChunkValidation> chunk_validation_;

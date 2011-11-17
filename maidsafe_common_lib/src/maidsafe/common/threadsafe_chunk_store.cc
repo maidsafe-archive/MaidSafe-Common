@@ -67,6 +67,19 @@ bool ThreadsafeChunkStore::Delete(const std::string &name) {
   return chunk_store_->Delete(name);
 }
 
+bool ThreadsafeChunkStore::Modify(const std::string &name,
+                                  const std::string &content) {
+  UniqueLock unique_lock(shared_mutex_);
+  return chunk_store_->Modify(name, content);
+}
+
+bool ThreadsafeChunkStore::Modify(const std::string &name,
+                                  const fs::path &source_file_name,
+                                  bool delete_source_file) {
+  UniqueLock unique_lock(shared_mutex_);
+  return chunk_store_->Modify(name, source_file_name, delete_source_file);
+}
+
 bool ThreadsafeChunkStore::MoveTo(const std::string &name,
                                   ChunkStore *sink_chunk_store) {
   UniqueLock unique_lock(shared_mutex_);
@@ -83,37 +96,42 @@ bool ThreadsafeChunkStore::Validate(const std::string &name) const {
   return chunk_store_->Validate(name);
 }
 
-std::uintmax_t ThreadsafeChunkStore::Size(const std::string &name) const {
+std::string ThreadsafeChunkStore::Version(const std::string &name) const {
+  SharedLock shared_lock(shared_mutex_);
+  return chunk_store_->Version(name);
+}
+
+uintmax_t ThreadsafeChunkStore::Size(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Size(name);
 }
 
-std::uintmax_t ThreadsafeChunkStore::Size() const {
+uintmax_t ThreadsafeChunkStore::Size() const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Size();
 }
 
-std::uintmax_t ThreadsafeChunkStore::Capacity() const {
+uintmax_t ThreadsafeChunkStore::Capacity() const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Capacity();
 }
 
-void ThreadsafeChunkStore::SetCapacity(const std::uintmax_t &capacity) {
+void ThreadsafeChunkStore::SetCapacity(const uintmax_t &capacity) {
   UniqueLock unique_lock(shared_mutex_);
   chunk_store_->SetCapacity(capacity);
 }
 
-bool ThreadsafeChunkStore::Vacant(const std::uintmax_t &required_size) const {
+bool ThreadsafeChunkStore::Vacant(const uintmax_t &required_size) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Vacant(required_size);
 }
 
-std::uintmax_t ThreadsafeChunkStore::Count(const std::string &name) const {
+uintmax_t ThreadsafeChunkStore::Count(const std::string &name) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Count(name);
 }
 
-std::uintmax_t ThreadsafeChunkStore::Count() const {
+uintmax_t ThreadsafeChunkStore::Count() const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Count();
 }

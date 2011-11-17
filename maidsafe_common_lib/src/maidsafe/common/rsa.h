@@ -40,9 +40,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4505)
 #endif
 
+#include "boost/function.hpp"
 #include "maidsafe/common/version.h"
-#include "maidsafe/common/asymmetric_crypto.h"
-#if MAIDSAFE_COMMON_VERSION != 1003
+#if MAIDSAFE_COMMON_VERSION != 1004
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -107,6 +107,9 @@ void GetPublicKeyAndValidation(
 bool Validate(const PlainText &plain_text,
               const Signature &signature,
               const PublicKey &public_key);
+
+bool MatchingPublicKeys(const PublicKey &pub_key_one,
+                        const PublicKey &pub_key_two);
 
 }  // namespace rsa
 }  // namespace maidsafe

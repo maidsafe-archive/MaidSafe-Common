@@ -63,7 +63,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/file_chunk_store.h"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1003
+#if MAIDSAFE_COMMON_VERSION != 1004
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -74,26 +74,28 @@ namespace arg = std::placeholders;
 
 namespace maidsafe {
 
+/**
+ * Manages storage and retrieval of chunks using a two-tier storage system.
+ */
 class BufferedChunkStore: public ChunkStore {
  public:
-  BufferedChunkStore(bool reference_counting,
-                     std::shared_ptr<ChunkValidation> chunk_validation,
+  BufferedChunkStore(std::shared_ptr<ChunkValidation> chunk_validation,
                      boost::asio::io_service &asio_service)
-      : ChunkStore(reference_counting),
+      : ChunkStore(),
         cache_mutex_(),
         xfer_mutex_(),
         xfer_cond_var_(),
         chunk_validation_(chunk_validation),
         asio_service_(asio_service),
-        internal_perm_chunk_store_(new FileChunkStore(reference_counting,
-                                                      chunk_validation_)),
-        cache_chunk_store_(false, chunk_validation_),
-        perm_chunk_store_(reference_counting, internal_perm_chunk_store_),
+        internal_perm_chunk_store_(new FileChunkStore(chunk_validation_)),
+        cache_chunk_store_(chunk_validation_),
+        perm_chunk_store_(internal_perm_chunk_store_),
         cached_chunks_(),
         removable_chunks_(),
         pending_xfers_(),
         perm_capacity_(0),
-        perm_size_(0) {}
+        perm_size_(0),
+        initialised_(false) {}
   ~BufferedChunkStore();
 
   /**
@@ -110,6 +112,7 @@ class BufferedChunkStore: public ChunkStore {
       return false;
     perm_capacity_ = internal_perm_chunk_store_->Capacity();
     perm_size_ = internal_perm_chunk_store_->Size();
+    initialised_ = true;
     return true;
   }
 
@@ -188,6 +191,25 @@ class BufferedChunkStore: public ChunkStore {
   bool Delete(const std::string &name);
 
   /**
+   * Modifies chunk content under the given name.
+   * @param name Chunk name
+   * @param content The chunk's modified content
+   * @return True if chunk has been modified.
+   */
+  bool Modify(const std::string &name, const std::string &content);
+
+  /**
+   * Modifies a chunk's content as a file, potentially overwriting an existing
+   * file of the same name.
+   * @param name Chunk name
+   * @param source_file_name Path to modified content file
+   * @return True if chunk has been modified.
+   */
+  bool Modify(const std::string &name,
+              const fs::path &source_file_name,
+              bool delete_source_file);
+
+  /**
    * Adds a locally existing chunk to another ChunkStore and removes it from
    * this one.
    * @param name Chunk name
@@ -224,27 +246,33 @@ class BufferedChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return True if chunk valid
    */
-
   bool Validate(const std::string &name) const;
+
+  /**
+   * Retrieves the chunk's content version using the ChunkValidation object.
+   * @param name Chunk name
+   * @return The chunk version
+   */
+  std::string Version(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
    */
-  std::uintmax_t Size(const std::string &name) const;
+  uintmax_t Size(const std::string &name) const;
 
   /**
    * Retrieves the total size of the permanently stored chunks.
    * @return Size in bytes
    */
-  std::uintmax_t Size() const;
+  uintmax_t Size() const;
 
   /**
    * Retrieves the total size of the cached chunks.
    * @return Size in bytes
    */
-  std::uintmax_t CacheSize() const;
+  uintmax_t CacheSize() const;
 
   /**
    * Retrieves the maximum permanent storage capacity available.
@@ -252,7 +280,7 @@ class BufferedChunkStore: public ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t Capacity() const;
+  uintmax_t Capacity() const;
 
   /**
    * Retrieves the maximum cache capacity available.
@@ -260,7 +288,7 @@ class BufferedChunkStore: public ChunkStore {
    * A capacity of zero (0) equals infinite storage space.
    * @return Capacity in bytes
    */
-  std::uintmax_t CacheCapacity() const;
+  uintmax_t CacheCapacity() const;
 
   /**
    * Sets the maximum permanent storage capacity available.
@@ -269,7 +297,7 @@ class BufferedChunkStore: public ChunkStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetCapacity(const std::uintmax_t &capacity);
+  void SetCapacity(const uintmax_t &capacity);
 
   /**
    * Sets the maximum cache capacity available.
@@ -278,21 +306,21 @@ class BufferedChunkStore: public ChunkStore {
    * always be at least as high as the total size of already stored chunks.
    * @param capacity Capacity in bytes
    */
-  void SetCacheCapacity(const std::uintmax_t &capacity);
+  void SetCacheCapacity(const uintmax_t &capacity);
 
   /**
    * Checks whether the permanent storage has enough capacity to store a chunk
    * of the given size.
    * @return True if required size vacant
    */
-  bool Vacant(const std::uintmax_t &required_size) const;
+  bool Vacant(const uintmax_t &required_size) const;
 
   /**
    * Checks whether the cache has enough capacity to store a chunk of the given
    * size.
    * @return True if required size vacant
    */
-  bool CacheVacant(const std::uintmax_t &required_size) const;
+  bool CacheVacant(const uintmax_t &required_size) const;
 
   /**
    * Retrieves the number of references to a chunk.
@@ -303,19 +331,19 @@ class BufferedChunkStore: public ChunkStore {
    * @param name Chunk name
    * @return Reference count
    */
-  std::uintmax_t Count(const std::string &name) const;
+  uintmax_t Count(const std::string &name) const;
 
   /**
    * Retrieves the number of chunks held by the permanent store.
    * @return Chunk count
    */
-  std::uintmax_t Count() const;
+  uintmax_t Count() const;
 
   /**
    * Retrieves the number of chunks held in cache.
    * @return Chunk count
    */
-  std::uintmax_t CacheCount() const;
+  uintmax_t CacheCount() const;
 
   /**
    * Checks if any chunks are held by this ChunkStore.
@@ -378,6 +406,7 @@ class BufferedChunkStore: public ChunkStore {
   std::list<std::string> removable_chunks_;
   std::multiset<std::string> pending_xfers_;
   uintmax_t perm_capacity_, perm_size_;
+  bool initialised_;
 };
 
 }  //  namespace maidsafe

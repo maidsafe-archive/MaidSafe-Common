@@ -232,6 +232,14 @@ std::string HexSubstr(const std::string &non_hex) {
     return hex;
 }
 
+std::string Base32Substr(const std::string &non_base32) {
+  std::string base32(EncodeToBase32(non_base32));
+  if (base32.size() > 16)
+    return (base32.substr(0, 7) + ".." + base32.substr(base32.size() - 7));
+  else
+    return base32;
+}
+
 boost::posix_time::time_duration GetDurationSinceEpoch() {
   return boost::posix_time::microsec_clock::universal_time() - kMaidSafeEpoch;
 }
@@ -240,7 +248,7 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
   if (!content)
     return false;
   try {
-    std::uintmax_t file_size(fs::file_size(file_path));
+    uintmax_t file_size(fs::file_size(file_path));
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
     if (!file_in.good())
       return false;

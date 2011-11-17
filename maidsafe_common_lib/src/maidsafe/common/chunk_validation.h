@@ -37,7 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/filesystem/path.hpp"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1003
+#if MAIDSAFE_COMMON_VERSION != 1004
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
@@ -73,9 +73,16 @@ class ChunkValidation {
   virtual bool Hashable(const std::string &name) = 0;
 
   /**
+   * Checks if a chunk's content can be changed after it's been created.
+   * @param name Chunk name
+   * @return Whether chunk is modifiable.
+   */
+  virtual bool Modifiable(const std::string &name) = 0;
+
+  /**
    * Checks if a chunk is valid.
    * @param name Chunk name
-   * @param content Chunk's content as string.
+   * @param content Chunk's content as string
    * @return Whether chunk is valid.
    */
   virtual bool ValidChunk(const std::string &name,
@@ -84,10 +91,28 @@ class ChunkValidation {
   /**
    * Checks if a chunk is valid.
    * @param name Chunk name
-   * @param path Path to chunk's content.
+   * @param path Path to chunk's content
    * @return Whether chunk is valid.
    */
   virtual bool ValidChunk(const std::string &name, const fs::path &path) = 0;
+
+  /**
+   * Returns the version of a chunk's contents.
+   * @param name Chunk name
+   * @param content Chunk's content as string
+   * @return The chunk version.
+   */
+  virtual std::string Version(const std::string &name,
+                              const std::string &content) = 0;
+
+  /**
+   * Returns the version of a chunk's contents.
+   * @param name Chunk name
+   * @param path Path to chunk's content
+   * @return The chunk version.
+   */
+  virtual std::string Version(const std::string &name,
+                              const fs::path &path) = 0;
 
  private:
   ChunkValidation(const ChunkValidation&);

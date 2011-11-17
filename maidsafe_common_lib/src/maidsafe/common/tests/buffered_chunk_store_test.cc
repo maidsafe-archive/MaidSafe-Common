@@ -43,15 +43,14 @@ namespace maidsafe {
 
 namespace test {
 
-template <> template <class HashType>
+template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<BufferedChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
-    bool reference_counting,
     const fs::path &chunk_dir,
     boost::asio::io_service &asio_service) {
   chunk_store->reset(new BufferedChunkStore(
-      reference_counting,
-      std::shared_ptr<ChunkValidation>(new HashableChunkValidation<HashType>),
+      std::shared_ptr<ChunkValidation>(
+          new HashableChunkValidation<ValidationType, VersionType>),
       asio_service));
   if (!chunk_dir.empty())
     reinterpret_cast<BufferedChunkStore*>(chunk_store->get())->Init(chunk_dir);
@@ -70,12 +69,13 @@ class BufferedChunkStoreTest: public testing::Test {
         test_work_(),
         thread_group_(),
         test_thread_group_(),
-        chunk_validation_(new HashableChunkValidation<crypto::SHA512>),
-        chunk_store_(new BufferedChunkStore(
-            false, chunk_validation_, asio_service_)),
+        chunk_validation_(
+            new HashableChunkValidation<crypto::SHA512, crypto::Tiger>),
+        chunk_store_(new BufferedChunkStore(chunk_validation_, asio_service_)),
         mutex_(),
         cond_var_(),
-        store_counter_(0) {
+        store_counter_(0),
+        cache_modify_counter_(0) {
     work_.reset(new boost::asio::io_service::work(asio_service_));
     test_work_.reset(new boost::asio::io_service::work(test_asio_service_));
     for (int i = 0; i < 3; ++i) {
@@ -90,10 +90,34 @@ class BufferedChunkStoreTest: public testing::Test {
   ~BufferedChunkStoreTest() {}
 
   void DoStore(const std::string &name, const std::string &content) {
-    EXPECT_TRUE(chunk_store_->Store(name, content));
+    EXPECT_TRUE(chunk_store_->Store(name, content)) << "Contain?: " <<
+      chunk_store_->Has(name) << " Size:" << name.size();
     boost::unique_lock<boost::mutex> lock(mutex_);
     ++store_counter_;
     cond_var_.notify_one();
+  }
+
+  void DoCacheStore(const std::string &name, const std::string &content) {
+    EXPECT_TRUE(chunk_store_->CacheStore(name, content));
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    ++store_counter_;
+    cond_var_.notify_one();
+  }
+
+  void DoCacheModify(const std::string &name, const std::string &content) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    EXPECT_TRUE(chunk_store_->Modify(name, content));
+    EXPECT_FALSE(chunk_store_->PermanentHas(name));
+    EXPECT_TRUE(chunk_store_->CacheHas(name));
+    EXPECT_EQ(content, chunk_store_->Get(name));
+    ++cache_modify_counter_;
+    cond_var_.notify_one();
+  }
+
+  void WaitForCacheModify(const int &count) {
+    boost::unique_lock<boost::mutex> lock(mutex_);
+    while (cache_modify_counter_ < count)
+      cond_var_.wait(lock);
   }
 
   void WaitForStore(const int &count) {
@@ -118,16 +142,16 @@ class BufferedChunkStoreTest: public testing::Test {
   }
 
   fs::path CreateRandomFile(const fs::path &file_path,
-                            const std::uint64_t &file_size) {
+                            const uint64_t &file_size) {
     fs::ofstream ofs(file_path, std::ios::binary | std::ios::out |
                                 std::ios::trunc);
     if (file_size != 0) {
       size_t string_size = (file_size > 100000) ? 100000 :
                           static_cast<size_t>(file_size);
-      std::uint64_t remaining_size = file_size;
+      uint64_t remaining_size = file_size;
       std::string rand_str = RandomString(2 * string_size);
       std::string file_content;
-      std::uint64_t start_pos = 0;
+      uint64_t start_pos = 0;
       while (remaining_size) {
         srand(17);
         start_pos = rand() % string_size;  // NOLINT (Fraser)
@@ -146,7 +170,7 @@ class BufferedChunkStoreTest: public testing::Test {
     return file_path;
   }
 
-  std::shared_ptr<fs::path> test_dir_;
+  TestPath test_dir_;
   fs::path chunk_dir_;
   boost::asio::io_service asio_service_, test_asio_service_;
   std::shared_ptr<boost::asio::io_service::work> work_, test_work_;
@@ -156,6 +180,7 @@ class BufferedChunkStoreTest: public testing::Test {
   boost::mutex mutex_;
   boost::condition_variable cond_var_;
   int store_counter_;
+  int cache_modify_counter_;
 };
 
 TEST_F(BufferedChunkStoreTest, BEH_CacheInit) {
@@ -499,6 +524,48 @@ TEST_F(BufferedChunkStoreTest, BEH_PermanentStore) {
   chunk_store_->CacheClear();
   EXPECT_TRUE(chunk_store_->PermanentStore(name1));
   EXPECT_TRUE(chunk_store_->PermanentHas(name2));
+
+  chunk_store_->Clear();
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->Has(name1));
+  EXPECT_TRUE(chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->CacheClear();
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(chunk_store_->Has(name1));
+  EXPECT_FALSE(chunk_store_->CacheHas(name1));
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->Clear();
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_EQ(3, chunk_store_->Count(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+
+  EXPECT_TRUE(chunk_store_->PermanentStore(name1));
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
 }
 
 TEST_F(BufferedChunkStoreTest, BEH_WaitForTransfer) {
@@ -569,6 +636,29 @@ TEST_F(BufferedChunkStoreTest, BEH_StoreWithRemovableChunks) {
   EXPECT_EQ(uintmax_t(2560), chunk_store_->Size());
 }
 
+TEST_F(BufferedChunkStoreTest, BEH_ModifyCacheChunks) {
+  std::string modifying_chunk_content(RandomString(100));
+  std::string modifying_chunk_name(RandomString(65));
+  store_counter_ = 0;
+  cache_modify_counter_ = 0;
+  chunk_store_->SetCacheCapacity(4 << 20);
+  chunk_store_->SetCapacity(4 << 20);
+  test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoCacheStore,
+        this, modifying_chunk_name, modifying_chunk_content));
+  WaitForStore(1);
+
+  for (int i = 1; i < 100; ++i) {
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoStore,
+        this, RandomString(64 + i % 2), RandomString(RandomUint32() % 99 + 1)));
+    test_asio_service_.post(std::bind(
+        &BufferedChunkStoreTest::DoCacheModify,
+        this, modifying_chunk_name, RandomString(RandomUint32() % 120)));
+  }
+  WaitForStore(100);
+  WaitForCacheModify(99);
+}
 }  // namespace test
 
 }  // namespace maidsafe
