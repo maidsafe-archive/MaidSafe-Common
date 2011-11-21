@@ -190,6 +190,9 @@ IF(NOT ALL_REPOSITORIES)
         SigmoidPro
         MaidSafe-Breakpad
 #        Deduplicator-Gauge
+#        Documents
+#        Minesweep
+        AWS-Transporter
         )
 ENDIF()
 
@@ -200,6 +203,8 @@ SET(NON_INSTALL_REPOSITORIES
       SigmoidPro
       MaidSafe-Breakpad
 #        Deduplicator-Gauge
+#        Documents
+#        Minesweep
       )
 
 

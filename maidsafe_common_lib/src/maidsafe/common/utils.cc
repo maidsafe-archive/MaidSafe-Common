@@ -381,10 +381,11 @@ TestPath CreateTestPath(std::string test_prefix) {
 void CleanupTest(fs::path *&test_path) {
   if (!test_path->empty()) {
     boost::system::error_code error_code;
-    if (!fs::remove_all(*test_path, error_code) || error_code) {
+    if (fs::remove_all(*test_path, error_code) == 0)
+      LOG(WARNING) << "Test directory " << *test_path << " already deleted.";
+    if (error_code)
       LOG(WARNING) << "Failed to clean up test directory " << *test_path
                    << "  (error message: " << error_code.message() << ")";
-    }
   }
   delete test_path;
   test_path = NULL;
