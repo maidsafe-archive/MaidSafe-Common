@@ -41,6 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/function.hpp"
+#include "boost/serialization/nvp.hpp"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/version.h"
