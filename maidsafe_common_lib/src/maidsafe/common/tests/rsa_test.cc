@@ -131,39 +131,41 @@ TEST_F(RSATest, BEH_Serialise) {
 
   std::ostringstream oss;
   boost::archive::text_oarchive output_archive(oss);
-  output_archive << keys_.private_key << keys_.public_key;
+  const PrivateKey kOriginalPrivateKey(keys_.private_key);
+  const PublicKey kOriginalPublicKey(keys_.public_key);
+  output_archive << kOriginalPrivateKey << kOriginalPublicKey;
   std::string encoded(oss.str());
 
-  PrivateKey private_key;
-  PublicKey public_key;
+  PrivateKey recovered_private_key;
+  PublicKey recovered_public_key;
   std::istringstream iss1(encoded);
   boost::archive::text_iarchive input_archive1(iss1);
-  input_archive1 >> public_key >> private_key;
-  EXPECT_FALSE(ValidateKey(public_key));
-  EXPECT_FALSE(ValidateKey(private_key));
+  input_archive1 >> recovered_public_key >> recovered_private_key;
+  EXPECT_FALSE(ValidateKey(recovered_public_key));
+  EXPECT_FALSE(ValidateKey(recovered_private_key));
 
   try {
-    input_archive1 >> private_key >> public_key;
+    input_archive1 >> recovered_private_key >> recovered_public_key;
   }
   catch(const boost::archive::archive_exception &e) {
     EXPECT_EQ(boost::archive::archive_exception::input_stream_error, e.code);
-    EXPECT_FALSE(ValidateKey(public_key));
-    EXPECT_FALSE(ValidateKey(private_key));
+    EXPECT_FALSE(ValidateKey(recovered_public_key));
+    EXPECT_FALSE(ValidateKey(recovered_private_key));
   }
 
   try {
     std::istringstream iss2(encoded);
     boost::archive::text_iarchive input_archive2(iss2);
-    input_archive2 >> private_key >> public_key;
+    input_archive2 >> recovered_private_key >> recovered_public_key;
   }
   catch(const std::exception &e) {
     FAIL() << e.what();
   }
-  EXPECT_TRUE(ValidateKey(public_key));
-  EXPECT_TRUE(ValidateKey(private_key));
+  EXPECT_TRUE(ValidateKey(recovered_public_key));
+  EXPECT_TRUE(ValidateKey(recovered_private_key));
 
-  EXPECT_TRUE(CheckRoundtrip(public_key, keys_.private_key));
-  EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
+  EXPECT_TRUE(CheckRoundtrip(recovered_public_key, kOriginalPrivateKey));
+  EXPECT_TRUE(CheckRoundtrip(recovered_public_key, recovered_private_key));
 }
 
 }  // namespace test
