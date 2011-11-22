@@ -35,7 +35,7 @@ enum CommonReturnCode {
   kRSAEncryptError = -101000,
   kRSADecryptError = -101001,
   kRSASigningError = -101010,
-  kRSAInvalidsignature = -101011,
+  kRSAInvalidSignature = -101011,
   kRSASignatureEmpty = -101100
 };
 

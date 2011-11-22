@@ -41,6 +41,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/function.hpp"
+
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/version.h"
 #if MAIDSAFE_COMMON_VERSION != 1004
 #  error This API is not compatible with the installed library.\
@@ -48,6 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 namespace maidsafe {
+
 namespace rsa {
 
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
@@ -58,60 +61,118 @@ typedef std::function<void(const std::string&, const std::string&)>
 
 struct Keys {
  public:
-  enum { KeySize = 4096 };
-  Keys() : identity(), priv_key(), pub_key(), validation_token() {}
+  enum { kKeySize = 4096 };
+  Keys() : identity(), private_key(), public_key(), validation_token() {}
   Identity identity;
-  PrivateKey priv_key;
-  PublicKey pub_key;
+  PrivateKey private_key;
+  PublicKey public_key;
   ValidationToken validation_token;  // certificate, additional signature etc.
 };
 
 int GenerateKeyPair(Keys *keypair);
 
-int Sign(const PlainText &data,
-          const PrivateKey &priv_key,
-          Signature *signature);
-
-int CheckSignature(const PlainText &plain_text,
-                   const Signature &signature,
-                   const PublicKey &pub_key);
-
 int Encrypt(const PlainText &plain_text,
-            const PublicKey &pub_key,
-              CipherText *result);
+            const PublicKey &public_key,
+            CipherText *result);
 
 int Decrypt(const CipherText &data,
-            const PrivateKey &priv_key,
+            const PrivateKey &private_key,
             PlainText *result);
 
-void EncodePrivateKey(const PrivateKey& key, std::string *priv_key);
+int Sign(const PlainText &data,
+         const PrivateKey &private_key,
+         Signature *signature);
 
-void EncodePublicKey(const PublicKey& key, std::string *pub_key);
+int CheckSignature(const PlainText &data,
+                   const Signature &signature,
+                   const PublicKey &public_key);
 
-void DecodePrivateKey(const std::string& priv_key, PrivateKey *key);
+void EncodePrivateKey(const PrivateKey &key, std::string *private_key);
 
-void DecodePublicKey(const std::string& pub_key, PublicKey *key);
+void EncodePublicKey(const PublicKey &key, std::string *public_key);
+
+void DecodePrivateKey(const std::string &private_key, PrivateKey *key);
+
+void DecodePublicKey(const std::string &public_key, PublicKey *key);
 
 // check decoded keys were the same as encoded and pub key not replaced
 bool CheckRoundtrip(const PublicKey &public_key,
-                    const PrivateKey &priv_key);
+                    const PrivateKey &private_key);
 
-bool ValidateKey(const PrivateKey &priv_key);
+bool ValidateKey(const PrivateKey &private_key);
 
-bool ValidateKey(const PublicKey &pub_key);
+bool ValidateKey(const PublicKey &public_key);
 
-void GetPublicKeyAndValidation(
-    const Identity &public_key_id,
-    GetPublicKeyAndValidationCallback callback);
+void GetPublicKeyAndValidation(const Identity &public_key_id,
+                               GetPublicKeyAndValidationCallback callback);
 
 bool Validate(const PlainText &plain_text,
               const Signature &signature,
               const PublicKey &public_key);
 
-bool MatchingPublicKeys(const PublicKey &pub_key_one,
-                        const PublicKey &pub_key_two);
+bool MatchingPublicKeys(const PublicKey &public_key1,
+                        const PublicKey &public_key2);
 
 }  // namespace rsa
+
 }  // namespace maidsafe
+
+
+namespace boost {
+
+namespace serialization {
+
+#ifdef __MSVC__
+#  pragma warning(disable: 4127)
+#endif
+template <typename Archive>
+void serialize(Archive &archive,                              // NOLINT (Fraser)
+               maidsafe::rsa::PrivateKey &private_key,
+               const unsigned int& /*version*/) {
+  try {
+    std::string encoded_private_key;
+    if (Archive::is_saving::value)
+      maidsafe::rsa::EncodePrivateKey(private_key, &encoded_private_key);
+    archive& boost::serialization::make_nvp("private_key", encoded_private_key);
+    if (Archive::is_loading::value) {
+        maidsafe::rsa::DecodePrivateKey(encoded_private_key, &private_key);
+    }
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed decoding: " << e.what();
+  }
+#ifdef __MSVC__
+#  pragma warning(default: 4127)
+#endif
+}
+
+#ifdef __MSVC__
+#  pragma warning(disable: 4127)
+#endif
+template <typename Archive>
+void serialize(Archive &archive,                              // NOLINT (Fraser)
+               maidsafe::rsa::PublicKey &public_key,
+               const unsigned int& /*version*/) {
+  try {
+    std::string encoded_public_key;
+    if (Archive::is_saving::value)
+      maidsafe::rsa::EncodePublicKey(public_key, &encoded_public_key);
+    archive& boost::serialization::make_nvp("public_key", encoded_public_key);
+    if (Archive::is_loading::value) {
+        maidsafe::rsa::DecodePublicKey(encoded_public_key, &public_key);
+    }
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed decoding: " << e.what();
+  }
+#ifdef __MSVC__
+#  pragma warning(default: 4127)
+#endif
+}
+
+}  // namespace serialization
+
+}  // namespace boost
+
 
 #endif  // MAIDSAFE_COMMON_RSA_H_
