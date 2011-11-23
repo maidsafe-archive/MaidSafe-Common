@@ -29,6 +29,7 @@ int FLAGS_ms_logging_user = 3;
 int FLAGS_ms_logging_benchmark = 3;
 
 int FLAGS_ms_logging_common = 3;
+int FLAGS_ms_logging_private = 3;
 int FLAGS_ms_logging_transport = 3;
 int FLAGS_ms_logging_encrypt = 3;
 int FLAGS_ms_logging_dht = 3;
