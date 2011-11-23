@@ -131,6 +131,12 @@ MESSAGE("=======================================================================
 ###################################################################################################
 FILE(GLOB SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.cc")
 FILE(GLOB HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.h")
+
+IF (APPLE)
+# Currently not supporting breakpad using OSX, so remove breakpad header and source
+LIST(REMOVE_ITEM SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.cc")
+LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.h")
+ENDIF()
 SET(ALL_FILES_COMMON_DIR ${SOURCE_FILES_COMMON_DIR} ${HEADER_FILES_COMMON_DIR})
 SOURCE_GROUP("common Source Files" FILES ${SOURCE_FILES_COMMON_DIR})
 SOURCE_GROUP("common Header Files" FILES ${HEADER_FILES_COMMON_DIR})

@@ -464,6 +464,9 @@ APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Glog_
 ###################################################################################################
 # Google Breakpad                                                                                 #
 ###################################################################################################
+
+# Currently not supporting breakpad using OSX
+IF (NOT APPLE)
 IF((${BUILD_TARGET} MATCHES "BREAKPAD") OR (${BUILD_TARGET} MATCHES "ALL"))
   MESSAGE("-- Building Google Breakpad Client")
   MESSAGE("     This may take a few minutes...")
@@ -557,7 +560,7 @@ APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Break
 APPEND_TO_EXPORT_FILE("                        IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE \"${Breakpad_LIBRARY_RELEASE_INSTALLED}\"")
 APPEND_TO_EXPORT_FILE("                        IMPORTED_LINK_INTERFACE_LIBRARIES_DEBUG \"${Breakpad_LIBRARY_DEBUG_INSTALLED}\")\n")
 
-
+ENDIF()
 
 UNSET(BUILD_TARGET CACHE)
 
