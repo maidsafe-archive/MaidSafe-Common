@@ -176,6 +176,7 @@ ENDIF()
 IF(NOT ALL_REPOSITORIES)
   SET(ALL_REPOSITORIES
         MaidSafe-Common
+        MaidSafe-Private
         MaidSafe-Transport
         MaidSafe-Encrypt
         MaidSafe-DHT
@@ -191,6 +192,7 @@ IF(NOT ALL_REPOSITORIES)
         MaidSafe-Breakpad
 #        Deduplicator-Gauge
 #        Documents
+        Simulation
 #        Minesweep
         AWS-Transporter
         )
@@ -202,9 +204,10 @@ SET(NON_INSTALL_REPOSITORIES
       SigmoidCore
       SigmoidPro
       MaidSafe-Breakpad
-#        Deduplicator-Gauge
-#        Documents
-#        Minesweep
+#      Deduplicator-Gauge
+#      Documents
+      Simulation
+#      Minesweep
       )
 
 
