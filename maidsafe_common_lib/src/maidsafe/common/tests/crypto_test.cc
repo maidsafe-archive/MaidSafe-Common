@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/return_codes.h"
 
 namespace fs = boost::filesystem;
 
@@ -64,27 +65,37 @@ TEST(CryptoTest, BEH_Obfuscation) {
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 #pragma omp parallel
   {  // NOLINT (dirvine)
-    EXPECT_TRUE(SecurePassword("", "salt", 100).empty());
-    EXPECT_TRUE(SecurePassword("password", "", 100).empty());
-    EXPECT_TRUE(SecurePassword("password", "salt", 0).empty());
+    std::string password;
+    EXPECT_EQ(kGeneralError,
+              SecurePassword("", "salt", 100, &password));
+    EXPECT_EQ(kGeneralError,
+              SecurePassword("password", "", 100, &password));
+    EXPECT_EQ(kGeneralError,
+              SecurePassword("password", "salt", 0, &password));
     const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
     const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
     const uint32_t kKnownIterations1(5);
-    const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac29693"
-        "853dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e"
-        "4f162e0"));
-    EXPECT_EQ(kKnownDerived1, SecurePassword(kKnownPassword1,
-              kKnownSalt1, kKnownIterations1));
+    const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac2969385"
+    "3dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
+     password.clear();
+
+    EXPECT_EQ(kSuccess,
+              SecurePassword(kKnownPassword1,
+              kKnownSalt1, kKnownIterations1, &password));
+//    std::cout << EncodeToHex(password) << std::endl;
+    EXPECT_EQ(kKnownDerived1, password);
     const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974"
         "696573206d75737420636f6d6d756e69636174652077697468206f74686572206e"
         "2d656e74697469657320766961206e2d3120656e746974656568656568656573"));
     const std::string kKnownSalt2(DecodeFromHex("1234567878563412"));
     const uint32_t kKnownIterations2(500);
-    const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598b"
-        "b945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e05c3ffc14d7fd8"
-        "511c840"));
-    EXPECT_EQ(kKnownDerived2, SecurePassword(kKnownPassword2,
-              kKnownSalt2, kKnownIterations2));
+    const std::string kKnownDerived2(DecodeFromHex("4391697b647773d2ac29693853"
+    "dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0c1"
+    "999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e"
+    "05c3ffc14d7fd8511c840"));
+    EXPECT_EQ(kSuccess, SecurePassword(kKnownPassword2,
+              kKnownSalt2, kKnownIterations2, &password));
+    EXPECT_EQ(kKnownDerived2, password);
   }
 }
 
@@ -248,8 +259,8 @@ TEST(CryptoTest, BEH_Hash) {
 std::string CorruptData(const std::string &input) {
   // Replace a single char of input to a different random char.
   std::string output(input);
-  output.at(SRandomUint32() % input.size()) +=
-      (SRandomUint32() % 254) + 1;
+  output.at(RandomUint32() % input.size()) +=
+      (RandomUint32() % 254) + 1;
   return output;
 }
 
@@ -289,87 +300,6 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
     EXPECT_TRUE(SymmEncrypt(kUnencrypted, kKey, "").empty());
     EXPECT_TRUE(SymmDecrypt(kEncrypted, "", kIV).empty());
     EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
-  }
-}
-
-TEST(CryptoTest, BEH_AsymEncrypt) {
-  // Set up data
-#pragma omp parallel
-  {  // NOLINT (dirvine)
-    RsaKeyPair rsakp;
-    rsakp.GenerateKeys(4096);
-
-    const std::string kPublicKey(rsakp.public_key());
-    const std::string kPrivateKey(rsakp.private_key());
-    rsakp.GenerateKeys(4096);
-    const std::string kAnotherPrivateKey(rsakp.private_key());
-    EXPECT_NE(kPrivateKey, kAnotherPrivateKey);
-    const std::string kUnencrypted(SRandomString(470));
-    const std::string kBadPublicKey(
-        kPublicKey.substr(0, kPublicKey.size() - 1));
-    const std::string kBadPrivateKey(
-        kPrivateKey.substr(0, kPrivateKey.size() - 1));
-
-    // Encryption
-    std::string encrypted1(AsymEncrypt(kUnencrypted, kPublicKey));
-    EXPECT_FALSE(encrypted1.empty());
-    std::string encrypted2(AsymEncrypt(kUnencrypted, kPublicKey));
-    EXPECT_FALSE(encrypted2.empty());
-    EXPECT_NE(encrypted1, encrypted2);
-    EXPECT_TRUE(AsymEncrypt(kUnencrypted, kBadPublicKey).empty());
-    EXPECT_TRUE(AsymEncrypt(kUnencrypted, kPrivateKey).empty());
-
-    // Decryption
-    EXPECT_EQ(kUnencrypted, AsymDecrypt(encrypted1, kPrivateKey));
-    EXPECT_EQ(kUnencrypted, AsymDecrypt(encrypted2, kPrivateKey));
-    EXPECT_NE(kUnencrypted, AsymDecrypt(encrypted1, kAnotherPrivateKey));
-    EXPECT_NE(kUnencrypted, AsymDecrypt(encrypted1, kBadPrivateKey));
-    EXPECT_TRUE(AsymDecrypt(encrypted1, kPublicKey).empty());
-
-    // Check using empty string
-    EXPECT_TRUE(AsymDecrypt("", kPrivateKey).empty());
-
-    // Check using invalid input data size (> 470 chars)
-    const std::string kInvalidData(kUnencrypted + "A");
-    EXPECT_TRUE(AsymEncrypt(kInvalidData, kPublicKey).empty());
-  }
-}
-
-TEST(CryptoTest, BEH_AsymSign) {
-  // Set up data
-#pragma omp parallel
-  {  // NOLINT (dirvine)
-    RsaKeyPair rsakp;
-    rsakp.GenerateKeys(4096);
-    const std::string kPublicKey(rsakp.public_key());
-    const std::string kPrivateKey(rsakp.private_key());
-    rsakp.GenerateKeys(4096);
-    const std::string kAnotherPublicKey(rsakp.public_key());
-    const std::string kAnotherPrivateKey(rsakp.private_key());
-    EXPECT_NE(kPublicKey, kAnotherPublicKey);
-    EXPECT_NE(kPrivateKey, kAnotherPrivateKey);
-    const std::string kTestData(RandomString(99999));
-    const std::string kBadPublicKey(
-        kPublicKey.substr(0, kPublicKey.size() - 1));
-    const std::string kBadPrivateKey(
-        kPrivateKey.substr(0, kPrivateKey.size() - 1));
-
-    // Create signatures
-    std::string signature_string(AsymSign(kTestData, kPrivateKey));
-    EXPECT_FALSE(signature_string.empty());
-    std::string another_signature_string(AsymSign(kTestData,
-                                                  kAnotherPrivateKey));
-    EXPECT_FALSE(another_signature_string.empty());
-    EXPECT_NE(signature_string, another_signature_string);
-    EXPECT_TRUE(AsymSign(kTestData, kBadPrivateKey).empty());
-    EXPECT_TRUE(AsymSign(kTestData, kPublicKey).empty());
-
-    // Validate signatures
-    EXPECT_TRUE(AsymCheckSig(kTestData, signature_string, kPublicKey));
-    EXPECT_FALSE(AsymCheckSig(kTestData, another_signature_string, kPublicKey));
-    EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kAnotherPublicKey));
-    EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kBadPublicKey));
-    EXPECT_FALSE(AsymCheckSig(kTestData, signature_string, kPrivateKey));
   }
 }
 
@@ -435,56 +365,6 @@ TEST(CryptoTest, BEH_AESTigerDeterministic) {
   std::string answer2 ="f98bb1b55f14f3ec8612212919d47db91bb94c2e9329de2d";
   EXPECT_EQ(EncodeToHex(Hash<crypto::Tiger>(
     (crypto::Compress(test_data, 9)))), answer2);
-}
-
-TEST(RSAKeysTest, BEH_RsaKeyPair) {
-  // Check setters and getters
-#pragma omp parallel
-  {  // NOLINT (dirvine)
-    RsaKeyPair rsakp;
-    EXPECT_TRUE(rsakp.public_key().empty());
-    EXPECT_TRUE(rsakp.private_key().empty());
-    std::string public_key = SRandomString(100);
-    rsakp.set_public_key(public_key);
-    EXPECT_EQ(rsakp.public_key(), public_key);
-    std::string private_key = SRandomString(100);
-    rsakp.set_private_key(private_key);
-    EXPECT_EQ(rsakp.private_key(), private_key);
-
-    // Check key generation
-    rsakp.GenerateKeys(4096);
-    EXPECT_NE(rsakp.public_key(), public_key);
-    EXPECT_NE(rsakp.private_key(), private_key);
-    public_key = rsakp.public_key();
-    private_key = rsakp.private_key();
-    EXPECT_FALSE(public_key.empty());
-    EXPECT_FALSE(private_key.empty());
-
-    // Use the first keys to encrypt and decrypt data
-    const std::string kUnencrypted(RandomString(400));
-    std::string encrypted(AsymEncrypt(kUnencrypted, public_key));
-    EXPECT_FALSE(encrypted.empty());
-    EXPECT_NE(kUnencrypted, encrypted);
-    EXPECT_EQ(kUnencrypted, AsymDecrypt(encrypted, private_key));
-
-    // Generate new keys and check they cannot be interchanged with originals
-    rsakp.GenerateKeys(4096);
-    EXPECT_NE(rsakp.public_key(), public_key);
-    EXPECT_NE(rsakp.private_key(), private_key);
-    std::string another_encrypted(AsymEncrypt(kUnencrypted,
-                                              rsakp.public_key()));
-    EXPECT_FALSE(another_encrypted.empty());
-    EXPECT_NE(kUnencrypted, another_encrypted);
-    EXPECT_NE(encrypted, another_encrypted);
-    EXPECT_EQ(kUnencrypted, AsymDecrypt(another_encrypted,
-                                        rsakp.private_key()));
-    EXPECT_NE(kUnencrypted, AsymDecrypt(encrypted, rsakp.private_key()));
-    EXPECT_NE(kUnencrypted, AsymDecrypt(another_encrypted, private_key));
-
-    rsakp.ClearKeys();
-    EXPECT_TRUE(rsakp.public_key().empty());
-    EXPECT_TRUE(rsakp.private_key().empty());
-  }
 }
 
 }  // namespace test

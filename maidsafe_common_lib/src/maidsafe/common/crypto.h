@@ -80,6 +80,7 @@ typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
+
 const uint16_t AES256_KeySize = 32;  /**< size in bytes. */
 const uint16_t AES256_IVSize = 16;  /**< size in bytes. */
 const uint16_t kMaxCompressionLevel = 9;
@@ -103,10 +104,11 @@ std::string XOR(const std::string &first, const std::string &second);
  *  @param salt salt.
  *  @param pin PIN from which the number of iterations is derived.
  *  @param label additional data to provide distinct input data to PBKDF
- *  @return The derived key. */
-std::string SecurePassword(const std::string &password,
+ *  @return CommonReturnCode */
+int SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin,
+                           std::string *derived_password,
                            const std::string &label = kMaidSafeVersionLabel);
 
 /** Hash function operating on a string.
@@ -166,43 +168,6 @@ std::string SymmDecrypt(const std::string &input,
                         const std::string &key,
                         const std::string &initialisation_vector);
 
-/** Asymmetrically encrypt a string.
- *  Performs asymmetric encryption with a public key using RSA.  It returns an
- *  empty string if the public key is not valid.
- *  @param input string to be encrypted.
- *  @param public_key public key used to encrypt.
- *  @return the encrypted data or an empty string. */
-std::string AsymEncrypt(const std::string &input,
-                        const std::string &public_key);
-
-/** Asymmetrically decrypt a string.
- *  Performs asymmetric decryption with a private key using RSA.  It returns an
- *  empty string if the private key is not valid.
- *  @param input string to be decrypted.
- *  @param private_key private key used to encrypt.
- *  @return the decrypted data or an empty string. */
-std::string AsymDecrypt(const std::string &input,
-                        const std::string &private_key);
-
-/** Asymmetrically sign a string.
- *  Signs data with a private key.  It returns the 512 bit signature or an empty
- *  string if the private key is not valid.
- *  @param input string to be signed.
- *  @param private_key private key used to sign.
- *  @return the signature of the data or an empty string. */
-std::string AsymSign(const std::string &input, const std::string &private_key);
-
-/** Asymmetrically verify the signature of a string.
- *  Verifies the signature of data signed with a private key by using the
- *  corresponding public key.
- *  @param input_data the original data that was signed.
- *  @param input_signature signature to be verified.
- *  @param public_key public key used to verify.
- *  @return True if the signature was successfully validated, false
- *  otherwise. */
-bool AsymCheckSig(const std::string &input_data,
-                  const std::string &input_signature,
-                  const std::string &public_key);
 
 /** Compress a string.
  *  Compress a string using gzip.  Compression level must be between 0 and 9
@@ -218,61 +183,6 @@ std::string Compress(const std::string &input,
  *  @param input string to be uncompressed.
  *  @return the uncompressed data or an empty string. */
 std::string Uncompress(const std::string &input);
-
-
-/** Return a cryptographically-secure random number
- *  @param bit_count bit count.
- *  @return random number. */
-CryptoPP::Integer RandomNumber(size_t bit_count);
-
-
-/** Return a cryptographically-secure random block of bytes
- *  @param output byte array to be filled with random data.
- *  @param input size of data. */
-void RandomBlock(byte *output, size_t size);
-
-
-/** Object for managing an RSA key pair.
- *  Object that generates and holds an RSA key pair (private and public keys) of
- *  length given by the user.
- *  @class RsaKeyPair */
-class RsaKeyPair {
- public:
-
-  /** Default constructor. */
-  RsaKeyPair() : public_key_(), private_key_() {}
-
-  /** Getter.
-   *  @return The cryptographic public key. */
-  std::string public_key() const { return public_key_; }
-
-  /** Getter.
-   *  @return The cryptographic private key. */
-  std::string private_key() const { return private_key_; }
-
-  /** Setter.
-   *  @param publickey The cryptographic public key. */
-  void set_public_key(const std::string &publickey) { public_key_ = publickey; }
-
-  /** Setter.
-   *  @param privatekey The cryptographic private key. */
-  void set_private_key(const std::string &privatekey) {
-    private_key_ = privatekey;
-  }
-
-  /** Sets the keys as empty strings. */
-  void ClearKeys() {
-    public_key_.clear();
-    private_key_.clear();
-  }
-
-  /** Generates a pair of RSA keys of given size.
-   *  @param key_size size in bits of the keys. */
-  void GenerateKeys(const uint16_t &key_size);
- private:
-  std::string public_key_;
-  std::string private_key_;
-};
 
 }  // namespace crypto
 
