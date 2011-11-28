@@ -116,6 +116,8 @@ bool MatchingPublicKeys(const PublicKey &public_key1,
 
 }  // namespace rsa
 
+namespace asymm = rsa;
+
 }  // namespace maidsafe
 
 
