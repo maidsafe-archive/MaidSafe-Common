@@ -224,6 +224,7 @@ CryptoPP::StringSource source(data,
     string_sink[i].reset(new CryptoPP::StringSink(this_element)); // need to pass vector "out_strings[i]" in here !!!
 //     channel = WordToString<word32>(i);
 //     string_sink[i]->Put((byte *)channel.data(), 4)
+    // see http://www.cryptopp.com/wiki/ChannelSwitch
     channelswitch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
     out_strings->push_back(this_element);
   }
