@@ -367,6 +367,20 @@ TEST(CryptoTest, BEH_AESTigerDeterministic) {
     (crypto::Compress(test_data, 9)))), answer2);
 }
 
+TEST(CryptoTest, BEH_SecretSharing) {
+  std::string rand_string(RandomString(64));
+  std::string recovered;
+  uint8_t num_shares(20);
+  uint8_t threshold(10);
+  std::vector<std::string> data_parts;
+  SecretShareData(threshold, num_shares, rand_string, &data_parts);
+  for (int i = 0; i < num_shares; ++i)
+    std::cout << "part " << i << " : " << data_parts[i] << std::endl;
+  SecretRecoverData(threshold, data_parts, &recovered);
+  EXPECT_EQ(recovered, rand_string);
+
+}
+
 }  // namespace test
 
 }  // namespace crypto

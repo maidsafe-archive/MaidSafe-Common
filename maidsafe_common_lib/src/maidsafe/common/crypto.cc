@@ -41,6 +41,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/modes.h"
 #include "cryptopp/osrng.h"
 #include "cryptopp/pssr.h"
+#include  "cryptopp/ida.h"
 #include "cryptopp/pwdbased.h"
 #include "cryptopp/cryptlib.h"
 
@@ -57,6 +58,14 @@ namespace maidsafe {
 
 namespace crypto {
 
+namespace {
+
+CryptoPP::RandomNumberGenerator &rng() {
+  static CryptoPP::AutoSeededRandomPool random_number_generator;
+  return random_number_generator;
+}
+}  // unamed namespace
+  
 std::string XOR(const std::string &first, const std::string &second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
@@ -194,6 +203,51 @@ std::string Uncompress(const std::string &input) {
     return "";
   }
 }
+
+void SecretShareData(uint8_t threshold,
+                     uint8_t nShares,
+                     const std::string &data,
+                     std::vector<std::string> *out_strings) {
+CryptoPP::ChannelSwitch * channelswitch;
+CryptoPP::StringSource source(data,
+                            false,
+                            new CryptoPP::SecretSharing(rng(),
+                                            threshold,
+                                            nShares,
+                  channelswitch = new CryptoPP::ChannelSwitch ));
+  out_strings->resize(nShares);
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(nShares);
+  std::string channel;
+  
+  for (int i = 0; i < nShares; ++i) {
+    std::string this_element;
+    string_sink[i].reset(new CryptoPP::StringSink(this_element)); // need to pass vector "out_strings[i]" in here !!!
+//     channel = WordToString<word32>(i);
+//     string_sink[i]->Put((byte *)channel.data(), 4)
+    channelswitch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
+    out_strings->push_back(this_element);
+  }
+  source.PumpAll();
+}
+
+void SecretRecoverData(uint8_t threshold,
+                       const std::vector<std::string> &in_strings,
+                       std::string *data)
+{
+  if (in_strings.size() < threshold) {
+    *data = "";
+    return;
+  }
+  CryptoPP::SecretRecovery recovery(threshold, new CryptoPP::StringSink(*data));
+  
+  for (auto i = 0 ; i != threshold ; ++i) {
+    const byte *bit = reinterpret_cast<const byte *>(&in_strings.at(i));
+    recovery.Put(bit, in_strings.at(i).size());
+  }
+  recovery.MessageEnd();
+}
+
+
 
 }  // namespace crypto
 
