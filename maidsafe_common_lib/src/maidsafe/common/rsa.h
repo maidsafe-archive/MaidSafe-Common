@@ -57,8 +57,15 @@ namespace rsa {
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
 typedef CryptoPP::RSA::PublicKey PublicKey;
 typedef std::string ValidationToken, Identity, PlainText, Signature, CipherText;
-typedef std::function<void(const std::string&, const std::string&)>
-        GetPublicKeyAndValidationCallback;
+typedef std::function<void(PublicKey,
+                           ValidationToken)> GetPublicKeyAndValidationCallback;
+typedef std::function<void(Identity,
+                           GetPublicKeyAndValidationCallback)>
+    GetPublicKeyAndValidationFunctor;
+typedef std::function<bool(Identity,                          // NOLINT (Fraser)
+                           PublicKey,
+                           ValidationToken)> ValidatePublicKeyFunctor;
+typedef std::function<bool(PlainText, Signature, PublicKey)> ValidateFunctor;  // NOLINT (Fraser)
 
 struct Keys {
  public:
@@ -103,9 +110,6 @@ bool CheckRoundtrip(const PublicKey &public_key,
 bool ValidateKey(const PrivateKey &private_key);
 
 bool ValidateKey(const PublicKey &public_key);
-
-void GetPublicKeyAndValidation(const Identity &public_key_id,
-                               GetPublicKeyAndValidationCallback callback);
 
 bool Validate(const PlainText &plain_text,
               const Signature &signature,

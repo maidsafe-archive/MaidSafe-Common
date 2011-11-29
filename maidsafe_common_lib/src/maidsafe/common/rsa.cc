@@ -269,18 +269,10 @@ bool ValidateKey(const PublicKey &public_key) {
   return public_key.Validate(rng(), 2);
 }
 
-void GetPublicKeyAndValidation(const Identity &/*public_key_id*/,
-                               GetPublicKeyAndValidationCallback callback) {
-  callback("", "");
-}
-
 bool Validate(const PlainText &data,
               const Signature &signature,
               const PublicKey &public_key) {
-  if (0 == CheckSignature(data, signature, public_key))
-    return true;
-  else
-    return false;
+  return (kSuccess == CheckSignature(data, signature, public_key));
 }
 
 bool MatchingPublicKeys(const PublicKey &public_key1,
