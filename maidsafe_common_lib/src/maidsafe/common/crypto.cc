@@ -204,8 +204,8 @@ std::string Uncompress(const std::string &input) {
   }
 }
 
-void SecretShareData(uint8_t threshold,
-                     uint8_t nShares,
+void SecretShareData(uint8_t &threshold,
+                     uint8_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings) {
 CryptoPP::ChannelSwitch * channelswitch;
@@ -220,32 +220,40 @@ CryptoPP::StringSource source(data,
   std::string channel;
   
   for (int i = 0; i < nShares; ++i) {
-    std::string this_element;
-    string_sink[i].reset(new CryptoPP::StringSink(this_element)); // need to pass vector "out_strings[i]" in here !!!
-//     channel = WordToString<word32>(i);
-//     string_sink[i]->Put((byte *)channel.data(), 4)
+    string_sink[i].reset(new CryptoPP::StringSink(out_strings->at(i))); 
+     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
+     string_sink[i]->Put((byte *)channel.data(), 4);
     // see http://www.cryptopp.com/wiki/ChannelSwitch
     channelswitch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
-    out_strings->push_back(this_element);
   }
   source.PumpAll();
 }
 
-void SecretRecoverData(uint8_t threshold,
+void SecretRecoverData(uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data)
 {
-  if (in_strings.size() < threshold) {
-    *data = "";
-    return;
-  }
+
   CryptoPP::SecretRecovery recovery(threshold, new CryptoPP::StringSink(*data));
-  
-  for (auto i = 0 ; i != threshold ; ++i) {
-    const byte *bit = reinterpret_cast<const byte *>(&in_strings.at(i));
-    recovery.Put(bit, in_strings.at(i).size());
+
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(threshold);
+  CryptoPP::SecByteBlock channel(4);
+  uint8_t size(in_strings.size());
+  uint8_t num_to_check = std::min(size, threshold);
+  for (auto i = 0 ; i < num_to_check ; ++i) {
+    string_sources[i].reset(new CryptoPP::StringSource(in_strings.at(i), false));
+    string_sources[i]->Pump(4);
+    string_sources[i]->Get(channel, 4);
+    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(recovery,
+                                      std::string((char *)channel.begin(), 4)));
   }
-  recovery.MessageEnd();
+    while (string_sources[0]->Pump(256))
+      for (auto i=1; i<num_to_check; i++)
+        string_sources[i]->Pump(256);
+
+  for (auto i=0; i<num_to_check; i++)
+    string_sources[i]->PumpAll();
+  
 }
 
 

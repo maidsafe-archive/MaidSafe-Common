@@ -184,12 +184,12 @@ std::string Compress(const std::string &input,
  *  @return the uncompressed data or an empty string. */
 std::string Uncompress(const std::string &input);
 
-void SecretRecoverData(uint8_t threshold,
+void SecretRecoverData(uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data);
 
-void SecretShareData(uint8_t threshold,
-                     uint8_t nShares,
+void SecretShareData(uint8_t &threshold,
+                     uint8_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings);
 

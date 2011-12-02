@@ -374,10 +374,15 @@ TEST(CryptoTest, BEH_SecretSharing) {
   uint8_t threshold(10);
   std::vector<std::string> data_parts;
   SecretShareData(threshold, num_shares, rand_string, &data_parts);
-  for (int i = 0; i < num_shares; ++i)
-    std::cout << "part " << i << " : " << data_parts[i] << std::endl;
   SecretRecoverData(threshold, data_parts, &recovered);
   EXPECT_EQ(recovered, rand_string);
+  uint8_t not_enough(9);
+  SecretRecoverData(not_enough, data_parts, &recovered);
+  EXPECT_NE(recovered, rand_string);
+  uint8_t too_many(100);
+  // TODO FIXME
+//   SecretRecoverData(too_many, data_parts, &recovered);
+//   EXPECT_EQ(recovered, rand_string);
 
 }
 
