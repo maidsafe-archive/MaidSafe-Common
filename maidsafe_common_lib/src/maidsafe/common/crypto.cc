@@ -222,7 +222,7 @@ CryptoPP::StringSource source(data,
   for (int i = 0; i < nShares; ++i) {
     string_sink[i].reset(new CryptoPP::StringSink(out_strings->at(i))); 
      channel = CryptoPP::WordToString<CryptoPP::word32>(i);
-     string_sink[i]->Put((byte *)channel.data(), 4);
+     string_sink[i]->Put(const_cast<byte *>(reinterpret_cast<const byte *>(channel.data())), 4);
     // see http://www.cryptopp.com/wiki/ChannelSwitch
     channelswitch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
   }
@@ -245,7 +245,7 @@ void SecretRecoverData(uint8_t &threshold,
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(recovery,
-                                      std::string((char *)channel.begin(), 4)));
+                                      std::string(reinterpret_cast<char *>(channel.begin()), 4)));
   }
     while (string_sources[0]->Pump(256))
       for (auto i=1; i<num_to_check; i++)
