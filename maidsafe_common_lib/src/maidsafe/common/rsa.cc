@@ -106,9 +106,15 @@ int Encrypt(const PlainText &data,
     return kInvalidPublicKey;
   }
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-  CryptoPP::StringSource(data, true,
-      new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-          new CryptoPP::StringSink(*result)));
+  try {
+    CryptoPP::StringSource(data, true,
+        new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
+            new CryptoPP::StringSink(*result)));
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed encryption: " << e.what();
+    return kRSAEncryptError;
+  }
   if (data == *result) {
     DLOG(ERROR) << "Failed encryption";
     return kRSAEncryptError;
