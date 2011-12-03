@@ -42,8 +42,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/integer.h"
-#include "cryptopp/pubkey.h"
-#include "cryptopp/rsa.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
 #include "cryptopp/aes.h"
@@ -54,6 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4505)
 #endif
 
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1004
@@ -106,10 +105,10 @@ std::string XOR(const std::string &first, const std::string &second);
  *  @param label additional data to provide distinct input data to PBKDF
  *  @return CommonReturnCode */
 int SecurePassword(const std::string &password,
-                           const std::string &salt,
-                           const uint32_t &pin,
-                           std::string *derived_password,
-                           const std::string &label = kMaidSafeVersionLabel);
+                   const std::string &salt,
+                   const uint32_t &pin,
+                   std::string *derived_password,
+                   const std::string &label = kMaidSafeVersionLabel);
 
 /** Hash function operating on a string.
  *  @tparam HashType type of hash function to use (e.g. SHA512)
@@ -183,6 +182,18 @@ std::string Compress(const std::string &input,
  *  @param input string to be uncompressed.
  *  @return the uncompressed data or an empty string. */
 std::string Uncompress(const std::string &input);
+
+
+/** Create symmetric key, encrypt data with it, asymmetrically encrypt both */
+int CombinedEncrypt(const std::string &input,
+                    const rsa::PublicKey &public_key,
+                    std::string *encrypted_data,
+                    std::string *encrypted_symm_key);
+
+int CombinedDecrypt(const std::string &encrypted_data,
+                    const std::string &encrypted_symm_key,
+                    const rsa::PrivateKey &private_key,
+                    std::string *decrypted_data);
 
 }  // namespace crypto
 
