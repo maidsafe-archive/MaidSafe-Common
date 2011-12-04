@@ -205,7 +205,6 @@ std::string Uncompress(const std::string &input) {
   }
 }
 
-<<<<<<< HEAD
 void SecretShareData(uint8_t &threshold,
                      uint8_t &nShares,
                      const std::string &data,
@@ -258,9 +257,6 @@ void SecretRecoverData(uint8_t &threshold,
   
 }
 
-
-
-=======
 int CombinedEncrypt(const std::string &input,
                     const rsa::PublicKey &public_key,
                     std::string *encrypted_data,
@@ -307,8 +303,6 @@ int CombinedDecrypt(const std::string &encrypted_data,
   return kSuccess;
 }
 
-
->>>>>>> origin/next
 }  // namespace crypto
 
 }  // namespace maidsafe
