@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include <memory>
 #include <algorithm>
+#include <vector>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -66,7 +67,7 @@ CryptoPP::RandomNumberGenerator &rng() {
   return random_number_generator;
 }
 }  // unamed namespace
-  
+
 std::string XOR(const std::string &first, const std::string &second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
@@ -205,8 +206,8 @@ std::string Uncompress(const std::string &input) {
   }
 }
 
-void SecretShareData(uint8_t &threshold,
-                     uint8_t &nShares,
+void SecretShareData(const uint8_t &threshold,
+                     const uint8_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings) {
 CryptoPP::ChannelSwitch * channelswitch;
@@ -215,13 +216,13 @@ CryptoPP::StringSource source(data,
                             new CryptoPP::SecretSharing(rng(),
                                             threshold,
                                             nShares,
-                  channelswitch = new CryptoPP::ChannelSwitch ));
+                  channelswitch = new CryptoPP::ChannelSwitch));
   out_strings->resize(nShares);
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(nShares);
   std::string channel;
-  
+
   for (int i = 0; i < nShares; ++i) {
-    string_sink[i].reset(new CryptoPP::StringSink(out_strings->at(i))); 
+    string_sink[i].reset(new CryptoPP::StringSink(out_strings->at(i)));
      channel = CryptoPP::WordToString<CryptoPP::word32>(i);
      string_sink[i]->Put(const_cast<byte *>(reinterpret_cast<const byte *>
                                                      (channel.data())), 4);
@@ -233,13 +234,12 @@ CryptoPP::StringSource source(data,
   source.PumpAll();
 }
 
-void SecretRecoverData(uint8_t &threshold,
+void SecretRecoverData(const uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
-                       std::string *data)
-{
+                       std::string *data) {
   uint8_t size(in_strings.size());
   uint8_t num_to_check = std::min(size, threshold);
-  
+
   CryptoPP::SecretRecovery recovery(num_to_check,
                                     new CryptoPP::StringSink(*data));
 
@@ -256,12 +256,11 @@ void SecretRecoverData(uint8_t &threshold,
                     std::string(reinterpret_cast<char *>(channel.begin()), 4)));
   }
     while (string_sources[0]->Pump(256))
-      for (auto i=1; i<num_to_check; i++)
+      for (auto i = 1; i < num_to_check; i++)
         string_sources[i]->Pump(256);
 
-  for (auto i=0; i<num_to_check; i++)
+  for (auto i = 0; i < num_to_check; i++)
     string_sources[i]->PumpAll();
-  
 }
 
 int CombinedEncrypt(const std::string &input,

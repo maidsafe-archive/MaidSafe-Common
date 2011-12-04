@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <string>
 #include <algorithm>
+#include <vector>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -184,12 +185,12 @@ std::string Compress(const std::string &input,
 std::string Uncompress(const std::string &input);
 
 
-void SecretRecoverData(uint8_t &threshold,
+void SecretRecoverData(const uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data);
 
-void SecretShareData(uint8_t &threshold,
-                     uint8_t &nShares,
+void SecretShareData(const uint8_t &threshold,
+                     const uint8_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings);
 
