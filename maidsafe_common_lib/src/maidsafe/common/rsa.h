@@ -34,6 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4702)
 #endif
+#include "cryptopp/channels.h"
+#include "cryptopp/ida.h"
 #include "cryptopp/rsa.h"
 #ifdef __MSVC__
 #  pragma warning(pop)
