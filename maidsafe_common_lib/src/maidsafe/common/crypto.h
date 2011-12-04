@@ -40,8 +40,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/filesystem/path.hpp"
 
+#include "cryptopp/channels.h"
 #include "cryptopp/files.h"
 #include "cryptopp/filters.h"
+#include "cryptopp/ida.h"
 #include "cryptopp/integer.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"

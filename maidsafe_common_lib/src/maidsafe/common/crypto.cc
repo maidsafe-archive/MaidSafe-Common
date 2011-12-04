@@ -210,13 +210,11 @@ void SecretShareData(const uint8_t &threshold,
                      const uint8_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings) {
-CryptoPP::ChannelSwitch * channelswitch;
-CryptoPP::StringSource source(data,
-                            false,
-                            new CryptoPP::SecretSharing(rng(),
-                                            threshold,
-                                            nShares,
-                  channelswitch = new CryptoPP::ChannelSwitch));
+CryptoPP::ChannelSwitch * channelswitch = new CryptoPP::ChannelSwitch;
+CryptoPP::StringSource source(
+    data,
+    false,
+    new CryptoPP::SecretSharing(rng(), threshold, nShares, channelswitch));
   out_strings->resize(nShares);
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(nShares);
   std::string channel;
@@ -237,7 +235,7 @@ CryptoPP::StringSource source(data,
 void SecretRecoverData(const uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data) {
-  uint8_t size(in_strings.size());
+  uint8_t size(static_cast<uint8_t>(in_strings.size()));
   uint8_t num_to_check = std::min(size, threshold);
 
   CryptoPP::SecretRecovery recovery(num_to_check,
