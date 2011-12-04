@@ -343,7 +343,7 @@ TEST(UtilsTest, BEH_Base32Substr) {
   EXPECT_EQ("mbnxw", Base32Substr("XYZ"));
   EXPECT_EQ("nftgg3dfn3vys", Base32Substr("abcdefgh"));
   EXPECT_EQ("nftgg3d..ys4mkpn", Base32Substr("abcdefghijk"));
-  EXPECT_EQ(16U, Base32Substr(RandomString(8 + RandomUint32() % 20)).size());
+  EXPECT_EQ(16U, Base32Substr(RandomString(16 + RandomUint32() % 20)).size());
 }
 
 TEST(UtilsTest, BEH_TimeFunctions) {
