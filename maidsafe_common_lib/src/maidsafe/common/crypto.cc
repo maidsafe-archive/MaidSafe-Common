@@ -223,9 +223,12 @@ CryptoPP::StringSource source(data,
   for (int i = 0; i < nShares; ++i) {
     string_sink[i].reset(new CryptoPP::StringSink(out_strings->at(i))); 
      channel = CryptoPP::WordToString<CryptoPP::word32>(i);
-     string_sink[i]->Put(const_cast<byte *>(reinterpret_cast<const byte *>(channel.data())), 4);
+     string_sink[i]->Put(const_cast<byte *>(reinterpret_cast<const byte *>
+                                                     (channel.data())), 4);
     // see http://www.cryptopp.com/wiki/ChannelSwitch
-    channelswitch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
+    channelswitch->AddRoute(channel,
+                            *string_sink[i],
+                            CryptoPP::DEFAULT_CHANNEL);
   }
   source.PumpAll();
 }
@@ -234,19 +237,23 @@ void SecretRecoverData(uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data)
 {
-
-  CryptoPP::SecretRecovery recovery(threshold, new CryptoPP::StringSink(*data));
-
-  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(threshold);
-  CryptoPP::SecByteBlock channel(4);
   uint8_t size(in_strings.size());
   uint8_t num_to_check = std::min(size, threshold);
+  
+  CryptoPP::SecretRecovery recovery(num_to_check,
+                                    new CryptoPP::StringSink(*data));
+
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSource>
+                              string_sources(num_to_check);
+  CryptoPP::SecByteBlock channel(4);
+
   for (auto i = 0 ; i < num_to_check ; ++i) {
-    string_sources[i].reset(new CryptoPP::StringSource(in_strings.at(i), false));
+    string_sources[i].reset(new CryptoPP::StringSource(in_strings.at(i),
+                                                       false));
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(recovery,
-                                      std::string(reinterpret_cast<char *>(channel.begin()), 4)));
+                    std::string(reinterpret_cast<char *>(channel.begin()), 4)));
   }
     while (string_sources[0]->Pump(256))
       for (auto i=1; i<num_to_check; i++)
@@ -294,7 +301,7 @@ int CombinedDecrypt(const std::string &encrypted_data,
 
   *decrypted_data = SymmDecrypt(encrypted_data,
                                 decrypted_symm_key.substr(0, AES256_KeySize),
-                                decrypted_symm_key.substr(AES256_IVSize));
+                                decrypted_symm_key.substr(AES256_KeySize));
   if (decrypted_data->empty()) {
     DLOG(ERROR) << "Failed symmetrically decrypting data";
     return kFailedSymmDecrypt;
