@@ -380,9 +380,8 @@ TEST(CryptoTest, BEH_SecretSharing) {
   SecretRecoverData(not_enough, data_parts, &recovered);
   EXPECT_NE(recovered, rand_string);
   uint8_t too_many(100);
-  // TODO FIXME
-//   SecretRecoverData(too_many, data_parts, &recovered);
-//   EXPECT_EQ(recovered, rand_string);
+  SecretRecoverData(too_many, data_parts, &recovered);
+  EXPECT_EQ(recovered, rand_string);
 
 }
 
