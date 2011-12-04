@@ -106,9 +106,15 @@ int Encrypt(const PlainText &data,
     return kInvalidPublicKey;
   }
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-  CryptoPP::StringSource(data, true,
-      new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-          new CryptoPP::StringSink(*result)));
+  try {
+    CryptoPP::StringSource(data, true,
+        new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
+            new CryptoPP::StringSink(*result)));
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed encryption: " << e.what();
+    return kRSAEncryptError;
+  }
   if (data == *result) {
     DLOG(ERROR) << "Failed encryption";
     return kRSAEncryptError;
@@ -204,31 +210,55 @@ int CheckSignature(const PlainText &data,
 }
 
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
-  CryptoPP::ByteQueue queue;
-  key.DEREncodePrivateKey(queue);
-  EncodeKey(queue, private_key);
+  try {
+    CryptoPP::ByteQueue queue;
+    key.DEREncodePrivateKey(queue);
+    EncodeKey(queue, private_key);
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << e.what();
+    private_key->clear();
+  }
 }
 
 void EncodePublicKey(const PublicKey &key, std::string *public_key) {
-  CryptoPP::ByteQueue queue;
-  key.DEREncodePublicKey(queue);
-  EncodeKey(queue, public_key);
+  try {
+    CryptoPP::ByteQueue queue;
+    key.DEREncodePublicKey(queue);
+    EncodeKey(queue, public_key);
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << e.what();
+    public_key->clear();
+  }
 }
 
 void DecodePrivateKey(const std::string &private_key, PrivateKey *key) {
-  CryptoPP::ByteQueue queue;
-  DecodeKey(private_key, &queue);
-  key->BERDecodePrivateKey(queue,
-                            false /*paramsPresent*/,
-                            static_cast<size_t>(queue.MaxRetrievable()));
+  try {
+    CryptoPP::ByteQueue queue;
+    DecodeKey(private_key, &queue);
+    key->BERDecodePrivateKey(queue,
+                              false /*paramsPresent*/,
+                              static_cast<size_t>(queue.MaxRetrievable()));
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << e.what();
+    *key = PrivateKey();
+  }
 }
 
 void DecodePublicKey(const std::string &public_key, PublicKey *key) {
-  CryptoPP::ByteQueue queue;
-  DecodeKey(public_key, &queue);
-  key->BERDecodePublicKey(queue,
-                          false /*paramsPresent*/,
-                          static_cast<size_t>(queue.MaxRetrievable()));
+  try {
+    CryptoPP::ByteQueue queue;
+    DecodeKey(public_key, &queue);
+    key->BERDecodePublicKey(queue,
+                            false /*paramsPresent*/,
+                            static_cast<size_t>(queue.MaxRetrievable()));
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << e.what();
+    *key = PublicKey();
+  }
 }
 
 bool CheckRoundtrip(const PublicKey &public_key,
@@ -245,18 +275,10 @@ bool ValidateKey(const PublicKey &public_key) {
   return public_key.Validate(rng(), 2);
 }
 
-void GetPublicKeyAndValidation(const Identity &/*public_key_id*/,
-                               GetPublicKeyAndValidationCallback callback) {
-  callback("", "");
-}
-
 bool Validate(const PlainText &data,
               const Signature &signature,
               const PublicKey &public_key) {
-  if (0 == CheckSignature(data, signature, public_key))
-    return true;
-  else
-    return false;
+  return (kSuccess == CheckSignature(data, signature, public_key));
 }
 
 bool MatchingPublicKeys(const PublicKey &public_key1,

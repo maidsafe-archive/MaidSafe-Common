@@ -26,6 +26,8 @@ namespace maidsafe {
 enum CommonReturnCode {
   kSuccess = 0,
   kGeneralError = -100001,
+  kNullParameter = -100002,
+  kFailedSymmDecrypt = -100003,
 
   // RSA error codes
   kKeyGenerationError = -100100,
