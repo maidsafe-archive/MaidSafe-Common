@@ -26,13 +26,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <cstdlib>
+
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/lexical_cast.hpp"
+
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/return_codes.h"
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/return_codes.h"
 
 namespace fs = boost::filesystem;
 
@@ -365,6 +368,23 @@ TEST(CryptoTest, BEH_AESTigerDeterministic) {
   std::string answer2 ="f98bb1b55f14f3ec8612212919d47db91bb94c2e9329de2d";
   EXPECT_EQ(EncodeToHex(Hash<crypto::Tiger>(
     (crypto::Compress(test_data, 9)))), answer2);
+}
+
+TEST(CryptoTest, BEH_CombinedEncryptDecrypt) {
+  rsa::Keys k;
+  rsa::GenerateKeyPair(&k);
+  std::string input(RandomString(64)), encrypted_data, encrypted_symm_key;
+  ASSERT_EQ(kSuccess, CombinedEncrypt(input,
+                                      k.public_key,
+                                      &encrypted_data,
+                                      &encrypted_symm_key));
+
+  std::string reconstituted;
+  ASSERT_EQ(kSuccess, CombinedDecrypt(encrypted_data,
+                                      encrypted_symm_key,
+                                      k.private_key,
+                                      &reconstituted));
+  ASSERT_EQ(input, reconstituted);
 }
 
 }  // namespace test

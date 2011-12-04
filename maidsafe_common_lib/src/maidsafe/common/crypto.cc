@@ -233,7 +233,7 @@ int CombinedDecrypt(const std::string &encrypted_data,
 
   *decrypted_data = SymmDecrypt(encrypted_data,
                                 decrypted_symm_key.substr(0, AES256_KeySize),
-                                decrypted_symm_key.substr(AES256_IVSize));
+                                decrypted_symm_key.substr(AES256_KeySize));
   if (decrypted_data->empty()) {
     DLOG(ERROR) << "Failed symmetrically decrypting data";
     return kFailedSymmDecrypt;
