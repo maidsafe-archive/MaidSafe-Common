@@ -38,6 +38,27 @@
 #==============================================================================#
 
 
+FUNCTION(MS_ADD_EXECUTABLE EXE)
+  SET(FILES ${ARGV})
+  LIST(REMOVE_AT FILES 0)
+  SET(ALL_EXECUTABLES ${ALL_EXECUTABLES} ${EXE} PARENT_SCOPE)
+  ADD_EXECUTABLE(${EXE} ${FILES})
+  IF(NOT MSVC)
+    # Force renaming of exes to match standard CMake library renaming policy
+    SET_TARGET_PROPERTIES(${EXE} PROPERTIES
+                            DEBUG_OUTPUT_NAME ${EXE}-d
+                            RELWITHDEBINFO_OUTPUT_NAME ${EXE}-rwdi
+                            MINSIZEREL_OUTPUT_NAME ${EXE}-msr)
+  ENDIF()
+ENDFUNCTION()
+
+FUNCTION(INSTALL_HEADERS DESTINATION)
+  SET(FILES ${ARGV})
+  LIST(REMOVE_AT FILES 0 1)
+  INSTALL(CODE "FILE(GLOB_RECURSE INSTALLED \"\${CMAKE_INSTALL_PREFIX}/${DESTINATION}/*.h*\")\nIF(INSTALLED)\nFILE(REMOVE \${INSTALLED})\nENDIF()")
+  INSTALL(FILES ${FILES} DESTINATION ${DESTINATION})
+ENDFUNCTION()
+
 FUNCTION(ADD_COVERAGE_EXCLUDE REGEX)
   FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE \${CTEST_CUSTOM_COVERAGE_EXCLUDE} \"${REGEX}\")\n")
 ENDFUNCTION()
@@ -98,16 +119,6 @@ FUNCTION(REMOVE_OLD_PROTO_FILES)
         MESSAGE("-- Removed ${PB_FILE}")
       ENDIF()
     ENDFOREACH()
-  ENDIF()
-ENDFUNCTION()
-
-# Force renaming of exes to match standard CMake library renaming policy
-FUNCTION(RENAME_EXECUTABLE EXE)
-  IF(NOT MSVC)
-    SET_TARGET_PROPERTIES(${EXE} PROPERTIES
-                            DEBUG_OUTPUT_NAME ${EXE}-d
-                            RELWITHDEBINFO_OUTPUT_NAME ${EXE}-rwdi
-                            MINSIZEREL_OUTPUT_NAME ${EXE}-msr)
   ENDIF()
 ENDFUNCTION()
 
