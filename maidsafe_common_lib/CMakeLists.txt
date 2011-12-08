@@ -132,10 +132,10 @@ MESSAGE("=======================================================================
 FILE(GLOB SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.cc")
 FILE(GLOB HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.h")
 
-IF (APPLE)
-# Currently not supporting breakpad using OSX, so remove breakpad header and source
-LIST(REMOVE_ITEM SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.cc")
-LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.h")
+IF(APPLE)
+  # Currently not supporting breakpad using OSX, so remove breakpad header and source
+  LIST(REMOVE_ITEM SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.cc")
+  LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.h")
 ENDIF()
 SET(ALL_FILES_COMMON_DIR ${SOURCE_FILES_COMMON_DIR} ${HEADER_FILES_COMMON_DIR})
 SOURCE_GROUP("common Source Files" FILES ${SOURCE_FILES_COMMON_DIR})
@@ -161,9 +161,7 @@ FILE(GLOB TOOL_FILES "${PROJECT_SOURCE_DIR}/../tools/*")
 ###################################################################################################
 # All Platforms:  Add Test Exes and Create all maidsafe_dht libs                                  #
 ###################################################################################################
-ADD_LIBRARY(maidsafe_common_static STATIC ${ALL_FILES_COMMON_DIR})
-SET_TARGET_PROPERTIES(maidsafe_common_static PROPERTIES OUTPUT_NAME maidsafe_common)
-
+MS_ADD_STATIC_LIBRARY(maidsafe_common ${ALL_FILES_COMMON_DIR})
 MS_ADD_EXECUTABLE(TESTcommon ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 MS_ADD_EXECUTABLE(TESTboost ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
@@ -175,18 +173,7 @@ TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_te
 # Builds                                                                                          #
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
-IF(MSVC)
-  # C4996 'Function call with parameters that may be unsafe' caused by std::copy in crypto::XOR
-  # Disabled as per advice at https://svn.boost.org/trac/boost/wiki/Guidelines/WarningsGuidelines
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4996")
-  SET_TARGET_PROPERTIES(maidsafe_common_static PROPERTIES
-                          STATIC_LIBRARY_FLAGS_RELEASE "/LTCG")
-  SET_TARGET_PROPERTIES(TESTcommon TESTboost PROPERTIES
-                          LINK_FLAGS_RELEASE "/OPT:REF /OPT:ICF /LTCG /INCREMENTAL:NO ${LINKER_LIBS_DIRS_RELEASE}"
-                          LINK_FLAGS_DEBUG "${LINKER_LIBS_DIRS_DEBUG}"
-                          LINK_FLAGS_RELWITHDEBINFO "${LINKER_LIBS_DIRS_DEBUG} /LTCG /INCREMENTAL:NO"
-                          LINK_FLAGS_MINSIZEREL "${LINKER_LIBS_DIRS_DEBUG} /LTCG")
-ENDIF()
+
 
 ###################################################################################################
 # Tests                                                                                           #
@@ -271,13 +258,11 @@ ELSE()
 ENDIF()
 MESSAGE("\n\n================================================================================"\n)
 
+RENAME_OUTDATED_BUILT_EXES()
+
 FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON_VERSION
        REGEX "VERSION [0-9]+$")
 STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
-
-FOREACH(HEADER_FILE ${HEADER_FILES_COMMON_DIR})
-  CHECK_INSTALL_HEADER_HAS_VERSION_GUARD(${HEADER_FILE})
-ENDFOREACH()
 
 SET(EXPORT_NAME maidsafe_common)
 INSTALL(TARGETS maidsafe_common_static EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
