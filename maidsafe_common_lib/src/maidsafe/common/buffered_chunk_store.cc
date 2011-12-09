@@ -746,4 +746,23 @@ void BufferedChunkStore::RemoveDeletionMarks(const std::string &name) {
   }
 }
 
+bool BufferedChunkStore::DeleteAllMarked() {
+  DLOG(INFO) << "DeleteAllMarked - Deleting all chunks listed "
+             << "in removable_chunks_";
+  while (!removable_chunks_.empty()) {
+    auto it = removable_chunks_.begin();
+    if (!Delete(*it)) {
+      DLOG(ERROR) << "DeleteAllMarked - Could not delete "
+                  << Base32Substr(*it);
+      return false;
+    }
+    removable_chunks_.pop_front();
+  }
+  return true;
+}
+
+std::list<std::string> BufferedChunkStore::GetRemovableChunks() const {
+  return removable_chunks_;
+}
+
 }  // namespace maidsafe
