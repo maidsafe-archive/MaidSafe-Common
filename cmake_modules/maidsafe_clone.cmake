@@ -180,33 +180,33 @@ IF(NOT ALL_REPOSITORIES)
         MaidSafe-Transport
         MaidSafe-Encrypt
         MaidSafe-DHT
-        PKI
-        Passport
+        MaidSafe-PKI
+        MaidSafe-Passport
         MaidSafe-PD
-        File-Browser
         MaidSafe-Drive
         LifeStuff
         LifeStuff-GUI
         SigmoidCore
         SigmoidPro
         MaidSafe-Breakpad
-#        Deduplicator-Gauge
-#        Documents
+        MaidSafe-Documents
+        File-Browser
         Simulation
+#        Deduplicator-Gauge
 #        Minesweep
         AWS-Transporter
         )
 ENDIF()
 
 SET(NON_INSTALL_REPOSITORIES
-      File-Browser
       LifeStuff-GUI
       SigmoidCore
       SigmoidPro
       MaidSafe-Breakpad
-#      Deduplicator-Gauge
-#      Documents
+      MaidSafe-Documents
+      File-Browser
       Simulation
+#      Deduplicator-Gauge
 #      Minesweep
       )
 

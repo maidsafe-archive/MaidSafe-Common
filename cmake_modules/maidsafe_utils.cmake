@@ -38,128 +38,6 @@
 #==============================================================================#
 
 
-FUNCTION(MS_ADD_EXECUTABLE EXE)
-  SET(FILES ${ARGV})
-  LIST(REMOVE_AT FILES 0)
-  SET(ALL_EXECUTABLES ${ALL_EXECUTABLES} ${EXE} PARENT_SCOPE)
-  ADD_EXECUTABLE(${EXE} ${FILES})
-  IF(NOT MSVC)
-    # Force renaming of exes to match standard CMake library renaming policy
-    SET_TARGET_PROPERTIES(${EXE} PROPERTIES
-                            DEBUG_OUTPUT_NAME ${EXE}-d
-                            RELWITHDEBINFO_OUTPUT_NAME ${EXE}-rwdi
-                            MINSIZEREL_OUTPUT_NAME ${EXE}-msr)
-  ENDIF()
-ENDFUNCTION()
-
-FUNCTION(MS_ADD_STATIC_LIBRARY LIB_OUTPUT_NAME)
-  SET(FILES ${ARGV})
-  LIST(REMOVE_AT FILES 0)
-  STRING(TOLOWER ${LIB_OUTPUT_NAME} LIB_OUTPUT_NAME)
-  SET(LIB ${LIB_OUTPUT_NAME}_static)
-  SET(ALL_LIBRARIES ${ALL_LIBRARIES} ${LIB} PARENT_SCOPE)
-  ADD_LIBRARY(${LIB} STATIC ${FILES})
-  SET_TARGET_PROPERTIES(${LIB} PROPERTIES OUTPUT_NAME ${LIB_OUTPUT_NAME})
-ENDFUNCTION()
-
-# Ensure all headers for a given destination folder are passed in a single call,
-# as this function clears out all existing headers from the destination folder
-# (non-recursively).
-FUNCTION(INSTALL_HEADERS DESTINATION)
-  SET(FILES ${ARGV})
-  LIST(REMOVE_AT FILES 0 1)
-  FOREACH(HEADER ${FILES})
-    GET_FILENAME_COMPONENT(HEADER_NAME ${HEADER} NAME)
-    IF(NOT ${HEADER_NAME} STREQUAL "version.h")
-      FILE(STRINGS ${HEADER} VERSION_LINE REGEX "#if ${THIS_VERSION} != ${${THIS_VERSION}}")
-      IF("${VERSION_LINE}" STREQUAL "")
-        SET(ERROR_MESSAGE "\n\n${HEADER} is missing the version guard block.\n")
-        SET(ERROR_MESSAGE "${ERROR_MESSAGE}Ensure the following code is included in the file:\n\n")
-        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#include \"${THIS_VERSION_FILE}\"\n")
-        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#if ${THIS_VERSION} != ${${THIS_VERSION}}\n")
-        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#  error This API is not compatible with the installed library.\\\n")
-        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t    Please update the ${EXPORT_NAME} library.\n")
-        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#endif\n\n\n")
-        MESSAGE(FATAL_ERROR ${ERROR_MESSAGE})
-      ENDIF()
-    ENDIF()
-  ENDFOREACH()
-  INSTALL(CODE "FILE(GLOB INSTALLED \"\${CMAKE_INSTALL_PREFIX}/${DESTINATION}/*.h*\")\nIF(INSTALLED)\nFILE(REMOVE \${INSTALLED})\nENDIF()")
-  INSTALL(FILES ${FILES} DESTINATION ${DESTINATION})
-ENDFUNCTION()
-
-FUNCTION(ADD_COVERAGE_EXCLUDE REGEX)
-  FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE \${CTEST_CUSTOM_COVERAGE_EXCLUDE} \"${REGEX}\")\n")
-ENDFUNCTION()
-
-FUNCTION(ADD_MEMCHECK_IGNORE TEST_NAME)
-  FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_MEMCHECK_IGNORE \${CTEST_CUSTOM_MEMCHECK_IGNORE} \"${TEST_NAME}\")\n")
-ENDFUNCTION()
-
-# Searches for and removes old test directories that may have been left in %temp%
-FUNCTION(CLEANUP_TEMP_DIR)
-  IF(WIN32)
-    IF(NOT CLEAN_TEMP)
-      SET(CLEAN_TEMP "OFF" CACHE INTERNAL "Cleanup of temp test folders, options are: ONCE, OFF, ALWAYS" FORCE)
-    ENDIF(NOT CLEAN_TEMP)
-    EXECUTE_PROCESS(COMMAND CMD /C ECHO %TEMP% OUTPUT_VARIABLE temp_path OUTPUT_STRIP_TRAILING_WHITESPACE)
-    STRING(REPLACE "\\" "/" temp_path ${temp_path})
-    FILE(GLOB maidsafe_temp_dirs ${temp_path}/MaidSafe_Test*)
-    FILE(GLOB sigmoid_temp_dirs ${temp_path}/Sigmoid_Test*)
-    SET(temp_dirs ${maidsafe_temp_dirs} ${sigmoid_temp_dirs})
-    LIST(LENGTH temp_dirs temp_dir_count)
-    IF(NOT ${temp_dir_count} EQUAL 0)
-      MESSAGE("")
-      IF(CLEAN_TEMP MATCHES ONCE OR CLEAN_TEMP MATCHES ALWAYS)
-        MESSAGE("Cleaning up temporary test folders.\n")
-        FOREACH(temp_dir ${temp_dirs})
-          FILE(REMOVE_RECURSE ${temp_dir})
-          MESSAGE("-- Removed ${temp_dir}")
-        ENDFOREACH()
-      ELSE()
-        MESSAGE("The following temporary test folders could be cleaned up:\n")
-        FOREACH(temp_dir ${temp_dirs})
-          MESSAGE("-- Found ${temp_dir}")
-        ENDFOREACH()
-        MESSAGE("")
-        MESSAGE("To cleanup, run cmake ../.. -DCLEAN_TEMP=ONCE or cmake ../.. -DCLEAN_TEMP=ALWAYS")
-      ENDIF()
-      MESSAGE("================================================================================")
-    ENDIF()
-    IF(NOT CLEAN_TEMP MATCHES ALWAYS)
-      SET(CLEAN_TEMP "OFF" CACHE INTERNAL "Cleanup of temp test folders, options are: ONCE, OFF, ALWAYS" FORCE)
-    ENDIF()
-  ENDIF()
-ENDFUNCTION()
-
-# Searches for and removes old generated .pb.cc and .pb.h files in the source tree
-FUNCTION(REMOVE_OLD_PROTO_FILES)
-  FILE(GLOB_RECURSE PB_FILES RELATIVE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/*.pb.*)
-  LIST(LENGTH PB_FILES PB_FILES_COUNT)
-  IF(NOT ${PB_FILES_COUNT} EQUAL 0)
-    FOREACH(PB_FILE ${PB_FILES})
-      GET_FILENAME_COMPONENT(PB_FILE_PATH ${PB_FILE} PATH)
-      GET_FILENAME_COMPONENT(PB_FILE_WE ${PB_FILE} NAME_WE)
-      LIST(FIND PROTO_FILES "${PB_FILE_PATH}/${PB_FILE_WE}.proto" FOUND)
-      IF (FOUND EQUAL -1)
-        FILE(REMOVE ${PROJECT_SOURCE_DIR}/src/${PB_FILE})
-        STRING(REGEX REPLACE "[\\/.:]" "_" PROTO_CACHE_NAME "${PB_FILE_PATH}/${PB_FILE_WE}.proto")
-        UNSET(${PROTO_CACHE_NAME} CACHE)
-        MESSAGE("-- Removed ${PB_FILE}")
-      ENDIF()
-    ENDFOREACH()
-  ENDIF()
-ENDFUNCTION()
-
-FUNCTION(TEST_SUMMARY_OUTPUT)
-  LIST(LENGTH ALL_GTESTS GTEST_COUNT)
-  MESSAGE("\n${MAIDSAFE_TEST_TYPE_MESSAGE}.   ${GTEST_COUNT} Google Tests.\n")
-  MESSAGE("    To include all tests,                ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=ALL")
-  MESSAGE("    To include behavioural tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=BEH")
-  MESSAGE("    To include functional tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=FUNC")
-  MESSAGE("================================================================================")
-ENDFUNCTION()
-
 # Checks VERSION_H file for dependent MaidSafe library versions.  For a project
 # with e.g. "#define MAIDSAFE_COMMON_VERSION 010215" in its version.h then the following
 # variables are set:
@@ -218,13 +96,93 @@ FUNCTION(HANDLE_VERSIONS VERSION_H)
   ENDFOREACH()
 ENDFUNCTION()
 
-FUNCTION(ADD_VERSION_INFO_TO_INSTALLED_FILE)
-  INSTALL(CODE "STRING(TOLOWER \${CMAKE_INSTALL_CONFIG_NAME} CMAKE_INSTALL_CONFIG_NAME_LOWER)")
-  INSTALL(CODE "FIND_FILE(INSTALL_FILE ${EXPORT_NAME}-\${CMAKE_INSTALL_CONFIG_NAME_LOWER}.cmake PATHS \${CMAKE_INSTALL_PREFIX}/share/maidsafe)")
-  INSTALL(CODE "FILE(APPEND \${INSTALL_FILE} \"\\n\\n# Definition of this library's version\\n\")")
-  INSTALL(CODE "FILE(APPEND \${INSTALL_FILE} \"SET(${THIS_VERSION} ${${THIS_VERSION}})\\n\")")
+
+# Adds a static library with CMake Target name of "${LIB_OUTPUT_NAME}_static",
+# and with an output name of "${LIB_OUTPUT_NAME}".
+FUNCTION(MS_ADD_STATIC_LIBRARY LIB_OUTPUT_NAME)
+  SET(FILES ${ARGV})
+  LIST(REMOVE_AT FILES 0)
+  STRING(TOLOWER ${LIB_OUTPUT_NAME} LIB_OUTPUT_NAME)
+  SET(LIB ${LIB_OUTPUT_NAME}_static)
+  SET(ALL_LIBRARIES ${ALL_LIBRARIES} ${LIB} PARENT_SCOPE)
+  ADD_LIBRARY(${LIB} STATIC ${FILES})
+  SET_TARGET_PROPERTIES(${LIB} PROPERTIES OUTPUT_NAME ${LIB_OUTPUT_NAME} FOLDER "MaidSafe Libraries")
 ENDFUNCTION()
 
+
+# Adds an executable with CMake Target name of "${EXE}" and with an output name
+# with an appendix matching standard CMake library renaming policy.
+# ${FOLDER_NAME} defines the folder in which the executable appears if the
+# chosen IDE supports folders for projects.
+FUNCTION(MS_ADD_EXECUTABLE EXE FOLDER_NAME)
+  SET(FILES ${ARGV})
+  LIST(REMOVE_AT FILES 0 1)
+  SET(ALL_EXECUTABLES ${ALL_EXECUTABLES} ${EXE} PARENT_SCOPE)
+  ADD_EXECUTABLE(${EXE} ${FILES})
+  IF(NOT MSVC)
+    SET_TARGET_PROPERTIES(${EXE} PROPERTIES
+                            DEBUG_OUTPUT_NAME ${EXE}-d
+                            RELWITHDEBINFO_OUTPUT_NAME ${EXE}-rwdi
+                            MINSIZEREL_OUTPUT_NAME ${EXE}-msr)
+  ENDIF()
+  SET_TARGET_PROPERTIES(${EXE} PROPERTIES FOLDER ${FOLDER_NAME})
+ENDFUNCTION()
+
+
+FUNCTION(ADD_STYLE_TEST)
+  IF(PYTHONINTERP_FOUND)
+    SET(FILES ${ARGV})
+    LIST(REMOVE_AT FILES 0)
+    IF(UNIX)
+      ADD_TEST(STYLE_CHECK python ${MaidSafeCommon_TOOLS_DIR}/cpplint.py ${FILES})
+    ELSE()
+      STRING(REPLACE "/" "\\\\" STYLE_CHECK_SOURCE ${PROJECT_SOURCE_DIR})
+      ADD_TEST(STYLE_CHECK ${MaidSafeCommon_TOOLS_DIR}/run_cpplint.bat ${STYLE_CHECK_SOURCE} ${MaidSafeCommon_TOOLS_DIR}/cpplint.py)
+    ENDIF()
+    SET_PROPERTY(TEST STYLE_CHECK PROPERTY LABELS Functional CodingStyle)
+  ENDIF()
+ENDFUNCTION()
+
+
+FUNCTION(TEST_SUMMARY_OUTPUT)
+  LIST(LENGTH ALL_GTESTS GTEST_COUNT)
+  MESSAGE("\n${MAIDSAFE_TEST_TYPE_MESSAGE}.   ${GTEST_COUNT} Google Tests.\n")
+  MESSAGE("    To include all tests,                ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=ALL")
+  MESSAGE("    To include behavioural tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=BEH")
+  MESSAGE("    To include functional tests,        ${ERROR_MESSAGE_CMAKE_PATH} -DMAIDSAFE_TEST_TYPE=FUNC")
+  MESSAGE("================================================================================")
+ENDFUNCTION()
+
+
+FUNCTION(ADD_COVERAGE_EXCLUDE REGEX)
+  FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_COVERAGE_EXCLUDE \${CTEST_CUSTOM_COVERAGE_EXCLUDE} \"${REGEX}\")\n")
+ENDFUNCTION()
+
+
+FUNCTION(ADD_MEMCHECK_IGNORE TEST_NAME)
+  FILE(APPEND ${PROJECT_BINARY_DIR}/CTestCustom.cmake "SET(CTEST_CUSTOM_MEMCHECK_IGNORE \${CTEST_CUSTOM_MEMCHECK_IGNORE} \"${TEST_NAME}\")\n")
+ENDFUNCTION()
+
+
+FUNCTION(FINAL_MESSAGE)
+  MESSAGE("\nThe library and headers will be installed to:\n")
+  MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
+  MESSAGE("To include this project in any other MaidSafe project, use:\n")
+  MESSAGE("    -DMAIDSAFE_COMMON_INSTALL_DIR:PATH=\"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
+  MESSAGE("To build and install this project now, run:\n")
+  IF(MSVC)
+    MESSAGE("    cmake --build . --config Release --target install")
+    MESSAGE("    cmake --build . --config Debug --target install")
+  ELSE()
+    MESSAGE("    cmake --build . --target install")
+  ENDIF()
+  MESSAGE("\n\n================================================================================"\n)
+ENDFUNCTION()
+
+
+# Appends ".old" to executable files found (recursively) within the build tree
+# which don't match current target filenames.  This avoids accidentally running
+# outdated executables in the case of renaming a CMake Target.
 FUNCTION(RENAME_OUTDATED_BUILT_EXES)
   IF(MSVC)
     FILE(GLOB_RECURSE BUILT_EXES RELATIVE ${PROJECT_BINARY_DIR} "${PROJECT_BINARY_DIR}/*.exe")
@@ -243,17 +201,100 @@ FUNCTION(RENAME_OUTDATED_BUILT_EXES)
 ENDFUNCTION()
 
 
-FUNCTION(FINAL_MESSAGE)
-  MESSAGE("\nThe library and headers will be installed to:\n")
-  MESSAGE("    \"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
-  MESSAGE("To include this project in any other MaidSafe project, use:\n")
-  MESSAGE("    -DMAIDSAFE_COMMON_INSTALL_DIR:PATH=\"${CMAKE_INSTALL_PREFIX_MESSAGE}\"\n\n")
-  MESSAGE("To build and install this project now, run:\n")
-  IF(MSVC)
-    MESSAGE("    cmake --build . --config Release --target install")
-    MESSAGE("    cmake --build . --config Debug --target install")
-  ELSE()
-    MESSAGE("    cmake --build . --target install")
+FUNCTION(MS_INSTALL_LIBS)
+  INSTALL(TARGETS ${ARGV} EXPORT ${MS_PROJECT_NAME} ARCHIVE DESTINATION lib)
+ENDFUNCTION()
+
+
+# Ensure all headers for a given destination folder are passed in a single call,
+# as this function clears out all existing headers from the destination folder
+# (non-recursively).
+FUNCTION(MS_INSTALL_HEADERS HEADERS_DESTINATION)
+  SET(MS_HEADERS ${ARGV})
+  LIST(REMOVE_AT MS_HEADERS 0)
+  FOREACH(HEADER ${MS_HEADERS})
+    GET_FILENAME_COMPONENT(HEADER_NAME ${HEADER} NAME)
+    IF(NOT ${HEADER_NAME} STREQUAL "version.h")
+      FILE(STRINGS ${HEADER} VERSION_LINE REGEX "#if ${THIS_VERSION} != ${${THIS_VERSION}}")
+      IF("${VERSION_LINE}" STREQUAL "")
+        SET(ERROR_MESSAGE "\n\n${HEADER} is missing the version guard block.\n")
+        SET(ERROR_MESSAGE "${ERROR_MESSAGE}Ensure the following code is included in the file:\n\n")
+        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#include \"${THIS_VERSION_FILE}\"\n")
+        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#if ${THIS_VERSION} != ${${THIS_VERSION}}\n")
+        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#  error This API is not compatible with the installed library.\\\n")
+        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t    Please update the ${MS_PROJECT_NAME} library.\n")
+        SET(ERROR_MESSAGE "${ERROR_MESSAGE}\t#endif\n\n\n")
+        MESSAGE(FATAL_ERROR ${ERROR_MESSAGE})
+      ENDIF()
+    ENDIF()
+  ENDFOREACH()
+  INSTALL(CODE "FILE(GLOB INSTALLED \"\${CMAKE_INSTALL_PREFIX}/${DESTINATION}/*.h*\")\nIF(INSTALLED)\nFILE(REMOVE \${INSTALLED})\nENDIF()")
+  INSTALL(FILES ${MS_HEADERS} DESTINATION include/maidsafe/${HEADERS_DESTINATION})
+ENDFUNCTION()
+
+
+FUNCTION(MS_INSTALL_EXPORT)
+  INSTALL(EXPORT ${MS_PROJECT_NAME} DESTINATION share/maidsafe)
+  # Append version info to the export file.
+  INSTALL(CODE "STRING(TOLOWER \${CMAKE_INSTALL_CONFIG_NAME} CMAKE_INSTALL_CONFIG_NAME_LOWER)")
+  INSTALL(CODE "FIND_FILE(INSTALL_FILE ${MS_PROJECT_NAME}-\${CMAKE_INSTALL_CONFIG_NAME_LOWER}.cmake PATHS \${CMAKE_INSTALL_PREFIX}/share/maidsafe)")
+  INSTALL(CODE "FILE(APPEND \${INSTALL_FILE} \"\\n\\n# Definition of this library's version\\n\")")
+  INSTALL(CODE "FILE(APPEND \${INSTALL_FILE} \"SET(${THIS_VERSION} ${${THIS_VERSION}})\\n\")")
+ENDFUNCTION()
+
+
+# Searches for and removes old generated .pb.cc and .pb.h files in the source tree
+FUNCTION(REMOVE_OLD_PROTO_FILES)
+  FILE(GLOB_RECURSE PB_FILES RELATIVE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/*.pb.*)
+  LIST(LENGTH PB_FILES PB_FILES_COUNT)
+  IF(NOT ${PB_FILES_COUNT} EQUAL 0)
+    FOREACH(PB_FILE ${PB_FILES})
+      GET_FILENAME_COMPONENT(PB_FILE_PATH ${PB_FILE} PATH)
+      GET_FILENAME_COMPONENT(PB_FILE_WE ${PB_FILE} NAME_WE)
+      LIST(FIND PROTO_FILES "${PB_FILE_PATH}/${PB_FILE_WE}.proto" FOUND)
+      IF (FOUND EQUAL -1)
+        FILE(REMOVE ${PROJECT_SOURCE_DIR}/src/${PB_FILE})
+        STRING(REGEX REPLACE "[\\/.:]" "_" PROTO_CACHE_NAME "${PB_FILE_PATH}/${PB_FILE_WE}.proto")
+        UNSET(${PROTO_CACHE_NAME} CACHE)
+        MESSAGE("-- Removed ${PB_FILE}")
+      ENDIF()
+    ENDFOREACH()
   ENDIF()
-  MESSAGE("\n\n================================================================================"\n)
+ENDFUNCTION()
+
+
+# Searches for and removes old test directories that may have been left in %temp%
+FUNCTION(CLEANUP_TEMP_DIR)
+  IF(WIN32)
+    IF(NOT CLEAN_TEMP)
+      SET(CLEAN_TEMP "OFF" CACHE INTERNAL "Cleanup of temp test folders, options are: ONCE, OFF, ALWAYS" FORCE)
+    ENDIF(NOT CLEAN_TEMP)
+    EXECUTE_PROCESS(COMMAND CMD /C ECHO %TEMP% OUTPUT_VARIABLE temp_path OUTPUT_STRIP_TRAILING_WHITESPACE)
+    STRING(REPLACE "\\" "/" temp_path ${temp_path})
+    FILE(GLOB maidsafe_temp_dirs ${temp_path}/MaidSafe_Test*)
+    FILE(GLOB sigmoid_temp_dirs ${temp_path}/Sigmoid_Test*)
+    SET(temp_dirs ${maidsafe_temp_dirs} ${sigmoid_temp_dirs})
+    LIST(LENGTH temp_dirs temp_dir_count)
+    IF(NOT ${temp_dir_count} EQUAL 0)
+      MESSAGE("")
+      IF(CLEAN_TEMP MATCHES ONCE OR CLEAN_TEMP MATCHES ALWAYS)
+        MESSAGE("Cleaning up temporary test folders.\n")
+        FOREACH(temp_dir ${temp_dirs})
+          FILE(REMOVE_RECURSE ${temp_dir})
+          MESSAGE("-- Removed ${temp_dir}")
+        ENDFOREACH()
+      ELSE()
+        MESSAGE("The following temporary test folders could be cleaned up:\n")
+        FOREACH(temp_dir ${temp_dirs})
+          MESSAGE("-- Found ${temp_dir}")
+        ENDFOREACH()
+        MESSAGE("")
+        MESSAGE("To cleanup, run cmake ../.. -DCLEAN_TEMP=ONCE or cmake ../.. -DCLEAN_TEMP=ALWAYS")
+      ENDIF()
+      MESSAGE("================================================================================")
+    ENDIF()
+    IF(NOT CLEAN_TEMP MATCHES ALWAYS)
+      SET(CLEAN_TEMP "OFF" CACHE INTERNAL "Cleanup of temp test folders, options are: ONCE, OFF, ALWAYS" FORCE)
+    ENDIF()
+  ENDIF()
 ENDFUNCTION()

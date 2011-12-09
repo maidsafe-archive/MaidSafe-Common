@@ -35,7 +35,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
-#  pragma warning(disable: 4702)
+#  pragma warning(disable: 4355 4702)
 #endif
 
 #include "boost/filesystem/path.hpp"

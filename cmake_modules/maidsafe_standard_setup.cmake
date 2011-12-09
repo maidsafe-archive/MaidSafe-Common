@@ -37,6 +37,11 @@
 #                                                                              #
 #==============================================================================#
 
+IF(WIN32)
+  SET(ERROR_MESSAGE_CMAKE_PATH "   cmake ..\\..")
+ELSE()
+  SET(ERROR_MESSAGE_CMAKE_PATH "cmake ../../..")
+ENDIF()
 
 SET(MAIDSAFE_TEST_TYPE_MESSAGE "Tests included: All")
 IF(NOT MAIDSAFE_TEST_TYPE)
@@ -53,17 +58,6 @@ ENDIF()
 
 ENABLE_TESTING()
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
-
-IF(UNIX)
-  EXECUTE_PROCESS(COMMAND date +%a%d%m%y OUTPUT_VARIABLE pddate OUTPUT_STRIP_TRAILING_WHITESPACE)
-ELSE()
-  EXECUTE_PROCESS(COMMAND CMD /C DATE /T OUTPUT_VARIABLE pddate OUTPUT_STRIP_TRAILING_WHITESPACE)
-  STRING(REPLACE "/" "" pddate ${pddate})
-  STRING(SUBSTRING ${pddate} 0 4 pddateddmm)
-  STRING(SUBSTRING ${pddate} 6 2 pddateyy)
-  SET(pddate ${pddateddmm}${pddateyy})
-  STRING(REPLACE " " "_" pddate ${pddate})
-ENDIF()
 
 IF(APPLE)
   SET(CMAKE_OSX_SYSROOT "/")

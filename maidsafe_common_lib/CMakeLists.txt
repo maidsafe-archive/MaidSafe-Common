@@ -1,6 +1,6 @@
 #==============================================================================#
 #                                                                              #
-#  Copyright (c) 2011 maidsafe.net limited                                     #
+#  Copyright (c) 2011 MaidSafe.net limited                                     #
 #  All rights reserved.                                                        #
 #                                                                              #
 #  Redistribution and use in source and binary forms, with or without          #
@@ -34,36 +34,33 @@
 #==============================================================================#
 
 
+SET(MS_PROJECT_NAME maidsafe_common)
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.4 FATAL_ERROR)
 MESSAGE("================================================================================\n")
 
-SET(ERROR_MESSAGE_CMAKE_PATH "cmake ../../..")
 GET_FILENAME_COMPONENT(CMAKE_BUILD_TYPE_DIR ${CMAKE_BINARY_DIR} NAME)
 
-# Variable MSVC is not set until after PROJECT command below
+# Variable MSVC is not set until after "PROJECT" command below
 IF(CMAKE_BUILD_TYPE_DIR MATCHES "Win_MSVC")
   SET(CMAKE_BUILD_TYPE_DIR Release)
-  SET(ERROR_MESSAGE_CMAKE_PATH "   cmake ..\\..")
 ELSEIF(CMAKE_BUILD_TYPE_DIR MATCHES "kdev")
   SET(CMAKE_BUILD_TYPE_DIR Debug)
   SET(KDEV 1)
 ENDIF()
 
-SET(ERROR_MESSAGE "No generator previously specified.\nTo see a full list of generators, run:\n\t${ERROR_MESSAGE_CMAKE_PATH} --help\n")
 IF(NOT ${CMAKE_C_COMPILER_WORKS})
-  MESSAGE(FATAL_ERROR ${ERROR_MESSAGE})
+  MESSAGE(FATAL_ERROR "No generator previously specified.\nTo see a full list of generators, run:\n\tcmake --help\n")
 ENDIF()
 
+# This "PROJECT" command resets CMAKE_BUILD_TYPE, hence it's copied from CMAKE_BUILD_TYPE_DIR which is set above.
 IF((CMAKE_BUILD_TYPE_DIR MATCHES "Release") OR (DEFINED ${KDEV}))
-  SET(PROJECT_NAME maidsafe_common)
+  PROJECT(${MS_PROJECT_NAME})
 ELSE()
-  SET(PROJECT_NAME maidsafe_common_${CMAKE_BUILD_TYPE_DIR})
+  STRING(TOLOWER ${CMAKE_BUILD_TYPE_DIR} MS_PROJECT_NAME_APPENDIX)
+  PROJECT(${MS_PROJECT_NAME}_${MS_PROJECT_NAME_APPENDIX})
 ENDIF()
-OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
 
-
-# This call resets CMAKE_BUILD_TYPE, hence it's copied from CMAKE_BUILD_TYPE_DIR which is set above.
-PROJECT(${PROJECT_NAME})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, the build type is set by running cmake from the appropriate build subdirectory e.g. for a Debug build, \"cd build/Linux/Debug && cmake ../../..\"." FORCE)
 
 IF(MSVC)
@@ -159,18 +156,18 @@ FILE(GLOB MODULE_FILES "${PROJECT_SOURCE_DIR}/../cmake_modules/*")
 FILE(GLOB TOOL_FILES "${PROJECT_SOURCE_DIR}/../tools/*")
 
 ###################################################################################################
-# All Platforms:  Add Test Exes and Create all maidsafe_dht libs                                  #
+# Define MaidSafe libraries and executables                                                       #
 ###################################################################################################
-MS_ADD_STATIC_LIBRARY(maidsafe_common ${ALL_FILES_COMMON_DIR})
-MS_ADD_EXECUTABLE(TESTcommon ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
-MS_ADD_EXECUTABLE(TESTboost ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
+MS_ADD_STATIC_LIBRARY(${MS_PROJECT_NAME} ${ALL_FILES_COMMON_DIR})
+MS_ADD_EXECUTABLE(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
+MS_ADD_EXECUTABLE(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
 TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static glog_static boost_filesystem boost_serialization boost_system boost_thread ${SYS_LIB})
 TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
 TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
 
 ###################################################################################################
-# Builds                                                                                          #
+# Set compiler and linker flags                                                                   #
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
 
@@ -178,24 +175,7 @@ INCLUDE(maidsafe_standard_flags)
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
-IF(PYTHONINTERP_FOUND)
-  IF(UNIX)
-    FIND_FILE(LINT_CHECKER cpplint.py ${MaidSafeCommon_TOOLS_DIR})
-    IF(LINT_CHECKER)
-      ADD_TEST(STYLE_CHECK python ${LINT_CHECKER} ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
-      SET_PROPERTY(TEST STYLE_CHECK PROPERTY LABELS Functional Common CodingStyle)
-    ENDIF()
-  ELSE()
-    FIND_FILE(LINT_CHECKER run_cpplint.bat ${MaidSafeCommon_TOOLS_DIR})
-    FIND_FILE(LINT_CHECKER_PY cpplint.py ${MaidSafeCommon_TOOLS_DIR})
-    IF(LINT_CHECKER AND LINT_CHECKER_PY)
-      STRING(REPLACE "/" "\\\\" STYLE_CHECK_SOURCE ${PROJECT_SOURCE_DIR})
-      ADD_TEST(STYLE_CHECK ${LINT_CHECKER} ${STYLE_CHECK_SOURCE} ${LINT_CHECKER_PY})
-      SET_PROPERTY(TEST STYLE_CHECK PROPERTY LABELS Functional CodingStyle)
-    ENDIF()
-  ENDIF()
-ENDIF()
-
+ADD_STYLE_TEST(${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
 ADD_GTESTS(TESTcommon)
 ADD_GTESTS(TESTboost)
 INCLUDE(${CRYPTO_TEST_CMAKE})
@@ -264,14 +244,12 @@ FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON
        REGEX "VERSION [0-9]+$")
 STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
 
-SET(EXPORT_NAME maidsafe_common)
-INSTALL(TARGETS maidsafe_common_static EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-INSTALL_HEADERS(include/maidsafe/common ${HEADER_FILES_COMMON_DIR})
+MS_INSTALL_LIBS(maidsafe_common_static)
+MS_INSTALL_HEADERS(common ${HEADER_FILES_COMMON_DIR})
 INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
 INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
 INSTALL(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)
-INSTALL(EXPORT ${EXPORT_NAME} DESTINATION share/maidsafe)
-ADD_VERSION_INFO_TO_INSTALLED_FILE()
+MS_INSTALL_EXPORT()
 
 FIND_FILE(CONINUOUS_SCRIPT_CMAKE maidsafe_dashboard.cmake PATHS ${CMAKE_MODULE_PATH})
 IF(CONINUOUS_SCRIPT_CMAKE)
