@@ -1,6 +1,27 @@
-v0.10.04 (WIP)
+v0.10.05 (WIP)
 --------------
 
+
+v0.10.04
+--------
+* Added CMake functions for use in other projects.
+* Ensure random string is over 16 when testing for truncate
+* Added CombinedEncrypt and Decrypt methods for encrypting large strings.
+* Added missing try catch block to Encrypt.
+* Added typedefs for RSA functors.
+* Added try catch blocks to crypo key en/decoding.
+* Added namespace alias for rsa in rsa.h
+* Moved rsa key pair generator to common from passport
+* Removed breakpad support on OSX
+* Added boost serialize method to PublicKey and PrivateKey.
+* Minor update to CleanupTest output.
+* Added delete source_file option to Modify Func
+* Removed reference-counting as a ChunkStore option.
+* Added per-project logging severity levels.
+* Added debug method Base32Substr to utils.cc
+* Added Check for hashable Chunks in Modify and Included Modifications
+* Added Modify Operation to ChunkStores
+* Added chunk version interfaces
 
 v0.10.03
 --------
