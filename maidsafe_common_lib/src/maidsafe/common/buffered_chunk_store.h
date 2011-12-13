@@ -106,12 +106,15 @@ class BufferedChunkStore: public ChunkStore {
    * @param dir_depth directory depth
    * @return True if directory exists or could be created
    */
-  bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U) {
+  bool Init(const fs::path &storage_location,
+            std::list<std::string> removable_chunks = std::list<std::string>(),
+            unsigned int dir_depth = 5U) {
     if (!reinterpret_cast<FileChunkStore*>(
           internal_perm_chunk_store_.get())->Init(storage_location, dir_depth))
       return false;
     perm_capacity_ = internal_perm_chunk_store_->Capacity();
     perm_size_ = internal_perm_chunk_store_->Size();
+    removable_chunks_ = removable_chunks;
     initialised_ = true;
     return true;
   }
@@ -373,6 +376,10 @@ class BufferedChunkStore: public ChunkStore {
    * @param name Chunk name
    */
   void MarkForDeletion(const std::string &name);
+
+  bool DeleteAllMarked();
+
+  std::list<std::string> GetRemovableChunks() const;
 
  private:
   BufferedChunkStore(const BufferedChunkStore&);

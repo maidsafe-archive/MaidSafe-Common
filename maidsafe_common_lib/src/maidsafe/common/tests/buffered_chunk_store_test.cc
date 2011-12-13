@@ -659,6 +659,35 @@ TEST_F(BufferedChunkStoreTest, BEH_ModifyCacheChunks) {
   WaitForStore(100);
   WaitForCacheModify(99);
 }
+
+TEST_F(BufferedChunkStoreTest, BEH_DeleteAllMarked) {
+  std::string content(RandomString(100));
+  std::string name1(RandomString(64)), name2(RandomString(64));
+
+  for (int i = 0; i < 4; ++i)
+    EXPECT_TRUE(chunk_store_->Store(name1, content));
+  EXPECT_EQ(4, chunk_store_->Count(name1));
+  EXPECT_TRUE(chunk_store_->Store(name2, content));
+
+  for (int i = 0; i < 3; ++i)
+    chunk_store_->MarkForDeletion(name1);
+
+  std::list<std::string> delete_list = chunk_store_->GetRemovableChunks();
+  EXPECT_EQ(3, delete_list.size());
+  EXPECT_TRUE(chunk_store_->DeleteAllMarked());
+  EXPECT_TRUE(chunk_store_->PermanentHas(name1));
+  EXPECT_EQ(1, chunk_store_->Count(name1));
+  EXPECT_EQ(1, chunk_store_->Count(name2));
+
+  chunk_store_->MarkForDeletion(name1);
+  EXPECT_TRUE(chunk_store_->DeleteAllMarked());
+  EXPECT_FALSE(chunk_store_->PermanentHas(name1));
+  EXPECT_EQ(1, chunk_store_->Count(name2));
+
+  delete_list = chunk_store_->GetRemovableChunks();
+  EXPECT_EQ(0, delete_list.size());
+}
+
 }  // namespace test
 
 }  // namespace maidsafe
