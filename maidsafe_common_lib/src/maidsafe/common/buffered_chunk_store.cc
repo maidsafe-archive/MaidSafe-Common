@@ -202,13 +202,11 @@ bool BufferedChunkStore::Delete(const std::string &name) {
   if (!file_delete_result)
     DLOG(ERROR) << "Delete - Could not delete " << Base32Substr(name);
 
-  UpgradeLock upgrade_lock(cache_mutex_);
+  UniqueLock lock(cache_mutex_);
   auto it = std::find(cached_chunks_.begin(), cached_chunks_.end(), name);
-  if (it != cached_chunks_.end()) {
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
+  if (it != cached_chunks_.end())
     cached_chunks_.erase(it);
-    cache_chunk_store_.Delete(name);
-  }
+  cache_chunk_store_.Delete(name);
 
   return file_delete_result;
 }
@@ -363,13 +361,11 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
     return false;
   }
 
-  UpgradeLock upgrade_lock(cache_mutex_);
+  UniqueLock lock(cache_mutex_);
   auto it = std::find(cached_chunks_.begin(), cached_chunks_.end(), name);
-  if (it != cached_chunks_.end()) {
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
+  if (it != cached_chunks_.end())
     cached_chunks_.erase(it);
-    cache_chunk_store_.Delete(name);
-  }
+  cache_chunk_store_.Delete(name);
 
   return true;
 }
@@ -741,9 +737,43 @@ void BufferedChunkStore::DoMakeChunkPermanent(const std::string &name) {
 void BufferedChunkStore::RemoveDeletionMarks(const std::string &name) {
   auto it = removable_chunks_.begin();
   while ((it = std::find(it, removable_chunks_.end(), name)) !=
-         removable_chunks_.end()) {
-      it = removable_chunks_.erase(it);
+         removable_chunks_.end())
+    it = removable_chunks_.erase(it);
+}
+
+bool BufferedChunkStore::DeleteAllMarked() {
+  bool delete_result(true);
+  std::list<std::string> rem_chunks;
+  {
+    boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+    rem_chunks = removable_chunks_;
+    removable_chunks_.clear();
+    while (!pending_xfers_.empty())
+      xfer_cond_var_.wait(xfer_lock);
+    for (auto it = rem_chunks.begin(); it != rem_chunks.end(); ++it) {
+      if (!perm_chunk_store_.Delete(*it)) {
+        delete_result = false;
+        DLOG(ERROR) << "DeleteAllMarked - Could not delete "
+                    << Base32Substr(*it) << " from permanent store.";
+      }
+    }
+    perm_size_ = perm_chunk_store_.Size();
   }
+
+  UniqueLock lock(cache_mutex_);
+  for (auto it = rem_chunks.begin(); it != rem_chunks.end(); ++it) {
+    auto it2 = std::find(cached_chunks_.begin(), cached_chunks_.end(), *it);
+    if (it2 != cached_chunks_.end())
+      cached_chunks_.erase(it2);
+    cache_chunk_store_.Delete(*it);
+  }
+
+  return delete_result;
+}
+
+std::list<std::string> BufferedChunkStore::GetRemovableChunks() const {
+  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  return removable_chunks_;
 }
 
 }  // namespace maidsafe
