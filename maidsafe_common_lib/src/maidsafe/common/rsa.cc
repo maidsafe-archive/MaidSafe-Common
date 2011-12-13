@@ -97,14 +97,14 @@ int GenerateKeyPair(Keys *keypair) {
 int Encrypt(const PlainText &data,
             const PublicKey &public_key,
             CipherText *result) {
-//   if (data.empty()) {
-//     DLOG(ERROR) << "No data";
-//     return kDataEmpty;
-//   }
-//   if (!public_key.Validate(rng(), 0)) {
-//     DLOG(ERROR) << "Bad public key";
-//     return kInvalidPublicKey;
-//   }
+  if (data.empty()) {
+    DLOG(ERROR) << "No data";
+    return kDataEmpty;
+  }
+  if (!public_key.Validate(rng(), 0)) {
+    DLOG(ERROR) << "Bad public key";
+    return kInvalidPublicKey;
+  }
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   try {
     CryptoPP::StringSource(data, true,
@@ -179,35 +179,34 @@ int Sign(const std::string &data,
 int CheckSignature(const PlainText &data,
                    const Signature &signature,
                    const PublicKey &public_key) {
-//   if (!public_key.Validate(rng(), 0)) {
-//     DLOG(ERROR) << "Bad public key";
-//     return kInvalidPublicKey;
-//   }
-//   if (data.empty()) {
-//     DLOG(ERROR) << "No data";
-//     return kDataEmpty;
-//   }
-//   if (signature.empty()) {
-//     DLOG(ERROR) << "No signature";
-//     return kRSASignatureEmpty;
-//   }
-// 
-//   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier
-//       verifier(public_key);
-//   try {
-//     if (verifier.VerifyMessage(reinterpret_cast<const byte*>(data.c_str()),
-//                                data.size(),
-//                                reinterpret_cast<const byte*>(signature.c_str()),
-//                                signature.size()))
-//        return kSuccess;
-//      else
-//        return kRSAInvalidSignature;
-//   }
-//   catch(const CryptoPP::Exception &e) {
-//     DLOG(ERROR) << "Failed signature check: " << e.what();
-//     return kRSAInvalidSignature;
-//   }
-  return kSuccess;
+  if (!public_key.Validate(rng(), 0)) {
+    DLOG(ERROR) << "Bad public key";
+    return kInvalidPublicKey;
+  }
+  if (data.empty()) {
+    DLOG(ERROR) << "No data";
+    return kDataEmpty;
+  }
+  if (signature.empty()) {
+    DLOG(ERROR) << "No signature";
+    return kRSASignatureEmpty;
+  }
+
+  CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier
+      verifier(public_key);
+  try {
+    if (verifier.VerifyMessage(reinterpret_cast<const byte*>(data.c_str()),
+                               data.size(),
+                               reinterpret_cast<const byte*>(signature.c_str()),
+                               signature.size()))
+       return kSuccess;
+     else
+       return kRSAInvalidSignature;
+  }
+  catch(const CryptoPP::Exception &e) {
+    DLOG(ERROR) << "Failed signature check: " << e.what();
+    return kRSAInvalidSignature;
+  }
 }
 
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
@@ -279,8 +278,7 @@ bool ValidateKey(const PublicKey &public_key) {
 bool Validate(const PlainText &data,
               const Signature &signature,
               const PublicKey &public_key) {
-  return true;
-//   return (kSuccess == CheckSignature(data, signature, public_key));
+  return (kSuccess == CheckSignature(data, signature, public_key));
 }
 
 bool MatchingPublicKeys(const PublicKey &public_key1,
