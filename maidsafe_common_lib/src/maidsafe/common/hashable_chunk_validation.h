@@ -95,7 +95,6 @@ class HashableChunkValidation : public ChunkValidation {
    * @return Whether chunk is valid.
    */
   bool ValidChunk(const std::string &name, const std::string &content) {
-    return true;
     if (!Hashable(name))
       return ValidName(name);
 
@@ -109,7 +108,6 @@ class HashableChunkValidation : public ChunkValidation {
    * @return Whether chunk is valid.
    */
   bool ValidChunk(const std::string &name, const fs::path &path) {
-    return true;
     if (!Hashable(name))
       return ValidName(name);
 
