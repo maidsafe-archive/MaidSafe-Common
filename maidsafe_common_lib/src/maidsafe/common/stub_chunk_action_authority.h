@@ -33,10 +33,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_STUB_CHUNK_ACTION_AUTHORITY_H_
 #define MAIDSAFE_COMMON_STUB_CHUNK_ACTION_AUTHORITY_H_
 
-#include "maidsafe/common/chunk_action_authority.h"
-
 #include <string>
 
+#include "maidsafe/common/chunk_action_authority.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
