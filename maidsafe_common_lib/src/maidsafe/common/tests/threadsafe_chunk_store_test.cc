@@ -48,6 +48,7 @@ namespace test_tscs {
   const size_t kIterationSize = 13;
 }
 
+template<>
 void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path&,
