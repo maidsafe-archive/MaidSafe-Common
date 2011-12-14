@@ -26,15 +26,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
- * @file chunk_validation.h
- * @brief Declaration of ChunkValidation interface.
+ * @file chunk_action_authority.h
+ * @brief Declaration of ChunkActionAuthority interface.
  */
 
-#ifndef MAIDSAFE_COMMON_CHUNK_VALIDATION_H_
-#define MAIDSAFE_COMMON_CHUNK_VALIDATION_H_
+#ifndef MAIDSAFE_COMMON_CHUNK_ACTION_AUTHORITY_H_
+#define MAIDSAFE_COMMON_CHUNK_ACTION_AUTHORITY_H_
 
+#include <memory>
 #include <string>
 #include "boost/filesystem/path.hpp"
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
@@ -47,37 +49,47 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
+class ChunkStore;
+
+
 /**
- * Abstract class to validate chunks.
+ * Abstract class to validate chunks, and requested actions on chunks.
  *
  * Implementations will need to be aware of different chunk types and their
  * inherent validity.
  */
-class ChunkValidation {
+class ChunkActionAuthority {
  public:
-  ChunkValidation() {}
-  virtual ~ChunkValidation() {}
+  enum OperationType { kStore, kDelete, kUpdate, kGet, kHas };
+
+  ChunkActionAuthority() {}
+  virtual ~ChunkActionAuthority() {}
 
   /**
-   * Checks if a chunk's name is in a valid, known format.
+   * Checks if op_type is valid for the given chunk.
+   * @param op_type Ennumeration indicating the requested operation type
    * @param name Chunk name
-   * @return Whether chunk name is valid.
+   * @param content Chunk's content as string
+   * @param public_key Public key used to validate reauest against existing data
+   * @param chunk_store ChunkStore used to retrieve existing data if required
+   * @param new_content Chunk's new (possibly modified) content to replace /
+   * be stored under "name".  A NULL pointer may be passed here.
+   * @return kSuccess where the requested operation is valid.  Any other value
+   * indicates an invalid request.
    */
-  virtual bool ValidName(const std::string &name) = 0;
+  virtual int ValidOperation(const int &op_type,
+                             const std::string &name,
+                             const std::string &content,
+                             const asymm::PublicKey &public_key,
+                             std::shared_ptr<ChunkStore> chunk_store,
+                             std::string *new_content = NULL) const = 0;
 
   /**
-   * Checks if the hash of a chunk's content is supposed to match its name.
+   * Checks if a chunk is suitable for caching based on its type.
    * @param name Chunk name
-   * @return Whether chunk is hashable.
+   * @return Whether chunk is casheable.
    */
-  virtual bool Hashable(const std::string &name) = 0;
-
-  /**
-   * Checks if a chunk's content can be changed after it's been created.
-   * @param name Chunk name
-   * @return Whether chunk is modifiable.
-   */
-  virtual bool Modifiable(const std::string &name) = 0;
+  virtual bool Cacheable(const std::string &name) const = 0;
 
   /**
    * Checks if a chunk is valid.
@@ -86,7 +98,7 @@ class ChunkValidation {
    * @return Whether chunk is valid.
    */
   virtual bool ValidChunk(const std::string &name,
-                          const std::string &content) = 0;
+                          const std::string &content) const = 0;
 
   /**
    * Checks if a chunk is valid.
@@ -94,7 +106,8 @@ class ChunkValidation {
    * @param path Path to chunk's content
    * @return Whether chunk is valid.
    */
-  virtual bool ValidChunk(const std::string &name, const fs::path &path) = 0;
+  virtual bool ValidChunk(const std::string &name,
+                          const fs::path &path) const = 0;
 
   /**
    * Returns the version of a chunk's contents.
@@ -103,7 +116,7 @@ class ChunkValidation {
    * @return The chunk version.
    */
   virtual std::string Version(const std::string &name,
-                              const std::string &content) = 0;
+                              const std::string &content) const = 0;
 
   /**
    * Returns the version of a chunk's contents.
@@ -112,13 +125,13 @@ class ChunkValidation {
    * @return The chunk version.
    */
   virtual std::string Version(const std::string &name,
-                              const fs::path &path) = 0;
+                              const fs::path &path) const = 0;
 
  private:
-  ChunkValidation(const ChunkValidation&);
-  ChunkValidation& operator=(const ChunkValidation&);
+  ChunkActionAuthority(const ChunkActionAuthority&);
+  ChunkActionAuthority& operator=(const ChunkActionAuthority&);
 };
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_CHUNK_VALIDATION_H_
+#endif  // MAIDSAFE_COMMON_CHUNK_ACTION_AUTHORITY_H_

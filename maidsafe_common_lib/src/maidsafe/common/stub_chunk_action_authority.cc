@@ -25,24 +25,50 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
-#include "maidsafe/common/tests/chunk_store_api_test.h"
-#include "maidsafe/common/memory_chunk_store.h"
+#include "maidsafe/common/stub_chunk_action_authority.h"
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/return_codes.h"
+
 
 namespace maidsafe {
 
-namespace test {
-
-void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
-    std::shared_ptr<ChunkStore> *chunk_store,
-    const fs::path&,
-    boost::asio::io_service&) {
-  chunk_store->reset(new MemoryChunkStore(
-      std::shared_ptr<StubChunkActionAuthority>(new StubChunkActionAuthority)));
+int StubChunkActionAuthority::ValidOperation(
+    const int &/*op_type*/,
+    const std::string &/*name*/,
+    const std::string &content,
+    const asymm::PublicKey &/*public_key*/,
+    std::shared_ptr<ChunkStore> /*chunk_store*/,
+    std::string *new_content) const {
+  if (new_content)
+    *new_content = content;
+  return kSuccess;
 }
 
-INSTANTIATE_TYPED_TEST_CASE_P(Memory, ChunkStoreTest, MemoryChunkStore);
+bool StubChunkActionAuthority::Cacheable(const std::string &/*name*/) const {
+  return true;
+}
 
-}  // namespace test
+bool StubChunkActionAuthority::ValidChunk(
+    const std::string &/*name*/,
+    const std::string &/*content*/) const {
+  return true;
+}
+
+bool StubChunkActionAuthority::ValidChunk(const std::string &/*name*/,
+                                          const fs::path &/*path*/) const {
+  return true;
+}
+
+std::string StubChunkActionAuthority::Version(
+    const std::string &name,
+    const std::string &/*content*/) const {
+  return name;
+}
+
+std::string StubChunkActionAuthority::Version(const std::string &name,
+                                              const fs::path &/*path*/) const {
+  return name;
+}
+
 
 }  // namespace maidsafe

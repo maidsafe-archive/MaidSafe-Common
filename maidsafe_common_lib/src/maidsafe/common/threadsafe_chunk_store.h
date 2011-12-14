@@ -145,7 +145,7 @@ class ThreadsafeChunkStore : public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk using the ChunkValidation object.
+   * Validates a chunk using the ChunkActionAuthority object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
@@ -154,7 +154,7 @@ class ThreadsafeChunkStore : public ChunkStore {
   bool Validate(const std::string &name) const;
 
   /**
-   * Retrieves the chunk's content version using the ChunkValidation object.
+   * Retrieves the chunk's content version using the ChunkActionAuthority object
    * @param name Chunk name
    * @return The chunk version
    */

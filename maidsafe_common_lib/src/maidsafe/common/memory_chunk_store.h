@@ -52,7 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/chunk_store.h"
-#include "maidsafe/common/chunk_validation.h"
+#include "maidsafe/common/stub_chunk_action_authority.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
@@ -70,10 +70,11 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  explicit MemoryChunkStore(std::shared_ptr<ChunkValidation> chunk_validation)
-      : ChunkStore(),
-        chunk_validation_(chunk_validation),
-        chunks_() {}
+  explicit MemoryChunkStore(
+      std::shared_ptr<ChunkActionAuthority> chunk_action_authority)
+          : ChunkStore(),
+            chunk_action_authority_(chunk_action_authority),
+            chunks_() {}
   ~MemoryChunkStore() {}
 
   /**
@@ -154,7 +155,7 @@ class MemoryChunkStore: public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk using the ChunkValidation object.
+   * Validates a chunk using the ChunkActionAuthority object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
@@ -163,7 +164,7 @@ class MemoryChunkStore: public ChunkStore {
   bool Validate(const std::string &name) const;
 
   /**
-   * Retrieves the chunk's content version using the ChunkValidation object.
+   * Retrieves the chunk's content version using the ChunkActionAuthority object
    * @param name Chunk name
    * @return The chunk version
    */
@@ -214,7 +215,7 @@ class MemoryChunkStore: public ChunkStore {
   typedef std::pair<uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
-  std::shared_ptr<ChunkValidation> chunk_validation_;
+  std::shared_ptr<ChunkActionAuthority> chunk_action_authority_;
   std::map<std::string, ChunkEntry> chunks_;
 };
 

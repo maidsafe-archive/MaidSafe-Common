@@ -123,8 +123,8 @@ bool FileChunkStore::Store(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
-    return false;
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name))
+//    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name, true));
 
@@ -147,8 +147,8 @@ bool FileChunkStore::Store(const std::string &name,
     return true;
   } else {
     //  chunk already exists
-    if (!chunk_validation_->Hashable(name))
-      return false;
+//    if (!chunk_action_authority_->Cacheable(name))
+//      return false;
     fs::path old_path(chunk_file), new_path(chunk_file);
     old_path.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
@@ -169,8 +169,8 @@ bool FileChunkStore::Store(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
-    return false;
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name))
+//    return false;
 
   boost::system::error_code ec;
   fs::path chunk_file(ChunkNameToFilePath(name, true));
@@ -205,8 +205,8 @@ bool FileChunkStore::Store(const std::string &name,
     }
   } else {
     //  chunk already exists
-    if (!chunk_validation_->Hashable(name))
-      return false;
+//    if (!chunk_action_authority_->Cacheable(name))
+//      return false;
     fs::path old_path(chunk_file), new_path(chunk_file);
     old_path.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
@@ -273,11 +273,10 @@ bool FileChunkStore::Modify(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      chunk_validation_->Hashable(name) ||
-      !Has(name))
-    return false;
+//  if (!chunk_action_authority_ ||
+//      chunk_action_authority_->Cacheable(name) ||
+//      !Has(name))
+//    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
@@ -306,12 +305,11 @@ bool FileChunkStore::Modify(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      source_file_name.empty() ||
-      chunk_validation_->Hashable(name) ||
-      !Has(name))
-    return false;
+//  if (!chunk_action_authority_ ||
+//      source_file_name.empty() ||
+//      chunk_action_authority_->Cacheable(name) ||
+//      !Has(name))
+//    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
@@ -394,8 +392,8 @@ bool FileChunkStore::Has(const std::string &name) const {
 }
 
 bool FileChunkStore::Validate(const std::string &name) const {
-  if (!chunk_validation_)
-    return false;
+//  if (!chunk_action_authority_)
+//    return false;
 
   if (!IsChunkStoreInitialised())
     return false;
@@ -411,11 +409,11 @@ bool FileChunkStore::Validate(const std::string &name) const {
   chunk_file.replace_extension(
       "." + boost::lexical_cast<std::string>(ref_count));
 
-  return chunk_validation_->ValidChunk(name, chunk_file);
+  return chunk_action_authority_->ValidChunk(name, chunk_file);
 }
 
 std::string FileChunkStore::Version(const std::string &name) const {
-  if (!chunk_validation_)
+  if (!chunk_action_authority_)
     return "";
 
   if (!IsChunkStoreInitialised())
@@ -432,7 +430,7 @@ std::string FileChunkStore::Version(const std::string &name) const {
   chunk_file.replace_extension(
       "." + boost::lexical_cast<std::string>(ref_count));
 
-  return chunk_validation_->Version(name, chunk_file);
+  return chunk_action_authority_->Version(name, chunk_file);
 }
 
 uintmax_t FileChunkStore::Size(const std::string &name) const {

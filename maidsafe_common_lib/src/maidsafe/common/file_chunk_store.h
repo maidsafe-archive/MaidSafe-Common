@@ -52,7 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/chunk_store.h"
-#include "maidsafe/common/chunk_validation.h"
+#include "maidsafe/common/stub_chunk_action_authority.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
@@ -74,14 +74,15 @@ class FileChunkStoreTest_BEH_Methods_Test;
  */
 class FileChunkStore: public ChunkStore {
  public:
-  explicit FileChunkStore(std::shared_ptr<ChunkValidation> chunk_validation)
-      : ChunkStore(),
-        chunk_validation_(chunk_validation),
-        initialised_(false),
-        storage_location_(),
-        chunk_count_(0),
-        dir_depth_(0),
-        info_file_() {}
+  explicit FileChunkStore(
+      std::shared_ptr<ChunkActionAuthority> chunk_action_authority)
+          : ChunkStore(),
+            chunk_action_authority_(chunk_action_authority),
+            initialised_(false),
+            storage_location_(),
+            chunk_count_(0),
+            dir_depth_(0),
+            info_file_() {}
   ~FileChunkStore();
 
   /**
@@ -171,7 +172,7 @@ class FileChunkStore: public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk using the ChunkValidation object.
+   * Validates a chunk using the ChunkActionAuthority object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
@@ -180,7 +181,7 @@ class FileChunkStore: public ChunkStore {
   bool Validate(const std::string &name) const;
 
   /**
-   * Retrieves the chunk's content version using the ChunkValidation object.
+   * Retrieves the chunk's content version using the ChunkActionAuthority object
    * @param name Chunk name
    * @return The chunk version
    */
@@ -281,7 +282,7 @@ class FileChunkStore: public ChunkStore {
 
   uintmax_t GetNumFromString(const std::string &) const;
 
-  std::shared_ptr<ChunkValidation> chunk_validation_;
+  std::shared_ptr<ChunkActionAuthority> chunk_action_authority_;
   bool initialised_;
   fs::path storage_location_;
   uintmax_t chunk_count_;

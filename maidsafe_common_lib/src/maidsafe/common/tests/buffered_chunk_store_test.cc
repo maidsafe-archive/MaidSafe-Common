@@ -33,8 +33,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/buffered_chunk_store.h"
 #include "maidsafe/common/file_chunk_store.h"
-#include "maidsafe/common/hashable_chunk_validation.h"
 #include "maidsafe/common/memory_chunk_store.h"
+#include "maidsafe/common/stub_chunk_action_authority.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/tests/chunk_store_api_test.h"
@@ -43,14 +43,12 @@ namespace maidsafe {
 
 namespace test {
 
-template <> template <class ValidationType, class VersionType>
 void ChunkStoreTest<BufferedChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path &chunk_dir,
     boost::asio::io_service &asio_service) {
   chunk_store->reset(new BufferedChunkStore(
-      std::shared_ptr<ChunkValidation>(
-          new HashableChunkValidation<ValidationType, VersionType>),
+      std::shared_ptr<StubChunkActionAuthority>(new StubChunkActionAuthority),
       asio_service));
   if (!chunk_dir.empty())
     reinterpret_cast<BufferedChunkStore*>(chunk_store->get())->Init(chunk_dir);
@@ -69,9 +67,8 @@ class BufferedChunkStoreTest: public testing::Test {
         test_work_(),
         thread_group_(),
         test_thread_group_(),
-        chunk_validation_(
-            new HashableChunkValidation<crypto::SHA512, crypto::Tiger>),
-        chunk_store_(new BufferedChunkStore(chunk_validation_, asio_service_)),
+        chunk_action_authority_(new StubChunkActionAuthority),
+        chunk_store_(new BufferedChunkStore(chunk_action_authority_, asio_service_)),
         mutex_(),
         cond_var_(),
         store_counter_(0),
@@ -175,7 +172,7 @@ class BufferedChunkStoreTest: public testing::Test {
   boost::asio::io_service asio_service_, test_asio_service_;
   std::shared_ptr<boost::asio::io_service::work> work_, test_work_;
   boost::thread_group thread_group_, test_thread_group_;
-  std::shared_ptr<ChunkValidation> chunk_validation_;
+  std::shared_ptr<StubChunkActionAuthority> chunk_action_authority_;
   std::shared_ptr<BufferedChunkStore> chunk_store_;
   boost::mutex mutex_;
   boost::condition_variable cond_var_;

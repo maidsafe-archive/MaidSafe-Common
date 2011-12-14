@@ -79,23 +79,25 @@ namespace maidsafe {
  */
 class BufferedChunkStore: public ChunkStore {
  public:
-  BufferedChunkStore(std::shared_ptr<ChunkValidation> chunk_validation,
-                     boost::asio::io_service &asio_service)
-      : ChunkStore(),
-        cache_mutex_(),
-        xfer_mutex_(),
-        xfer_cond_var_(),
-        chunk_validation_(chunk_validation),
-        asio_service_(asio_service),
-        internal_perm_chunk_store_(new FileChunkStore(chunk_validation_)),
-        cache_chunk_store_(chunk_validation_),
-        perm_chunk_store_(internal_perm_chunk_store_),
-        cached_chunks_(),
-        removable_chunks_(),
-        pending_xfers_(),
-        perm_capacity_(0),
-        perm_size_(0),
-        initialised_(false) {}
+  BufferedChunkStore(
+      std::shared_ptr<ChunkActionAuthority> chunk_action_authority,
+      boost::asio::io_service &asio_service)
+          : ChunkStore(),
+            cache_mutex_(),
+            xfer_mutex_(),
+            xfer_cond_var_(),
+            chunk_action_authority_(chunk_action_authority),
+            asio_service_(asio_service),
+            internal_perm_chunk_store_(
+                new FileChunkStore(chunk_action_authority_)),
+            cache_chunk_store_(chunk_action_authority_),
+            perm_chunk_store_(internal_perm_chunk_store_),
+            cached_chunks_(),
+            removable_chunks_(),
+            pending_xfers_(),
+            perm_capacity_(0),
+            perm_size_(0),
+            initialised_(false) {}
   ~BufferedChunkStore();
 
   /**
@@ -243,7 +245,7 @@ class BufferedChunkStore: public ChunkStore {
   bool PermanentHas(const std::string &name) const;
 
   /**
-   * Validates a chunk using the ChunkValidation object.
+   * Validates a chunk using the ChunkActionAuthority object.
    *
    * In case a chunk turns out to be invalid, it's advisable to delete it.
    * @param name Chunk name
@@ -252,7 +254,7 @@ class BufferedChunkStore: public ChunkStore {
   bool Validate(const std::string &name) const;
 
   /**
-   * Retrieves the chunk's content version using the ChunkValidation object.
+   * Retrieves the chunk's content version using the ChunkActionAuthority object.
    * @param name Chunk name
    * @return The chunk version
    */
@@ -404,7 +406,7 @@ class BufferedChunkStore: public ChunkStore {
   mutable boost::shared_mutex cache_mutex_;
   mutable boost::mutex xfer_mutex_;
   mutable boost::condition_variable xfer_cond_var_;
-  std::shared_ptr<ChunkValidation> chunk_validation_;
+  std::shared_ptr<ChunkActionAuthority> chunk_action_authority_;
   boost::asio::io_service &asio_service_;
   std::shared_ptr<ChunkStore> internal_perm_chunk_store_;
   mutable MemoryChunkStore cache_chunk_store_;

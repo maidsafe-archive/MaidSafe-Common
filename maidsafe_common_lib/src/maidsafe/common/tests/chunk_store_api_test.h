@@ -74,12 +74,9 @@ class ChunkStoreTest: public testing::Test {
     fs::create_directories(chunk_dir_);
     fs::create_directories(alt_chunk_dir_);
     fs::create_directories(tiger_chunk_dir_);
-    InitChunkStore<crypto::SHA512, crypto::Tiger>(
-        &chunk_store_, chunk_dir_, asio_service_);
-    InitChunkStore<crypto::SHA512, crypto::Tiger>(
-        &alt_chunk_store_, alt_chunk_dir_, asio_service_);
-    InitChunkStore<crypto::Tiger, crypto::Tiger>(
-        &tiger_chunk_store_, tiger_chunk_dir_, asio_service_);
+    InitChunkStore(&chunk_store_, chunk_dir_, asio_service_);
+    InitChunkStore(&alt_chunk_store_, alt_chunk_dir_, asio_service_);
+    InitChunkStore(&tiger_chunk_store_, tiger_chunk_dir_, asio_service_);
   }
 
   void TearDown() {
@@ -88,7 +85,6 @@ class ChunkStoreTest: public testing::Test {
     thread_group_.join_all();
   }
 
-  template <class ValidationType, class VersionType>
   void InitChunkStore(std::shared_ptr<ChunkStore> *chunk_store,
                       const fs::path &chunk_dir,
                       boost::asio::io_service &asio_service);

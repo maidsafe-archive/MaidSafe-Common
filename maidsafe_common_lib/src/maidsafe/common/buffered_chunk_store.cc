@@ -213,15 +213,15 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const std::string &content) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "Modify - Invalid name passed: " << Base32Substr(name);
-    return false;
-  }
-
-  if (chunk_validation_->Hashable(name)) {
-    DLOG(ERROR) << "Modify - Hashable chunk passed: " << Base32Substr(name);
-    return false;
-  }
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
+//    DLOG(ERROR) << "Modify - Invalid name passed: " << Base32Substr(name);
+//    return false;
+//  }
+//
+//  if (chunk_action_authority_->Hashable(name)) {
+//    DLOG(ERROR) << "Modify - Hashable chunk passed: " << Base32Substr(name);
+//    return false;
+//  }
 
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   RemoveDeletionMarks(name);
@@ -561,14 +561,14 @@ void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
 
 bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const std::string &content) const {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << Base32Substr(name);
-    return false;
-  }
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
+//    DLOG(ERROR) << "DoCacheStore-Invalid name passed: " << Base32Substr(name);
+//    return false;
+//  }
 
   UpgradeLock upgrade_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return chunk_validation_->Hashable(name);
+    return chunk_action_authority_->Cacheable(name);
 
   // Check whether cache has capacity to store chunk
   if (content.size() > cache_chunk_store_.Capacity() &&
@@ -610,14 +610,14 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const uintmax_t &size,
                                       const fs::path &source_file_name,
                                       bool delete_source_file) const {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << Base32Substr(name);
-    return false;
-  }
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
+//    DLOG(ERROR) << "DoCacheStore-Invalid name passed: " << Base32Substr(name);
+//    return false;
+//  }
 
   UpgradeLock upgrade_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return chunk_validation_->Hashable(name);
+    return chunk_action_authority_->Cacheable(name);
 
   // Check whether cache has capacity to store chunk
   if (size > cache_chunk_store_.Capacity() &&

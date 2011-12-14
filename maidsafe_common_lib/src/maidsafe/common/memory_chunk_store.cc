@@ -54,17 +54,17 @@ bool MemoryChunkStore::Get(const std::string &name,
 
 bool MemoryChunkStore::Store(const std::string &name,
                              const std::string &content) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "Failed to validate chunk " << Base32Substr(name);
-    return false;
-  }
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
+//    DLOG(ERROR) << "Failed to validate chunk " << Base32Substr(name);
+//    return false;
+//  }
 
   auto it = chunks_.find(name);
   if (it != chunks_.end()) {
-    if (!chunk_validation_->Hashable(name)) {
-      DLOG(ERROR) << "Already stored chunk " << Base32Substr(name);
-      return false;
-    }
+//    if (!chunk_action_authority_->Cacheable(name)) {
+//      DLOG(ERROR) << "Already stored chunk " << Base32Substr(name);
+//      return false;
+//    }
     ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << Base32Substr(name) << " to "
                 << (*it).second.first;
@@ -92,10 +92,10 @@ bool MemoryChunkStore::Store(const std::string &name,
 bool MemoryChunkStore::Store(const std::string &name,
                              const fs::path &source_file_name,
                              bool delete_source_file) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "Failed to validate chunk " << Base32Substr(name);
-    return false;
-  }
+//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
+//    DLOG(ERROR) << "Failed to validate chunk " << Base32Substr(name);
+//    return false;
+//  }
 
   boost::system::error_code ec;
   auto it = chunks_.find(name);
@@ -133,9 +133,9 @@ bool MemoryChunkStore::Store(const std::string &name,
     chunks_[name] = ChunkEntry(1, content);
     IncreaseSize(chunk_size);
     DLOG(INFO) << "Stored chunk " << Base32Substr(name);
-  } else if (!chunk_validation_->Hashable(name)) {
-      DLOG(ERROR) << "Already stored chunk " << Base32Substr(name);
-      return false;
+//  } else if (!chunk_action_authority_->Cacheable(name)) {
+//      DLOG(ERROR) << "Already stored chunk " << Base32Substr(name);
+//      return false;
   } else {
     ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << Base32Substr(name) << " to "
@@ -178,10 +178,9 @@ bool MemoryChunkStore::Modify(const std::string &name,
   auto it = chunks_.find(name);
   if (it == chunks_.end())
     return false;
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      chunk_validation_->Hashable(name))
-    return false;
+//  if (!chunk_action_authority_ ||
+//      chunk_action_authority_->Cacheable(name))
+//    return false;
 
   std::string current_content((*it).second.second);
 
@@ -252,7 +251,7 @@ bool MemoryChunkStore::Has(const std::string &name) const {
 }
 
 bool MemoryChunkStore::Validate(const std::string &name) const {
-  if (!chunk_validation_) {
+  if (!chunk_action_authority_) {
     DLOG(ERROR) << "No validation available for chunk " << Base32Substr(name);
     return false;
   }
@@ -263,14 +262,14 @@ bool MemoryChunkStore::Validate(const std::string &name) const {
     return false;
   }
 
-  bool valid(chunk_validation_->ValidChunk(name, (*it).second.second));
+  bool valid(chunk_action_authority_->ValidChunk(name, (*it).second.second));
   DLOG(INFO) << "Validation result for chunk " << Base32Substr(name) << ": "
              << std::boolalpha << valid;
   return valid;
 }
 
 std::string MemoryChunkStore::Version(const std::string &name) const {
-  if (!chunk_validation_) {
+  if (!chunk_action_authority_) {
     DLOG(ERROR) << "No validation available for chunk " << Base32Substr(name);
     return "";
   }
@@ -281,7 +280,8 @@ std::string MemoryChunkStore::Version(const std::string &name) const {
     return "";
   }
 
-  std::string version(chunk_validation_->Version(name, (*it).second.second));
+  std::string version(
+      chunk_action_authority_->Version(name, (*it).second.second));
   DLOG(INFO) << "Version result for chunk " << Base32Substr(name) << ": "
              << Base32Substr(version);
   return version;
