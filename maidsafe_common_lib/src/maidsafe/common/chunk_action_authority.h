@@ -66,7 +66,7 @@ class ChunkActionAuthority {
   virtual ~ChunkActionAuthority() {}
 
   /**
-   * Checks if op_type is valid for the given chunk.
+   * Checks if op_type is valid for the given chunk content.
    * @param op_type Ennumeration indicating the requested operation type
    * @param name Chunk name
    * @param content Chunk's content as string
@@ -85,7 +85,7 @@ class ChunkActionAuthority {
                              std::string *new_content = NULL) const = 0;
 
   /**
-   * Checks if op_type is valid for the given chunk.
+   * Checks if op_type is valid for the given chunk held as a file.
    * @param op_type Ennumeration indicating the requested operation type
    * @param name Chunk name
    * @param path Path to chunk's content
@@ -96,12 +96,12 @@ class ChunkActionAuthority {
    * @return kSuccess where the requested operation is valid.  Any other value
    * indicates an invalid request.
    */
-  virtual int ValidOperation(const int &op_type,
-                             const std::string &name,
-                             const fs::path &path,
-                             const asymm::PublicKey &public_key,
-                             std::shared_ptr<ChunkStore> chunk_store,
-                             std::string *new_content = NULL) const = 0;
+  virtual int ValidOperationOnFile(const int &op_type,
+                                   const std::string &name,
+                                   const fs::path &path,
+                                   const asymm::PublicKey &public_key,
+                                   std::shared_ptr<ChunkStore> chunk_store,
+                                   std::string *new_content = NULL) const = 0;
 
   /**
   * Checks if a chunk's name is in a valid, known format.
@@ -132,8 +132,8 @@ class ChunkActionAuthority {
    * @param path Path to chunk's content
    * @return Whether chunk is valid.
    */
-  virtual bool ValidChunk(const std::string &name,
-                          const fs::path &path) const = 0;
+  virtual bool ValidChunkFile(const std::string &name,
+                              const fs::path &path) const = 0;
 
   /**
    * Returns the version of a chunk's contents.
@@ -150,8 +150,8 @@ class ChunkActionAuthority {
    * @param path Path to chunk's content
    * @return The chunk version.
    */
-  virtual std::string Version(const std::string &name,
-                              const fs::path &path) const = 0;
+  virtual std::string VersionFromFile(const std::string &name,
+                                      const fs::path &path) const = 0;
 
  private:
   ChunkActionAuthority(const ChunkActionAuthority&);

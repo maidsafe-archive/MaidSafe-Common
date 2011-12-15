@@ -42,7 +42,7 @@ int StubChunkActionAuthority::ValidOperation(
   return kSuccess;
 }
 
-int StubChunkActionAuthority::ValidOperation(
+int StubChunkActionAuthority::ValidOperationOnFile(
     const int &/*op_type*/,
     const std::string &/*name*/,
     const fs::path &/*path*/,
@@ -66,8 +66,8 @@ bool StubChunkActionAuthority::ValidChunk(
   return true;
 }
 
-bool StubChunkActionAuthority::ValidChunk(const std::string &/*name*/,
-                                          const fs::path &/*path*/) const {
+bool StubChunkActionAuthority::ValidChunkFile(const std::string &/*name*/,
+                                              const fs::path &/*path*/) const {
   return true;
 }
 
@@ -77,8 +77,9 @@ std::string StubChunkActionAuthority::Version(
   return name;
 }
 
-std::string StubChunkActionAuthority::Version(const std::string &name,
-                                              const fs::path &/*path*/) const {
+std::string StubChunkActionAuthority::VersionFromFile(
+    const std::string &name,
+    const fs::path &/*path*/) const {
   return name;
 }
 

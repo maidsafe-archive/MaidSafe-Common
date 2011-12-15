@@ -409,7 +409,7 @@ bool FileChunkStore::Validate(const std::string &name) const {
   chunk_file.replace_extension(
       "." + boost::lexical_cast<std::string>(ref_count));
 
-  return chunk_action_authority_->ValidChunk(name, chunk_file);
+  return chunk_action_authority_->ValidChunkFile(name, chunk_file);
 }
 
 std::string FileChunkStore::Version(const std::string &name) const {
@@ -430,7 +430,7 @@ std::string FileChunkStore::Version(const std::string &name) const {
   chunk_file.replace_extension(
       "." + boost::lexical_cast<std::string>(ref_count));
 
-  return chunk_action_authority_->Version(name, chunk_file);
+  return chunk_action_authority_->VersionFromFile(name, chunk_file);
 }
 
 uintmax_t FileChunkStore::Size(const std::string &name) const {
