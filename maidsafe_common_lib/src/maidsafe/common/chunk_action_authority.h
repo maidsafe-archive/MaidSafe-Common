@@ -85,6 +85,32 @@ class ChunkActionAuthority {
                              std::string *new_content = NULL) const = 0;
 
   /**
+   * Checks if op_type is valid for the given chunk.
+   * @param op_type Ennumeration indicating the requested operation type
+   * @param name Chunk name
+   * @param path Path to chunk's content
+   * @param public_key Public key used to validate reauest against existing data
+   * @param chunk_store ChunkStore used to retrieve existing data if required
+   * @param new_content Chunk's new (possibly modified) content to replace /
+   * be stored under "name".  A NULL pointer may be passed here.
+   * @return kSuccess where the requested operation is valid.  Any other value
+   * indicates an invalid request.
+   */
+  virtual int ValidOperation(const int &op_type,
+                             const std::string &name,
+                             const fs::path &path,
+                             const asymm::PublicKey &public_key,
+                             std::shared_ptr<ChunkStore> chunk_store,
+                             std::string *new_content = NULL) const = 0;
+
+  /**
+  * Checks if a chunk's name is in a valid, known format.
+  * @param name Chunk name
+  * @return Whether chunk name is valid.
+  */
+  virtual bool ValidName(const std::string &name) const = 0;
+
+  /**
    * Checks if a chunk is suitable for caching based on its type.
    * @param name Chunk name
    * @return Whether chunk is casheable.

@@ -35,13 +35,25 @@ namespace maidsafe {
 int StubChunkActionAuthority::ValidOperation(
     const int &/*op_type*/,
     const std::string &/*name*/,
-    const std::string &content,
+    const std::string &/*content*/,
     const asymm::PublicKey &/*public_key*/,
     std::shared_ptr<ChunkStore> /*chunk_store*/,
-    std::string *new_content) const {
-  if (new_content)
-    *new_content = content;
+    std::string * /*new_content*/) const {
   return kSuccess;
+}
+
+int StubChunkActionAuthority::ValidOperation(
+    const int &/*op_type*/,
+    const std::string &/*name*/,
+    const fs::path &/*path*/,
+    const asymm::PublicKey &/*public_key*/,
+    std::shared_ptr<ChunkStore> /*chunk_store*/,
+    std::string * /*new_content*/) const {
+  return kSuccess;
+}
+
+bool StubChunkActionAuthority::ValidName(const std::string &name) const {
+  return !name.empty();
 }
 
 bool StubChunkActionAuthority::Cacheable(const std::string &/*name*/) const {

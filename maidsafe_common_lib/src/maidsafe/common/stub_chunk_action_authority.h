@@ -56,6 +56,13 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
                              const asymm::PublicKey &public_key,
                              std::shared_ptr<ChunkStore> chunk_store,
                              std::string *new_content = NULL) const;
+  virtual int ValidOperation(const int &op_type,
+                             const std::string &name,
+                             const fs::path &path,
+                             const asymm::PublicKey &public_key,
+                             std::shared_ptr<ChunkStore> chunk_store,
+                             std::string *new_content = NULL) const;
+  virtual bool ValidName(const std::string &name) const;
   virtual bool Cacheable(const std::string &name) const;
   virtual bool ValidChunk(const std::string &name,
                           const std::string &content) const;
