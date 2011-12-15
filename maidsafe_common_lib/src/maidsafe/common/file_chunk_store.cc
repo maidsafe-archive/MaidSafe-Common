@@ -391,48 +391,6 @@ bool FileChunkStore::Has(const std::string &name) const {
   return GetChunkReferenceCount(ChunkNameToFilePath(name)) != 0;
 }
 
-bool FileChunkStore::Validate(const std::string &name) const {
-//  if (!chunk_action_authority_)
-//    return false;
-
-  if (!IsChunkStoreInitialised())
-    return false;
-
-  if (name.empty())
-    return false;
-
-  fs::path chunk_file(ChunkNameToFilePath(name));
-  uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-  if (ref_count == 0)
-    return false;
-
-  chunk_file.replace_extension(
-      "." + boost::lexical_cast<std::string>(ref_count));
-
-  return chunk_action_authority_->ValidChunkFile(name, chunk_file);
-}
-
-std::string FileChunkStore::Version(const std::string &name) const {
-  if (!chunk_action_authority_)
-    return "";
-
-  if (!IsChunkStoreInitialised())
-    return "";
-
-  if (name.empty())
-    return "";
-
-  fs::path chunk_file(ChunkNameToFilePath(name));
-  uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-  if (ref_count == 0)
-    return "";
-
-  chunk_file.replace_extension(
-      "." + boost::lexical_cast<std::string>(ref_count));
-
-  return chunk_action_authority_->VersionFromFile(name, chunk_file);
-}
-
 uintmax_t FileChunkStore::Size(const std::string &name) const {
   if (!IsChunkStoreInitialised())
     return 0;

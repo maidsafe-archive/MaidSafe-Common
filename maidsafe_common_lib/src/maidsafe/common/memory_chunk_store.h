@@ -70,10 +70,8 @@ namespace maidsafe {
  */
 class MemoryChunkStore: public ChunkStore {
  public:
-  explicit MemoryChunkStore(
-      std::shared_ptr<ChunkActionAuthority> chunk_action_authority)
+  explicit MemoryChunkStore()
           : ChunkStore(),
-            chunk_action_authority_(chunk_action_authority),
             chunks_() {}
   ~MemoryChunkStore() {}
 
@@ -155,22 +153,6 @@ class MemoryChunkStore: public ChunkStore {
   bool Has(const std::string &name) const;
 
   /**
-   * Validates a chunk using the ChunkActionAuthority object.
-   *
-   * In case a chunk turns out to be invalid, it's advisable to delete it.
-   * @param name Chunk name
-   * @return True if chunk valid
-   */
-  bool Validate(const std::string &name) const;
-
-  /**
-   * Retrieves the chunk's content version using the ChunkActionAuthority object
-   * @param name Chunk name
-   * @return The chunk version
-   */
-  std::string Version(const std::string &name) const;
-
-  /**
    * Retrieves the size of a chunk.
    * @param name Chunk name
    * @return Size in bytes
@@ -215,7 +197,6 @@ class MemoryChunkStore: public ChunkStore {
   typedef std::pair<uintmax_t, std::string> ChunkEntry;
   MemoryChunkStore(const MemoryChunkStore&);
   MemoryChunkStore& operator=(const MemoryChunkStore&);
-  std::shared_ptr<ChunkActionAuthority> chunk_action_authority_;
   std::map<std::string, ChunkEntry> chunks_;
 };
 

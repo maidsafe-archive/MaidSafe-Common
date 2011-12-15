@@ -74,10 +74,8 @@ class FileChunkStoreTest_BEH_Methods_Test;
  */
 class FileChunkStore: public ChunkStore {
  public:
-  explicit FileChunkStore(
-      std::shared_ptr<ChunkActionAuthority> chunk_action_authority)
+  explicit FileChunkStore()
           : ChunkStore(),
-            chunk_action_authority_(chunk_action_authority),
             initialised_(false),
             storage_location_(),
             chunk_count_(0),
@@ -170,22 +168,6 @@ class FileChunkStore: public ChunkStore {
    * @return True if chunk exists
    */
   bool Has(const std::string &name) const;
-
-  /**
-   * Validates a chunk using the ChunkActionAuthority object.
-   *
-   * In case a chunk turns out to be invalid, it's advisable to delete it.
-   * @param name Chunk name
-   * @return True if chunk valid
-   */
-  bool Validate(const std::string &name) const;
-
-  /**
-   * Retrieves the chunk's content version using the ChunkActionAuthority object
-   * @param name Chunk name
-   * @return The chunk version
-   */
-  std::string Version(const std::string &name) const;
 
   /**
    * Retrieves the size of a chunk.
@@ -282,7 +264,6 @@ class FileChunkStore: public ChunkStore {
 
   uintmax_t GetNumFromString(const std::string &) const;
 
-  std::shared_ptr<ChunkActionAuthority> chunk_action_authority_;
   bool initialised_;
   fs::path storage_location_;
   uintmax_t chunk_count_;

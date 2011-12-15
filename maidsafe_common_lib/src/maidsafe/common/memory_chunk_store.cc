@@ -250,43 +250,6 @@ bool MemoryChunkStore::Has(const std::string &name) const {
   return found;
 }
 
-bool MemoryChunkStore::Validate(const std::string &name) const {
-  if (!chunk_action_authority_) {
-    DLOG(ERROR) << "No validation available for chunk " << Base32Substr(name);
-    return false;
-  }
-
-  auto it = chunks_.find(name);
-  if (it == chunks_.end()) {
-    DLOG(WARNING) << "Failed to find chunk " << Base32Substr(name);
-    return false;
-  }
-
-  bool valid(chunk_action_authority_->ValidChunk(name, (*it).second.second));
-  DLOG(INFO) << "Validation result for chunk " << Base32Substr(name) << ": "
-             << std::boolalpha << valid;
-  return valid;
-}
-
-std::string MemoryChunkStore::Version(const std::string &name) const {
-  if (!chunk_action_authority_) {
-    DLOG(ERROR) << "No validation available for chunk " << Base32Substr(name);
-    return "";
-  }
-
-  auto it = chunks_.find(name);
-  if (it == chunks_.end()) {
-    DLOG(WARNING) << "Failed to find chunk " << Base32Substr(name);
-    return "";
-  }
-
-  std::string version(
-      chunk_action_authority_->Version(name, (*it).second.second));
-  DLOG(INFO) << "Version result for chunk " << Base32Substr(name) << ": "
-             << Base32Substr(version);
-  return version;
-}
-
 uintmax_t MemoryChunkStore::Size(const std::string &name) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end())
