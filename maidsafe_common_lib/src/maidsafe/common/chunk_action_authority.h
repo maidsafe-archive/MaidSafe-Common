@@ -80,6 +80,7 @@ class ChunkActionAuthority {
   virtual int ValidOperation(const int &op_type,
                              const std::string &name,
                              const std::string &content,
+                             const std::string &version,
                              const asymm::PublicKey &public_key,
                              std::shared_ptr<ChunkStore> chunk_store,
                              std::string *new_content = NULL) const = 0;
@@ -99,6 +100,7 @@ class ChunkActionAuthority {
   virtual int ValidOperationOnFile(const int &op_type,
                                    const std::string &name,
                                    const fs::path &path,
+                                   const std::string &version,
                                    const asymm::PublicKey &public_key,
                                    std::shared_ptr<ChunkStore> chunk_store,
                                    std::string *new_content = NULL) const = 0;
