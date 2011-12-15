@@ -38,7 +38,6 @@ int StubChunkActionAuthority::ValidOperation(
     const std::string &/*content*/,
     const std::string &/*version*/,
     const asymm::PublicKey &/*public_key*/,
-    std::shared_ptr<ChunkStore> /*chunk_store*/,
     std::string * /*new_content*/) const {
   return kSuccess;
 }
@@ -49,7 +48,6 @@ int StubChunkActionAuthority::ValidOperationOnFile(
     const fs::path &/*path*/,
     const std::string &/*version*/,
     const asymm::PublicKey &/*public_key*/,
-    std::shared_ptr<ChunkStore> /*chunk_store*/,
     std::string * /*new_content*/) const {
   return kSuccess;
 }
@@ -62,26 +60,11 @@ bool StubChunkActionAuthority::Cacheable(const std::string &/*name*/) const {
   return true;
 }
 
-bool StubChunkActionAuthority::ValidChunk(
-    const std::string &/*name*/,
-    const std::string &/*content*/) const {
+bool StubChunkActionAuthority::ValidChunk(const std::string &/*name*/) const {
   return true;
 }
 
-bool StubChunkActionAuthority::ValidChunkFile(const std::string &/*name*/,
-                                              const fs::path &/*path*/) const {
-  return true;
-}
-
-std::string StubChunkActionAuthority::Version(
-    const std::string &name,
-    const std::string &/*content*/) const {
-  return name;
-}
-
-std::string StubChunkActionAuthority::VersionFromFile(
-    const std::string &name,
-    const fs::path &/*path*/) const {
+std::string StubChunkActionAuthority::Version(const std::string &name) const {
   return name;
 }
 
