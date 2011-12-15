@@ -213,15 +213,10 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const std::string &content) {
-//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
-//    DLOG(ERROR) << "Modify - Invalid name passed: " << Base32Substr(name);
-//    return false;
-//  }
-//
-//  if (chunk_action_authority_->Hashable(name)) {
-//    DLOG(ERROR) << "Modify - Hashable chunk passed: " << Base32Substr(name);
-//    return false;
-//  }
+  if (name.empty()) {
+    DLOG(ERROR) << "Modify - Empty name passed.";
+    return false;
+  }
 
   boost::unique_lock<boost::mutex> lock(xfer_mutex_);
   RemoveDeletionMarks(name);
@@ -400,34 +395,6 @@ bool BufferedChunkStore::PermanentHas(const std::string &name) const {
   return perm_chunk_store_.Count(name) > rem_count;
 }
 
-bool BufferedChunkStore::Validate(const std::string &name) const {
-  if (name.empty()) {
-    DLOG(ERROR) << "Validate - Empty name passed.";
-    return false;
-  }
-
-  {
-    SharedLock shared_lock(cache_mutex_);
-    if (cache_chunk_store_.Has(name))
-      return cache_chunk_store_.Validate(name);
-  }
-  return perm_chunk_store_.Validate(name);
-}
-
-std::string BufferedChunkStore::Version(const std::string &name) const {
-  if (name.empty()) {
-    DLOG(ERROR) << "Version - Empty name passed.";
-    return "";
-  }
-
-  {
-    SharedLock shared_lock(cache_mutex_);
-    if (cache_chunk_store_.Has(name))
-      return cache_chunk_store_.Version(name);
-  }
-  return perm_chunk_store_.Version(name);
-}
-
 uintmax_t BufferedChunkStore::Size(const std::string &name) const {
   if (name.empty()) {
     DLOG(ERROR) << "Size - Empty name passed.";
@@ -561,14 +528,14 @@ void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
 
 bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const std::string &content) const {
-//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
-//    DLOG(ERROR) << "DoCacheStore-Invalid name passed: " << Base32Substr(name);
-//    return false;
-//  }
+  if (name.empty()) {
+    DLOG(ERROR) << "DoCacheStore - Empty name passed.";
+    return false;
+  }
 
   UpgradeLock upgrade_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return chunk_action_authority_->Cacheable(name);
+    return true;
 
   // Check whether cache has capacity to store chunk
   if (content.size() > cache_chunk_store_.Capacity() &&
@@ -610,14 +577,14 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const uintmax_t &size,
                                       const fs::path &source_file_name,
                                       bool delete_source_file) const {
-//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name)) {
-//    DLOG(ERROR) << "DoCacheStore-Invalid name passed: " << Base32Substr(name);
-//    return false;
-//  }
+  if (name.empty()) {
+    DLOG(ERROR) << "DoCacheStore - Empty name passed.";
+    return false;
+  }
 
   UpgradeLock upgrade_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return chunk_action_authority_->Cacheable(name);
+    return true;
 
   // Check whether cache has capacity to store chunk
   if (size > cache_chunk_store_.Capacity() &&
