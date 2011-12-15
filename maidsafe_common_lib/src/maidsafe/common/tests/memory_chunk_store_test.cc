@@ -38,8 +38,7 @@ void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path&,
     boost::asio::io_service&) {
-  chunk_store->reset(new MemoryChunkStore(
-      std::shared_ptr<StubChunkActionAuthority>(new StubChunkActionAuthority)));
+  chunk_store->reset(new MemoryChunkStore());
 }
 
 INSTANTIATE_TYPED_TEST_CASE_P(Memory, ChunkStoreTest, MemoryChunkStore);

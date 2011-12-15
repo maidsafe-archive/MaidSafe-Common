@@ -48,9 +48,7 @@ void ChunkStoreTest<BufferedChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path &chunk_dir,
     boost::asio::io_service &asio_service) {
-  chunk_store->reset(new BufferedChunkStore(
-      std::shared_ptr<StubChunkActionAuthority>(new StubChunkActionAuthority),
-      asio_service));
+  chunk_store->reset(new BufferedChunkStore(asio_service));
   if (!chunk_dir.empty())
     reinterpret_cast<BufferedChunkStore*>(chunk_store->get())->Init(chunk_dir);
 }
@@ -68,9 +66,8 @@ class BufferedChunkStoreTest: public testing::Test {
         test_work_(),
         thread_group_(),
         test_thread_group_(),
-        chunk_action_authority_(new StubChunkActionAuthority),
-        chunk_store_(new BufferedChunkStore(chunk_action_authority_,
-                                            asio_service_)),
+        chunk_action_authority_(),
+        chunk_store_(new BufferedChunkStore(asio_service_)),
         mutex_(),
         cond_var_(),
         store_counter_(0),
