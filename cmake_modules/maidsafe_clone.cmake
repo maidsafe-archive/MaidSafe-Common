@@ -191,10 +191,8 @@ IF(NOT ALL_REPOSITORIES)
         SigmoidUltimate
         MaidSafe-Breakpad
         MaidSafe-Documents
-        File-Browser
         Simulation
-#        Deduplicator-Gauge
-#        Minesweep
+        Sandbox
 #        AWS-Transporter
         )
 ENDIF()
@@ -206,10 +204,8 @@ SET(NON_INSTALL_REPOSITORIES
       SigmoidUltimate
       MaidSafe-Breakpad
       MaidSafe-Documents
-      File-Browser
       Simulation
-#      Deduplicator-Gauge
-#      Minesweep
+      Sandbox
       )
 
 
