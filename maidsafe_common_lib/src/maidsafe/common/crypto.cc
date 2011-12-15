@@ -66,6 +66,7 @@ CryptoPP::RandomNumberGenerator &rng() {
   static CryptoPP::AutoSeededRandomPool random_number_generator;
   return random_number_generator;
 }
+
 }  // unamed namespace
 
 std::string XOR(const std::string &first, const std::string &second) {
