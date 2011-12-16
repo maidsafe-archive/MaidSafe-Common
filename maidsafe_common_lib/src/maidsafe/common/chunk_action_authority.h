@@ -51,37 +51,37 @@ class ChunkActionAuthority {
   explicit ChunkActionAuthority(std::shared_ptr<ChunkStore> chunk_store);
   virtual ~ChunkActionAuthority();
   std::string Get(const std::string &name,
-                  const std::string &version = "",
-                  const asymm::PublicKey *const public_key = NULL) const;
+                  const std::string &version,
+                  const asymm::PublicKey &public_key) const;
   // Retrieves a chunk's content as a file, potentially overwriting an existing
   // file of the same name.
   bool Get(const std::string &name,
            const fs::path &sink_file_name,
-           const std::string &version = "",
-           const asymm::PublicKey *const public_key = NULL) const;
+           const std::string &version,
+           const asymm::PublicKey &public_key) const;
   bool Store(const std::string &name,
              const std::string &content,
-             const asymm::PublicKey *const public_key = NULL);
+             const asymm::PublicKey &public_key);
   bool Store(const std::string &name,
              const fs::path &source_file_name,
              bool delete_source_file,
-             const asymm::PublicKey *const public_key = NULL);
+             const asymm::PublicKey &public_key);
   // Returns true if chunk deleted or non-existant
   bool Delete(const std::string &name,
-              const std::string &version = "",
-              const asymm::PublicKey *const public_key = NULL);
+              const std::string &version,
+              const asymm::PublicKey &public_key);
   bool Modify(const std::string &name,
               const std::string &content,
-              const std::string &version = "",
-              const asymm::PublicKey *const public_key = NULL);
+              const std::string &version,
+              const asymm::PublicKey &public_key);
   bool Modify(const std::string &name,
               const fs::path &source_file_name,
               bool delete_source_file,
-              const std::string &version = "",
-              const asymm::PublicKey *const public_key = NULL);
+              const std::string &version,
+              const asymm::PublicKey &public_key);
   bool Has(const std::string &name,
-           const std::string &version = "",
-           const asymm::PublicKey *const public_key = NULL) const;
+           const std::string &version,
+           const asymm::PublicKey &public_key) const;
 
   virtual bool ValidName(const std::string &name) const = 0;
   virtual bool Cacheable(const std::string &name) const = 0;
@@ -94,7 +94,7 @@ class ChunkActionAuthority {
                              const std::string &name,
                              const std::string &content,
                              const std::string &version,
-                             const asymm::PublicKey *const public_key,
+                             const asymm::PublicKey &public_key,
                              std::string *existing_content = NULL,
                              std::string *new_content = NULL) const = 0;
   std::shared_ptr<ChunkStore> chunk_store_;

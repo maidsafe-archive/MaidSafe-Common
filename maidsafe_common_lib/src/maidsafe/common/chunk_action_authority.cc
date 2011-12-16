@@ -43,7 +43,7 @@ ChunkActionAuthority::~ChunkActionAuthority() {}
 std::string ChunkActionAuthority::Get(
       const std::string &name,
       const std::string &version,
-      const asymm::PublicKey *const public_key) const {
+      const asymm::PublicKey &public_key) const {
   std::string existing_content;
   int result(ValidOperation(kGet, name, "", version, public_key,
                             &existing_content));
@@ -58,7 +58,7 @@ std::string ChunkActionAuthority::Get(
 bool ChunkActionAuthority::Get(const std::string &name,
                                const fs::path &sink_file_name,
                                const std::string &version,
-                               const asymm::PublicKey *const public_key) const {
+                               const asymm::PublicKey &public_key) const {
   std::string existing_content;
   int result(ValidOperation(kGet, name, "", version, public_key,
                             &existing_content));
@@ -76,10 +76,9 @@ bool ChunkActionAuthority::Get(const std::string &name,
   return true;
 }
 
-bool ChunkActionAuthority::Store(
-      const std::string &name,
-      const std::string &content,
-      const asymm::PublicKey *const public_key) {
+bool ChunkActionAuthority::Store(const std::string &name,
+                                 const std::string &content,
+                                 const asymm::PublicKey &public_key) {
   int result(ValidOperation(kStore, name, content, "", public_key));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to store " << Base32Substr(name) << ": "
@@ -95,11 +94,10 @@ bool ChunkActionAuthority::Store(
   return true;
 }
 
-bool ChunkActionAuthority::Store(
-      const std::string &name,
-      const fs::path &source_file_name,
-      bool delete_source_file,
-      const asymm::PublicKey *const public_key) {
+bool ChunkActionAuthority::Store(const std::string &name,
+                                 const fs::path &source_file_name,
+                                 bool delete_source_file,
+                                 const asymm::PublicKey &public_key) {
   std::string content;
   if (!ReadFile(source_file_name, &content)) {
     DLOG(ERROR) << "Failed to read " << source_file_name;
@@ -134,10 +132,9 @@ bool ChunkActionAuthority::Store(
   return true;
 }
 
-bool ChunkActionAuthority::Delete(
-      const std::string &name,
-      const std::string &version,
-      const asymm::PublicKey *const public_key) {
+bool ChunkActionAuthority::Delete(const std::string &name,
+                                  const std::string &version,
+                                  const asymm::PublicKey &public_key) {
   int result(ValidOperation(kDelete, name, "", version, public_key));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to delete " << Base32Substr(name) << ": "
@@ -153,11 +150,10 @@ bool ChunkActionAuthority::Delete(
   return true;
 }
 
-bool ChunkActionAuthority::Modify(
-      const std::string &name,
-      const std::string &content,
-      const std::string &version,
-      const asymm::PublicKey *const public_key) {
+bool ChunkActionAuthority::Modify(const std::string &name,
+                                  const std::string &content,
+                                  const std::string &version,
+                                  const asymm::PublicKey &public_key) {
   std::string new_content;
   int result(ValidOperation(kModify, name, content, version, public_key, NULL,
                             &new_content));
@@ -175,12 +171,11 @@ bool ChunkActionAuthority::Modify(
   return true;
 }
 
-bool ChunkActionAuthority::Modify(
-      const std::string &name,
-      const fs::path &source_file_name,
-      bool delete_source_file,
-      const std::string &version,
-      const asymm::PublicKey *const public_key) {
+bool ChunkActionAuthority::Modify(const std::string &name,
+                                  const fs::path &source_file_name,
+                                  bool delete_source_file,
+                                  const std::string &version,
+                                  const asymm::PublicKey &public_key) {
   std::string content;
   if (!ReadFile(source_file_name, &content)) {
     DLOG(ERROR) << "Failed to read " << source_file_name;
@@ -219,7 +214,7 @@ bool ChunkActionAuthority::Modify(
 
 bool ChunkActionAuthority::Has(const std::string &name,
                                const std::string &version,
-                               const asymm::PublicKey *const public_key) const {
+                               const asymm::PublicKey &public_key) const {
   int result(ValidOperation(kHas, name, "", version, public_key));
   if (result != kSuccess) {
     DLOG(WARNING) << "Invalid request for Has " << Base32Substr(name) << ": "
