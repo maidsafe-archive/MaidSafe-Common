@@ -400,7 +400,8 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
 
   // Check Modify on Hash Chunk Returns False
   EXPECT_FALSE(this->chunk_store_->Modify(hash_name, modified_content));
-  EXPECT_FALSE(this->chunk_store_->Modify(hash_name, modified_content2));
+  EXPECT_TRUE(this->chunk_store_->Modify(hash_name, modified_content2));
+  EXPECT_EQ(1, this->chunk_store_->Count(hash_name));
 
   // Setting Free Space in Storage
   this->chunk_store_->SetCapacity(1024);
@@ -414,12 +415,12 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_EQ(125, this->chunk_store_->Size(non_hash_name));
   EXPECT_TRUE(this->chunk_store_->Has(hash_name));
   EXPECT_EQ(1, this->chunk_store_->Count(hash_name));
-  EXPECT_EQ(123, this->chunk_store_->Size(hash_name));
+  EXPECT_EQ(120, this->chunk_store_->Size(hash_name));
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(460, this->chunk_store_->Size(name_file));
   EXPECT_EQ(3, this->chunk_store_->Count());
-  EXPECT_EQ(708, this->chunk_store_->Size());
+  EXPECT_EQ(705, this->chunk_store_->Size());
 
   /* Mod Procedure - 2 */
   EXPECT_TRUE(this->chunk_store_->Modify(non_hash_name, modified_content2));
@@ -430,7 +431,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(455, this->chunk_store_->Size(name_file));
-  EXPECT_EQ(698, this->chunk_store_->Size());
+  EXPECT_EQ(695, this->chunk_store_->Size());
 
   EXPECT_TRUE(this->chunk_store_->Delete(non_hash_name));
   EXPECT_TRUE(this->chunk_store_->Delete(hash_name));
@@ -455,11 +456,12 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_EQ(1, this->chunk_store_->Count(non_hash_name));
   EXPECT_EQ(1158, this->chunk_store_->Size());
 
-  // Check Modify on Hash Chunk Returns False
-  EXPECT_FALSE(this->chunk_store_->Modify(hash_name, modified_content));
-  EXPECT_FALSE(this->chunk_store_->Modify(hash_name_file,
-                                              modified_path,
-                                              false));
+  // Check Modify on Hash Chunk Returns True but doesn't increase count
+  EXPECT_TRUE(this->chunk_store_->Modify(hash_name, modified_content));
+  EXPECT_EQ(2, this->chunk_store_->Count(hash_name));
+  EXPECT_EQ(125, this->chunk_store_->Size(hash_name));
+  EXPECT_TRUE(this->chunk_store_->Modify(hash_name_file, modified_path, false));
+  EXPECT_EQ(2, this->chunk_store_->Count(hash_name_file));
 
   // Valid Calls on Reference Count Store
   /* Mod Procedure - 1 */
@@ -473,7 +475,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(460, this->chunk_store_->Size(name_file));
-  EXPECT_EQ(1164, this->chunk_store_->Size());
+  EXPECT_EQ(1170, this->chunk_store_->Size());
 
   /* Mod Procedure - 2 */
   EXPECT_TRUE(this->chunk_store_->Modify(non_hash_name, modified_content2));
@@ -485,7 +487,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Modify) {
   EXPECT_TRUE(this->chunk_store_->Has(name_file));
   EXPECT_EQ(1, this->chunk_store_->Count(name_file));
   EXPECT_EQ(455, this->chunk_store_->Size(name_file));
-  EXPECT_EQ(1154, this->chunk_store_->Size());
+  EXPECT_EQ(1160, this->chunk_store_->Size());
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_MoveTo) {
