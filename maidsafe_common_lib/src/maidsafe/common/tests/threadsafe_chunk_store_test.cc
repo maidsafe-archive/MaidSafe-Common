@@ -231,7 +231,6 @@ class ThreadsafeChunkStoreTest : public testing::Test {
     // TODO(David) FIXME - Intermittant fail in MCS
     // EXPECT_TRUE(another_chunk_store->Has(chunk_name));
   }
-    MemoryChunkStore shared_ptr;
 
  protected:
   fs::path CreateRandomFile(const fs::path &file_path,
