@@ -48,6 +48,8 @@ class ChunkStore;
 
 class ChunkActionAuthority {
  public:
+  enum OperationType { kGet, kStore, kDelete, kModify, kHas };
+
   explicit ChunkActionAuthority(std::shared_ptr<ChunkStore> chunk_store);
   virtual ~ChunkActionAuthority();
   std::string Get(const std::string &name,
@@ -89,7 +91,6 @@ class ChunkActionAuthority {
   virtual std::string Version(const std::string &name) const = 0;
 
  protected:
-  enum OperationType { kGet, kStore, kDelete, kModify, kHas };
   virtual int ValidOperation(const int &op_type,
                              const std::string &name,
                              const std::string &content,
