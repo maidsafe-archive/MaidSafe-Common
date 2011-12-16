@@ -33,7 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace maidsafe {
 
 int StubChunkActionAuthority::ValidOperation(
-    const int &/*op_type*/,
+    const OperationType &/*op_type*/,
     const std::string &/*name*/,
     const std::string &/*content*/,
     const std::string &/*version*/,
