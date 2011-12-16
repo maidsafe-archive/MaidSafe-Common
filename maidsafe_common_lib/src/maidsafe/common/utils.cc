@@ -280,24 +280,35 @@ boost::posix_time::time_duration GetDurationSinceEpoch() {
 }
 
 bool ReadFile(const fs::path &file_path, std::string *content) {
-  if (!content)
+  if (!content) {
+    DLOG(ERROR) << "Failed to read file " << file_path
+                << ": NULL pointer passed";
     return false;
+  }
+
   try {
     uintmax_t file_size(fs::file_size(file_path));
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
-    if (!file_in.good())
+    if (!file_in.good()) {
+      DLOG(ERROR) << "Failed to read file " << file_path << ": Bad filestream";
       return false;
+    }
     if (file_size == 0U) {
       content->clear();
       return true;
     }
-    if (file_size > std::numeric_limits<unsigned int>::max())
+    if (file_size > std::numeric_limits<unsigned int>::max()) {
+      DLOG(ERROR) << "Failed to read file " << file_path << ": File size "
+                  << file_size << " too large (over "
+                  << std::numeric_limits<unsigned int>::max() << ")";
       return false;
+    }
     content->resize(static_cast<unsigned int>(file_size));
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
   }
-  catch(...) {
+  catch(const std::exception &e) {
+    DLOG(ERROR) << "Failed to read file " << file_path << ": " << e.what();
     return false;
   }
   return true;
@@ -305,14 +316,18 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
 
 bool WriteFile(const fs::path &file_path, const std::string &content) {
   try {
-    if (!file_path.has_filename())
+    if (!file_path.has_filename()) {
+      DLOG(ERROR) << "Failed to write: file_path " << file_path
+                  << " has no filename";
       return false;
+    }
     fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |
                                      std::ios::binary);
     file_out.write(content.data(), content.size());
     file_out.close();
   }
-  catch(...) {
+  catch(const std::exception &e) {
+    DLOG(ERROR) << "Failed to write file " << file_path << ": " << e.what();
     return false;
   }
   return true;

@@ -25,11 +25,6 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/**
- * @file stub_chunk_action_authority.h
- * @brief Stubbed ChunkActionAuthority.
- */
-
 #ifndef MAIDSAFE_COMMON_STUB_CHUNK_ACTION_AUTHORITY_H_
 #define MAIDSAFE_COMMON_STUB_CHUNK_ACTION_AUTHORITY_H_
 
@@ -51,22 +46,19 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
   explicit StubChunkActionAuthority(std::shared_ptr<ChunkStore> chunk_store)
       : ChunkActionAuthority(chunk_store) {}
   virtual ~StubChunkActionAuthority() {}
-  virtual int ValidOperation(const int &op_type,
-                             const std::string &name,
-                             const std::string &content,
-                             const std::string &version,
-                             const asymm::PublicKey &public_key,
-                             std::string *new_content = NULL) const;
-  virtual int ValidOperationOnFile(const int &op_type,
-                                   const std::string &name,
-                                   const fs::path &path,
-                                   const std::string &version,
-                                   const asymm::PublicKey &public_key,
-                                   std::string *new_content = NULL) const;
   virtual bool ValidName(const std::string &name) const;
   virtual bool Cacheable(const std::string &name) const;
   virtual bool ValidChunk(const std::string &name) const;
   virtual std::string Version(const std::string &name) const;
+
+ protected:
+  virtual int ValidOperation(const int &op_type,
+                             const std::string &name,
+                             const std::string &content,
+                             const std::string &version,
+                             const asymm::PublicKey *const public_key,
+                             std::string *existing_content = NULL,
+                             std::string *new_content = NULL) const;
 
  private:
   StubChunkActionAuthority(const StubChunkActionAuthority&);

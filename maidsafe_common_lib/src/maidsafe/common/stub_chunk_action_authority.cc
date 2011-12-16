@@ -37,17 +37,8 @@ int StubChunkActionAuthority::ValidOperation(
     const std::string &/*name*/,
     const std::string &/*content*/,
     const std::string &/*version*/,
-    const asymm::PublicKey &/*public_key*/,
-    std::string * /*new_content*/) const {
-  return kSuccess;
-}
-
-int StubChunkActionAuthority::ValidOperationOnFile(
-    const int &/*op_type*/,
-    const std::string &/*name*/,
-    const fs::path &/*path*/,
-    const std::string &/*version*/,
-    const asymm::PublicKey &/*public_key*/,
+    const asymm::PublicKey *const /*public_key*/,
+    std::string * /*existing_content*/,
     std::string * /*new_content*/) const {
   return kSuccess;
 }

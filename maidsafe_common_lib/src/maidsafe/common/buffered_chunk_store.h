@@ -80,21 +80,21 @@ namespace maidsafe {
  */
 class BufferedChunkStore: public ChunkStore {
  public:
-  explicit BufferedChunkStore(boost::asio::io_service &asio_service)
-            : ChunkStore(),
-              cache_mutex_(),
-              xfer_mutex_(),
-              xfer_cond_var_(),
-              asio_service_(asio_service),
-              internal_perm_chunk_store_(new FileChunkStore()),
-              cache_chunk_store_(),
-              perm_chunk_store_(internal_perm_chunk_store_),
-              cached_chunks_(),
-              removable_chunks_(),
-              pending_xfers_(),
-              perm_capacity_(0),
-              perm_size_(0),
-              initialised_(false) {}
+  explicit BufferedChunkStore(boost::asio::io_service &asio_service)  // NOLINT (Fraser)
+      : ChunkStore(),
+        cache_mutex_(),
+        xfer_mutex_(),
+        xfer_cond_var_(),
+        asio_service_(asio_service),
+        internal_perm_chunk_store_(new FileChunkStore()),
+        cache_chunk_store_(),
+        perm_chunk_store_(internal_perm_chunk_store_),
+        cached_chunks_(),
+        removable_chunks_(),
+        pending_xfers_(),
+        perm_capacity_(0),
+        perm_size_(0),
+        initialised_(false) {}
   ~BufferedChunkStore();
 
   /**
