@@ -775,84 +775,6 @@ TYPED_TEST_P(ChunkStoreTest, BEH_References) {
   EXPECT_EQ(2, this->chunk_store_->Count());
 }
 
-TYPED_TEST_P(ChunkStoreTest, BEH_NonHashable) {
-  std::string content1(RandomString(100)), content2(RandomString(50));
-  std::string name1(RandomString(65)), name2(RandomString(65));
-  fs::path path(*this->test_dir_ / "chunk.dat");
-  this->CreateRandomFile(path, 25);
-
-  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->chunk_store_->Store(name1, content2));
-  EXPECT_FALSE(this->chunk_store_->Store(name1, path, false));
-  EXPECT_EQ(1, this->chunk_store_->Count(name1));
-  EXPECT_EQ(100, this->chunk_store_->Size(name1));
-
-  EXPECT_TRUE(this->chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->chunk_store_->Store(name2, content1));
-  EXPECT_FALSE(this->chunk_store_->Store(name2, content2));
-  EXPECT_EQ(1, this->chunk_store_->Count(name2));
-  EXPECT_EQ(25, this->chunk_store_->Size(name2));
-
-  EXPECT_TRUE(this->chunk_store_->Delete(name1));
-  EXPECT_FALSE(this->chunk_store_->Has(name1));
-  EXPECT_TRUE(this->chunk_store_->Store(name1, path, false));
-  EXPECT_EQ(25, this->chunk_store_->Size(name1));
-
-  EXPECT_TRUE(this->chunk_store_->Delete(name2));
-  EXPECT_FALSE(this->chunk_store_->Has(name2));
-  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
-  EXPECT_EQ(50, this->chunk_store_->Size(name2));
-
-  EXPECT_TRUE(this->alt_chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
-  EXPECT_TRUE(this->chunk_store_->Delete(name1));
-  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
-
-  EXPECT_TRUE(this->alt_chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
-  EXPECT_TRUE(this->alt_chunk_store_->Delete(name2));
-  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
-
-  this->chunk_store_->Clear();
-  this->alt_chunk_store_->Clear();
-
-  EXPECT_TRUE(this->chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->chunk_store_->Store(name1, content2));
-  EXPECT_FALSE(this->chunk_store_->Store(name1, path, false));
-  EXPECT_EQ(1, this->chunk_store_->Count(name1));
-  EXPECT_EQ(100, this->chunk_store_->Size(name1));
-
-  EXPECT_TRUE(this->chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->chunk_store_->Store(name2, content1));
-  EXPECT_FALSE(this->chunk_store_->Store(name2, content2));
-  EXPECT_EQ(1, this->chunk_store_->Count(name2));
-  EXPECT_EQ(25, this->chunk_store_->Size(name2));
-
-  EXPECT_TRUE(this->chunk_store_->Delete(name1));
-  EXPECT_FALSE(this->chunk_store_->Has(name1));
-  EXPECT_TRUE(this->chunk_store_->Store(name1, path, false));
-  EXPECT_EQ(25, this->chunk_store_->Size(name1));
-
-  EXPECT_TRUE(this->chunk_store_->Delete(name2));
-  EXPECT_FALSE(this->chunk_store_->Has(name2));
-  EXPECT_TRUE(this->chunk_store_->Store(name2, content2));
-  EXPECT_EQ(50, this->chunk_store_->Size(name2));
-
-  EXPECT_TRUE(this->alt_chunk_store_->Store(name1, content1));
-  EXPECT_FALSE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
-  EXPECT_TRUE(this->chunk_store_->Delete(name1));
-  EXPECT_TRUE(this->alt_chunk_store_->MoveTo(name1, this->chunk_store_.get()));
-
-  EXPECT_TRUE(this->alt_chunk_store_->Store(name2, path, false));
-  EXPECT_FALSE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
-  EXPECT_TRUE(this->alt_chunk_store_->Delete(name2));
-  EXPECT_TRUE(this->chunk_store_->MoveTo(name2, this->alt_chunk_store_.get()));
-}
-
 TYPED_TEST_P(ChunkStoreTest, BEH_SmallName) {
   EXPECT_FALSE(this->chunk_store_->Has("x"));
   EXPECT_EQ(0, this->chunk_store_->Count("x"));
@@ -898,7 +820,6 @@ REGISTER_TYPED_TEST_CASE_P(ChunkStoreTest,
                            BEH_MoveTo,
                            BEH_Capacity,
                            BEH_References,
-                           BEH_NonHashable,
                            BEH_SmallName,
                            BEH_Clear);
 
