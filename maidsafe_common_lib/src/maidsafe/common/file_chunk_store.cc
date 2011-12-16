@@ -123,8 +123,8 @@ bool FileChunkStore::Store(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name))
-//    return false;
+  if (name.empty())
+    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name, true));
 
@@ -146,9 +146,6 @@ bool FileChunkStore::Store(const std::string &name,
     ChunkAdded(content.size());
     return true;
   } else {
-    //  chunk already exists
-//    if (!chunk_action_authority_->Cacheable(name))
-//      return false;
     fs::path old_path(chunk_file), new_path(chunk_file);
     old_path.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
@@ -169,8 +166,8 @@ bool FileChunkStore::Store(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-//  if (!chunk_action_authority_ || !chunk_action_authority_->ValidName(name))
-//    return false;
+  if (name.empty())
+    return false;
 
   boost::system::error_code ec;
   fs::path chunk_file(ChunkNameToFilePath(name, true));
@@ -205,8 +202,6 @@ bool FileChunkStore::Store(const std::string &name,
     }
   } else {
     //  chunk already exists
-//    if (!chunk_action_authority_->Cacheable(name))
-//      return false;
     fs::path old_path(chunk_file), new_path(chunk_file);
     old_path.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
@@ -273,10 +268,8 @@ bool FileChunkStore::Modify(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-//  if (!chunk_action_authority_ ||
-//      chunk_action_authority_->Cacheable(name) ||
-//      !Has(name))
-//    return false;
+  if (name.empty() || !Has(name))
+    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
@@ -305,11 +298,8 @@ bool FileChunkStore::Modify(const std::string &name,
   if (!IsChunkStoreInitialised())
     return false;
 
-//  if (!chunk_action_authority_ ||
-//      source_file_name.empty() ||
-//      chunk_action_authority_->Cacheable(name) ||
-//      !Has(name))
-//    return false;
+  if (name.empty() || !Has(name))
+    return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
   uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
