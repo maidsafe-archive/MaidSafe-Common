@@ -52,7 +52,7 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
   virtual std::string Version(const std::string &name) const;
 
  protected:
-  virtual int ValidOperation(const int &op_type,
+  virtual int ValidOperation(const OperationType &op_type,
                              const std::string &name,
                              const std::string &content,
                              const std::string &version,
