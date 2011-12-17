@@ -37,7 +37,7 @@ namespace maidsafe {
 
 namespace test {
 
-template<>
+template <>
 void ChunkStoreTest<FileChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path &chunk_dir,

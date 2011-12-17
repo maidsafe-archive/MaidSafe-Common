@@ -32,17 +32,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-int StubChunkActionAuthority::ValidOperation(
-    const OperationType &/*op_type*/,
-    const std::string &/*name*/,
-    const std::string &/*content*/,
-    const std::string &/*version*/,
-    const asymm::PublicKey *const /*public_key*/,
-    std::string * /*existing_content*/,
-    std::string * /*new_content*/) const {
-  return kSuccess;
-}
-
 bool StubChunkActionAuthority::ValidName(const std::string &name) const {
   return !name.empty();
 }
@@ -59,5 +48,42 @@ std::string StubChunkActionAuthority::Version(const std::string &name) const {
   return name;
 }
 
+int StubChunkActionAuthority::ValidGet(
+    const std::string &/*name*/,
+    const std::string &/*version*/,
+    const asymm::PublicKey &/*public_key*/,
+    std::string * /*existing_content*/) const {
+  return kSuccess;
+}
+
+int StubChunkActionAuthority::ValidStore(
+    const std::string &/*name*/,
+    const std::string &/*content*/,
+    const asymm::PublicKey &/*public_key*/) const {
+  return kSuccess;
+}
+
+int StubChunkActionAuthority::ValidDelete(
+    const std::string &/*name*/,
+    const std::string &/*version*/,
+    const asymm::PublicKey &/*public_key*/) const {
+  return kSuccess;
+}
+
+int StubChunkActionAuthority::ValidModify(
+    const std::string &/*name*/,
+    const std::string &/*content*/,
+    const std::string &/*version*/,
+    const asymm::PublicKey &/*public_key*/,
+    std::string * /*new_content*/) const {
+  return kSuccess;
+}
+
+int StubChunkActionAuthority::ValidHas(
+    const std::string &/*name*/,
+    const std::string &/*version*/,
+    const asymm::PublicKey &/*public_key*/) const {
+  return kSuccess;
+}
 
 }  // namespace maidsafe

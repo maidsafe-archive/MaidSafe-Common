@@ -52,13 +52,24 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
   virtual std::string Version(const std::string &name) const;
 
  protected:
-  virtual int ValidOperation(const OperationType &op_type,
-                             const std::string &name,
-                             const std::string &content,
-                             const std::string &version,
-                             const asymm::PublicKey *const public_key,
-                             std::string *existing_content = NULL,
-                             std::string *new_content = NULL) const;
+  virtual int ValidGet(const std::string &name,
+                       const std::string &version,
+                       const asymm::PublicKey &public_key,
+                       std::string *existing_content = NULL) const;
+  virtual int ValidStore(const std::string &name,
+                         const std::string &content,
+                         const asymm::PublicKey &public_key) const;
+  virtual int ValidDelete(const std::string &name,
+                          const std::string &version,
+                          const asymm::PublicKey &public_key) const;
+  virtual int ValidModify(const std::string &name,
+                          const std::string &content,
+                          const std::string &version,
+                          const asymm::PublicKey &public_key,
+                          std::string *new_content = NULL) const;
+  virtual int ValidHas(const std::string &name,
+                       const std::string &version,
+                       const asymm::PublicKey &public_key) const;
 
  private:
   StubChunkActionAuthority(const StubChunkActionAuthority&);

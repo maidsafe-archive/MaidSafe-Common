@@ -48,8 +48,6 @@ class ChunkStore;
 
 class ChunkActionAuthority {
  public:
-  enum OperationType { kGet, kStore, kDelete, kModify, kHas };
-
   explicit ChunkActionAuthority(std::shared_ptr<ChunkStore> chunk_store);
   virtual ~ChunkActionAuthority();
   std::string Get(const std::string &name,
@@ -91,13 +89,24 @@ class ChunkActionAuthority {
   virtual std::string Version(const std::string &name) const = 0;
 
  protected:
-  virtual int ValidOperation(const OperationType &op_type,
-                             const std::string &name,
-                             const std::string &content,
-                             const std::string &version,
-                             const asymm::PublicKey &public_key,
-                             std::string *existing_content = NULL,
-                             std::string *new_content = NULL) const = 0;
+  virtual int ValidGet(const std::string &name,
+                       const std::string &version,
+                       const asymm::PublicKey &public_key,
+                       std::string *existing_content = NULL) const = 0;
+  virtual int ValidStore(const std::string &name,
+                         const std::string &content,
+                         const asymm::PublicKey &public_key) const = 0;
+  virtual int ValidDelete(const std::string &name,
+                          const std::string &version,
+                          const asymm::PublicKey &public_key) const = 0;
+  virtual int ValidModify(const std::string &name,
+                          const std::string &content,
+                          const std::string &version,
+                          const asymm::PublicKey &public_key,
+                          std::string *new_content = NULL) const = 0;
+  virtual int ValidHas(const std::string &name,
+                       const std::string &version,
+                       const asymm::PublicKey &public_key) const = 0;
   std::shared_ptr<ChunkStore> chunk_store_;
 
  private:

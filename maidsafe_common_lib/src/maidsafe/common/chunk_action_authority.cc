@@ -45,8 +45,7 @@ std::string ChunkActionAuthority::Get(
       const std::string &version,
       const asymm::PublicKey &public_key) const {
   std::string existing_content;
-  int result(ValidOperation(kGet, name, "", version, public_key,
-                            &existing_content));
+  int result(ValidGet(name, version, public_key, &existing_content));
   if (result != kSuccess) {
     DLOG(WARNING) << "Failed to get " << Base32Substr(name) << ": " << result;
     existing_content.clear();
@@ -60,8 +59,7 @@ bool ChunkActionAuthority::Get(const std::string &name,
                                const std::string &version,
                                const asymm::PublicKey &public_key) const {
   std::string existing_content;
-  int result(ValidOperation(kGet, name, "", version, public_key,
-                            &existing_content));
+  int result(ValidGet(name, version, public_key, &existing_content));
   if (result != kSuccess) {
     DLOG(WARNING) << "Failed to get " << Base32Substr(name) << ": " << result;
     return false;
@@ -79,7 +77,7 @@ bool ChunkActionAuthority::Get(const std::string &name,
 bool ChunkActionAuthority::Store(const std::string &name,
                                  const std::string &content,
                                  const asymm::PublicKey &public_key) {
-  int result(ValidOperation(kStore, name, content, "", public_key));
+  int result(ValidStore(name, content, public_key));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to store " << Base32Substr(name) << ": "
                 << result;
@@ -104,7 +102,7 @@ bool ChunkActionAuthority::Store(const std::string &name,
     return false;
   }
 
-  int result(ValidOperation(kStore, name, content, "", public_key));
+  int result(ValidStore(name, content, public_key));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to store " << Base32Substr(name) << ": "
                 << result;
@@ -135,7 +133,7 @@ bool ChunkActionAuthority::Store(const std::string &name,
 bool ChunkActionAuthority::Delete(const std::string &name,
                                   const std::string &version,
                                   const asymm::PublicKey &public_key) {
-  int result(ValidOperation(kDelete, name, "", version, public_key));
+  int result(ValidDelete(name, version, public_key));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to delete " << Base32Substr(name) << ": "
                 << result;
@@ -155,8 +153,7 @@ bool ChunkActionAuthority::Modify(const std::string &name,
                                   const std::string &version,
                                   const asymm::PublicKey &public_key) {
   std::string new_content;
-  int result(ValidOperation(kModify, name, content, version, public_key, NULL,
-                            &new_content));
+  int result(ValidModify(name, content, version, public_key, &new_content));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to modify " << Base32Substr(name) << ": "
                 << result;
@@ -183,8 +180,7 @@ bool ChunkActionAuthority::Modify(const std::string &name,
   }
 
   std::string new_content;
-  int result(ValidOperation(kModify, name, content, version, public_key, NULL,
-                            &new_content));
+  int result(ValidModify(name, content, version, public_key, &new_content));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to modify " << Base32Substr(name) << ": "
                 << result;
@@ -215,7 +211,7 @@ bool ChunkActionAuthority::Modify(const std::string &name,
 bool ChunkActionAuthority::Has(const std::string &name,
                                const std::string &version,
                                const asymm::PublicKey &public_key) const {
-  int result(ValidOperation(kHas, name, "", version, public_key));
+  int result(ValidHas(name, version, public_key));
   if (result != kSuccess) {
     DLOG(WARNING) << "Invalid request for Has " << Base32Substr(name) << ": "
                   << result;
