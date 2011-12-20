@@ -50,7 +50,6 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
   virtual bool Cacheable(const std::string &name) const;
   virtual bool ValidChunk(const std::string &name) const;
   virtual std::string Version(const std::string &name) const;
-  virtual std::string ApplyTypeToName(const std::string &name) const;
 
  protected:
   virtual int ValidGet(const std::string &name,

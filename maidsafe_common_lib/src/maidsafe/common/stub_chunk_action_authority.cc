@@ -48,11 +48,6 @@ std::string StubChunkActionAuthority::Version(const std::string &name) const {
   return name;
 }
 
-std::string StubChunkActionAuthority::ApplyTypeToName(
-    const std::string &name) const {
-  return name;
-}
-
 int StubChunkActionAuthority::ValidGet(
     const std::string &/*name*/,
     const std::string &/*version*/,

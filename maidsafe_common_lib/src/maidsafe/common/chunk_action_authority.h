@@ -87,7 +87,6 @@ class ChunkActionAuthority {
   virtual bool Cacheable(const std::string &name) const = 0;
   virtual bool ValidChunk(const std::string &name) const = 0;
   virtual std::string Version(const std::string &name) const = 0;
-  virtual std::string ApplyTypeToName(const std::string &name) const = 0;
 
  protected:
   virtual int ValidGet(const std::string &name,
