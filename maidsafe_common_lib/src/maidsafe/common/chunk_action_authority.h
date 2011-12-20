@@ -55,38 +55,39 @@ class ChunkActionAuthority {
                   const asymm::PublicKey &public_key) const;
   // Retrieves a chunk's content as a file, potentially overwriting an existing
   // file of the same name.
-  bool Get(const std::string &name,
-           const fs::path &sink_file_name,
-           const std::string &version,
-           const asymm::PublicKey &public_key) const;
-  bool Store(const std::string &name,
-             const std::string &content,
-             const asymm::PublicKey &public_key);
-  bool Store(const std::string &name,
-             const fs::path &source_file_name,
-             bool delete_source_file,
-             const asymm::PublicKey &public_key);
+  virtual bool Get(const std::string &name,
+                   const fs::path &sink_file_name,
+                   const std::string &version,
+                   const asymm::PublicKey &public_key) const;
+  virtual bool Store(const std::string &name,
+                     const std::string &content,
+                     const asymm::PublicKey &public_key);
+  virtual bool Store(const std::string &name,
+                     const fs::path &source_file_name,
+                     bool delete_source_file,
+                     const asymm::PublicKey &public_key);
   // Returns true if chunk deleted or non-existant
-  bool Delete(const std::string &name,
-              const std::string &version,
-              const asymm::PublicKey &public_key);
-  bool Modify(const std::string &name,
-              const std::string &content,
-              const std::string &version,
-              const asymm::PublicKey &public_key);
-  bool Modify(const std::string &name,
-              const fs::path &source_file_name,
-              bool delete_source_file,
-              const std::string &version,
-              const asymm::PublicKey &public_key);
-  bool Has(const std::string &name,
-           const std::string &version,
-           const asymm::PublicKey &public_key) const;
+  virtual bool Delete(const std::string &name,
+                      const std::string &version,
+                      const asymm::PublicKey &public_key);
+  virtual bool Modify(const std::string &name,
+                      const std::string &content,
+                      const std::string &version,
+                      const asymm::PublicKey &public_key);
+  virtual bool Modify(const std::string &name,
+                      const fs::path &source_file_name,
+                      bool delete_source_file,
+                      const std::string &version,
+                      const asymm::PublicKey &public_key);
+  virtual bool Has(const std::string &name,
+                   const std::string &version,
+                   const asymm::PublicKey &public_key) const;
 
   virtual bool ValidName(const std::string &name) const = 0;
   virtual bool Cacheable(const std::string &name) const = 0;
   virtual bool ValidChunk(const std::string &name) const = 0;
   virtual std::string Version(const std::string &name) const = 0;
+  virtual std::string ApplyTypeToName(const std::string &name) const = 0;
 
  protected:
   virtual int ValidGet(const std::string &name,

@@ -213,13 +213,8 @@ bool ChunkActionAuthority::Has(const std::string &name,
                                const asymm::PublicKey &public_key) const {
   int result(ValidHas(name, version, public_key));
   if (result != kSuccess) {
-    DLOG(WARNING) << "Invalid request for Has " << Base32Substr(name) << ": "
-                  << result;
-    return false;
-  }
-
-  if (!chunk_store_->Has(name)) {
-    DLOG(WARNING) << "Failed to find " << Base32Substr(name);
+    DLOG(WARNING) << "Invalid request or doesn't have " << Base32Substr(name)
+                  << ": " << result;
     return false;
   }
 
