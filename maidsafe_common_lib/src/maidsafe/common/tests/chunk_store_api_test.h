@@ -69,6 +69,7 @@ class ChunkStoreTest: public testing::Test {
                   (&boost::asio::io_service::run), &asio_service_));
         }
   ~ChunkStoreTest() {}
+
  protected:
   void SetUp() {
     fs::create_directories(chunk_dir_);

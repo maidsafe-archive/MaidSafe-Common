@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)

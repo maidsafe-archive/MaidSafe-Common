@@ -132,8 +132,9 @@ bool ChunkActionAuthority::Store(const std::string &name,
 
 bool ChunkActionAuthority::Delete(const std::string &name,
                                   const std::string &version,
+                                  const std::string &ownership_proof,
                                   const asymm::PublicKey &public_key) {
-  int result(ValidDelete(name, version, public_key));
+  int result(ValidDelete(name, version, ownership_proof, public_key));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to delete " << Base32Substr(name) << ": "
                 << result;

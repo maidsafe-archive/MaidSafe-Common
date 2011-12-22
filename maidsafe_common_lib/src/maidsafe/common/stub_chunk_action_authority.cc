@@ -66,6 +66,7 @@ int StubChunkActionAuthority::ValidStore(
 int StubChunkActionAuthority::ValidDelete(
     const std::string &/*name*/,
     const std::string &/*version*/,
+    const std::string &/*ownership_proof*/,
     const asymm::PublicKey &/*public_key*/) const {
   return kSuccess;
 }

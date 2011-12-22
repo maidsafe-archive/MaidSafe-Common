@@ -69,6 +69,7 @@ class ChunkActionAuthority {
   // Returns true if chunk deleted or non-existant
   virtual bool Delete(const std::string &name,
                       const std::string &version,
+                      const std::string &ownership_proof,
                       const asymm::PublicKey &public_key);
   virtual bool Modify(const std::string &name,
                       const std::string &content,
@@ -98,6 +99,7 @@ class ChunkActionAuthority {
                          const asymm::PublicKey &public_key) const = 0;
   virtual int ValidDelete(const std::string &name,
                           const std::string &version,
+                          const std::string &ownership_proof,
                           const asymm::PublicKey &public_key) const = 0;
   virtual int ValidModify(const std::string &name,
                           const std::string &content,

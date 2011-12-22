@@ -45,6 +45,7 @@ class CryptoKeyPairsTest : public testing::Test {
         kRsaKeySize_(4096),
         threads_(),
         crypto_key_pairs_(asio_service_, kRsaKeySize_) {}
+
  protected:
   void SetUp() {
     for (int i(0); i != 5; ++i) {

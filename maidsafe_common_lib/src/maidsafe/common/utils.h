@@ -113,6 +113,7 @@ class Stats {
   * @return arithmetic mean
   */
   T Mean() const { return size_ > 0 ? static_cast<T>(sum_ / size_) : 0; }
+
  private:
   uint64_t size_;
   T min_;
