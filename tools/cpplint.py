@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 #
 # Copyright (c) 2009 Google Inc. All rights reserved.
 #
@@ -1771,10 +1771,15 @@ def CheckSpacing(filename, clean_lines, linenum, error):
         # //----------------------------------------------------------
         # or are an empty C++ style Doxygen comment, like:
         # ///
+        # or are an inline Doxygen comment, like:
+        # int num;  ///< a number
+        # or are Doxygen group brackets ///@{ and ///@}
         # or they begin with multiple slashes followed by a space:
         # //////// Header comment
         match = (Search(r'[=/-]{4,}\s*$', line[commentend:]) or
                  Search(r'^/$', line[commentend:]) or
+                 Search(r'^/< ', line[commentend:]) or
+                 Search(r'^/@[{}]', line[commentend:]) or
                  Search(r'^/+ ', line[commentend:]))
         if not match:
           error(filename, linenum, 'whitespace/comments', 4,
