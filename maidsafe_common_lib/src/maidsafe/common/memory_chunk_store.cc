@@ -31,7 +31,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-std::string MemoryChunkStore::Get(const std::string &name) const {
+MemoryChunkStore::MemoryChunkStore() : ChunkStore(), chunks_() {}
+
+MemoryChunkStore::~MemoryChunkStore() {}
+
+std::string MemoryChunkStore::Get(
+    const std::string &name,
+    const asymm::Identity &/*public_key_id*/) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end()) {
     DLOG(WARNING) << "Can't get chunk " << Base32Substr(name);
@@ -42,7 +48,8 @@ std::string MemoryChunkStore::Get(const std::string &name) const {
 }
 
 bool MemoryChunkStore::Get(const std::string &name,
-                           const fs::path &sink_file_name) const {
+                           const fs::path &sink_file_name,
+                           const asymm::Identity &/*public_key_id*/) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end()) {
     DLOG(WARNING) << "Can't get chunk " << Base32Substr(name);
@@ -53,7 +60,8 @@ bool MemoryChunkStore::Get(const std::string &name,
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
-                             const std::string &content) {
+                             const std::string &content,
+                             const asymm::Identity &/*public_key_id*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Empty name passed.";
     return false;
@@ -87,7 +95,8 @@ bool MemoryChunkStore::Store(const std::string &name,
 
 bool MemoryChunkStore::Store(const std::string &name,
                              const fs::path &source_file_name,
-                             bool delete_source_file) {
+                             bool delete_source_file,
+                             const asymm::Identity &/*public_key_id*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Empty name passed.";
     return false;
@@ -141,7 +150,8 @@ bool MemoryChunkStore::Store(const std::string &name,
   return true;
 }
 
-bool MemoryChunkStore::Delete(const std::string &name) {
+bool MemoryChunkStore::Delete(const std::string &name,
+                              const asymm::Identity &/*public_key_id*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Name empty";
     return false;
@@ -165,7 +175,8 @@ bool MemoryChunkStore::Delete(const std::string &name) {
 }
 
 bool MemoryChunkStore::Modify(const std::string &name,
-                              const std::string &content) {
+                              const std::string &content,
+                              const asymm::Identity &/*public_key_id*/) {
   if (name.empty())
     return false;
   auto it = chunks_.find(name);
@@ -189,7 +200,8 @@ bool MemoryChunkStore::Modify(const std::string &name,
 
 bool MemoryChunkStore::Modify(const std::string &name,
                               const fs::path &source_file_name,
-                              bool delete_source_file) {
+                              bool delete_source_file,
+                              const asymm::Identity &/*public_key_id*/) {
   if (source_file_name.empty())
     return false;
   std::string content;
@@ -201,6 +213,14 @@ bool MemoryChunkStore::Modify(const std::string &name,
   if (delete_source_file)
     fs::remove(source_file_name, ec);
   return true;
+}
+
+bool MemoryChunkStore::Has(const std::string &name,
+                           const asymm::Identity &/*public_key_id*/) const {
+  bool found(chunks_.find(name) != chunks_.end());
+  DLOG(INFO) << (found ? "Have chunk " : "Do not have chunk ")
+             << Base32Substr(name);
+  return found;
 }
 
 bool MemoryChunkStore::MoveTo(const std::string &name,
@@ -231,13 +251,6 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
   }
 
   return true;
-}
-
-bool MemoryChunkStore::Has(const std::string &name) const {
-  bool found(chunks_.find(name) != chunks_.end());
-  DLOG(INFO) << (found ? "Have chunk " : "Do not have chunk ")
-             << Base32Substr(name);
-  return found;
 }
 
 uintmax_t MemoryChunkStore::Size(const std::string &name) const {

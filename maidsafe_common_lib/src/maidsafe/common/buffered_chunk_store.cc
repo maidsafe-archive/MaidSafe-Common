@@ -31,10 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-/**
- * If the cache is full and there are no more chunks left to delete, this is the
- * number of chunk transfers to wait for (in Store) before the next check.
- */
+// If the cache is full and there are no more chunks left to delete, this is the
+// number of chunk transfers to wait for (in Store) before the next check.
 const int kWaitTransfersForCacheVacantCheck(10);
 
 BufferedChunkStore::~BufferedChunkStore() {
@@ -43,7 +41,9 @@ BufferedChunkStore::~BufferedChunkStore() {
     xfer_cond_var_.wait(lock);
 }
 
-std::string BufferedChunkStore::Get(const std::string &name) const {
+std::string BufferedChunkStore::Get(
+    const std::string &name,
+    const asymm::Identity &/*public_key_id*/) const {
   if (name.empty()) {
     DLOG(ERROR) << "Get - Empty name passed.";
     return "";
@@ -68,7 +68,8 @@ std::string BufferedChunkStore::Get(const std::string &name) const {
 }
 
 bool BufferedChunkStore::Get(const std::string &name,
-                             const fs::path &sink_file_name) const {
+                             const fs::path &sink_file_name,
+                             const asymm::Identity &/*public_key_id*/) const {
   if (name.empty()) {
     DLOG(ERROR) << "Get - Empty name passed.";
     return false;
@@ -93,7 +94,8 @@ bool BufferedChunkStore::Get(const std::string &name,
 }
 
 bool BufferedChunkStore::Store(const std::string &name,
-                               const std::string &content) {
+                               const std::string &content,
+                               const asymm::Identity &/*public_key_id*/) {
   if (!DoCacheStore(name, content))
     return false;
 
@@ -109,7 +111,8 @@ bool BufferedChunkStore::Store(const std::string &name,
 
 bool BufferedChunkStore::Store(const std::string &name,
                                const fs::path &source_file_name,
-                               bool delete_source_file) {
+                               bool delete_source_file,
+                               const asymm::Identity &/*public_key_id*/) {
   boost::system::error_code ec;
   uintmax_t size(fs::file_size(source_file_name, ec));
 
@@ -184,7 +187,8 @@ bool BufferedChunkStore::PermanentStore(const std::string &name) {
   return true;
 }
 
-bool BufferedChunkStore::Delete(const std::string &name) {
+bool BufferedChunkStore::Delete(const std::string &name,
+                                const asymm::Identity &/*public_key_id*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Delete - Empty name passed.";
     return false;
@@ -212,7 +216,8 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 }
 
 bool BufferedChunkStore::Modify(const std::string &name,
-                                const std::string &content) {
+                                const std::string &content,
+                                const asymm::Identity &/*public_key_id*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Modify - Empty name passed.";
     return false;
@@ -312,7 +317,8 @@ bool BufferedChunkStore::Modify(const std::string &name,
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const fs::path &source_file_name,
-                                bool delete_source_file) {
+                                bool delete_source_file,
+                                const asymm::Identity &/*public_key_id*/) {
   if (source_file_name.empty()) {
     DLOG(ERROR) << "Modify - No source file passed for " << Base32Substr(name);
     return false;
@@ -333,6 +339,11 @@ bool BufferedChunkStore::Modify(const std::string &name,
   if (delete_source_file)
     fs::remove(source_file_name, ec);
   return true;
+}
+
+bool BufferedChunkStore::Has(const std::string &name,
+                             const asymm::Identity &/*public_key_id*/) const {
+  return CacheHas(name) || PermanentHas(name);
 }
 
 bool BufferedChunkStore::MoveTo(const std::string &name,
@@ -363,10 +374,6 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
   cache_chunk_store_.Delete(name);
 
   return true;
-}
-
-bool BufferedChunkStore::Has(const std::string &name) const {
-  return CacheHas(name) || PermanentHas(name);
 }
 
 bool BufferedChunkStore::CacheHas(const std::string &name) const {

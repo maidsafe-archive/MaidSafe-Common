@@ -166,7 +166,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_Get) {
   EXPECT_EQ(name, crypto::HashFile<crypto::SHA512>(path));
 
   // invalid file name
-  EXPECT_FALSE(this->chunk_store_->Get(name, ""));
+  EXPECT_FALSE(this->chunk_store_->Get(name, fs::path("")));
 }
 
 TYPED_TEST_P(ChunkStoreTest, BEH_Store) {
@@ -676,7 +676,7 @@ TYPED_TEST_P(ChunkStoreTest, BEH_References) {
   EXPECT_TRUE(this->chunk_store_->Get("").empty());
   EXPECT_TRUE(this->chunk_store_->Get(name1).empty());
   EXPECT_FALSE(this->chunk_store_->Get("", *this->test_dir_ / "dummy"));
-  EXPECT_FALSE(this->chunk_store_->Get(name1, ""));
+  EXPECT_FALSE(this->chunk_store_->Get(name1, fs::path("")));
   EXPECT_FALSE(this->chunk_store_->Get(name1, *this->test_dir_ / "dummy"));
   EXPECT_FALSE(this->chunk_store_->Store("", "dummy"));
   EXPECT_FALSE(this->chunk_store_->Store(name1, ""));

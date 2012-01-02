@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
 
 #include <string>
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
@@ -41,7 +42,9 @@ namespace maidsafe {
 class AlternativeStore {
  public:
   virtual ~AlternativeStore() {}
-  virtual bool Has(const std::string &key) const = 0;
+  virtual bool Has(
+      const std::string &key,
+      const asymm::Identity &public_key_id = asymm::Identity()) const = 0;
 };
 
 }  // namespace maidsafe

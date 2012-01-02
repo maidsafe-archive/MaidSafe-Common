@@ -36,6 +36,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
+FileChunkStore::FileChunkStore()
+    : ChunkStore(),
+      initialised_(false),
+      storage_location_(),
+      chunk_count_(0),
+      dir_depth_(0),
+      info_file_() {}
 
 FileChunkStore::~FileChunkStore() {
   info_file_.close();
@@ -74,7 +81,9 @@ bool FileChunkStore::Init(const fs::path &storage_location,
   return true;
 }
 
-std::string FileChunkStore::Get(const std::string &name) const {
+std::string FileChunkStore::Get(
+    const std::string &name,
+    const asymm::Identity &/*public_key_id*/) const {
   if (!IsChunkStoreInitialised())
     return "";
 
@@ -97,7 +106,8 @@ std::string FileChunkStore::Get(const std::string &name) const {
 }
 
 bool FileChunkStore::Get(const std::string &name,
-                         const fs::path &sink_file_name) const {
+                         const fs::path &sink_file_name,
+                         const asymm::Identity &/*public_key_id*/) const {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -119,7 +129,8 @@ bool FileChunkStore::Get(const std::string &name,
 }
 
 bool FileChunkStore::Store(const std::string &name,
-                           const std::string &content) {
+                           const std::string &content,
+                           const asymm::Identity &/*public_key_id*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -162,7 +173,8 @@ bool FileChunkStore::Store(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
-                           bool delete_source_file) {
+                           bool delete_source_file,
+                           const asymm::Identity &/*public_key_id*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -220,7 +232,8 @@ bool FileChunkStore::Store(const std::string &name,
   return false;
 }
 
-bool FileChunkStore::Delete(const std::string &name) {
+bool FileChunkStore::Delete(const std::string &name,
+                            const asymm::Identity &/*public_key_id*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -264,7 +277,8 @@ bool FileChunkStore::Delete(const std::string &name) {
 }
 
 bool FileChunkStore::Modify(const std::string &name,
-                            const std::string &content) {
+                            const std::string &content,
+                            const asymm::Identity &/*public_key_id*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -294,7 +308,8 @@ bool FileChunkStore::Modify(const std::string &name,
 
 bool FileChunkStore::Modify(const std::string &name,
                             const fs::path &source_file_name,
-                            bool delete_source_file) {
+                            bool delete_source_file,
+                            const asymm::Identity &/*public_key_id*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -329,6 +344,17 @@ bool FileChunkStore::Modify(const std::string &name,
   if (delete_source_file)
     fs::remove(source_file_name, ec);
   return true;
+}
+
+bool FileChunkStore::Has(const std::string &name,
+                         const asymm::Identity &/*public_key_id*/) const {
+  if (!IsChunkStoreInitialised())
+    return false;
+
+  if (name.empty())
+    return false;
+
+  return GetChunkReferenceCount(ChunkNameToFilePath(name)) != 0;
 }
 
 bool FileChunkStore::MoveTo(const std::string &name,
@@ -369,16 +395,6 @@ bool FileChunkStore::MoveTo(const std::string &name,
     }
   }
   return false;
-}
-
-bool FileChunkStore::Has(const std::string &name) const {
-  if (!IsChunkStoreInitialised())
-    return false;
-
-  if (name.empty())
-    return false;
-
-  return GetChunkReferenceCount(ChunkNameToFilePath(name)) != 0;
 }
 
 uintmax_t FileChunkStore::Size(const std::string &name) const {
@@ -485,14 +501,11 @@ void FileChunkStore::ChunkRemoved(const uintmax_t &delta) {
   SaveChunkStoreState();
 }
 
-/**
- * Directory Iteration is required
- * The function receives a chunk name without extension
- * To get the file's ref count (extension), each file in the
- * dir needs to be checked for match after removing its extension
- *
- * @todo Add ability to merge reference counts of multiple copies of same chunk
- */
+// Directory Iteration is required.  The function receives a chunk name without
+// extension.  To get the file's ref count (extension), each file in the dir
+// needs to be checked for match after removing its extension
+//
+// @todo Add ability to merge reference counts of multiple copies of same chunk
 uintmax_t FileChunkStore::GetChunkReferenceCount(
     const fs::path &chunk_path) const {
   boost::system::error_code ec;

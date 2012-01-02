@@ -25,11 +25,6 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/**
- * @file threadsafe_chunk_store.h
- * @brief Declaration of ThreadsafeChunkStore interface.
- */
-
 #ifndef MAIDSAFE_COMMON_THREADSAFE_CHUNK_STORE_H_
 #define MAIDSAFE_COMMON_THREADSAFE_CHUNK_STORE_H_
 
@@ -54,159 +49,45 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-/**
- * Concrete threadsafe class to manage storage and retrieval of chunks.  The
- * class implements shared mutex locking around another concrete ChunkStore.
- */
+// Concrete threadsafe class to manage storage and retrieval of chunks.  The
+// class implements shared mutex locking around another concrete ChunkStore.
 class ThreadsafeChunkStore : public ChunkStore {
  public:
-  explicit ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store)
-      : ChunkStore(),
-        chunk_store_(chunk_store),
-        shared_mutex_() {}
-
-  ~ThreadsafeChunkStore() {}
-
-  /**
-   * Retrieves a chunk's content as a string.
-   * @param name Chunk name
-   * @return Chunk content, or empty if non-existant
-   */
-  std::string Get(const std::string &name) const;
-
-  /**
-   * Retrieves a chunk's content as a file, potentially overwriting an existing
-   * file of the same name.
-   * @param name Chunk name
-   * @param sink_file_name Path to output file
-   * @return True if chunk exists and could be written to file.
-   */
-  bool Get(const std::string &name, const fs::path &sink_file_name) const;
-
-  /**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's content
-   * @return True if chunk could be stored or already existed
-   */
-  bool Store(const std::string &name, const std::string &content);
-
-  /**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param source_file_name Path to input file
-   * @param delete_source_file True if file can be deleted after storing
-   * @return True if chunk could be stored or already existed
-   */
+  explicit ThreadsafeChunkStore(std::shared_ptr<ChunkStore> chunk_store);
+  ~ThreadsafeChunkStore();
+  std::string Get(
+      const std::string &name,
+      const asymm::Identity &public_key_id = asymm::Identity()) const;
+  bool Get(const std::string &name,
+           const fs::path &sink_file_name,
+           const asymm::Identity &public_key_id = asymm::Identity()) const;
+  bool Store(const std::string &name,
+             const std::string &content,
+             const asymm::Identity &public_key_id = asymm::Identity());
   bool Store(const std::string &name,
              const fs::path &source_file_name,
-             bool delete_source_file);
-
-  /**
-   * Deletes a stored chunk.
-   * @param name Chunk name
-   * @return True if chunk deleted or non-existant
-   */
-  bool Delete(const std::string &name);
-
-  /**
-   * Modifies chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's modified content
-   * @return True if chunk has been modified.
-   */
-  bool Modify(const std::string &name, const std::string &content);
-
-  /**
-   * Modifies a chunk's content as a file, potentially overwriting an existing
-   * file of the same name.
-   * @param name Chunk name
-   * @param source_file_name Path to modified content file
-   * @return True if chunk has been modified.
-   */
+             bool delete_source_file,
+             const asymm::Identity &public_key_id = asymm::Identity());
+  bool Delete(const std::string &name,
+              const asymm::Identity &public_key_id = asymm::Identity());
+  bool Modify(const std::string &name,
+              const std::string &content,
+              const asymm::Identity &public_key_id = asymm::Identity());
   bool Modify(const std::string &name,
               const fs::path &source_file_name,
-              bool delete_source_file);
-
-  /**
-   * Efficiently adds a locally existing chunk to another ChunkStore and
-   * removes it from this one.
-   * @param name Chunk name
-   * @param sink_chunk_store The receiving ChunkStore
-   * @return True if operation successful
-   */
+              bool delete_source_file,
+              const asymm::Identity &public_key_id = asymm::Identity());
+  bool Has(const std::string &name,
+           const asymm::Identity &public_key_id = asymm::Identity()) const;
   bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
-
-  /**
-   * Checks if a chunk exists.
-   * @param name Chunk name
-   * @return True if chunk exists
-   */
-  bool Has(const std::string &name) const;
-
-  /**
-   * Retrieves the size of a chunk.
-   * @param name Chunk name
-   * @return Size in bytes
-   */
   uintmax_t Size(const std::string &name) const;
-
-  /**
-   * Retrieves the total size of the stored chunks.
-   * @return Size in bytes
-   */
   uintmax_t Size() const;
-
-  /**
-   * Retrieves the maximum storage capacity available to this ChunkStore.
-   *
-   * A capacity of zero (0) equals infinite storage space.
-   * @return Capacity in bytes
-   */
   uintmax_t Capacity() const;
-
-  /**
-   * Sets the maximum storage capacity available to this ChunkStore.
-   *
-   * A capacity of zero (0) equals infinite storage space. The capacity must
-   * always be at least as high as the total size of already stored chunks.
-   * @param capacity Capacity in bytes
-   */
   void SetCapacity(const uintmax_t &capacity);
-
-  /**
-   * Checks whether the ChunkStore has enough capacity to store a chunk of the
-   * given size.
-   * @return True if required size vacant
-   */
   bool Vacant(const uintmax_t &required_size) const;
-
-  /**
-   * Retrieves the number of references to a chunk.
-   *
-   * If reference counting is enabled, this returns the number of (virtual)
-   * copies of a chunk in the ChunkStore. Otherwise it would return 1 if the
-   * chunks exists, or 0 if it doesn't.
-   * @param name Chunk name
-   * @return Reference count
-   */
   uintmax_t Count(const std::string &name) const;
-
-  /**
-   * Retrieves the number of chunks held by this ChunkStore.
-   * @return Chunk count
-   */
   uintmax_t Count() const;
-
-  /**
-   * Checks if any chunks are held by this ChunkStore.
-   * @return True if no chunks stored
-   */
   bool Empty() const;
-
-  /**
-   * Deletes all stored chunks.
-   */
   void Clear();
 
  private:
