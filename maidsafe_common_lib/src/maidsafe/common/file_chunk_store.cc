@@ -83,7 +83,7 @@ bool FileChunkStore::Init(const fs::path &storage_location,
 
 std::string FileChunkStore::Get(
     const std::string &name,
-    const asymm::Identity &/*public_key_id*/) const {
+    const ValidationData &/*validation_data*/) const {
   if (!IsChunkStoreInitialised())
     return "";
 
@@ -107,7 +107,7 @@ std::string FileChunkStore::Get(
 
 bool FileChunkStore::Get(const std::string &name,
                          const fs::path &sink_file_name,
-                         const asymm::Identity &/*public_key_id*/) const {
+                         const ValidationData &/*validation_data*/) const {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -130,7 +130,7 @@ bool FileChunkStore::Get(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const std::string &content,
-                           const asymm::Identity &/*public_key_id*/) {
+                           const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -174,7 +174,7 @@ bool FileChunkStore::Store(const std::string &name,
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
                            bool delete_source_file,
-                           const asymm::Identity &/*public_key_id*/) {
+                           const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -233,7 +233,7 @@ bool FileChunkStore::Store(const std::string &name,
 }
 
 bool FileChunkStore::Delete(const std::string &name,
-                            const asymm::Identity &/*public_key_id*/) {
+                            const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -278,7 +278,7 @@ bool FileChunkStore::Delete(const std::string &name,
 
 bool FileChunkStore::Modify(const std::string &name,
                             const std::string &content,
-                            const asymm::Identity &/*public_key_id*/) {
+                            const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -309,7 +309,7 @@ bool FileChunkStore::Modify(const std::string &name,
 bool FileChunkStore::Modify(const std::string &name,
                             const fs::path &source_file_name,
                             bool delete_source_file,
-                            const asymm::Identity &/*public_key_id*/) {
+                            const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -347,7 +347,7 @@ bool FileChunkStore::Modify(const std::string &name,
 }
 
 bool FileChunkStore::Has(const std::string &name,
-                         const asymm::Identity &/*public_key_id*/) const {
+                         const ValidationData &/*validation_data*/) const {
   if (!IsChunkStoreInitialised())
     return false;
 

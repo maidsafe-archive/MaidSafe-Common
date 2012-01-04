@@ -43,21 +43,22 @@ ThreadsafeChunkStore::~ThreadsafeChunkStore() {}
 
 std::string ThreadsafeChunkStore::Get(
     const std::string &name,
-    const asymm::Identity &/*public_key_id*/) const {
+    const ValidationData &/*validation_data*/) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Get(name);
 }
 
-bool ThreadsafeChunkStore::Get(const std::string &name,
-                               const fs::path &sink_file_name,
-                               const asymm::Identity &/*public_key_id*/) const {
+bool ThreadsafeChunkStore::Get(
+    const std::string &name,
+    const fs::path &sink_file_name,
+    const ValidationData &/*validation_data*/) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Get(name, sink_file_name);
 }
 
 bool ThreadsafeChunkStore::Store(const std::string &name,
                                  const std::string &content,
-                                 const asymm::Identity &/*public_key_id*/) {
+                                 const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Store(name, content);
 }
@@ -65,20 +66,20 @@ bool ThreadsafeChunkStore::Store(const std::string &name,
 bool ThreadsafeChunkStore::Store(const std::string &name,
                                  const fs::path &source_file_name,
                                  bool delete_source_file,
-                                 const asymm::Identity &/*public_key_id*/) {
+                                 const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Store(name, source_file_name, delete_source_file);
 }
 
 bool ThreadsafeChunkStore::Delete(const std::string &name,
-                                  const asymm::Identity &/*public_key_id*/) {
+                                  const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Delete(name);
 }
 
 bool ThreadsafeChunkStore::Modify(const std::string &name,
                                   const std::string &content,
-                                  const asymm::Identity &/*public_key_id*/) {
+                                  const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Modify(name, content);
 }
@@ -86,13 +87,14 @@ bool ThreadsafeChunkStore::Modify(const std::string &name,
 bool ThreadsafeChunkStore::Modify(const std::string &name,
                                   const fs::path &source_file_name,
                                   bool delete_source_file,
-                                  const asymm::Identity &/*public_key_id*/) {
+                                  const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Modify(name, source_file_name, delete_source_file);
 }
 
-bool ThreadsafeChunkStore::Has(const std::string &name,
-                               const asymm::Identity &/*public_key_id*/) const {
+bool ThreadsafeChunkStore::Has(
+    const std::string &name,
+    const ValidationData &/*validation_data*/) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Has(name);
 }

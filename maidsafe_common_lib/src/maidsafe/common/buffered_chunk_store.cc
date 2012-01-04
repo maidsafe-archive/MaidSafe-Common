@@ -43,7 +43,7 @@ BufferedChunkStore::~BufferedChunkStore() {
 
 std::string BufferedChunkStore::Get(
     const std::string &name,
-    const asymm::Identity &/*public_key_id*/) const {
+    const ValidationData &/*validation_data*/) const {
   if (name.empty()) {
     DLOG(ERROR) << "Get - Empty name passed.";
     return "";
@@ -69,7 +69,7 @@ std::string BufferedChunkStore::Get(
 
 bool BufferedChunkStore::Get(const std::string &name,
                              const fs::path &sink_file_name,
-                             const asymm::Identity &/*public_key_id*/) const {
+                             const ValidationData &/*validation_data*/) const {
   if (name.empty()) {
     DLOG(ERROR) << "Get - Empty name passed.";
     return false;
@@ -95,7 +95,7 @@ bool BufferedChunkStore::Get(const std::string &name,
 
 bool BufferedChunkStore::Store(const std::string &name,
                                const std::string &content,
-                               const asymm::Identity &/*public_key_id*/) {
+                               const ValidationData &/*validation_data*/) {
   if (!DoCacheStore(name, content))
     return false;
 
@@ -112,7 +112,7 @@ bool BufferedChunkStore::Store(const std::string &name,
 bool BufferedChunkStore::Store(const std::string &name,
                                const fs::path &source_file_name,
                                bool delete_source_file,
-                               const asymm::Identity &/*public_key_id*/) {
+                               const ValidationData &/*validation_data*/) {
   boost::system::error_code ec;
   uintmax_t size(fs::file_size(source_file_name, ec));
 
@@ -188,7 +188,7 @@ bool BufferedChunkStore::PermanentStore(const std::string &name) {
 }
 
 bool BufferedChunkStore::Delete(const std::string &name,
-                                const asymm::Identity &/*public_key_id*/) {
+                                const ValidationData &/*validation_data*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Delete - Empty name passed.";
     return false;
@@ -217,7 +217,7 @@ bool BufferedChunkStore::Delete(const std::string &name,
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const std::string &content,
-                                const asymm::Identity &/*public_key_id*/) {
+                                const ValidationData &/*validation_data*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Modify - Empty name passed.";
     return false;
@@ -318,7 +318,7 @@ bool BufferedChunkStore::Modify(const std::string &name,
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const fs::path &source_file_name,
                                 bool delete_source_file,
-                                const asymm::Identity &/*public_key_id*/) {
+                                const ValidationData &/*validation_data*/) {
   if (source_file_name.empty()) {
     DLOG(ERROR) << "Modify - No source file passed for " << Base32Substr(name);
     return false;
@@ -342,7 +342,7 @@ bool BufferedChunkStore::Modify(const std::string &name,
 }
 
 bool BufferedChunkStore::Has(const std::string &name,
-                             const asymm::Identity &/*public_key_id*/) const {
+                             const ValidationData &/*validation_data*/) const {
   return CacheHas(name) || PermanentHas(name);
 }
 

@@ -67,28 +67,28 @@ class MemoryChunkStore : public ChunkStore {
   ~MemoryChunkStore();
   std::string Get(
       const std::string &name,
-      const asymm::Identity &public_key_id = asymm::Identity()) const;
+      const ValidationData &validation_data = ValidationData()) const;
   bool Get(const std::string &name,
            const fs::path &sink_file_name,
-           const asymm::Identity &public_key_id = asymm::Identity()) const;
+           const ValidationData &validation_data = ValidationData()) const;
   bool Store(const std::string &name,
              const std::string &content,
-             const asymm::Identity &public_key_id = asymm::Identity());
+             const ValidationData &validation_data = ValidationData());
   bool Store(const std::string &name,
              const fs::path &source_file_name,
              bool delete_source_file,
-             const asymm::Identity &public_key_id = asymm::Identity());
+             const ValidationData &validation_data = ValidationData());
   bool Delete(const std::string &name,
-              const asymm::Identity &public_key_id = asymm::Identity());
+              const ValidationData &validation_data = ValidationData());
   bool Modify(const std::string &name,
               const std::string &content,
-              const asymm::Identity &public_key_id = asymm::Identity());
+              const ValidationData &validation_data = ValidationData());
   bool Modify(const std::string &name,
               const fs::path &source_file_name,
               bool delete_source_file,
-              const asymm::Identity &public_key_id = asymm::Identity());
+              const ValidationData &validation_data = ValidationData());
   bool Has(const std::string &name,
-           const asymm::Identity &public_key_id = asymm::Identity()) const;
+           const ValidationData &validation_data = ValidationData()) const;
   bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
   uintmax_t Size(const std::string &name) const;
   uintmax_t Size() const { return ChunkStore::Size(); }

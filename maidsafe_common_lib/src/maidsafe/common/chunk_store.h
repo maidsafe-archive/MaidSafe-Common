@@ -59,7 +59,7 @@ class ChunkStore : public AlternativeStore {
   // Retrieves a chunk's content as a string.
   virtual std::string Get(
       const std::string &name,
-      const asymm::Identity &public_key_id = asymm::Identity()) const = 0;
+      const ValidationData &validation_data = ValidationData()) const = 0;
 
   // Retrieves a chunk's content as a file, potentially overwriting an existing
   // file of the same name.  Returns true if chunk exists and could be written
@@ -67,31 +67,31 @@ class ChunkStore : public AlternativeStore {
   virtual bool Get(
       const std::string &name,
       const fs::path &sink_file_name,
-      const asymm::Identity &public_key_id = asymm::Identity()) const = 0;
+      const ValidationData &validation_data = ValidationData()) const = 0;
 
   // Stores chunk content under the given name.
   virtual bool Store(
       const std::string &name,
       const std::string &content,
-      const asymm::Identity &public_key_id = asymm::Identity()) = 0;
+      const ValidationData &validation_data = ValidationData()) = 0;
 
   // Stores chunk content under the given name.
   virtual bool Store(
       const std::string &name,
       const fs::path &source_file_name,
       bool delete_source_file,
-      const asymm::Identity &public_key_id = asymm::Identity()) = 0;
+      const ValidationData &validation_data = ValidationData()) = 0;
 
   // Deletes a stored chunk.  Returns true if chunk deleted or non-existant.
   virtual bool Delete(
       const std::string &name,
-      const asymm::Identity &public_key_id = asymm::Identity()) = 0;
+      const ValidationData &validation_data = ValidationData()) = 0;
 
   // Modifies chunk content under the given name.
   virtual bool Modify(
       const std::string &name,
       const std::string &content,
-      const asymm::Identity &public_key_id = asymm::Identity()) = 0;
+      const ValidationData &validation_data = ValidationData()) = 0;
 
   // Modifies a chunk's content as a file, potentially overwriting an existing
   // file of the same name.
@@ -99,12 +99,12 @@ class ChunkStore : public AlternativeStore {
       const std::string &name,
       const fs::path &source_file_name,
       bool delete_source_file,
-      const asymm::Identity &public_key_id = asymm::Identity()) = 0;
+      const ValidationData &validation_data = ValidationData()) = 0;
 
   // Checks if a chunk exists.
   virtual bool Has(
       const std::string &name,
-      const asymm::Identity &public_key_id = asymm::Identity()) const = 0;
+      const ValidationData &validation_data = ValidationData()) const = 0;
 
   // Efficiently adds a locally existing chunk to another ChunkStore and
   // removes it from this one.

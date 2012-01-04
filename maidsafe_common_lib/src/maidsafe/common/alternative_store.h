@@ -41,10 +41,19 @@ namespace maidsafe {
 
 class AlternativeStore {
  public:
+  struct ValidationData {
+    ValidationData(const asymm::Keys &key_pair_in,
+                   const std::string &ownership_proof_in)
+        : key_pair(key_pair_in),
+          ownership_proof(ownership_proof_in) {}
+    ValidationData() : key_pair(), ownership_proof() {}
+    asymm::Keys key_pair;
+    std::string ownership_proof;
+  };
   virtual ~AlternativeStore() {}
   virtual bool Has(
       const std::string &key,
-      const asymm::Identity &public_key_id = asymm::Identity()) const = 0;
+      const ValidationData &validation_data = ValidationData()) const = 0;
 };
 
 }  // namespace maidsafe
