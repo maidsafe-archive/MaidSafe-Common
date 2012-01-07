@@ -103,6 +103,11 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/build ${PROJECT_SOURCE_DIR}/../cmake
 INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX}/share/maidsafe/maidsafe_third_party.cmake)
 SET(MaidSafeCommon_INCLUDE_DIR ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
 
+SET(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+FILE(GLOB PROTO_FILES_COMMON RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/common/*.proto")
+SET(PROTO_FILES "${PROTO_FILES_COMMON}")
+
+
 ###################################################################################################
 # Standard setup                                                                                  #
 ###################################################################################################
@@ -170,12 +175,21 @@ TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_te
 # Set compiler and linker flags                                                                   #
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
+IF(MSVC)
+  # Warnings switched off for protocol buffer generated files
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc
+                                PROPERTIES COMPILE_FLAGS "/W0")
+ELSEIF(UNIX)
+  SET_SOURCE_FILES_PROPERTIES(${PROTO_SOURCE_FILES} PROPERTIES COMPILE_FLAGS "-w")
+ENDIF()
 
 
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
-ADD_STYLE_TEST(${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
+SET(STYLE_TESTS ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
+LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc")
+ADD_STYLE_TEST(${STYLE_TESTS})
 ADD_GTESTS(TESTcommon)
 ADD_GTESTS(TESTboost)
 INCLUDE(${CRYPTO_TEST_CMAKE})
@@ -245,7 +259,9 @@ FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON
 STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
 
 MS_INSTALL_LIBS(maidsafe_common_static)
+LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.h")
 MS_INSTALL_HEADERS(common ${HEADER_FILES_COMMON_DIR})
+
 INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
 INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
 INSTALL(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)
