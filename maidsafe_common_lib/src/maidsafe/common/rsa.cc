@@ -47,6 +47,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/platform_config.h"
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/safe_enc.pb.h"
 
 
 namespace maidsafe {

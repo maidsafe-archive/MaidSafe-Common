@@ -180,7 +180,8 @@ IF(MSVC)
   SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc
                                 PROPERTIES COMPILE_FLAGS "/W0")
 ELSEIF(UNIX)
-  SET_SOURCE_FILES_PROPERTIES(${PROTO_SOURCE_FILES} PROPERTIES COMPILE_FLAGS "-w")
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc
+                                PROPERTIES COMPILE_FLAGS "-w")
 ENDIF()
 
 
