@@ -31,7 +31,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-std::string MemoryChunkStore::Get(const std::string &name) const {
+MemoryChunkStore::MemoryChunkStore() : ChunkStore(), chunks_() {}
+
+MemoryChunkStore::~MemoryChunkStore() {}
+
+std::string MemoryChunkStore::Get(
+    const std::string &name,
+    const ValidationData &/*validation_data*/) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end()) {
     DLOG(WARNING) << "Can't get chunk " << Base32Substr(name);
@@ -42,7 +48,8 @@ std::string MemoryChunkStore::Get(const std::string &name) const {
 }
 
 bool MemoryChunkStore::Get(const std::string &name,
-                           const fs::path &sink_file_name) const {
+                           const fs::path &sink_file_name,
+                           const ValidationData &/*validation_data*/) const {
   auto it = chunks_.find(name);
   if (it == chunks_.end()) {
     DLOG(WARNING) << "Can't get chunk " << Base32Substr(name);
@@ -53,18 +60,15 @@ bool MemoryChunkStore::Get(const std::string &name,
 }
 
 bool MemoryChunkStore::Store(const std::string &name,
-                             const std::string &content) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "Failed to validate chunk " << Base32Substr(name);
+                             const std::string &content,
+                             const ValidationData &/*validation_data*/) {
+  if (name.empty()) {
+    DLOG(ERROR) << "Empty name passed.";
     return false;
   }
 
   auto it = chunks_.find(name);
   if (it != chunks_.end()) {
-    if (!chunk_validation_->Hashable(name)) {
-      DLOG(ERROR) << "Already stored chunk " << Base32Substr(name);
-      return false;
-    }
     ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << Base32Substr(name) << " to "
                 << (*it).second.first;
@@ -91,9 +95,10 @@ bool MemoryChunkStore::Store(const std::string &name,
 
 bool MemoryChunkStore::Store(const std::string &name,
                              const fs::path &source_file_name,
-                             bool delete_source_file) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "Failed to validate chunk " << Base32Substr(name);
+                             bool delete_source_file,
+                             const ValidationData &/*validation_data*/) {
+  if (name.empty()) {
+    DLOG(ERROR) << "Empty name passed.";
     return false;
   }
 
@@ -133,9 +138,6 @@ bool MemoryChunkStore::Store(const std::string &name,
     chunks_[name] = ChunkEntry(1, content);
     IncreaseSize(chunk_size);
     DLOG(INFO) << "Stored chunk " << Base32Substr(name);
-  } else if (!chunk_validation_->Hashable(name)) {
-      DLOG(ERROR) << "Already stored chunk " << Base32Substr(name);
-      return false;
   } else {
     ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << Base32Substr(name) << " to "
@@ -148,7 +150,8 @@ bool MemoryChunkStore::Store(const std::string &name,
   return true;
 }
 
-bool MemoryChunkStore::Delete(const std::string &name) {
+bool MemoryChunkStore::Delete(const std::string &name,
+                              const ValidationData &/*validation_data*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Name empty";
     return false;
@@ -172,15 +175,12 @@ bool MemoryChunkStore::Delete(const std::string &name) {
 }
 
 bool MemoryChunkStore::Modify(const std::string &name,
-                              const std::string &content) {
+                              const std::string &content,
+                              const ValidationData &/*validation_data*/) {
   if (name.empty())
     return false;
   auto it = chunks_.find(name);
   if (it == chunks_.end())
-    return false;
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      chunk_validation_->Hashable(name))
     return false;
 
   std::string current_content((*it).second.second);
@@ -200,7 +200,8 @@ bool MemoryChunkStore::Modify(const std::string &name,
 
 bool MemoryChunkStore::Modify(const std::string &name,
                               const fs::path &source_file_name,
-                              bool delete_source_file) {
+                              bool delete_source_file,
+                              const ValidationData &/*validation_data*/) {
   if (source_file_name.empty())
     return false;
   std::string content;
@@ -212,6 +213,14 @@ bool MemoryChunkStore::Modify(const std::string &name,
   if (delete_source_file)
     fs::remove(source_file_name, ec);
   return true;
+}
+
+bool MemoryChunkStore::Has(const std::string &name,
+                           const ValidationData &/*validation_data*/) const {
+  bool found(chunks_.find(name) != chunks_.end());
+  DLOG(INFO) << (found ? "Have chunk " : "Do not have chunk ")
+             << Base32Substr(name);
+  return found;
 }
 
 bool MemoryChunkStore::MoveTo(const std::string &name,
@@ -242,49 +251,6 @@ bool MemoryChunkStore::MoveTo(const std::string &name,
   }
 
   return true;
-}
-
-bool MemoryChunkStore::Has(const std::string &name) const {
-  bool found(chunks_.find(name) != chunks_.end());
-  DLOG(INFO) << (found ? "Have chunk " : "Do not have chunk ")
-             << Base32Substr(name);
-  return found;
-}
-
-bool MemoryChunkStore::Validate(const std::string &name) const {
-  if (!chunk_validation_) {
-    DLOG(ERROR) << "No validation available for chunk " << Base32Substr(name);
-    return false;
-  }
-
-  auto it = chunks_.find(name);
-  if (it == chunks_.end()) {
-    DLOG(WARNING) << "Failed to find chunk " << Base32Substr(name);
-    return false;
-  }
-
-  bool valid(chunk_validation_->ValidChunk(name, (*it).second.second));
-  DLOG(INFO) << "Validation result for chunk " << Base32Substr(name) << ": "
-             << std::boolalpha << valid;
-  return valid;
-}
-
-std::string MemoryChunkStore::Version(const std::string &name) const {
-  if (!chunk_validation_) {
-    DLOG(ERROR) << "No validation available for chunk " << Base32Substr(name);
-    return "";
-  }
-
-  auto it = chunks_.find(name);
-  if (it == chunks_.end()) {
-    DLOG(WARNING) << "Failed to find chunk " << Base32Substr(name);
-    return "";
-  }
-
-  std::string version(chunk_validation_->Version(name, (*it).second.second));
-  DLOG(INFO) << "Version result for chunk " << Base32Substr(name) << ": "
-             << Base32Substr(version);
-  return version;
 }
 
 uintmax_t MemoryChunkStore::Size(const std::string &name) const {

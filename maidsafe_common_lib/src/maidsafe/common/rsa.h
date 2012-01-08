@@ -43,7 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/function.hpp"
-#include "boost/serialization/nvp.hpp"
+#include "boost/serialization/string.hpp"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/version.h"
@@ -138,18 +138,12 @@ template <typename Archive>
 void serialize(Archive &archive,                              // NOLINT (Fraser)
                maidsafe::rsa::PrivateKey &private_key,
                const unsigned int& /*version*/) {
-  try {
-    std::string encoded_private_key;
-    if (Archive::is_saving::value)
-      maidsafe::rsa::EncodePrivateKey(private_key, &encoded_private_key);
-    archive& boost::serialization::make_nvp("private_key", encoded_private_key);
-    if (Archive::is_loading::value) {
-        maidsafe::rsa::DecodePrivateKey(encoded_private_key, &private_key);
-    }
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed decoding: " << e.what();
-  }
+  std::string encoded_private_key;
+  if (Archive::is_saving::value)
+    maidsafe::rsa::EncodePrivateKey(private_key, &encoded_private_key);
+  archive & encoded_private_key;
+  if (Archive::is_loading::value)
+    maidsafe::rsa::DecodePrivateKey(encoded_private_key, &private_key);
 #ifdef __MSVC__
 #  pragma warning(default: 4127)
 #endif
@@ -162,18 +156,12 @@ template <typename Archive>
 void serialize(Archive &archive,                              // NOLINT (Fraser)
                maidsafe::rsa::PublicKey &public_key,
                const unsigned int& /*version*/) {
-  try {
-    std::string encoded_public_key;
-    if (Archive::is_saving::value)
-      maidsafe::rsa::EncodePublicKey(public_key, &encoded_public_key);
-    archive& boost::serialization::make_nvp("public_key", encoded_public_key);
-    if (Archive::is_loading::value) {
-        maidsafe::rsa::DecodePublicKey(encoded_public_key, &public_key);
-    }
-  }
-  catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed decoding: " << e.what();
-  }
+  std::string encoded_public_key;
+  if (Archive::is_saving::value)
+    maidsafe::rsa::EncodePublicKey(public_key, &encoded_public_key);
+  archive & encoded_public_key;
+  if (Archive::is_loading::value)
+    maidsafe::rsa::DecodePublicKey(encoded_public_key, &public_key);
 #ifdef __MSVC__
 #  pragma warning(default: 4127)
 #endif

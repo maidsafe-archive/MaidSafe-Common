@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
 
 #include <string>
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
@@ -40,8 +41,19 @@ namespace maidsafe {
 
 class AlternativeStore {
  public:
+  struct ValidationData {
+    ValidationData(const asymm::Keys &key_pair_in,
+                   const std::string &ownership_proof_in)
+        : key_pair(key_pair_in),
+          ownership_proof(ownership_proof_in) {}
+    ValidationData() : key_pair(), ownership_proof() {}
+    asymm::Keys key_pair;
+    std::string ownership_proof;
+  };
   virtual ~AlternativeStore() {}
-  virtual bool Has(const std::string &key) const = 0;
+  virtual bool Has(
+      const std::string &key,
+      const ValidationData &validation_data = ValidationData()) const = 0;
 };
 
 }  // namespace maidsafe

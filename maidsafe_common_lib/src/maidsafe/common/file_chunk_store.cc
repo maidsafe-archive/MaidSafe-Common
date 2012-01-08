@@ -36,6 +36,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
+FileChunkStore::FileChunkStore()
+    : ChunkStore(),
+      initialised_(false),
+      storage_location_(),
+      chunk_count_(0),
+      dir_depth_(0),
+      info_file_() {}
 
 FileChunkStore::~FileChunkStore() {
   info_file_.close();
@@ -74,7 +81,9 @@ bool FileChunkStore::Init(const fs::path &storage_location,
   return true;
 }
 
-std::string FileChunkStore::Get(const std::string &name) const {
+std::string FileChunkStore::Get(
+    const std::string &name,
+    const ValidationData &/*validation_data*/) const {
   if (!IsChunkStoreInitialised())
     return "";
 
@@ -97,7 +106,8 @@ std::string FileChunkStore::Get(const std::string &name) const {
 }
 
 bool FileChunkStore::Get(const std::string &name,
-                         const fs::path &sink_file_name) const {
+                         const fs::path &sink_file_name,
+                         const ValidationData &/*validation_data*/) const {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -119,11 +129,12 @@ bool FileChunkStore::Get(const std::string &name,
 }
 
 bool FileChunkStore::Store(const std::string &name,
-                           const std::string &content) {
+                           const std::string &content,
+                           const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+  if (name.empty())
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name, true));
@@ -146,9 +157,6 @@ bool FileChunkStore::Store(const std::string &name,
     ChunkAdded(content.size());
     return true;
   } else {
-    //  chunk already exists
-    if (!chunk_validation_->Hashable(name))
-      return false;
     fs::path old_path(chunk_file), new_path(chunk_file);
     old_path.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
@@ -165,11 +173,12 @@ bool FileChunkStore::Store(const std::string &name,
 
 bool FileChunkStore::Store(const std::string &name,
                            const fs::path &source_file_name,
-                           bool delete_source_file) {
+                           bool delete_source_file,
+                           const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name))
+  if (name.empty())
     return false;
 
   boost::system::error_code ec;
@@ -205,8 +214,6 @@ bool FileChunkStore::Store(const std::string &name,
     }
   } else {
     //  chunk already exists
-    if (!chunk_validation_->Hashable(name))
-      return false;
     fs::path old_path(chunk_file), new_path(chunk_file);
     old_path.replace_extension(
         "." + boost::lexical_cast<std::string>(ref_count));
@@ -225,7 +232,8 @@ bool FileChunkStore::Store(const std::string &name,
   return false;
 }
 
-bool FileChunkStore::Delete(const std::string &name) {
+bool FileChunkStore::Delete(const std::string &name,
+                            const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
@@ -269,14 +277,12 @@ bool FileChunkStore::Delete(const std::string &name) {
 }
 
 bool FileChunkStore::Modify(const std::string &name,
-                            const std::string &content) {
+                            const std::string &content,
+                            const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      chunk_validation_->Hashable(name) ||
-      !Has(name))
+  if (name.empty() || !Has(name))
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
@@ -302,15 +308,12 @@ bool FileChunkStore::Modify(const std::string &name,
 
 bool FileChunkStore::Modify(const std::string &name,
                             const fs::path &source_file_name,
-                            bool delete_source_file) {
+                            bool delete_source_file,
+                            const ValidationData &/*validation_data*/) {
   if (!IsChunkStoreInitialised())
     return false;
 
-  if (!chunk_validation_ ||
-      !chunk_validation_->ValidName(name) ||
-      source_file_name.empty() ||
-      chunk_validation_->Hashable(name) ||
-      !Has(name))
+  if (name.empty() || !Has(name))
     return false;
 
   fs::path chunk_file(ChunkNameToFilePath(name));
@@ -341,6 +344,17 @@ bool FileChunkStore::Modify(const std::string &name,
   if (delete_source_file)
     fs::remove(source_file_name, ec);
   return true;
+}
+
+bool FileChunkStore::Has(const std::string &name,
+                         const ValidationData &/*validation_data*/) const {
+  if (!IsChunkStoreInitialised())
+    return false;
+
+  if (name.empty())
+    return false;
+
+  return GetChunkReferenceCount(ChunkNameToFilePath(name)) != 0;
 }
 
 bool FileChunkStore::MoveTo(const std::string &name,
@@ -381,58 +395,6 @@ bool FileChunkStore::MoveTo(const std::string &name,
     }
   }
   return false;
-}
-
-bool FileChunkStore::Has(const std::string &name) const {
-  if (!IsChunkStoreInitialised())
-    return false;
-
-  if (name.empty())
-    return false;
-
-  return GetChunkReferenceCount(ChunkNameToFilePath(name)) != 0;
-}
-
-bool FileChunkStore::Validate(const std::string &name) const {
-  if (!chunk_validation_)
-    return false;
-
-  if (!IsChunkStoreInitialised())
-    return false;
-
-  if (name.empty())
-    return false;
-
-  fs::path chunk_file(ChunkNameToFilePath(name));
-  uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-  if (ref_count == 0)
-    return false;
-
-  chunk_file.replace_extension(
-      "." + boost::lexical_cast<std::string>(ref_count));
-
-  return chunk_validation_->ValidChunk(name, chunk_file);
-}
-
-std::string FileChunkStore::Version(const std::string &name) const {
-  if (!chunk_validation_)
-    return "";
-
-  if (!IsChunkStoreInitialised())
-    return "";
-
-  if (name.empty())
-    return "";
-
-  fs::path chunk_file(ChunkNameToFilePath(name));
-  uintmax_t ref_count(GetChunkReferenceCount(chunk_file));
-  if (ref_count == 0)
-    return "";
-
-  chunk_file.replace_extension(
-      "." + boost::lexical_cast<std::string>(ref_count));
-
-  return chunk_validation_->Version(name, chunk_file);
 }
 
 uintmax_t FileChunkStore::Size(const std::string &name) const {
@@ -539,14 +501,11 @@ void FileChunkStore::ChunkRemoved(const uintmax_t &delta) {
   SaveChunkStoreState();
 }
 
-/**
- * Directory Iteration is required
- * The function receives a chunk name without extension
- * To get the file's ref count (extension), each file in the
- * dir needs to be checked for match after removing its extension
- *
- * @todo Add ability to merge reference counts of multiple copies of same chunk
- */
+// Directory Iteration is required.  The function receives a chunk name without
+// extension.  To get the file's ref count (extension), each file in the dir
+// needs to be checked for match after removing its extension
+//
+// @todo Add ability to merge reference counts of multiple copies of same chunk
 uintmax_t FileChunkStore::GetChunkReferenceCount(
     const fs::path &chunk_path) const {
   boost::system::error_code ec;

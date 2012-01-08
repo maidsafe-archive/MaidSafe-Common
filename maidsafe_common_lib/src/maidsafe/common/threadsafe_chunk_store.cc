@@ -25,12 +25,7 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/**
- * @file threadsafe_chunk_store.h
- * @brief Declaration of ThreadsafeChunkStore interface.
- */
 #include "maidsafe/common/threadsafe_chunk_store.h"
-
 
 #include "maidsafe/common/utils.h"
 
@@ -38,67 +33,76 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-std::string ThreadsafeChunkStore::Get(const std::string &name) const {
+ThreadsafeChunkStore::ThreadsafeChunkStore(
+    std::shared_ptr<ChunkStore> chunk_store)
+        : ChunkStore(),
+          chunk_store_(chunk_store),
+          shared_mutex_() {}
+
+ThreadsafeChunkStore::~ThreadsafeChunkStore() {}
+
+std::string ThreadsafeChunkStore::Get(
+    const std::string &name,
+    const ValidationData &/*validation_data*/) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Get(name);
 }
 
-bool ThreadsafeChunkStore::Get(const std::string &name,
-                               const fs::path &sink_file_name) const {
+bool ThreadsafeChunkStore::Get(
+    const std::string &name,
+    const fs::path &sink_file_name,
+    const ValidationData &/*validation_data*/) const {
   SharedLock shared_lock(shared_mutex_);
   return chunk_store_->Get(name, sink_file_name);
 }
 
 bool ThreadsafeChunkStore::Store(const std::string &name,
-                                 const std::string &content) {
+                                 const std::string &content,
+                                 const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Store(name, content);
 }
 
 bool ThreadsafeChunkStore::Store(const std::string &name,
                                  const fs::path &source_file_name,
-                                 bool delete_source_file) {
+                                 bool delete_source_file,
+                                 const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Store(name, source_file_name, delete_source_file);
 }
 
-bool ThreadsafeChunkStore::Delete(const std::string &name) {
+bool ThreadsafeChunkStore::Delete(const std::string &name,
+                                  const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Delete(name);
 }
 
 bool ThreadsafeChunkStore::Modify(const std::string &name,
-                                  const std::string &content) {
+                                  const std::string &content,
+                                  const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Modify(name, content);
 }
 
 bool ThreadsafeChunkStore::Modify(const std::string &name,
                                   const fs::path &source_file_name,
-                                  bool delete_source_file) {
+                                  bool delete_source_file,
+                                  const ValidationData &/*validation_data*/) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->Modify(name, source_file_name, delete_source_file);
+}
+
+bool ThreadsafeChunkStore::Has(
+    const std::string &name,
+    const ValidationData &/*validation_data*/) const {
+  SharedLock shared_lock(shared_mutex_);
+  return chunk_store_->Has(name);
 }
 
 bool ThreadsafeChunkStore::MoveTo(const std::string &name,
                                   ChunkStore *sink_chunk_store) {
   UniqueLock unique_lock(shared_mutex_);
   return chunk_store_->MoveTo(name, sink_chunk_store);
-}
-
-bool ThreadsafeChunkStore::Has(const std::string &name) const {
-  SharedLock shared_lock(shared_mutex_);
-  return chunk_store_->Has(name);
-}
-
-bool ThreadsafeChunkStore::Validate(const std::string &name) const {
-  SharedLock shared_lock(shared_mutex_);
-  return chunk_store_->Validate(name);
-}
-
-std::string ThreadsafeChunkStore::Version(const std::string &name) const {
-  SharedLock shared_lock(shared_mutex_);
-  return chunk_store_->Version(name);
 }
 
 uintmax_t ThreadsafeChunkStore::Size(const std::string &name) const {

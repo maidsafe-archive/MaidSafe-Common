@@ -188,13 +188,12 @@ IF(NOT ALL_REPOSITORIES)
         LifeStuff-GUI
         SigmoidCore
         SigmoidPro
+        SigmoidUltimate
         MaidSafe-Breakpad
         MaidSafe-Documents
-        File-Browser
         Simulation
-#        Deduplicator-Gauge
-#        Minesweep
-        AWS-Transporter
+        Sandbox
+#        AWS-Transporter
         )
 ENDIF()
 
@@ -202,12 +201,11 @@ SET(NON_INSTALL_REPOSITORIES
       LifeStuff-GUI
       SigmoidCore
       SigmoidPro
+      SigmoidUltimate
       MaidSafe-Breakpad
       MaidSafe-Documents
-      File-Browser
       Simulation
-#      Deduplicator-Gauge
-#      Minesweep
+      Sandbox
       )
 
 

@@ -104,24 +104,22 @@ ADD_MEMCHECK_IGNORE(STYLE_CHECK)
 
 INCLUDE(maidsafe_run_protoc)
 
+
 ###################################################################################################
 # Python library search                                                                           #
 ###################################################################################################
 UNSET(PYTHON_EXECUTABLE CACHE)
 INCLUDE(FindPythonInterp)
+SET(Python_ADDITIONAL_VERSIONS 3.9 3.8 3.7 3.6 3.5 3.4 3.3 3.2 3.1 3.0)
 FIND_PACKAGE(PythonInterp)
 IF(PYTHONINTERP_FOUND)
   EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -V ERROR_VARIABLE PYTHON_VERSION ERROR_STRIP_TRAILING_WHITESPACE)
   STRING(REPLACE "Python " "" PYTHON_VERSION ${PYTHON_VERSION})
-  IF(${PYTHON_VERSION} VERSION_LESS 3)
-    MESSAGE("-- Found python executable v${PYTHON_VERSION} - style checking enabled.")
-  ELSE()
-    MESSAGE("-- Found python executable v${PYTHON_VERSION} - style checking disabled (need version < 3.0)")
-    UNSET(PYTHONINTERP_FOUND)
-  ENDIF()
+  MESSAGE("-- Found python executable v${PYTHON_VERSION} - style checking enabled.")
 ELSE()
   MESSAGE("-- Didn't find python executable: style checking disabled.")
 ENDIF()
+
 
 ###################################################################################################
 # All other libraries search                                                                      #

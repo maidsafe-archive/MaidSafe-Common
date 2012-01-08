@@ -68,7 +68,10 @@ namespace {
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
-boost::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex;
+boost::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex,
+             g_hex_encoder_mutex, g_hex_decoder_mutex,
+             g_base32_encoder_mutex, g_base32_decoder_mutex,
+             g_base64_encoder_mutex, g_base64_decoder_mutex;
 
 struct BinaryUnit;
 struct DecimalUnit;
@@ -125,6 +128,21 @@ std::string BytesToSiUnits(const uint64_t &num) {
   }
 }
 
+// Used as a custom deleter for instances of TestPath.  Tries to remove the test
+// directory created in the CreateTestPath method above.
+void CleanupTest(fs::path *&test_path) {
+  if (!test_path->empty()) {
+    boost::system::error_code error_code;
+    if (fs::remove_all(*test_path, error_code) == 0)
+      LOG(WARNING) << "Test directory " << *test_path << " already deleted.";
+    if (error_code)
+      LOG(WARNING) << "Failed to clean up test directory " << *test_path
+                   << "  (error message: " << error_code.message() << ")";
+  }
+  delete test_path;
+  test_path = NULL;
+}
+
 }  // unnamed namespace
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
@@ -135,7 +153,6 @@ std::string BytesToBinarySiUnits(const uint64_t &num) {
   return BytesToSiUnits<BinaryUnit>(num);
 }
 
-
 int32_t RandomInt32() {
   boost::uniform_int<> uniform_distribution(0,
       boost::integer_traits<int32_t>::const_max);
@@ -145,11 +162,9 @@ int32_t RandomInt32() {
   return uni();
 }
 
-
 uint32_t RandomUint32() {
   return static_cast<uint32_t>(RandomInt32());
 }
-
 
 std::string RandomString(const size_t &length) {
   boost::uniform_int<> uniform_distribution(0, 255);
@@ -184,43 +199,63 @@ std::string IntToString(const int &value) {
 
 std::string EncodeToHex(const std::string &non_hex_input) {
   std::string hex_output;
-  CryptoPP::StringSource(non_hex_input, true,
-      new CryptoPP::HexEncoder(new CryptoPP::StringSink(hex_output), false));
+  {
+    boost::mutex::scoped_lock lock(g_hex_encoder_mutex);
+    CryptoPP::StringSource(non_hex_input, true,
+        new CryptoPP::HexEncoder(new CryptoPP::StringSink(hex_output), false));
+  }
   return hex_output;
 }
 
 std::string EncodeToBase64(const std::string &non_base64_input) {
   std::string base64_output;
-  CryptoPP::StringSource(non_base64_input, true, new CryptoPP::Base64Encoder(
-      new CryptoPP::StringSink(base64_output), false, 255));
+  {
+    boost::mutex::scoped_lock lock(g_base64_encoder_mutex);
+    CryptoPP::StringSource(non_base64_input, true, new CryptoPP::Base64Encoder(
+        new CryptoPP::StringSink(base64_output), false, 255));
+  }
   return base64_output;
 }
 
 std::string EncodeToBase32(const std::string &non_base32_input) {
   std::string base32_output;
-  CryptoPP::StringSource(non_base32_input, true, new CryptoPP::Base32Encoder(
-      new CryptoPP::StringSink(base32_output), false));
+  {
+    boost::mutex::scoped_lock lock(g_base32_encoder_mutex);
+    CryptoPP::StringSource(non_base32_input, true, new CryptoPP::Base32Encoder(
+        new CryptoPP::StringSink(base32_output), false));
+  }
   return base32_output;
 }
 
 std::string DecodeFromHex(const std::string &hex_input) {
   std::string non_hex_output;
-  CryptoPP::StringSource(hex_input, true,
-      new CryptoPP::HexDecoder(new CryptoPP::StringSink(non_hex_output)));
+  {
+    boost::mutex::scoped_lock lock(g_hex_decoder_mutex);
+    CryptoPP::StringSource(hex_input, true,
+        new CryptoPP::HexDecoder(new CryptoPP::StringSink(non_hex_output)));
+  }
   return non_hex_output;
 }
 
 std::string DecodeFromBase64(const std::string &base64_input) {
   std::string non_base64_output;
-  CryptoPP::StringSource(base64_input, true,
-      new CryptoPP::Base64Decoder(new CryptoPP::StringSink(non_base64_output)));
+  {
+    boost::mutex::scoped_lock lock(g_base64_decoder_mutex);
+    CryptoPP::StringSource(base64_input, true,
+        new CryptoPP::Base64Decoder(
+            new CryptoPP::StringSink(non_base64_output)));
+  }
   return non_base64_output;
 }
 
 std::string DecodeFromBase32(const std::string &base32_input) {
   std::string non_base32_output;
-  CryptoPP::StringSource(base32_input, true,
-      new CryptoPP::Base32Decoder(new CryptoPP::StringSink(non_base32_output)));
+  {
+    boost::mutex::scoped_lock lock(g_base64_decoder_mutex);
+    CryptoPP::StringSource(base32_input, true,
+        new CryptoPP::Base32Decoder(
+            new CryptoPP::StringSink(non_base32_output)));
+  }
   return non_base32_output;
 }
 
@@ -245,24 +280,35 @@ boost::posix_time::time_duration GetDurationSinceEpoch() {
 }
 
 bool ReadFile(const fs::path &file_path, std::string *content) {
-  if (!content)
+  if (!content) {
+    DLOG(ERROR) << "Failed to read file " << file_path
+                << ": NULL pointer passed";
     return false;
+  }
+
   try {
     uintmax_t file_size(fs::file_size(file_path));
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
-    if (!file_in.good())
+    if (!file_in.good()) {
+      DLOG(ERROR) << "Failed to read file " << file_path << ": Bad filestream";
       return false;
+    }
     if (file_size == 0U) {
       content->clear();
       return true;
     }
-    if (file_size > std::numeric_limits<unsigned int>::max())
+    if (file_size > std::numeric_limits<unsigned int>::max()) {
+      DLOG(ERROR) << "Failed to read file " << file_path << ": File size "
+                  << file_size << " too large (over "
+                  << std::numeric_limits<unsigned int>::max() << ")";
       return false;
+    }
     content->resize(static_cast<unsigned int>(file_size));
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
   }
-  catch(...) {
+  catch(const std::exception &e) {
+    DLOG(ERROR) << "Failed to read file " << file_path << ": " << e.what();
     return false;
   }
   return true;
@@ -270,14 +316,18 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
 
 bool WriteFile(const fs::path &file_path, const std::string &content) {
   try {
-    if (!file_path.has_filename())
+    if (!file_path.has_filename()) {
+      DLOG(ERROR) << "Failed to write: file_path " << file_path
+                  << " has no filename";
       return false;
+    }
     fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |
                                      std::ios::binary);
     file_out.write(content.data(), content.size());
     file_out.close();
   }
-  catch(...) {
+  catch(const std::exception &e) {
+    DLOG(ERROR) << "Failed to write file " << file_path << ": " << e.what();
     return false;
   }
   return true;
@@ -339,19 +389,6 @@ TestPath CreateTestPath(std::string test_prefix) {
 
   LOG(INFO) << "Created test directory " << *test_path;
   return test_path;
-}
-
-void CleanupTest(fs::path *&test_path) {
-  if (!test_path->empty()) {
-    boost::system::error_code error_code;
-    if (fs::remove_all(*test_path, error_code) == 0)
-      LOG(WARNING) << "Test directory " << *test_path << " already deleted.";
-    if (error_code)
-      LOG(WARNING) << "Failed to clean up test directory " << *test_path
-                   << "  (error message: " << error_code.message() << ")";
-  }
-  delete test_path;
-  test_path = NULL;
 }
 
 }  // namespace test

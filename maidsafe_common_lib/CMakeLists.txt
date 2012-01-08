@@ -119,7 +119,7 @@ HANDLE_VERSIONS(${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h)
 ###################################################################################################
 # Boost libraries search                                                                          #
 ###################################################################################################
-SET(REQUIRED_BOOST_COMPONENTS filesystem system thread unit_test_framework)
+SET(REQUIRED_BOOST_COMPONENTS filesystem system thread date_time unit_test_framework)
 INCLUDE(maidsafe_find_boost)
 SET(EXPORT_BOOST_CMAKE ${CMAKE_BINARY_DIR}/boost_libs.cmake)
 FILE(WRITE ${EXPORT_BOOST_CMAKE} "${EXPORT_BOOST}")
@@ -167,7 +167,7 @@ MS_ADD_STATIC_LIBRARY(${MS_PROJECT_NAME} ${ALL_FILES_COMMON_DIR})
 MS_ADD_EXECUTABLE(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 MS_ADD_EXECUTABLE(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
-TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static protobuf_static glog_static boost_filesystem boost_serialization boost_system boost_thread ${SYS_LIB})
+TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static protobuf_static glog_static boost_date_time boost_filesystem boost_serialization boost_system boost_thread ${SYS_LIB})
 TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
 TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
 
@@ -175,22 +175,14 @@ TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_te
 # Set compiler and linker flags                                                                   #
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
-IF(MSVC)
-  # Warnings switched off for protocol buffer generated files
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc
-                                PROPERTIES COMPILE_FLAGS "/W0")
-ELSEIF(UNIX)
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc
-                                PROPERTIES COMPILE_FLAGS "-w")
-ENDIF()
 
 
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
 SET(STYLE_TESTS ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
-LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc")
-LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.h")
+LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc")
+LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
 ADD_STYLE_TEST(${STYLE_TESTS})
 ADD_GTESTS(TESTcommon)
 ADD_GTESTS(TESTboost)
@@ -261,7 +253,8 @@ FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON
 STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
 
 MS_INSTALL_LIBS(maidsafe_common_static)
-LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.h")
+LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
+LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt_pb.h")
 MS_INSTALL_HEADERS(common ${HEADER_FILES_COMMON_DIR})
 
 INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)

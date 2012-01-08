@@ -27,21 +27,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include "maidsafe/common/tests/chunk_store_api_test.h"
-#include "maidsafe/common/hashable_chunk_validation.h"
 #include "maidsafe/common/memory_chunk_store.h"
 
 namespace maidsafe {
 
 namespace test {
 
-template <> template <class ValidationType, class VersionType>
+template <>
 void ChunkStoreTest<MemoryChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path&,
     boost::asio::io_service&) {
-  chunk_store->reset(new MemoryChunkStore(
-      std::shared_ptr<ChunkValidation>(
-          new HashableChunkValidation<ValidationType, VersionType>)));
+  chunk_store->reset(new MemoryChunkStore());
 }
 
 INSTANTIATE_TYPED_TEST_CASE_P(Memory, ChunkStoreTest, MemoryChunkStore);

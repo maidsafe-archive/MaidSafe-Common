@@ -145,14 +145,18 @@ TEST_F(RSATest, BEH_Serialise) {
   EXPECT_FALSE(ValidateKey(recovered_public_key));
   EXPECT_FALSE(ValidateKey(recovered_private_key));
 
+  boost::archive::archive_exception arch_exception(
+      boost::archive::archive_exception::no_exception);
   try {
     input_archive1 >> recovered_private_key >> recovered_public_key;
   }
   catch(const boost::archive::archive_exception &e) {
-    EXPECT_EQ(boost::archive::archive_exception::input_stream_error, e.code);
-    EXPECT_FALSE(ValidateKey(recovered_public_key));
-    EXPECT_FALSE(ValidateKey(recovered_private_key));
+    arch_exception = e;
   }
+  EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
+            arch_exception.code);
+  EXPECT_FALSE(ValidateKey(recovered_public_key));
+  EXPECT_FALSE(ValidateKey(recovered_private_key));
 
   try {
     std::istringstream iss2(encoded);
