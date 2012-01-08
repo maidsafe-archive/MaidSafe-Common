@@ -115,7 +115,6 @@ int Encrypt(const PlainText &data,
                                         symm_encryption_key,
                                         symm_encryption_iv));
   std::string encryption_key_encrypted;
-  
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   try {
     CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv , true,
@@ -143,12 +142,11 @@ int Decrypt(const CipherText &data,
     return kInvalidPrivateKey;
   }
   SafeEncrypt safe_enc;
-  
   if (!safe_enc.ParseFromString(data)) {
         DLOG(ERROR) << "Cannot parse PB";
         return kRSADecryptError;
   }
-  
+
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
   std::string sym_enc_data;
   std::string temp_data = safe_enc.key();

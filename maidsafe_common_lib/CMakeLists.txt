@@ -190,6 +190,7 @@ ENDIF()
 ###################################################################################################
 SET(STYLE_TESTS ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
 LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.cc")
+LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc.pb.h")
 ADD_STYLE_TEST(${STYLE_TESTS})
 ADD_GTESTS(TESTcommon)
 ADD_GTESTS(TESTboost)
