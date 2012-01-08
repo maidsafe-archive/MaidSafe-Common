@@ -77,7 +77,7 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     std::string empty_data("");
     CryptoPP::RSA::PrivateKey empty_priv_key;
     CryptoPP::RSA::PublicKey empty_pub_key;
-    const std::string plain_data_other(RandomString(470));
+    const std::string plain_data_other(RandomString(47000));
     // Encryption and decryption
     EXPECT_EQ(kSuccess, Encrypt(plain_data, keys_.public_key, &recovered_data));
     EXPECT_NE(plain_data, recovered_data);

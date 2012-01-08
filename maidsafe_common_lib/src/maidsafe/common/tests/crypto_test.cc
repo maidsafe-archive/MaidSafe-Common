@@ -389,23 +389,6 @@ TEST(CryptoTest, BEH_SecretSharing) {
   EXPECT_EQ(recovered, rand_string);
 }
 
-TEST(CryptoTest, BEH_CombinedEncryptDecrypt) {
-  rsa::Keys k;
-  rsa::GenerateKeyPair(&k);
-  std::string input(RandomString(64)), encrypted_data, encrypted_symm_key;
-  ASSERT_EQ(kSuccess, CombinedEncrypt(input,
-                                      k.public_key,
-                                      &encrypted_data,
-                                      &encrypted_symm_key));
-
-  std::string reconstituted;
-  ASSERT_EQ(kSuccess, CombinedDecrypt(encrypted_data,
-                                      encrypted_symm_key,
-                                      k.private_key,
-                                      &reconstituted));
-  ASSERT_EQ(input, reconstituted);
-}
-
 }  // namespace test
 
 }  // namespace crypto
