@@ -113,10 +113,10 @@ int Encrypt(const PlainText &data,
     DLOG(ERROR) << "Bad public key";
     return kInvalidPublicKey;
   }
- std::string input_data, output_data;
- CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
- SafeEncrypt safe_enc;
- if (data.size() > encryptor.FixedMaxPlaintextLength()) {
+  std::string input_data, output_data;
+  CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
+  SafeEncrypt safe_enc;
+  if (data.size() > encryptor.FixedMaxPlaintextLength()) {
     std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
     std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
     safe_enc.set_data(crypto::SymmEncrypt(data,
@@ -127,7 +127,7 @@ int Encrypt(const PlainText &data,
   } else {
     input_data = data;
   }
-  
+
   try {
     CryptoPP::StringSource(input_data, true,
         new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
@@ -137,7 +137,7 @@ int Encrypt(const PlainText &data,
     DLOG(ERROR) << "Failed encryption: " << e.what();
     return kRSAEncryptError;
   }
-  
+
   if (data.size() > encryptor.FixedMaxPlaintextLength()) {
     safe_enc.set_key(output_data);
     if (!safe_enc.SerializeToString(result)) {
@@ -200,7 +200,7 @@ int Decrypt(const CipherText &data,
   } else {
     *result = out_data;
   }
-  
+
   if (result->empty()) {
     DLOG(ERROR) << "Failed symmetric decryption";
     return kRSADecryptError;
