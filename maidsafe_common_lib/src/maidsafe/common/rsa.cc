@@ -100,6 +100,11 @@ int GenerateKeyPair(Keys *keypair) {
 int Encrypt(const PlainText &data,
             const PublicKey &public_key,
             CipherText *result) {
+  if (!result) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
+  result->clear();
   if (data.empty()) {
     DLOG(ERROR) << "No data";
     return kDataEmpty;
@@ -108,6 +113,7 @@ int Encrypt(const PlainText &data,
     DLOG(ERROR) << "Bad public key";
     return kInvalidPublicKey;
   }
+
   SafeEncrypt safe_enc;
   std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
   std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
@@ -118,6 +124,11 @@ int Encrypt(const PlainText &data,
 
   std::string encryption_key_encrypted;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
+
+#ifdef DEBUG
+  if (data.size() <= encryptor.FixedMaxPlaintextLength())
+    DLOG(WARNING) << "This could have been encrypted using plain RSA";
+#endif
   try {
     CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv, true,
         new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
@@ -130,6 +141,7 @@ int Encrypt(const PlainText &data,
   safe_enc.set_key(encryption_key_encrypted);
   if (!safe_enc.SerializeToString(result)) {
     DLOG(ERROR) << "Failed to serialise PB";
+    result->clear();
     return kRSASerialisationError;
   }
 
@@ -139,6 +151,11 @@ int Encrypt(const PlainText &data,
 int Decrypt(const CipherText &data,
             const PrivateKey &private_key,
             PlainText *result) {
+  if (!result) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
+  result->clear();
   if (data.empty()) {
     DLOG(ERROR) << "No data";
     return kDataEmpty;
@@ -147,10 +164,7 @@ int Decrypt(const CipherText &data,
     DLOG(ERROR) << "Bad private key";
     return kInvalidPrivateKey;
   }
-  if (!result) {
-    DLOG(ERROR) << "NULL pointer passed";
-    return kNullParameter;
-  }
+
   SafeEncrypt safe_enc;
   if (!safe_enc.ParseFromString(data)) {
     DLOG(ERROR) << "Cannot parse PB";
