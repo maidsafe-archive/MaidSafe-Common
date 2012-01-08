@@ -167,7 +167,7 @@ MS_ADD_STATIC_LIBRARY(${MS_PROJECT_NAME} ${ALL_FILES_COMMON_DIR})
 MS_ADD_EXECUTABLE(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 MS_ADD_EXECUTABLE(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
-TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static glog_static boost_filesystem boost_serialization boost_system boost_thread ${SYS_LIB})
+TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static protobuf_static glog_static boost_filesystem boost_serialization boost_system boost_thread ${SYS_LIB})
 TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
 TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
 

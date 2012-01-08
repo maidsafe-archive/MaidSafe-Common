@@ -48,6 +48,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/platform_config.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/utils.h"
 #include "maidsafe/common/safe_enc.pb.h"
 
 
@@ -107,20 +108,26 @@ int Encrypt(const PlainText &data,
     DLOG(ERROR) << "Bad public key";
     return kInvalidPublicKey;
   }
+  SafeEncrypt safe_enc;
+  std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
+  std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
+  safe_enc.set_data(crypto::SymmEncrypt(data,
+                                        symm_encryption_key,
+                                        symm_encryption_iv));
+  std::string encryption_key_encrypted;
+  
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   try {
-    CryptoPP::StringSource(data, true,
+    CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv , true,
         new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-            new CryptoPP::StringSink(*result)));
+            new CryptoPP::StringSink(encryption_key_encrypted)));
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed encryption: " << e.what();
     return kRSAEncryptError;
   }
-  if (data == *result) {
-    DLOG(ERROR) << "Failed encryption";
-    return kRSAEncryptError;
-  }
+  safe_enc.set_key(encryption_key_encrypted);
+  safe_enc.SerializeToString(result);
   return kSuccess;
 }
 
@@ -135,21 +142,32 @@ int Decrypt(const CipherText &data,
     DLOG(ERROR) << "Bad private key";
     return kInvalidPrivateKey;
   }
+  SafeEncrypt safe_enc;
+  
+  if (!safe_enc.ParseFromString(data)) {
+        DLOG(ERROR) << "Cannot parse PB";
+        return kRSADecryptError;
+  }
+  
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
-  std::string recovered;
+  std::string sym_enc_data;
+  std::string temp_data = safe_enc.key();
   try {
-    CryptoPP::StringSource(data, true,
+    CryptoPP::StringSource(temp_data, true,
         new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
-            new CryptoPP::StringSink(*result)));
+            new CryptoPP::StringSink(sym_enc_data)));
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed decryption: " << e.what();
     return kRSADecryptError;
   }
-  if (data == *result) {
-    DLOG(ERROR) << "Failed decryption";
+
+  *result = (crypto::SymmDecrypt(safe_enc.data(),
+                              sym_enc_data.substr(0, crypto::AES256_KeySize),
+                              sym_enc_data.substr(crypto::AES256_KeySize,
+                                                  crypto::AES256_IVSize)));
+  if (*result == "")
     return kRSADecryptError;
-  }
   return kSuccess;
 }
 

@@ -84,6 +84,7 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     EXPECT_EQ(kSuccess, Decrypt(recovered_data, keys_.private_key,
                                 &recovered_data_other));
     EXPECT_EQ(plain_data, recovered_data_other);
+    
     EXPECT_EQ(recovered_data_other, plain_data);
     EXPECT_NE(recovered_data, plain_data);
     EXPECT_EQ(kDataEmpty,
