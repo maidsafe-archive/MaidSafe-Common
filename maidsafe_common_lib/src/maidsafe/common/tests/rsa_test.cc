@@ -69,30 +69,26 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
-  #pragma omp parallel
+//  #pragma omp parallel
   { // NOLINT (dirvine)
-    const std::string plain_data(RandomString(470));
-    std::string recovered_data("");
-    std::string recovered_data_other("");
-    std::string empty_data("");
+    const std::string kPlainData(RandomString(470));
+    std::string encrypted_data, recovered_data;
+    // Encryption and decryption
+    EXPECT_EQ(kSuccess, Encrypt(kPlainData, keys_.public_key, &encrypted_data));
+    EXPECT_NE(kPlainData, encrypted_data);
+    EXPECT_EQ(kSuccess, Decrypt(encrypted_data, keys_.private_key,
+                                &recovered_data));
+    EXPECT_EQ(kPlainData, recovered_data);
+
+    EXPECT_EQ(kDataEmpty, Encrypt("", keys_.public_key, &recovered_data));
+    EXPECT_EQ(kDataEmpty, Decrypt("", keys_.private_key, &recovered_data));
+
     CryptoPP::RSA::PrivateKey empty_priv_key;
     CryptoPP::RSA::PublicKey empty_pub_key;
-    const std::string plain_data_other(RandomString(47000));
-    // Encryption and decryption
-    EXPECT_EQ(kSuccess, Encrypt(plain_data, keys_.public_key, &recovered_data));
-    EXPECT_NE(plain_data, recovered_data);
-    EXPECT_EQ(kSuccess, Decrypt(recovered_data, keys_.private_key,
-                                &recovered_data_other));
-    EXPECT_EQ(plain_data, recovered_data_other);
-    EXPECT_EQ(recovered_data_other, plain_data);
-    EXPECT_NE(recovered_data, plain_data);
-    EXPECT_EQ(kDataEmpty,
-              Encrypt(empty_data, keys_.public_key, &recovered_data));
-    EXPECT_EQ(kDataEmpty, Decrypt(empty_data, keys_.private_key, &empty_data));
     EXPECT_EQ(kInvalidPrivateKey,
-              Decrypt(plain_data, empty_priv_key, &recovered_data));
+              Decrypt(kPlainData, empty_priv_key, &recovered_data));
     EXPECT_EQ(kInvalidPublicKey,
-              Encrypt(plain_data, empty_pub_key, &recovered_data));
+              Encrypt(kPlainData, empty_pub_key, &recovered_data));
   }
 }
 

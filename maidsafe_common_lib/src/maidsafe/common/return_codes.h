@@ -32,13 +32,15 @@ enum CommonReturnCode {
   // RSA error codes
   kKeyGenerationError = -100100,
   kDataEmpty = -100101,
-  kInvalidPublicKey = -100110,
-  kInvalidPrivateKey = -100111,
-  kRSAEncryptError = -101000,
-  kRSADecryptError = -101001,
-  kRSASigningError = -101010,
-  kRSAInvalidSignature = -101011,
-  kRSASignatureEmpty = -101100
+  kInvalidPublicKey = -100102,
+  kInvalidPrivateKey = -100103,
+  kRSAEncryptError = -100104,
+  kRSADecryptError = -100105,
+  kRSASigningError = -100106,
+  kRSAInvalidSignature = -100107,
+  kRSASignatureEmpty = -100108,
+  kRSASerialisationError = -100109,
+  kRSAParseError = -100110
 };
 
 }  // namespace maidsafe

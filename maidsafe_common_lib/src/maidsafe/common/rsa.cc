@@ -49,7 +49,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/platform_config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/safe_enc.pb.h"
+#include "maidsafe/common/safe_encrypt_pb.h"
 
 
 namespace maidsafe {
@@ -114,10 +114,12 @@ int Encrypt(const PlainText &data,
   safe_enc.set_data(crypto::SymmEncrypt(data,
                                         symm_encryption_key,
                                         symm_encryption_iv));
+  BOOST_ASSERT(!safe_enc.data().empty());
+
   std::string encryption_key_encrypted;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   try {
-    CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv , true,
+    CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv, true,
         new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
             new CryptoPP::StringSink(encryption_key_encrypted)));
   }
@@ -126,7 +128,11 @@ int Encrypt(const PlainText &data,
     return kRSAEncryptError;
   }
   safe_enc.set_key(encryption_key_encrypted);
-  safe_enc.SerializeToString(result);
+  if (!safe_enc.SerializeToString(result)) {
+    DLOG(ERROR) << "Failed to serialise PB";
+    return kRSASerialisationError;
+  }
+
   return kSuccess;
 }
 
@@ -141,17 +147,20 @@ int Decrypt(const CipherText &data,
     DLOG(ERROR) << "Bad private key";
     return kInvalidPrivateKey;
   }
+  if (!result) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
   SafeEncrypt safe_enc;
   if (!safe_enc.ParseFromString(data)) {
-        DLOG(ERROR) << "Cannot parse PB";
-        return kRSADecryptError;
+    DLOG(ERROR) << "Cannot parse PB";
+    return kRSAParseError;
   }
 
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
   std::string sym_enc_data;
-  std::string temp_data = safe_enc.key();
   try {
-    CryptoPP::StringSource(temp_data, true,
+    CryptoPP::StringSource(safe_enc.key(), true,
         new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
             new CryptoPP::StringSink(sym_enc_data)));
   }
@@ -160,12 +169,15 @@ int Decrypt(const CipherText &data,
     return kRSADecryptError;
   }
 
-  *result = (crypto::SymmDecrypt(safe_enc.data(),
-                              sym_enc_data.substr(0, crypto::AES256_KeySize),
-                              sym_enc_data.substr(crypto::AES256_KeySize,
-                                                  crypto::AES256_IVSize)));
-  if (*result == "")
+  *result = crypto::SymmDecrypt(safe_enc.data(),
+                                sym_enc_data.substr(0, crypto::AES256_KeySize),
+                                sym_enc_data.substr(crypto::AES256_KeySize,
+                                                    crypto::AES256_IVSize));
+  if (result->empty()) {
+    DLOG(ERROR) << "Failed symmetric decryption";
     return kRSADecryptError;
+  }
+
   return kSuccess;
 }
 
