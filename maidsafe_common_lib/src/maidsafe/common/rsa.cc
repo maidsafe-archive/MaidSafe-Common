@@ -113,36 +113,40 @@ int Encrypt(const PlainText &data,
     DLOG(ERROR) << "Bad public key";
     return kInvalidPublicKey;
   }
-
-  SafeEncrypt safe_enc;
-  std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
-  std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-  safe_enc.set_data(crypto::SymmEncrypt(data,
-                                        symm_encryption_key,
-                                        symm_encryption_iv));
-  BOOST_ASSERT(!safe_enc.data().empty());
-
-  std::string encryption_key_encrypted;
-  CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-
-#ifdef DEBUG
-  if (data.size() <= encryptor.FixedMaxPlaintextLength())
-    DLOG(WARNING) << "This could have been encrypted using plain RSA";
-#endif
+ std::string input_data, output_data;
+ CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
+ SafeEncrypt safe_enc;
+ if (data.size() >= encryptor.FixedMaxPlaintextLength()) {
+    std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
+    std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
+    safe_enc.set_data(crypto::SymmEncrypt(data,
+                                          symm_encryption_key,
+                                          symm_encryption_iv));
+    BOOST_ASSERT(!safe_enc.data().empty());
+    input_data = symm_encryption_key + symm_encryption_iv;
+  } else {
+    input_data = data;
+  }
+  
   try {
-    CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv, true,
+    CryptoPP::StringSource(input_data, true,
         new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-            new CryptoPP::StringSink(encryption_key_encrypted)));
+            new CryptoPP::StringSink(output_data)));
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed encryption: " << e.what();
     return kRSAEncryptError;
   }
-  safe_enc.set_key(encryption_key_encrypted);
-  if (!safe_enc.SerializeToString(result)) {
-    DLOG(ERROR) << "Failed to serialise PB";
-    result->clear();
-    return kRSASerialisationError;
+  
+  if (data.size() >= encryptor.FixedMaxPlaintextLength()) {
+    safe_enc.set_key(output_data);
+    if (!safe_enc.SerializeToString(result)) {
+      DLOG(ERROR) << "Failed to serialise PB";
+      result->clear();
+      return kRSASerialisationError;
+    }
+  } else {
+      *result = output_data;
   }
 
   return kSuccess;
@@ -169,7 +173,6 @@ int Decrypt(const CipherText &data,
   std::string cipher;
   bool parsed;
   if (!safe_enc.ParseFromString(data)) {
-    DLOG(INFO) << "Data is not PB";
     cipher = data;
     parsed = false;
   } else {
