@@ -1,0 +1,4 @@
+message SafeEncrypt {
+  required bytes key = 1;
+  required bytes data = 2;
+}
