@@ -166,27 +166,38 @@ int Decrypt(const CipherText &data,
   }
 
   SafeEncrypt safe_enc;
+  std::string cipher;
+  bool parsed;
   if (!safe_enc.ParseFromString(data)) {
-    DLOG(ERROR) << "Cannot parse PB";
-    return kRSAParseError;
+    DLOG(INFO) << "Data is not PB";
+    cipher = data;
+    parsed = false;
+  } else {
+    cipher = safe_enc.key();
+    parsed = true;
   }
 
   CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
-  std::string sym_enc_data;
+  std::string out_data;
   try {
-    CryptoPP::StringSource(safe_enc.key(), true,
+    CryptoPP::StringSource(cipher, true,
         new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
-            new CryptoPP::StringSink(sym_enc_data)));
+            new CryptoPP::StringSink(out_data)));
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed decryption: " << e.what();
     return kRSADecryptError;
   }
 
-  *result = crypto::SymmDecrypt(safe_enc.data(),
-                                sym_enc_data.substr(0, crypto::AES256_KeySize),
-                                sym_enc_data.substr(crypto::AES256_KeySize,
-                                                    crypto::AES256_IVSize));
+  if (parsed) {
+    *result = crypto::SymmDecrypt(safe_enc.data(),
+                                out_data.substr(0, crypto::AES256_KeySize),
+                                out_data.substr(crypto::AES256_KeySize,
+                                                crypto::AES256_IVSize));
+  } else {
+    *result = out_data;
+  }
+  
   if (result->empty()) {
     DLOG(ERROR) << "Failed symmetric decryption";
     return kRSADecryptError;
