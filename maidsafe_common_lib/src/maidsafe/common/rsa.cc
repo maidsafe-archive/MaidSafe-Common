@@ -116,7 +116,7 @@ int Encrypt(const PlainText &data,
  std::string input_data, output_data;
  CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
  SafeEncrypt safe_enc;
- if (data.size() >= encryptor.FixedMaxPlaintextLength()) {
+ if (data.size() > encryptor.FixedMaxPlaintextLength()) {
     std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
     std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
     safe_enc.set_data(crypto::SymmEncrypt(data,
@@ -138,7 +138,7 @@ int Encrypt(const PlainText &data,
     return kRSAEncryptError;
   }
   
-  if (data.size() >= encryptor.FixedMaxPlaintextLength()) {
+  if (data.size() > encryptor.FixedMaxPlaintextLength()) {
     safe_enc.set_key(output_data);
     if (!safe_enc.SerializeToString(result)) {
       DLOG(ERROR) << "Failed to serialise PB";
