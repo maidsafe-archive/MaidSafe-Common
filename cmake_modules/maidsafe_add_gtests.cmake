@@ -39,7 +39,8 @@
 #  This module adds individual gtests by parsing the tests files at a very     #
 #  basic level (e.g. there is no support for namespaces).  It also currently   #
 #  doesn't support all gtest options (e.g. the only value parameter generators #
-#  supported are "Range(begin, end[, step])" and "Values(v1, v2, ..., vN)".    #
+#  supported are "Range(begin, end[, step])", "Values(v1, v2, ..., vN)" and    #
+#  "Bool()").                                                                  #
 #                                                                              #
 #  There is basic support for TEST(...), TEST_F(...), TEST_P(...),             #
 #  TYPED_TEST(...) and TYPED_TEST_P(...).                                      #

@@ -109,9 +109,9 @@ void DecodePublicKey(const std::string &public_key, PublicKey *key);
 bool CheckRoundtrip(const PublicKey &public_key,
                     const PrivateKey &private_key);
 
-bool ValidateKey(const PrivateKey &private_key);
+bool ValidateKey(const PrivateKey &private_key, unsigned int level = 2U);
 
-bool ValidateKey(const PublicKey &public_key);
+bool ValidateKey(const PublicKey &public_key, unsigned int level = 2U);
 
 bool Validate(const PlainText &plain_text,
               const Signature &signature,
