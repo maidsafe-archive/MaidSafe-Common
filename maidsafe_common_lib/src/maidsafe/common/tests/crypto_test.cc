@@ -134,7 +134,7 @@ struct HashTestData {
 };
 
 TEST(CryptoTest, BEH_Hash) {
-#pragma omp parallel
+// #pragma omp parallel
   {  // NOLINT (dirvine)
     // Set up industry standard test data
     std::vector<HashTestData> test_data;
