@@ -67,8 +67,8 @@ bool MemoryChunkStore::Store(const std::string &name,
     return false;
   }
 
-  auto it = chunks_.find(name);
-  if (it != chunks_.end()) {
+  auto it(chunks_.lower_bound(name));
+  if (it != chunks_.end() && (*it).first == name) {
     ++(*it).second.first;
     DLOG(INFO) << "Increased count of chunk " << Base32Substr(name) << " to "
                 << (*it).second.first;
@@ -87,7 +87,13 @@ bool MemoryChunkStore::Store(const std::string &name,
     return false;
   }
 
-  chunks_[name] = ChunkEntry(1, content);
+  if (!chunks_.empty()) {
+    if (it == chunks_.begin())
+      it = --chunks_.end();
+    else
+      --it;
+  }
+  chunks_.insert(it, std::make_pair(name, ChunkEntry(1, content)));
   IncreaseSize(chunk_size);
   DLOG(INFO) << "Stored chunk " << Base32Substr(name);
   return true;

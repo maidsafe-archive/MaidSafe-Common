@@ -88,20 +88,20 @@ class BufferedChunkStoreTest: public testing::Test {
   void DoStore(const std::string &name, const std::string &content) {
     EXPECT_TRUE(chunk_store_->Store(name, content)) << "Contain?: " <<
       chunk_store_->Has(name) << " Size:" << name.size();
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::mutex::scoped_lock lock(mutex_);
     ++store_counter_;
     cond_var_.notify_one();
   }
 
   void DoCacheStore(const std::string &name, const std::string &content) {
     EXPECT_TRUE(chunk_store_->CacheStore(name, content));
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::mutex::scoped_lock lock(mutex_);
     ++store_counter_;
     cond_var_.notify_one();
   }
 
   void DoCacheModify(const std::string &name, const std::string &content) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::mutex::scoped_lock lock(mutex_);
     EXPECT_TRUE(chunk_store_->Modify(name, content));
     EXPECT_FALSE(chunk_store_->PermanentHas(name));
     EXPECT_TRUE(chunk_store_->CacheHas(name));
@@ -111,13 +111,13 @@ class BufferedChunkStoreTest: public testing::Test {
   }
 
   void WaitForCacheModify(const int &count) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::mutex::scoped_lock lock(mutex_);
     while (cache_modify_counter_ < count)
       cond_var_.wait(lock);
   }
 
   void WaitForStore(const int &count) {
-    boost::unique_lock<boost::mutex> lock(mutex_);
+    boost::mutex::scoped_lock lock(mutex_);
     while (store_counter_ < count)
       cond_var_.wait(lock);
   }
