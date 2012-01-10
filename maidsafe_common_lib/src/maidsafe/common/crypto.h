@@ -159,17 +159,6 @@ void SecretShareData(const uint8_t &threshold,
                      const std::string &data,
                      std::vector<std::string> *out_strings);
 
-// Create symmetric key, encrypt data with it, asymmetrically encrypt both.
-int CombinedEncrypt(const std::string &input,
-                    const rsa::PublicKey &public_key,
-                    std::string *encrypted_data,
-                    std::string *encrypted_symm_key);
-
-int CombinedDecrypt(const std::string &encrypted_data,
-                    const std::string &encrypted_symm_key,
-                    const rsa::PrivateKey &private_key,
-                    std::string *decrypted_data);
-
 }  // namespace crypto
 
 }  // namespace maidsafe
