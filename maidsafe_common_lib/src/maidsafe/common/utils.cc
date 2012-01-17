@@ -128,21 +128,6 @@ std::string BytesToSiUnits(const uint64_t &num) {
   }
 }
 
-// Used as a custom deleter for instances of TestPath.  Tries to remove the test
-// directory created in the CreateTestPath method above.
-void CleanupTest(fs::path *&test_path) {
-  if (!test_path->empty()) {
-    boost::system::error_code error_code;
-    if (fs::remove_all(*test_path, error_code) == 0)
-      LOG(WARNING) << "Test directory " << *test_path << " already deleted.";
-    if (error_code)
-      LOG(WARNING) << "Failed to clean up test directory " << *test_path
-                   << "  (error message: " << error_code.message() << ")";
-  }
-  delete test_path;
-  test_path = NULL;
-}
-
 }  // unnamed namespace
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
@@ -374,8 +359,22 @@ TestPath CreateTestPath(std::string test_prefix) {
   test_prefix += "_%%%%-%%%%-%%%%";
 
   boost::system::error_code error_code;
-  TestPath test_path(new fs::path(fs::unique_path(
-      fs::temp_directory_path(error_code) / test_prefix)), CleanupTest);
+  fs::path *test_path(new fs::path(fs::unique_path(
+      fs::temp_directory_path(error_code) / test_prefix)));
+  std::string debug(test_path->string());
+  TestPath test_path_ptr(test_path, [debug](fs::path *delete_path) {
+        if (!delete_path->empty()) {
+          boost::system::error_code ec;
+          // Can't use LOG in case glog has been unloaded already
+          if (fs::remove_all(*delete_path, ec) == 0)
+            std::cout << "Test directory " << debug << " already deleted.";
+          if (ec.value() != 0) {
+            std::cout << "Failed to clean up test directory " << debug
+                      << "  (error message: " << ec.message() << ")";
+          }
+        }
+        delete delete_path;
+      });
   if (error_code) {
     LOG(WARNING) << "Can't get a temp directory: " << error_code.message();
     return TestPath(new fs::path);
@@ -388,7 +387,7 @@ TestPath CreateTestPath(std::string test_prefix) {
   }
 
   LOG(INFO) << "Created test directory " << *test_path;
-  return test_path;
+  return test_path_ptr;
 }
 
 }  // namespace test
