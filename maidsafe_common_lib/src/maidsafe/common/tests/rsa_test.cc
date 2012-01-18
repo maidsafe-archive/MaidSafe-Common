@@ -163,9 +163,12 @@ TEST_F(RSATest, BEH_Serialise) {
   }
   catch(const boost::archive::archive_exception &e) {
     arch_exception = e;
+    EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
+              arch_exception.code);
   }
-  EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
-            arch_exception.code);
+  catch(const std::exception &std_e) {
+    DLOG(INFO) << std_e.what();
+  }
   EXPECT_FALSE(ValidateKey(recovered_public_key));
   EXPECT_FALSE(ValidateKey(recovered_private_key));
 
