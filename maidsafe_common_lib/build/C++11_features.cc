@@ -30,15 +30,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main() {
   // regex
-  std::regex reg_ex("r", std::regex_constants::nosubs);
-  std::wregex wreg_ex(L"r", std::regex_constants::icase);
+  std::regex reg_ex_test("r", std::regex_constants::nosubs);
+  std::wregex wreg_ex_test(L"r", std::regex_constants::icase);
+
+  // nullptr
+  char* nullptr_test(nullptr);
 
   // decltype
-  std::vector<int> v;
-  typedef decltype(v.front()) IntegerRef;
+  std::vector<int> decltype_test;
+  typedef decltype(decltype_test.front()) IntegerRef;
 
   // lambda
-  int a(([](int i)->int { return i * i; })(9));
+  int lambda_test(([](int i)->int { return i * i; })(9));
 
   return 0;
 }
