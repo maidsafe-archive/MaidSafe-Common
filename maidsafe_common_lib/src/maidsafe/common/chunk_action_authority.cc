@@ -152,9 +152,11 @@ bool ChunkActionAuthority::Delete(const std::string &name,
 bool ChunkActionAuthority::Modify(const std::string &name,
                                   const std::string &content,
                                   const std::string &version,
-                                  const asymm::PublicKey &public_key) {
+                                  const asymm::PublicKey &public_key,
+                                  int64_t *size_difference) {
   std::string new_content;
-  int result(ValidModify(name, content, version, public_key, &new_content));
+  int result(ValidModify(name, content, version, public_key, size_difference,
+                         &new_content));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to modify " << Base32Substr(name) << ": "
                 << result;
@@ -173,7 +175,8 @@ bool ChunkActionAuthority::Modify(const std::string &name,
                                   const fs::path &source_file_name,
                                   bool delete_source_file,
                                   const std::string &version,
-                                  const asymm::PublicKey &public_key) {
+                                  const asymm::PublicKey &public_key,
+                                  int64_t *size_difference) {
   std::string content;
   if (!ReadFile(source_file_name, &content)) {
     DLOG(ERROR) << "Failed to read " << source_file_name;
@@ -181,7 +184,8 @@ bool ChunkActionAuthority::Modify(const std::string &name,
   }
 
   std::string new_content;
-  int result(ValidModify(name, content, version, public_key, &new_content));
+  int result(ValidModify(name, content, version, public_key, size_difference,
+                         &new_content));
   if (result != kSuccess) {
     DLOG(ERROR) << "Invalid request to modify " << Base32Substr(name) << ": "
                 << result;

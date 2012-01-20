@@ -67,6 +67,7 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
                           const std::string &content,
                           const std::string &version,
                           const asymm::PublicKey &public_key,
+                          int64_t *size_difference,
                           std::string *new_content = NULL) const;
   virtual int ValidHas(const std::string &name,
                        const std::string &version,

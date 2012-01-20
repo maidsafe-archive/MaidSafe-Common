@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_CHUNK_ACTION_AUTHORITY_H_
 #define MAIDSAFE_COMMON_CHUNK_ACTION_AUTHORITY_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include "boost/filesystem/path.hpp"
@@ -74,12 +75,14 @@ class ChunkActionAuthority {
   virtual bool Modify(const std::string &name,
                       const std::string &content,
                       const std::string &version,
-                      const asymm::PublicKey &public_key);
+                      const asymm::PublicKey &public_key,
+                      int64_t *size_difference);
   virtual bool Modify(const std::string &name,
                       const fs::path &source_file_name,
                       bool delete_source_file,
                       const std::string &version,
-                      const asymm::PublicKey &public_key);
+                      const asymm::PublicKey &public_key,
+                      int64_t *size_difference);
   virtual bool Has(const std::string &name,
                    const std::string &version,
                    const asymm::PublicKey &public_key) const;
@@ -105,6 +108,7 @@ class ChunkActionAuthority {
                           const std::string &content,
                           const std::string &version,
                           const asymm::PublicKey &public_key,
+                          int64_t *size_difference,
                           std::string *new_content = NULL) const = 0;
   virtual int ValidHas(const std::string &name,
                        const std::string &version,
