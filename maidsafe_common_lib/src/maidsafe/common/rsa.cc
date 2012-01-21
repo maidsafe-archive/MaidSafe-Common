@@ -210,6 +210,9 @@ int CheckSignature(const PlainText &data,
 }
 
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
+  private_key->clear();;
+  if (!ValidateKey(key))
+    return;
   try {
     CryptoPP::ByteQueue queue;
     key.DEREncodePrivateKey(queue);
@@ -222,6 +225,9 @@ void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
 }
 
 void EncodePublicKey(const PublicKey &key, std::string *public_key) {
+  public_key->clear();;
+  if (!ValidateKey(key)) 
+    return;
   try {
     CryptoPP::ByteQueue queue;
     key.DEREncodePublicKey(queue);
