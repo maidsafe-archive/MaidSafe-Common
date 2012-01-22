@@ -25,11 +25,6 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/**
- * @file file_chunk_store.h
- * @brief Implementation of FileChunkStore.
- */
-
 #ifndef MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
 #define MAIDSAFE_COMMON_FILE_CHUNK_STORE_H_
 
@@ -52,7 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/chunk_store.h"
-#include "maidsafe/common/chunk_validation.h"
+#include "maidsafe/common/stub_chunk_action_authority.h"
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1005
@@ -69,164 +64,45 @@ namespace test {
 class FileChunkStoreTest_BEH_Methods_Test;
 }  // namespace test
 
-/**
- * Manages storage and retrieval of chunks using the file system.
- */
-class FileChunkStore: public ChunkStore {
+class FileChunkStore : public ChunkStore {
  public:
-  explicit FileChunkStore(std::shared_ptr<ChunkValidation> chunk_validation)
-      : ChunkStore(),
-        chunk_validation_(chunk_validation),
-        initialised_(false),
-        storage_location_(),
-        chunk_count_(0),
-        dir_depth_(0),
-        info_file_() {}
+  FileChunkStore();
   ~FileChunkStore();
-
-  /**
-   * Initialises the chunk storage directory.
-   *
-   * If the given directory path does not exist, it will be created.
-   * @param storage_location Path to storage directory
-   * @param dir_depth directory depth
-   * @return True if directory exists or could be created
-   */
+  // Initialises the chunk storage directory.  If the given directory path does
+  // not exist, it will be created.  Returns true if directory exists or could
+  // be created.
   bool Init(const fs::path &storage_location, unsigned int dir_depth = 5U);
-
-  /**
-   * Retrieves a chunk's content as a string.
-   * @param name Chunk name
-   * @return Chunk content, or empty if non-existant
-   */
-  std::string Get(const std::string &name) const;
-
-  /**
-   * Retrieves a chunk's content as a file, potentially overwriting an existing
-   * file of the same name.
-   * @param name Chunk name
-   * @param sink_file_name Path to output file
-   * @return True if chunk exists and could be written to file.
-   */
-  bool Get(const std::string &name, const fs::path &sink_file_name) const;
-
-  /**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's content
-   * @return True if chunk could be stored or already existed
-   */
-  bool Store(const std::string &name, const std::string &content);
-
-  /**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param source_file_name Path to input file
-   * @param delete_source_file True if file can be deleted after storing
-   * @return True if chunk could be stored or already existed
-   */
+  std::string Get(
+      const std::string &name,
+      const ValidationData &validation_data = ValidationData()) const;
+  bool Get(const std::string &name,
+           const fs::path &sink_file_name,
+           const ValidationData &validation_data = ValidationData()) const;
+  bool Store(const std::string &name,
+             const std::string &content,
+             const ValidationData &validation_data = ValidationData());
   bool Store(const std::string &name,
              const fs::path &source_file_name,
-             bool delete_source_file);
-
-  /**
-   * Deletes a stored chunk.
-   * @param name Chunk name
-   * @return True if chunk deleted or non-existant
-   */
-  bool Delete(const std::string &name);
-
-  /**
-   * Modifies chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's modified content
-   * @return True if chunk has been modified.
-   */
-  bool Modify(const std::string &name, const std::string &content);
-
-  /**
-   * Modifies a chunk's content as a file, potentially overwriting an existing
-   * file of the same name.
-   * @param name Chunk name
-   * @param source_file_name Path to modified content file
-   * @return True if chunk has been modified.
-   */
+             bool delete_source_file,
+             const ValidationData &validation_data = ValidationData());
+  bool Delete(const std::string &name,
+              const ValidationData &validation_data = ValidationData());
+  bool Modify(const std::string &name,
+              const std::string &content,
+              const ValidationData &validation_data = ValidationData());
   bool Modify(const std::string &name,
               const fs::path &source_file_name,
-              bool delete_source_file);
-  /**
-   * Efficiently adds a locally existing chunk to another ChunkStore and
-   * removes it from this one.
-   * @param name Chunk name
-   * @param sink_chunk_store The receiving ChunkStore
-   * @return True if operation successful
-   */
+              bool delete_source_file,
+              const ValidationData &validation_data = ValidationData());
+  bool Has(const std::string &name,
+           const ValidationData &validation_data = ValidationData()) const;
   bool MoveTo(const std::string &name, ChunkStore *sink_chunk_store);
-
-  /**
-   * Checks if a chunk exists.
-   * @param name Chunk name
-   * @return True if chunk exists
-   */
-  bool Has(const std::string &name) const;
-
-  /**
-   * Validates a chunk using the ChunkValidation object.
-   *
-   * In case a chunk turns out to be invalid, it's advisable to delete it.
-   * @param name Chunk name
-   * @return True if chunk valid
-   */
-  bool Validate(const std::string &name) const;
-
-  /**
-   * Retrieves the chunk's content version using the ChunkValidation object.
-   * @param name Chunk name
-   * @return The chunk version
-   */
-  std::string Version(const std::string &name) const;
-
-  /**
-   * Retrieves the size of a chunk.
-   * @param name Chunk name
-   * @return Size in bytes
-   */
   uintmax_t Size(const std::string &name) const;
-
-  /**
-   * Retrieves the total size of the stored chunks.
-   * @return Size in bytes
-   */
   uintmax_t Size() const { return ChunkStore::Size(); }
-
-  /**
-   * Retrieves the number of references to a chunk.
-   *
-   * If reference counting is enabled, this returns the number of (virtual)
-   * copies of a chunk in the ChunkStore. Otherwise it would return 1 if the
-   * chunks exists, or 0 if it doesn't.
-   * @param name Chunk name
-   * @return Reference count
-   */
   uintmax_t Count(const std::string &name) const;
-
-  /**
-   * Retrieves the number of chunks held by this ChunkStore.
-   * @return Chunk count
-   */
   uintmax_t Count() const;
-
-  /**
-   * Checks if any chunks are held by this ChunkStore.
-   * @return True if no chunks stored
-   */
   bool Empty() const;
-
-  /**
-   * Deletes all stored chunks.
-   */
   void Clear();
-
   friend class test::FileChunkStoreTest_BEH_Methods_Test;
 
  private:
@@ -235,53 +111,27 @@ class FileChunkStore: public ChunkStore {
   FileChunkStore(const FileChunkStore&);
   FileChunkStore& operator=(const FileChunkStore&);
 
-  /**
-   * Utility function
-   * Generates sub-dirs based on chunk-name and dir_depth_ specified
-   * @param the chunk name in raw format
-   * @param option used while storing a chunk - creates dir hierarchy
-   * @return the absolute file path after encoding the chunk name to base 32.
-   */
+  // Generates sub-dirs based on chunk-name and dir_depth_ specified.  Returns
+  // the absolute file path after encoding the chunk name to base 32.
   fs::path ChunkNameToFilePath(const std::string &chunk_name,
                                bool generate_dirs = false) const;
-
   void IncreaseChunkCount() { ++chunk_count_; }
   void DecreaseChunkCount() { --chunk_count_; }
-
   void ChunkAdded(const uintmax_t &delta);
   void ChunkRemoved(const uintmax_t &delta);
-
   void ResetChunkCount(uintmax_t chunk_count = 0) {
     chunk_count_ = chunk_count;
   }
-
-  /**
-   * Tries to read the ChunkStore info file in
-   * dir specified and gets total number of chunks
-   * and their collective size
-   */
+  // Tries to read the ChunkStore info file in dir specified and gets total
+  // number of chunks and their collective size
   RestoredChunkStoreInfo RetrieveChunkInfo(const fs::path &location) const;
-
-  /**
-   * Saves the current state of the ChunkStore
-   * (in terms of total number of chunks and their
-   * collective size) to the info file
-   */
+  // Saves the current state of the ChunkStore (in terms of total number of
+  // chunks and their collective size) to the info file
   void SaveChunkStoreState();
-
   bool IsChunkStoreInitialised() const { return initialised_; }
-
-  /**
-   * Utility function
-   * Returns reference count of a chunk
-   * @param the absolute path of the chunk
-   * @return the reference count for the chunk
-   */
   uintmax_t GetChunkReferenceCount(const fs::path &) const;
-
   uintmax_t GetNumFromString(const std::string &) const;
 
-  std::shared_ptr<ChunkValidation> chunk_validation_;
   bool initialised_;
   fs::path storage_location_;
   uintmax_t chunk_count_;

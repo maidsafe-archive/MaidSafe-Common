@@ -25,11 +25,6 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/**
- * @file chunk_store.h
- * @brief Declaration of ChunkStore interface.
- */
-
 #ifndef MAIDSAFE_COMMON_CHUNK_STORE_H_
 #define MAIDSAFE_COMMON_CHUNK_STORE_H_
 
@@ -50,206 +45,120 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-/**
- * Abstract class to manage storage and retrieval of named data items (chunks).
- *
- * A chunk is a small, content-adressable piece of data that can be validated
- * using an implementation-specific mechanism.
- *
- * The storage capacity can be limited by setting Capacity to a value greater
- * than zero. If that limit is reached, further Store operations will fail. A
- * value of zero (the default) equals infinite storage capacity.
- */
+// Abstract class to manage storage and retrieval of named data items (chunks).
+// A chunk is a small, content-adressable piece of data that can be validated
+// using an implementation-specific mechanism.
+// The storage capacity can be limited by setting Capacity to a value greater
+// than zero. If that limit is reached, further Store operations will fail. A
+// value of zero (the default) equals infinite storage capacity.
 class ChunkStore : public AlternativeStore {
  public:
   ChunkStore() : AlternativeStore(), capacity_(0), size_(0) {}
   virtual ~ChunkStore() {}
 
-  /**
-   * Retrieves a chunk's content as a string.
-   * @param name Chunk name
-   * @return Chunk content, or empty if non-existant
-   */
-  virtual std::string Get(const std::string &name) const = 0;
+  // Retrieves a chunk's content as a string.
+  virtual std::string Get(
+      const std::string &name,
+      const ValidationData &validation_data = ValidationData()) const = 0;
 
-  /**
-   * Retrieves a chunk's content as a file, potentially overwriting an existing
-   * file of the same name.
-   * @param name Chunk name
-   * @param sink_file_name Path to output file
-   * @return True if chunk exists and could be written to file.
-   */
-  virtual bool Get(const std::string &name,
-                   const fs::path &sink_file_name) const = 0;
+  // Retrieves a chunk's content as a file, potentially overwriting an existing
+  // file of the same name.  Returns true if chunk exists and could be written
+  // to file.
+  virtual bool Get(
+      const std::string &name,
+      const fs::path &sink_file_name,
+      const ValidationData &validation_data = ValidationData()) const = 0;
 
-  /**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's content
-   * @return True if chunk could be stored or already existed
-   */
-  virtual bool Store(const std::string &name, const std::string &content) = 0;
+  // Stores chunk content under the given name.
+  virtual bool Store(
+      const std::string &name,
+      const std::string &content,
+      const ValidationData &validation_data = ValidationData()) = 0;
 
-  /**
-   * Stores chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param source_file_name Path to input file
-   * @param delete_source_file True if file can be deleted after storing
-   * @return True if chunk could be stored or already existed
-   */
-  virtual bool Store(const std::string &name,
-                     const fs::path &source_file_name,
-                     bool delete_source_file) = 0;
+  // Stores chunk content under the given name.
+  virtual bool Store(
+      const std::string &name,
+      const fs::path &source_file_name,
+      bool delete_source_file,
+      const ValidationData &validation_data = ValidationData()) = 0;
 
-  /**
-   * Deletes a stored chunk.
-   * @param name Chunk name
-   * @return True if chunk deleted or non-existant
-   */
-  virtual bool Delete(const std::string &name) = 0;
+  // Deletes a stored chunk.  Returns true if chunk deleted or non-existant.
+  virtual bool Delete(
+      const std::string &name,
+      const ValidationData &validation_data = ValidationData()) = 0;
 
-  /**
-   * Modifies chunk content under the given name.
-   * @param name Chunk name, i.e. hash of the chunk content
-   * @param content The chunk's modified content
-   * @return True if chunk has been modified.
-   */
-  virtual bool Modify(const std::string &name, const std::string &content) = 0;
+  // Modifies chunk content under the given name.
+  virtual bool Modify(
+      const std::string &name,
+      const std::string &content,
+      const ValidationData &validation_data = ValidationData()) = 0;
 
-  /**
-   * Modifies a chunk's content as a file, potentially overwriting an existing
-   * file of the same name.
-   * @param name Chunk name
-   * @param source_file_name Path to modified content file
-   * @return True if chunk has been modified.
-   */
-  virtual bool Modify(const std::string &name,
-                      const fs::path &source_file_name,
-                      bool delete_source_file) = 0;
+  // Modifies a chunk's content as a file, potentially overwriting an existing
+  // file of the same name.
+  virtual bool Modify(
+      const std::string &name,
+      const fs::path &source_file_name,
+      bool delete_source_file,
+      const ValidationData &validation_data = ValidationData()) = 0;
 
-  /**
-   * Efficiently adds a locally existing chunk to another ChunkStore and
-   * removes it from this one.
-   * @param name Chunk name
-   * @param sink_chunk_store The receiving ChunkStore
-   * @return True if operation successful
-   */
+  // Checks if a chunk exists.
+  virtual bool Has(
+      const std::string &name,
+      const ValidationData &validation_data = ValidationData()) const = 0;
+
+  // Efficiently adds a locally existing chunk to another ChunkStore and
+  // removes it from this one.
   virtual bool MoveTo(const std::string &name,
                       ChunkStore *sink_chunk_store) = 0;
 
-  /**
-   * Checks if a chunk exists.
-   * @param name Chunk name
-   * @return True if chunk exists
-   */
-  virtual bool Has(const std::string &name) const = 0;
-
-  /**
-   * Validates a chunk.
-   *
-   * In case a chunk turns out to be invalid, it's advisable to delete it.
-   * @param name Chunk name
-   * @return True if chunk valid
-   */
-  virtual bool Validate(const std::string &name) const = 0;
-
-  /**
-   * Retrieves the chunk's content version.
-   * @param name Chunk name
-   * @return The chunk version
-   */
-  virtual std::string Version(const std::string &name) const = 0;
-
-  /**
-   * Retrieves the size of a chunk.
-   * @param name Chunk name
-   * @return Size in bytes
-   */
+  // Retrieves the size of a chunk (bytes).
   virtual uintmax_t Size(const std::string &name) const = 0;
 
-  /**
-   * Retrieves the total size of the stored chunks.
-   * @return Size in bytes
-   */
+  // Retrieves the total size of the stored chunks (bytes).
   virtual uintmax_t Size() const { return size_; }
 
-  /**
-   * Retrieves the maximum storage capacity available to this ChunkStore.
-   *
-   * A capacity of zero (0) equals infinite storage space.
-   * @return Capacity in bytes
-   */
+  // Retrieves the maximum storage capacity (bytes) available to this
+  // ChunkStore.  A capacity of zero (0) equals infinite storage space.
   virtual uintmax_t Capacity() const { return capacity_; }
 
-  /**
-   * Sets the maximum storage capacity available to this ChunkStore.
-   *
-   * A capacity of zero (0) equals infinite storage space. The capacity must
-   * always be at least as high as the total size of already stored chunks.
-   * @param capacity Capacity in bytes
-   */
+  // Sets the maximum storage capacity (bytes) available to this ChunkStore.
+  // A capacity of zero (0) equals infinite storage space. The capacity must
+  // always be at least as high as the total size of already stored chunks.
   virtual void SetCapacity(const uintmax_t &capacity) {
     capacity_ = capacity;
     if (capacity_ > 0 && capacity_ < size_)
       capacity_ = size_;
   }
 
-  /**
-   * Checks whether the ChunkStore has enough capacity to store a chunk of the
-   * given size.
-   * @return True if required size vacant
-   */
+  // Checks whether the ChunkStore has enough capacity to store a chunk of the
+  // given size.
   virtual bool Vacant(const uintmax_t &required_size) const {
     return capacity_ == 0 || size_ + required_size <= capacity_;
   }
 
-  /**
-   * Retrieves the number of references to a chunk.
-   *
-   * If reference counting is enabled, this returns the number of (virtual)
-   * copies of a chunk in the ChunkStore. Otherwise it would return 1 if the
-   * chunks exists, or 0 if it doesn't.
-   * @param name Chunk name
-   * @return Reference count
-   */
+  // Retrieves the number of (virtual) copies of a chunk in the ChunkStore.
   virtual uintmax_t Count(const std::string &name) const = 0;
 
-  /**
-   * Retrieves the number of chunks held by this ChunkStore.
-   * @return Chunk count
-   */
+  // Retrieves the number of chunks held by this ChunkStore.
   virtual uintmax_t Count() const = 0;
 
-  /**
-   * Checks if any chunks are held by this ChunkStore.
-   * @return True if no chunks stored
-   */
+  // Checks if any chunks are held by this ChunkStore.
   virtual bool Empty() const = 0;
 
-  /**
-   * Deletes all stored chunks.
-   */
+  // Deletes all stored chunks.
   virtual void Clear() { size_ = 0; }
 
  protected:
-  /**
-   * Increases the total size of the stored chunks.
-   *
-   * To be called by derived class when storing non-existant chunk.
-   * @param delta Size to add to total
-   */
+  // Increases the total size of the stored chunks.  To be called by derived
+  // class when storing non-existant chunk.
   void IncreaseSize(const uintmax_t &delta) {
     size_ += delta;
     if (capacity_ > 0 && capacity_ < size_)
       capacity_ = size_;
   }
 
-  /**
-   * Decreases the total size of the stored chunks.
-   *
-   * To be called by derived class when deleting existant chunk.
-   * @param delta Size to subtract from total
-   */
+  // Decreases the total size of the stored chunks.  To be called by derived
+  // class when deleting existant chunk.
   void DecreaseSize(const uintmax_t &delta) {
     if (delta <= size_)
       size_ -= delta;
@@ -257,9 +166,7 @@ class ChunkStore : public AlternativeStore {
       size_ = 0;
   }
 
-  /**
-   * Assess Storage Capacity needed For a Modify Operation
-   */
+  // Assess Storage Capacity needed For a Modify Operation
   bool AssessSpaceRequirement(const uintmax_t& current_size,
                               const uintmax_t& new_size,
                               bool* increase_size,
@@ -276,9 +183,7 @@ class ChunkStore : public AlternativeStore {
     return true;
   }
 
-  /**
-   * Updates Chunk Store Size After a Modify Operation
-   */
+  // Updates Chunk Store Size After a Modify Operation
   void AdjustChunkStoreStats(const uintmax_t& content_size_difference,
                              const bool& increase_size) {
     if (content_size_difference == 0)

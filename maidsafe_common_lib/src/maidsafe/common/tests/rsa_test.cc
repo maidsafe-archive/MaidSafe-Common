@@ -69,38 +69,49 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
-  #pragma omp parallel
-  { // NOLINT (dirvine)
-    const std::string plain_data(RandomString(470));
-    std::string recovered_data("");
-    std::string recovered_data_other("");
-    std::string empty_data("");
-    CryptoPP::RSA::PrivateKey empty_priv_key;
-    CryptoPP::RSA::PublicKey empty_pub_key;
-    const std::string plain_data_other(RandomString(470));
-    // Encryption and decryption
-    EXPECT_EQ(kSuccess, Encrypt(plain_data, keys_.public_key, &recovered_data));
-    EXPECT_NE(plain_data, recovered_data);
-    EXPECT_EQ(kSuccess, Decrypt(recovered_data, keys_.private_key,
-                                &recovered_data_other));
-    EXPECT_EQ(plain_data, recovered_data_other);
-    EXPECT_EQ(recovered_data_other, plain_data);
-    EXPECT_NE(recovered_data, plain_data);
-    EXPECT_EQ(kDataEmpty,
-              Encrypt(empty_data, keys_.public_key, &recovered_data));
-    EXPECT_EQ(kDataEmpty, Decrypt(empty_data, keys_.private_key, &empty_data));
-    EXPECT_EQ(kInvalidPrivateKey,
-              Decrypt(plain_data, empty_priv_key, &recovered_data));
+#pragma omp parallel
+  {  // NOLINT (dirvine)
+    const std::string kSmallData(RandomString(21));
+    std::string encrypted_data, recovered_data;
+    EXPECT_EQ(kSuccess, Encrypt(kSmallData, keys_.public_key, &encrypted_data));
+    EXPECT_NE(kSmallData, encrypted_data);
+    EXPECT_EQ(kSuccess, Decrypt(encrypted_data, keys_.private_key,
+                                &recovered_data));
+    EXPECT_EQ(kSmallData, recovered_data);
+
+    const std::string kLargeData(RandomString(1024 * 1024));
+    EXPECT_EQ(kSuccess, Encrypt(kLargeData, keys_.public_key, &encrypted_data));
+    EXPECT_NE(kLargeData, encrypted_data);
+    EXPECT_EQ(kSuccess, Decrypt(encrypted_data, keys_.private_key,
+                                &recovered_data));
+    EXPECT_EQ(kLargeData, recovered_data);
+
+    EXPECT_EQ(kNullParameter, Encrypt(kLargeData, keys_.public_key, NULL));
+    EXPECT_EQ(kNullParameter, Decrypt(encrypted_data, keys_.private_key, NULL));
+
+    recovered_data = "Not empty";
+    EXPECT_EQ(kDataEmpty, Encrypt("", keys_.public_key, &recovered_data));
+    EXPECT_TRUE(recovered_data.empty());
+    recovered_data = "Not empty";
+    EXPECT_EQ(kDataEmpty, Decrypt("", keys_.private_key, &recovered_data));
+    EXPECT_TRUE(recovered_data.empty());
+
+    recovered_data = "Not empty";
     EXPECT_EQ(kInvalidPublicKey,
-              Encrypt(plain_data, empty_pub_key, &recovered_data));
+              Encrypt(kLargeData, PublicKey(), &recovered_data));
+    EXPECT_TRUE(recovered_data.empty());
+    recovered_data = "Not empty";
+    EXPECT_EQ(kInvalidPrivateKey,
+              Decrypt(kLargeData, PrivateKey(), &recovered_data));
+    EXPECT_TRUE(recovered_data.empty());
   }
 }
 
 TEST_F(RSATest, BEH_SignValidate) {
 #pragma omp parallel
   {  // NOLINT (dirvine)
-    CryptoPP::RSA::PrivateKey empty_priv_key;
-    CryptoPP::RSA::PublicKey empty_pub_key;
+    PrivateKey empty_priv_key;
+    PublicKey empty_pub_key;
     const std::string kData(RandomString(470));
     std::string signature;
 
@@ -145,14 +156,21 @@ TEST_F(RSATest, BEH_Serialise) {
   EXPECT_FALSE(ValidateKey(recovered_public_key));
   EXPECT_FALSE(ValidateKey(recovered_private_key));
 
+  boost::archive::archive_exception arch_exception(
+      boost::archive::archive_exception::no_exception);
   try {
     input_archive1 >> recovered_private_key >> recovered_public_key;
   }
   catch(const boost::archive::archive_exception &e) {
-    EXPECT_EQ(boost::archive::archive_exception::input_stream_error, e.code);
-    EXPECT_FALSE(ValidateKey(recovered_public_key));
-    EXPECT_FALSE(ValidateKey(recovered_private_key));
+    arch_exception = e;
+    EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
+              arch_exception.code);
   }
+  catch(const std::exception &std_e) {
+    DLOG(INFO) << std_e.what();
+  }
+  EXPECT_FALSE(ValidateKey(recovered_public_key));
+  EXPECT_FALSE(ValidateKey(recovered_private_key));
 
   try {
     std::istringstream iss2(encoded);

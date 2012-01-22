@@ -47,6 +47,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/platform_config.h"
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/utils.h"
+#include "maidsafe/common/safe_encrypt_pb.h"
 
 
 namespace maidsafe {
@@ -97,6 +100,11 @@ int GenerateKeyPair(Keys *keypair) {
 int Encrypt(const PlainText &data,
             const PublicKey &public_key,
             CipherText *result) {
+  if (!result) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
+  result->clear();
   if (data.empty()) {
     DLOG(ERROR) << "No data";
     return kDataEmpty;
@@ -105,26 +113,50 @@ int Encrypt(const PlainText &data,
     DLOG(ERROR) << "Bad public key";
     return kInvalidPublicKey;
   }
+
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
+  SafeEncrypt safe_enc;
   try {
-    CryptoPP::StringSource(data, true,
-        new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-            new CryptoPP::StringSink(*result)));
+    if (data.size() > encryptor.FixedMaxPlaintextLength()) {
+      std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
+      std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
+      safe_enc.set_data(crypto::SymmEncrypt(data,
+                                            symm_encryption_key,
+                                            symm_encryption_iv));
+      BOOST_ASSERT(!safe_enc.data().empty());
+      std::string encryption_key_encrypted;
+      CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv, true,
+          new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
+              new CryptoPP::StringSink(encryption_key_encrypted)));
+      safe_enc.set_key(encryption_key_encrypted);
+      if (!safe_enc.SerializeToString(result)) {
+        DLOG(ERROR) << "Failed to serialise PB";
+        result->clear();
+        return kRSASerialisationError;
+      }
+    } else {
+      CryptoPP::StringSource(data, true,
+          new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
+              new CryptoPP::StringSink(*result)));
+    }
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed encryption: " << e.what();
     return kRSAEncryptError;
   }
-  if (data == *result) {
-    DLOG(ERROR) << "Failed encryption";
-    return kRSAEncryptError;
-  }
+
+
   return kSuccess;
 }
 
 int Decrypt(const CipherText &data,
             const PrivateKey &private_key,
             PlainText *result) {
+  if (!result) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
+  result->clear();
   if (data.empty()) {
     DLOG(ERROR) << "No data";
     return kDataEmpty;
@@ -133,21 +165,35 @@ int Decrypt(const CipherText &data,
     DLOG(ERROR) << "Bad private key";
     return kInvalidPrivateKey;
   }
-  CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
-  std::string recovered;
+
   try {
-    CryptoPP::StringSource(data, true,
-        new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
-            new CryptoPP::StringSink(*result)));
+    CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
+    SafeEncrypt safe_enc;
+    if (safe_enc.ParseFromString(data)) {
+      std::string out_data;
+      CryptoPP::StringSource(safe_enc.key(), true,
+          new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
+              new CryptoPP::StringSink(out_data)));
+      *result = crypto::SymmDecrypt(safe_enc.data(),
+                                    out_data.substr(0, crypto::AES256_KeySize),
+                                    out_data.substr(crypto::AES256_KeySize,
+                                                    crypto::AES256_IVSize));
+    } else {
+      CryptoPP::StringSource(data, true,
+          new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
+              new CryptoPP::StringSink(*result)));
+    }
   }
   catch(const CryptoPP::Exception &e) {
     DLOG(ERROR) << "Failed decryption: " << e.what();
     return kRSADecryptError;
   }
-  if (data == *result) {
+
+  if (result->empty()) {
     DLOG(ERROR) << "Failed decryption";
     return kRSADecryptError;
   }
+
   return kSuccess;
 }
 
@@ -273,12 +319,12 @@ bool CheckRoundtrip(const PublicKey &public_key,
           public_key.GetPublicExponent() != private_key.GetPrivateExponent());
 }
 
-bool ValidateKey(const PrivateKey &private_key) {
-  return private_key.Validate(rng(), 2);
+bool ValidateKey(const PrivateKey &private_key, unsigned int level) {
+  return private_key.Validate(rng(), level);
 }
 
-bool ValidateKey(const PublicKey &public_key) {
-  return public_key.Validate(rng(), 2);
+bool ValidateKey(const PublicKey &public_key, unsigned int level) {
+  return public_key.Validate(rng(), level);
 }
 
 bool Validate(const PlainText &data,

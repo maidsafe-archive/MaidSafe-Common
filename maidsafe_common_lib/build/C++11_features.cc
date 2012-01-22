@@ -1,4 +1,4 @@
-/* Copyright (c) 2009 maidsafe.net limited
+/* Copyright (c) 2012 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -25,37 +25,23 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
-#define MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
 
-#include <string>
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/version.h"
+#include <regex>
 
-#if MAIDSAFE_COMMON_VERSION != 1005
-#  error This API is not compatible with the installed library.\
-    Please update the MaidSafe-Common library.
-#endif
+int main() {
+  // regex
+  std::regex reg_ex_test("r", std::regex_constants::nosubs);
+  std::wregex wreg_ex_test(L"r", std::regex_constants::icase);
 
-namespace maidsafe {
+  // nullptr
+  char* nullptr_test(nullptr);
 
-class AlternativeStore {
- public:
-  struct ValidationData {
-    ValidationData(const asymm::Keys &key_pair_in,
-                   const std::string &ownership_proof_in)
-        : key_pair(key_pair_in),
-          ownership_proof(ownership_proof_in) {}
-    ValidationData() : key_pair(), ownership_proof() {}
-    asymm::Keys key_pair;
-    std::string ownership_proof;
-  };
-  virtual ~AlternativeStore() {}
-  virtual bool Has(
-      const std::string &key,
-      const ValidationData &validation_data = ValidationData()) const = 0;
-};
+  // decltype
+  std::vector<int> decltype_test;
+  typedef decltype(decltype_test.front()) IntegerRef;
 
-}  // namespace maidsafe
+  // lambda
+  int lambda_test(([](int i)->int { return i * i; })(9));
 
-#endif  // MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
+  return 0;
+}

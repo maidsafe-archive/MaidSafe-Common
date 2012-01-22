@@ -66,6 +66,7 @@ CryptoPP::RandomNumberGenerator &rng() {
   static CryptoPP::AutoSeededRandomPool random_number_generator;
   return random_number_generator;
 }
+
 }  // unamed namespace
 
 std::string XOR(const std::string &first, const std::string &second) {
@@ -259,52 +260,6 @@ void SecretRecoverData(const uint8_t &threshold,
 
   for (auto i = 0; i < num_to_check; i++)
     string_sources[i]->PumpAll();
-}
-
-int CombinedEncrypt(const std::string &input,
-                    const rsa::PublicKey &public_key,
-                    std::string *encrypted_data,
-                    std::string *encrypted_symm_key) {
-  if (!encrypted_data || !encrypted_symm_key) {
-    DLOG(ERROR) << "NULL pointer passed";
-    return kNullParameter;
-  }
-
-  std::string symm_encryption_key(RandomString(AES256_KeySize));
-  std::string symm_encryption_iv(RandomString(AES256_IVSize));
-  *encrypted_data = SymmEncrypt(input, symm_encryption_key, symm_encryption_iv);
-  return rsa::Encrypt(symm_encryption_key + symm_encryption_iv,
-                      public_key,
-                      encrypted_symm_key);
-}
-
-int CombinedDecrypt(const std::string &encrypted_data,
-                    const std::string &encrypted_symm_key,
-                    const rsa::PrivateKey &private_key,
-                    std::string *decrypted_data) {
-  if (!decrypted_data) {
-    DLOG(ERROR) << "NULL pointer passed";
-    return kNullParameter;
-  }
-
-  std::string decrypted_symm_key;
-  int result(rsa::Decrypt(encrypted_symm_key, private_key,
-                          &decrypted_symm_key));
-  if (result != kSuccess) {
-    DLOG(ERROR) << "Failed decrypting symmetric key: " << result;
-    decrypted_data->clear();
-    return result;
-  }
-
-  *decrypted_data = SymmDecrypt(encrypted_data,
-                                decrypted_symm_key.substr(0, AES256_KeySize),
-                                decrypted_symm_key.substr(AES256_KeySize));
-  if (decrypted_data->empty()) {
-    DLOG(ERROR) << "Failed symmetrically decrypting data";
-    return kFailedSymmDecrypt;
-  }
-
-  return kSuccess;
 }
 
 }  // namespace crypto

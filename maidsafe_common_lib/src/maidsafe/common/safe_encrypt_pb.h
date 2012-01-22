@@ -25,37 +25,17 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
-#define MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
 
-#include <string>
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/version.h"
+#ifndef MAIDSAFE_COMMON_SAFE_ENCRYPT_PB_H_
+#define MAIDSAFE_COMMON_SAFE_ENCRYPT_PB_H_
 
-#if MAIDSAFE_COMMON_VERSION != 1005
-#  error This API is not compatible with the installed library.\
-    Please update the MaidSafe-Common library.
+#ifdef __MSVC__
+#  pragma warning(push)
+#  pragma warning(disable: 4127 4244 4267)
+#endif
+#include "maidsafe/common/safe_encrypt.pb.h"
+#ifdef __MSVC__
+#  pragma warning(pop)
 #endif
 
-namespace maidsafe {
-
-class AlternativeStore {
- public:
-  struct ValidationData {
-    ValidationData(const asymm::Keys &key_pair_in,
-                   const std::string &ownership_proof_in)
-        : key_pair(key_pair_in),
-          ownership_proof(ownership_proof_in) {}
-    ValidationData() : key_pair(), ownership_proof() {}
-    asymm::Keys key_pair;
-    std::string ownership_proof;
-  };
-  virtual ~AlternativeStore() {}
-  virtual bool Has(
-      const std::string &key,
-      const ValidationData &validation_data = ValidationData()) const = 0;
-};
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_ALTERNATIVE_STORE_H_
+#endif  // MAIDSAFE_COMMON_SAFE_ENCRYPT_PB_H_

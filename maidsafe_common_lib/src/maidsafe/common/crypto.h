@@ -83,40 +83,28 @@ typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
 
-const uint16_t AES256_KeySize = 32;  /**< size in bytes. */
-const uint16_t AES256_IVSize = 16;  /**< size in bytes. */
+const uint16_t AES256_KeySize = 32;  // size in bytes.
+const uint16_t AES256_IVSize = 16;  // size in bytes.
 const uint16_t kMaxCompressionLevel = 9;
 
 static const std::string kMaidSafeVersionLabel1 =
     "MaidSafe Version 1 Key Derivation";
 static const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
-/** XOR one string with another.
- *  The function performs an bitwise XOR on each char of first with the
- *  corresponding char of second.  first and second must have identical size.
- *  @param first string to be obfuscated.
- *  @param second string used to obfuscate the first one.
- *  @return The obfuscated string. */
+// Performs a bitwise XOR on each char of first with the corresponding char of
+// second.  first and second must have identical size.
 std::string XOR(const std::string &first, const std::string &second);
 
-/** Creates a secure password.
- *  Creates a secure password using the Password-Based Key Derivation Function
- *  (PBKDF) version 2 algorithm.
- *  @param password password.
- *  @param salt salt.
- *  @param pin PIN from which the number of iterations is derived.
- *  @param label additional data to provide distinct input data to PBKDF
- *  @return CommonReturnCode */
+// Creates a secure password using the Password-Based Key Derivation Function
+// (PBKDF) version 2 algorithm.  The number of iterations is derived from "pin".
+// "label" is additional data to provide distinct input data to PBKDF.
 int SecurePassword(const std::string &password,
                    const std::string &salt,
                    const uint32_t &pin,
                    std::string *derived_password,
                    const std::string &label = kMaidSafeVersionLabel);
 
-/** Hash function operating on a string.
- *  @tparam HashType type of hash function to use (e.g. SHA512)
- *  @param input string that is to be hashed.
- *  @return the result of the hash function. */
+// Hash function operating on a string.
 template <class HashType>
 std::string Hash(const std::string &input) {
   std::string result;
@@ -126,11 +114,7 @@ std::string Hash(const std::string &input) {
   return result;
 }
 
-/** Hash function operating on a file.
- *  @tparam HashType type of hash function to use (e.g. SHA512)
- *  @param file_path path to file that is to be hashed.
- *  @return the result of the hash function, or empty string if the file could
- *  not be read. */
+// Hash function operating on a file.
 template <class HashType>
 std::string HashFile(const boost::filesystem::path &file_path) {
   std::string result;
@@ -146,46 +130,25 @@ std::string HashFile(const boost::filesystem::path &file_path) {
   return result;
 }
 
-/** Symmetrically encrypt a string.
- *  Performs symmetric encrytion using AES256. It returns an empty string if the
- *  key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
- *  @param input string to be encrypted.
- *  @param key key used to encrypt.  Size must be >= AES256_KeySize.
- *  @param initialisation_vector initialisation vector used to encrypt.  Size
- *  must be >= AES256_IVSize.
- *  @return the encrypted data or an empty string. */
+// Performs symmetric encrytion using AES256. It returns an empty string if the
+// key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
 std::string SymmEncrypt(const std::string &input,
                         const std::string &key,
                         const std::string &initialisation_vector);
 
-/** Symmetrically decrypt a string.
- *  Performs symmetric decrytion using AES256. It returns an empty string if the
- *  key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
- *  @param input string to be decrypted.
- *  @param key key used to encrypt.  Size must be >= AES256_KeySize.
- *  @param initialisation_vector initialisation vector used to encrypt.  Size
- *  must be >= AES256_IVSize.
- *  @return the decrypted data or an empty string. */
+// Performs symmetric decrytion using AES256. It returns an empty string if the
+// key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
 std::string SymmDecrypt(const std::string &input,
                         const std::string &key,
                         const std::string &initialisation_vector);
 
-
-/** Compress a string.
- *  Compress a string using gzip.  Compression level must be between 0 and 9
- *  inclusive or function returns an empty string.
- *  @param input string to be compressed.
- *  @param compression_level level of compression.
- *  @return the compressed data or an empty string. */
+// Compress a string using gzip.  Compression level must be between 0 and 9
+// inclusive or function returns an empty string.
 std::string Compress(const std::string &input,
                      const uint16_t &compression_level);
 
-/** Uncompress a string.
- *  Uncompress a string using gzip.
- *  @param input string to be uncompressed.
- *  @return the uncompressed data or an empty string. */
+// Uncompress a string using gzip.
 std::string Uncompress(const std::string &input);
-
 
 void SecretRecoverData(const uint8_t &threshold,
                        const std::vector<std::string> &in_strings,
@@ -195,17 +158,6 @@ void SecretShareData(const uint8_t &threshold,
                      const uint8_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings);
-
-/** Create symmetric key, encrypt data with it, asymmetrically encrypt both */
-int CombinedEncrypt(const std::string &input,
-                    const rsa::PublicKey &public_key,
-                    std::string *encrypted_data,
-                    std::string *encrypted_symm_key);
-
-int CombinedDecrypt(const std::string &encrypted_data,
-                    const std::string &encrypted_symm_key,
-                    const rsa::PrivateKey &private_key,
-                    std::string *decrypted_data);
 
 }  // namespace crypto
 

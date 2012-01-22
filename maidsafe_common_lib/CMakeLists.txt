@@ -69,6 +69,25 @@ IF(MSVC)
   ENDIF()
 ENDIF()
 
+# Check compiler can handle required C++11 features
+MESSAGE("-- Checking required C++11 features supported")
+SET(ERROR_LOG ${PROJECT_BINARY_DIR}/C++11_features_compile_message.txt)
+SET(TRY_COMPILE_FILE ${PROJECT_SOURCE_DIR}/build/C++11_features.cc)
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E remove ${ERROR_LOG})
+IF(WIN32)
+  TRY_COMPILE(C++11_CAPABLE ${PROJECT_BINARY_DIR} ${TRY_COMPILE_FILE} OUTPUT_VARIABLE OUT_VAR)
+ELSE()
+  TRY_COMPILE(C++11_CAPABLE ${PROJECT_BINARY_DIR} ${TRY_COMPILE_FILE} COMPILE_DEFINITIONS -std=c++0x OUTPUT_VARIABLE OUT_VAR)
+ENDIF()
+IF(NOT C++11_CAPABLE)
+  FILE(WRITE ${ERROR_LOG} "${OUT_VAR}")
+  SET(MSG "\n\nYour selected compiler does not implement all of the C++11 features required for this project.\n")
+  SET(MSG "${MSG}To see all the features required, look in ${TRY_COMPILE_FILE}\n")
+  SET(MSG "${MSG}To see the output from trying to compile this file, look in ${ERROR_LOG}\n\n")
+  MESSAGE(FATAL_ERROR ${MSG})
+ENDIF()
+
+
 ###################################################################################################
 # Third party library search                                                                      #
 ###################################################################################################
@@ -102,6 +121,11 @@ INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX_CMAKE})
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/build ${PROJECT_SOURCE_DIR}/../cmake_modules)
 INCLUDE(${MAIDSAFE_COMMON_INSTALL_PREFIX}/share/maidsafe/maidsafe_third_party.cmake)
 SET(MaidSafeCommon_INCLUDE_DIR ${MAIDSAFE_COMMON_INSTALL_PREFIX}/include)
+
+SET(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+FILE(GLOB PROTO_FILES_COMMON RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/common/*.proto")
+SET(PROTO_FILES "${PROTO_FILES_COMMON}")
+
 
 ###################################################################################################
 # Standard setup                                                                                  #
@@ -162,7 +186,7 @@ MS_ADD_STATIC_LIBRARY(${MS_PROJECT_NAME} ${ALL_FILES_COMMON_DIR})
 MS_ADD_EXECUTABLE(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 MS_ADD_EXECUTABLE(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
-TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static glog_static boost_filesystem boost_serialization boost_system boost_thread boost_date_time ${SYS_LIB})
+TARGET_LINK_LIBRARIES(maidsafe_common_static cryptopp_static protobuf_static glog_static boost_date_time boost_filesystem boost_serialization boost_system boost_thread ${SYS_LIB})
 TARGET_LINK_LIBRARIES(TESTcommon maidsafe_common_static gtest_static)
 TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_test_framework gtest_static ${SYS_LIB})
 
@@ -170,12 +194,22 @@ TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_te
 # Set compiler and linker flags                                                                   #
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
-
+IF(MSVC)
+  # Warnings switched off for protocol buffer generated files
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc
+                                PROPERTIES COMPILE_FLAGS "/W0")
+ELSEIF(UNIX)
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc
+                                PROPERTIES COMPILE_FLAGS "-w")
+ENDIF()
 
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
-ADD_STYLE_TEST(${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
+SET(STYLE_TESTS ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
+LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc")
+LIST(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
+ADD_STYLE_TEST(${STYLE_TESTS})
 ADD_GTESTS(TESTcommon)
 ADD_GTESTS(TESTboost)
 INCLUDE(${CRYPTO_TEST_CMAKE})
@@ -245,7 +279,10 @@ FILE(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON
 STRING(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
 
 MS_INSTALL_LIBS(maidsafe_common_static)
+LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
+LIST(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt_pb.h")
 MS_INSTALL_HEADERS(common ${HEADER_FILES_COMMON_DIR})
+
 INSTALL(FILES ${MODULE_FILES} DESTINATION share/maidsafe/cmake_modules)
 INSTALL(FILES ${TOOL_FILES} DESTINATION share/maidsafe/tools)
 INSTALL(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)

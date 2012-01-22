@@ -31,19 +31,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-/**
- * If the cache is full and there are no more chunks left to delete, this is the
- * number of chunk transfers to wait for (in Store) before the next check.
- */
+// If the cache is full and there are no more chunks left to delete, this is the
+// number of chunk transfers to wait for (in Store) before the next check.
 const int kWaitTransfersForCacheVacantCheck(10);
 
 BufferedChunkStore::~BufferedChunkStore() {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   while (!pending_xfers_.empty() && !asio_service_.stopped())
     xfer_cond_var_.wait(lock);
 }
 
-std::string BufferedChunkStore::Get(const std::string &name) const {
+std::string BufferedChunkStore::Get(
+    const std::string &name,
+    const ValidationData &/*validation_data*/) const {
   if (name.empty()) {
     DLOG(ERROR) << "Get - Empty name passed.";
     return "";
@@ -68,7 +68,8 @@ std::string BufferedChunkStore::Get(const std::string &name) const {
 }
 
 bool BufferedChunkStore::Get(const std::string &name,
-                             const fs::path &sink_file_name) const {
+                             const fs::path &sink_file_name,
+                             const ValidationData &/*validation_data*/) const {
   if (name.empty()) {
     DLOG(ERROR) << "Get - Empty name passed.";
     return false;
@@ -93,7 +94,13 @@ bool BufferedChunkStore::Get(const std::string &name,
 }
 
 bool BufferedChunkStore::Store(const std::string &name,
-                               const std::string &content) {
+                               const std::string &content,
+                               const ValidationData &/*validation_data*/) {
+  if (name.empty()) {
+    DLOG(ERROR) << "Store - Empty name passed.";
+    return false;
+  }
+
   if (!DoCacheStore(name, content))
     return false;
 
@@ -109,7 +116,13 @@ bool BufferedChunkStore::Store(const std::string &name,
 
 bool BufferedChunkStore::Store(const std::string &name,
                                const fs::path &source_file_name,
-                               bool delete_source_file) {
+                               bool delete_source_file,
+                               const ValidationData &/*validation_data*/) {
+  if (name.empty()) {
+    DLOG(ERROR) << "Store - Empty name passed.";
+    return false;
+  }
+
   boost::system::error_code ec;
   uintmax_t size(fs::file_size(source_file_name, ec));
 
@@ -131,6 +144,11 @@ bool BufferedChunkStore::Store(const std::string &name,
 
 bool BufferedChunkStore::CacheStore(const std::string &name,
                                     const std::string &content) {
+  if (name.empty()) {
+    DLOG(ERROR) << "CacheStore - Empty name passed.";
+    return false;
+  }
+
   if (!DoCacheStore(name, content))
     return false;
 
@@ -141,6 +159,11 @@ bool BufferedChunkStore::CacheStore(const std::string &name,
 bool BufferedChunkStore::CacheStore(const std::string &name,
                                     const fs::path &source_file_name,
                                     bool delete_source_file) {
+  if (name.empty()) {
+    DLOG(ERROR) << "CacheStore - Empty name passed.";
+    return false;
+  }
+
   boost::system::error_code ec;
   uintmax_t size(fs::file_size(source_file_name, ec));
 
@@ -167,7 +190,7 @@ bool BufferedChunkStore::PermanentStore(const std::string &name) {
   }
 
   {
-    boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+    boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
     RemoveDeletionMarks(name);
     while (pending_xfers_.count(name) > 0)
       xfer_cond_var_.wait(xfer_lock);
@@ -184,7 +207,8 @@ bool BufferedChunkStore::PermanentStore(const std::string &name) {
   return true;
 }
 
-bool BufferedChunkStore::Delete(const std::string &name) {
+bool BufferedChunkStore::Delete(const std::string &name,
+                                const ValidationData &/*validation_data*/) {
   if (name.empty()) {
     DLOG(ERROR) << "Delete - Empty name passed.";
     return false;
@@ -192,7 +216,7 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 
   bool file_delete_result(false);
   {
-    boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+    boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
     while (pending_xfers_.count(name) > 0)
       xfer_cond_var_.wait(xfer_lock);
     file_delete_result = perm_chunk_store_.Delete(name);
@@ -212,18 +236,14 @@ bool BufferedChunkStore::Delete(const std::string &name) {
 }
 
 bool BufferedChunkStore::Modify(const std::string &name,
-                                const std::string &content) {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "Modify - Invalid name passed: " << Base32Substr(name);
+                                const std::string &content,
+                                const ValidationData &/*validation_data*/) {
+  if (name.empty()) {
+    DLOG(ERROR) << "Modify - Empty name passed.";
     return false;
   }
 
-  if (chunk_validation_->Hashable(name)) {
-    DLOG(ERROR) << "Modify - Hashable chunk passed: " << Base32Substr(name);
-    return false;
-  }
-
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   RemoveDeletionMarks(name);
 
   while (pending_xfers_.count(name) > 0)
@@ -290,7 +310,7 @@ bool BufferedChunkStore::Modify(const std::string &name,
           while (cached_chunks_.empty()) {
             upgrade_lock.unlock();
             {
-              boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+              boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
               if (pending_xfers_.empty()) {
                 DLOG(ERROR) << "Modify - Can't make space for changes to "
                             << Base32Substr(name);
@@ -317,7 +337,8 @@ bool BufferedChunkStore::Modify(const std::string &name,
 
 bool BufferedChunkStore::Modify(const std::string &name,
                                 const fs::path &source_file_name,
-                                bool delete_source_file) {
+                                bool delete_source_file,
+                                const ValidationData &/*validation_data*/) {
   if (source_file_name.empty()) {
     DLOG(ERROR) << "Modify - No source file passed for " << Base32Substr(name);
     return false;
@@ -340,6 +361,11 @@ bool BufferedChunkStore::Modify(const std::string &name,
   return true;
 }
 
+bool BufferedChunkStore::Has(const std::string &name,
+                             const ValidationData &/*validation_data*/) const {
+  return CacheHas(name) || PermanentHas(name);
+}
+
 bool BufferedChunkStore::MoveTo(const std::string &name,
                                 ChunkStore *sink_chunk_store) {
   if (name.empty()) {
@@ -349,7 +375,7 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
 
   bool chunk_moved(false);
   {
-    boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+    boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
     while (pending_xfers_.count(name) > 0)
       xfer_cond_var_.wait(xfer_lock);
     chunk_moved = perm_chunk_store_.MoveTo(name, sink_chunk_store);
@@ -370,10 +396,6 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
   return true;
 }
 
-bool BufferedChunkStore::Has(const std::string &name) const {
-  return CacheHas(name) || PermanentHas(name);
-}
-
 bool BufferedChunkStore::CacheHas(const std::string &name) const {
   if (name.empty()) {
     DLOG(ERROR) << "CacheHas - Empty name passed.";
@@ -390,7 +412,7 @@ bool BufferedChunkStore::PermanentHas(const std::string &name) const {
     return false;
   }
 
-  boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+  boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
   while (pending_xfers_.count(name) > 0)
     xfer_cond_var_.wait(xfer_lock);
   uintmax_t rem_count(0);
@@ -398,34 +420,6 @@ bool BufferedChunkStore::PermanentHas(const std::string &name) const {
     if (*it == name)
       ++rem_count;
   return perm_chunk_store_.Count(name) > rem_count;
-}
-
-bool BufferedChunkStore::Validate(const std::string &name) const {
-  if (name.empty()) {
-    DLOG(ERROR) << "Validate - Empty name passed.";
-    return false;
-  }
-
-  {
-    SharedLock shared_lock(cache_mutex_);
-    if (cache_chunk_store_.Has(name))
-      return cache_chunk_store_.Validate(name);
-  }
-  return perm_chunk_store_.Validate(name);
-}
-
-std::string BufferedChunkStore::Version(const std::string &name) const {
-  if (name.empty()) {
-    DLOG(ERROR) << "Version - Empty name passed.";
-    return "";
-  }
-
-  {
-    SharedLock shared_lock(cache_mutex_);
-    if (cache_chunk_store_.Has(name))
-      return cache_chunk_store_.Version(name);
-  }
-  return perm_chunk_store_.Version(name);
 }
 
 uintmax_t BufferedChunkStore::Size(const std::string &name) const {
@@ -443,7 +437,7 @@ uintmax_t BufferedChunkStore::Size(const std::string &name) const {
 }
 
 uintmax_t BufferedChunkStore::Size() const {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   return perm_size_;
 }
 
@@ -453,7 +447,7 @@ uintmax_t BufferedChunkStore::CacheSize() const {
 }
 
 uintmax_t BufferedChunkStore::Capacity() const {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   return perm_capacity_;
 }
 
@@ -463,7 +457,7 @@ uintmax_t BufferedChunkStore::CacheCapacity() const {
 }
 
 void BufferedChunkStore::SetCapacity(const uintmax_t &capacity) {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   while (!pending_xfers_.empty())
     xfer_cond_var_.wait(lock);
   perm_chunk_store_.SetCapacity(capacity);
@@ -476,7 +470,7 @@ void BufferedChunkStore::SetCacheCapacity(const uintmax_t &capacity) {
 }
 
 bool BufferedChunkStore::Vacant(const uintmax_t &required_size) const {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   return perm_capacity_ == 0 || perm_size_ + required_size <= perm_capacity_;
 }
 
@@ -492,14 +486,14 @@ uintmax_t BufferedChunkStore::Count(const std::string &name) const {
     return 0;
   }
 
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   while (pending_xfers_.count(name) > 0)
     xfer_cond_var_.wait(lock);
   return perm_chunk_store_.Count(name);
 }
 
 uintmax_t BufferedChunkStore::Count() const {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   while (!pending_xfers_.empty())
     xfer_cond_var_.wait(lock);
   return perm_chunk_store_.Count();
@@ -520,7 +514,7 @@ bool BufferedChunkStore::CacheEmpty() const {
 }
 
 void BufferedChunkStore::Clear() {
-  boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+  boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
   while (!pending_xfers_.empty())
     xfer_cond_var_.wait(xfer_lock);
   UniqueLock unique_lock(cache_mutex_);
@@ -533,7 +527,7 @@ void BufferedChunkStore::Clear() {
 }
 
 void BufferedChunkStore::CacheClear() {
-  boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+  boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
   while (!pending_xfers_.empty())
     xfer_cond_var_.wait(xfer_lock);
   UniqueLock unique_lock(cache_mutex_);
@@ -543,7 +537,7 @@ void BufferedChunkStore::CacheClear() {
 
 void BufferedChunkStore::MarkForDeletion(const std::string &name) {
   if (!name.empty()) {
-    boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+    boost::mutex::scoped_lock lock(xfer_mutex_);
     removable_chunks_.push_back(name);
   }
 }
@@ -561,14 +555,9 @@ void BufferedChunkStore::AddCachedChunksEntry(const std::string &name) const {
 
 bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const std::string &content) const {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << Base32Substr(name);
-    return false;
-  }
-
-  UpgradeLock upgrade_lock(cache_mutex_);
+  UniqueLock unique_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return chunk_validation_->Hashable(name);
+    return true;
 
   // Check whether cache has capacity to store chunk
   if (content.size() > cache_chunk_store_.Capacity() &&
@@ -582,9 +571,9 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
   // Make space in cache
   while (!cache_chunk_store_.Vacant(content.size())) {
     while (cached_chunks_.empty()) {
-      upgrade_lock.unlock();
+      unique_lock.unlock();
       {
-        boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+        boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
         if (pending_xfers_.empty()) {
           DLOG(ERROR) << "DoCacheStore - Can't make space for "
                       << Base32Substr(name);
@@ -596,9 +585,8 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
           --limit;
         }
       }
-      upgrade_lock.lock();
+      unique_lock.lock();
     }
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
     cache_chunk_store_.Delete(cached_chunks_.back());
     cached_chunks_.pop_back();
   }
@@ -610,14 +598,9 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
                                       const uintmax_t &size,
                                       const fs::path &source_file_name,
                                       bool delete_source_file) const {
-  if (!chunk_validation_ || !chunk_validation_->ValidName(name)) {
-    DLOG(ERROR) << "DoCacheStore - Invalid name passed: " << Base32Substr(name);
-    return false;
-  }
-
-  UpgradeLock upgrade_lock(cache_mutex_);
+  UniqueLock unique_lock(cache_mutex_);
   if (cache_chunk_store_.Has(name))
-    return chunk_validation_->Hashable(name);
+    return true;
 
   // Check whether cache has capacity to store chunk
   if (size > cache_chunk_store_.Capacity() &&
@@ -631,9 +614,9 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
   // Make space in cache
   while (!cache_chunk_store_.Vacant(size)) {
     while (cached_chunks_.empty()) {
-      upgrade_lock.unlock();
+      unique_lock.unlock();
       {
-        boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+        boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
         if (pending_xfers_.empty()) {
           DLOG(ERROR) << "DoCacheStore - Can't make space for "
                       << Base32Substr(name);
@@ -645,9 +628,8 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
           --limit;
         }
       }
-      upgrade_lock.lock();
+      unique_lock.lock();
     }
-    UpgradeToUniqueLock unique_lock(upgrade_lock);
     cache_chunk_store_.Delete(cached_chunks_.back());
     cached_chunks_.pop_back();
   }
@@ -657,8 +639,7 @@ bool BufferedChunkStore::DoCacheStore(const std::string &name,
 
 bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
                                             const uintmax_t &size) {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
-
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   if (!initialised_) {
     DLOG(ERROR) << "MakeChunkPermanent - Can't make " << Base32Substr(name)
                 << " permanent, not initialised.";
@@ -701,10 +682,10 @@ bool BufferedChunkStore::MakeChunkPermanent(const std::string& name,
       perm_size_ += size;  // account for chunk in transfer
   }
 
+  pending_xfers_.insert(name);
   asio_service_.post(std::bind(
       static_cast<void(BufferedChunkStore::*)(const std::string&)>(    // NOLINT
           &BufferedChunkStore::DoMakeChunkPermanent), this, name));
-  pending_xfers_.insert(name);
 
   return true;
 }
@@ -726,26 +707,23 @@ void BufferedChunkStore::DoMakeChunkPermanent(const std::string &name) {
                 << Base32Substr(name);
   }
 
-  {
-    boost::unique_lock<boost::mutex> lock(xfer_mutex_);
-    perm_size_ = perm_chunk_store_.Size();
-    pending_xfers_.erase(pending_xfers_.find(name));
-    xfer_cond_var_.notify_all();
-  }
+  boost::mutex::scoped_lock lock(xfer_mutex_);
+  perm_size_ = perm_chunk_store_.Size();
+  pending_xfers_.erase(pending_xfers_.find(name));
+  xfer_cond_var_.notify_all();
 }
 
 void BufferedChunkStore::RemoveDeletionMarks(const std::string &name) {
-  auto it = removable_chunks_.begin();
-  while ((it = std::find(it, removable_chunks_.end(), name)) !=
-         removable_chunks_.end())
-    it = removable_chunks_.erase(it);
+  removable_chunks_.remove_if([&name](const std::string &i) {
+      return name == i;
+  });
 }
 
 bool BufferedChunkStore::DeleteAllMarked() {
   bool delete_result(true);
   std::list<std::string> rem_chunks;
   {
-    boost::unique_lock<boost::mutex> xfer_lock(xfer_mutex_);
+    boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
     rem_chunks = removable_chunks_;
     removable_chunks_.clear();
     while (!pending_xfers_.empty())
@@ -772,7 +750,7 @@ bool BufferedChunkStore::DeleteAllMarked() {
 }
 
 std::list<std::string> BufferedChunkStore::GetRemovableChunks() const {
-  boost::unique_lock<boost::mutex> lock(xfer_mutex_);
+  boost::mutex::scoped_lock lock(xfer_mutex_);
   return removable_chunks_;
 }
 

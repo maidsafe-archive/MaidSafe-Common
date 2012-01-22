@@ -35,7 +35,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/thread.hpp"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/hashable_chunk_validation.h"
 #include "maidsafe/common/memory_chunk_store.h"
 #include "maidsafe/common/tests/chunk_store_api_test.h"
 #include "maidsafe/common/threadsafe_chunk_store.h"
@@ -49,14 +48,12 @@ namespace test_tscs {
   const size_t kIterationSize = 13;
 }
 
-template <> template <class ValidationType, class VersionType>
+template <>
 void ChunkStoreTest<ThreadsafeChunkStore>::InitChunkStore(
     std::shared_ptr<ChunkStore> *chunk_store,
     const fs::path&,
     boost::asio::io_service&) {
-  std::shared_ptr<MemoryChunkStore> memory_chunk_store(new MemoryChunkStore(
-      std::shared_ptr<ChunkValidation>(
-          new HashableChunkValidation<ValidationType, VersionType>)));
+  std::shared_ptr<MemoryChunkStore> memory_chunk_store(new MemoryChunkStore());
   chunk_store->reset(new ThreadsafeChunkStore(memory_chunk_store));
 }
 
@@ -73,9 +70,7 @@ class ThreadsafeChunkStoreTest : public testing::Test {
         thread_group_(),
         total_chunk_size_(),
         mutex_() {
-    std::shared_ptr<MemoryChunkStore> chunk_store(new MemoryChunkStore(
-        std::shared_ptr<ChunkValidation>(
-            new HashableChunkValidation<crypto::SHA512, crypto::Tiger>)));
+    std::shared_ptr<MemoryChunkStore> chunk_store(new MemoryChunkStore());
     threadsafe_chunk_store_.reset(new ThreadsafeChunkStore(chunk_store));
   }
 
@@ -190,10 +185,6 @@ class ThreadsafeChunkStoreTest : public testing::Test {
 
     boost::mutex::scoped_lock lock(mutex_);
     *total_size = *total_size + chunk_size;
-  }
-
-  void ValidateChunk(const std::string &chunk_name) {
-    EXPECT_TRUE(threadsafe_chunk_store_->Validate(chunk_name));
   }
 
   void Size() {
@@ -317,17 +308,6 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Delete) {
   this->StopThreadpool();
 }
 
-TEST_F(ThreadsafeChunkStoreTest, BEH_Validate) {
-  size_t entry_size = this->chunkname_.size();
-  uint32_t index = RandomUint32();
-  for (size_t i = 0; i < entry_size; ++i) {
-    auto it = this->chunkname_.at(index % entry_size);
-    this->EnqueueTask(
-        std::bind(&ThreadsafeChunkStoreTest::ValidateChunk, this, it));
-  }
-  this->StopThreadpool();
-}
-
 TEST_F(ThreadsafeChunkStoreTest, BEH_Size_For_Chunk) {
   size_t entry_size = this->chunkname_.size();
   uint64_t total_size(0);
@@ -424,8 +404,7 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Clear) {
 }
 
 TEST_F(ThreadsafeChunkStoreTest, BEH_MoveTo) {
-  MemoryChunkStore another_chunk_store(std::shared_ptr<ChunkValidation>(
-      new HashableChunkValidation<crypto::SHA512, crypto::Tiger>));
+  MemoryChunkStore another_chunk_store;
   size_t entry_size = this->chunkname_.size();
   for (size_t i = 0; i < entry_size; ++i) {
     auto it = this->chunkname_.at(i);
@@ -471,8 +450,7 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Misc) {
   }
 
   // Create MoveTo functor
-  MemoryChunkStore another_chunk_store(std::shared_ptr<ChunkValidation>(
-      new HashableChunkValidation<crypto::SHA512, crypto::Tiger>));
+  MemoryChunkStore another_chunk_store;
   for (size_t i = 0; i < moveto_chunknames.size(); ++i) {
     functor f1 = std::bind(&ThreadsafeChunkStoreTest::MoveChunk, this,
                            moveto_chunknames[i], &another_chunk_store);
@@ -513,13 +491,6 @@ TEST_F(ThreadsafeChunkStoreTest, BEH_Misc) {
   for (size_t i = 0; i < chunkname_.size(); ++i) {
     functor f1 = std::bind(&ThreadsafeChunkStoreTest::ChunkSize, this,
                            chunkname_[i], &total_size);
-    functors.push_back(f1);
-  }
-
-  //  create Validate functor
-  for (size_t i = 0; i < chunkname_.size(); ++i) {
-    functor f1 = std::bind(&ThreadsafeChunkStoreTest::ValidateChunk, this,
-                           chunkname_[i]);
     functors.push_back(f1);
   }
 

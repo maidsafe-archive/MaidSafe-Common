@@ -134,7 +134,7 @@ struct HashTestData {
 };
 
 TEST(CryptoTest, BEH_Hash) {
-#pragma omp parallel
+// #pragma omp parallel
   {  // NOLINT (dirvine)
     // Set up industry standard test data
     std::vector<HashTestData> test_data;
@@ -387,23 +387,6 @@ TEST(CryptoTest, BEH_SecretSharing) {
   recovered.clear();
   SecretRecoverData(too_many, data_parts, &recovered);
   EXPECT_EQ(recovered, rand_string);
-}
-
-TEST(CryptoTest, BEH_CombinedEncryptDecrypt) {
-  rsa::Keys k;
-  rsa::GenerateKeyPair(&k);
-  std::string input(RandomString(64)), encrypted_data, encrypted_symm_key;
-  ASSERT_EQ(kSuccess, CombinedEncrypt(input,
-                                      k.public_key,
-                                      &encrypted_data,
-                                      &encrypted_symm_key));
-
-  std::string reconstituted;
-  ASSERT_EQ(kSuccess, CombinedDecrypt(encrypted_data,
-                                      encrypted_symm_key,
-                                      k.private_key,
-                                      &reconstituted));
-  ASSERT_EQ(input, reconstituted);
 }
 
 }  // namespace test
