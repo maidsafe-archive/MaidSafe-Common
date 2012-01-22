@@ -78,6 +78,10 @@ void DecodeKey(const std::string &key, CryptoPP::BufferedTransformation *bt) {
 }  // Unnamed namespace
 
 int GenerateKeyPair(Keys *keypair) {
+  if (!keypair) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
   CryptoPP::InvertibleRSAFunction parameters;
   try {
     parameters.GenerateRandomWithKeySize(rng(), Keys::kKeySize);
@@ -145,7 +149,6 @@ int Encrypt(const PlainText &data,
     return kRSAEncryptError;
   }
 
-
   return kSuccess;
 }
 
@@ -200,6 +203,10 @@ int Decrypt(const CipherText &data,
 int Sign(const std::string &data,
          const PrivateKey &private_key,
          std::string *signature) {
+  if (!signature) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return kNullParameter;
+  }
   if (!private_key.Validate(rng(), 0)) {
     DLOG(ERROR) << "Bad private key";
     return kInvalidPrivateKey;
@@ -256,9 +263,16 @@ int CheckSignature(const PlainText &data,
 }
 
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
-  private_key->clear();;
-  if (!ValidateKey(key))
+  if (!private_key) {
+    DLOG(ERROR) << "NULL pointer passed";
     return;
+  }
+  private_key->clear();
+  if (!ValidateKey(key)) {
+    DLOG(ERROR) << "Not a valid key";
+    return;
+  }
+
   try {
     CryptoPP::ByteQueue queue;
     key.DEREncodePrivateKey(queue);
@@ -271,9 +285,16 @@ void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
 }
 
 void EncodePublicKey(const PublicKey &key, std::string *public_key) {
-  public_key->clear();;
-  if (!ValidateKey(key)) 
+  if (!public_key) {
+    DLOG(ERROR) << "NULL pointer passed";
     return;
+  }
+  public_key->clear();
+  if (!ValidateKey(key)) {
+    DLOG(ERROR) << "Not a valid key";
+    return;
+  }
+
   try {
     CryptoPP::ByteQueue queue;
     key.DEREncodePublicKey(queue);
@@ -286,6 +307,10 @@ void EncodePublicKey(const PublicKey &key, std::string *public_key) {
 }
 
 void DecodePrivateKey(const std::string &private_key, PrivateKey *key) {
+  if (!key) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return;
+  }
   try {
     CryptoPP::ByteQueue queue;
     DecodeKey(private_key, &queue);
@@ -300,6 +325,10 @@ void DecodePrivateKey(const std::string &private_key, PrivateKey *key) {
 }
 
 void DecodePublicKey(const std::string &public_key, PublicKey *key) {
+  if (!key) {
+    DLOG(ERROR) << "NULL pointer passed";
+    return;
+  }
   try {
     CryptoPP::ByteQueue queue;
     DecodeKey(public_key, &queue);
