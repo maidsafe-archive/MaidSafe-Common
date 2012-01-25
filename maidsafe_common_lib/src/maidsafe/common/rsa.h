@@ -45,7 +45,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/function.hpp"
 #include "boost/serialization/string.hpp"
 
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/version.h"
 #if MAIDSAFE_COMMON_VERSION != 1005
 #  error This API is not compatible with the installed library.\
