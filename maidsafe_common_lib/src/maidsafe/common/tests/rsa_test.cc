@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/archive/text_iarchive.hpp"
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/omp.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
