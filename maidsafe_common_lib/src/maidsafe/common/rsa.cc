@@ -367,9 +367,15 @@ bool MatchingPublicKeys(const PublicKey &public_key1,
   std::string encoded_key1, encoded_key2;
   EncodePublicKey(public_key1, &encoded_key1);
   EncodePublicKey(public_key2, &encoded_key2);
-  if (!encoded_key1.empty() && !encoded_key2.empty())
-    return encoded_key1 == encoded_key2;
-  return false;
+  return encoded_key1 == encoded_key2;
+}
+
+bool MatchingPrivateKeys(const PrivateKey &private_key1,
+                         const PrivateKey &private_key2) {
+  std::string encoded_key1, encoded_key2;
+  EncodePrivateKey(private_key1, &encoded_key1);
+  EncodePrivateKey(private_key2, &encoded_key2);
+  return encoded_key1 == encoded_key2;
 }
 
 }  // namespace rsa

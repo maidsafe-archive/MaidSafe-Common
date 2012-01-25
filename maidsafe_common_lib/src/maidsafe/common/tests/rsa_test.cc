@@ -187,6 +187,16 @@ TEST_F(RSATest, BEH_Serialise) {
   EXPECT_TRUE(CheckRoundtrip(recovered_public_key, recovered_private_key));
 }
 
+TEST_F(RSATest, BEH_RsaKeysComparing) {
+  Keys k1, k2;
+  ASSERT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
+  ASSERT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
+
+  ASSERT_EQ(kSuccess, GenerateKeyPair(&k1));
+  k2.public_key = k1.public_key;
+  k2.private_key = k1.private_key;
+}
+
 }  // namespace test
 }  // namespace rsa
 }  // namespace maidsafe
