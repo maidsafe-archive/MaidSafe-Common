@@ -69,6 +69,28 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
   }
 }
 
+TEST_F(RSATest, FUNC_ValidateKeys) {
+#pragma omp parallel
+  { // NOLINT (dirvine)
+    PublicKey public_key;
+    EXPECT_FALSE(ValidateKey(public_key));
+    DecodePublicKey("Just some string", &public_key);
+    EXPECT_FALSE(ValidateKey(public_key));
+
+    PrivateKey private_key;
+    EXPECT_FALSE(ValidateKey(private_key));
+    DecodePublicKey("Just some string", &private_key);
+    EXPECT_FALSE(ValidateKey(private_key));
+
+    Keys keys;
+    EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
+    public_key = keys.public_key;
+    private_key = keys.private_key;
+    EXPECT_TRUE(ValidateKey(private_key));
+    EXPECT_TRUE(ValidateKey(public_key));
+  }
+}
+
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
 #pragma omp parallel
   {  // NOLINT (dirvine)
@@ -189,13 +211,18 @@ TEST_F(RSATest, BEH_Serialise) {
 }
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
-  Keys k1, k2;
-  ASSERT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
-  ASSERT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
+#pragma omp parallel
+  { // NOLINT (dirvine)
+    Keys k1, k2;
+    EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
+    EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
 
-  ASSERT_EQ(kSuccess, GenerateKeyPair(&k1));
-  k2.public_key = k1.public_key;
-  k2.private_key = k1.private_key;
+    EXPECT_EQ(kSuccess, GenerateKeyPair(&k1));
+    k2.public_key = k1.public_key;
+    k2.private_key = k1.private_key;
+    EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
+    EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
+  }
 }
 
 }  // namespace test
