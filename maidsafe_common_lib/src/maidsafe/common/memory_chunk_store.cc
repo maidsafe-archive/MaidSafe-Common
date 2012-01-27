@@ -172,6 +172,7 @@ bool MemoryChunkStore::Delete(const std::string &name,
   if (--(*it).second.first == 0) {
     DecreaseSize((*it).second.second.size());
     chunks_.erase(it);
+    DLOG(INFO) << "Deleted chunk " << Base32Substr(name);
   } else {
     DLOG(INFO) << "Decreased count of chunk " << Base32Substr(name) << " to "
                 << (*it).second.first << " via deletion";
