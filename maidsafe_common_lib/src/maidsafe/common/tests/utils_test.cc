@@ -45,8 +45,7 @@ namespace maidsafe {
 
 namespace test {
 
-void GenerateRandomStrings(const int &string_count,
-                           const size_t &string_size) {
+void GenerateRandomStrings(const int &string_count, const size_t &string_size) {
   for (int i = 0; i < string_count; ++i)
     RandomString(string_size);
 }
@@ -184,10 +183,10 @@ TEST(UtilsTest, BEH_BytesToBinarySiUnits) {
 
 TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   int thread_count(20);
-  int string_count(1000);
-  size_t string_size(4096);
 #pragma omp parallel num_threads(thread_count)
   {  // NOLINT (dirvine)
+    int string_count(1000);
+    size_t string_size(4096);
     test::GenerateRandomStrings(string_count, string_size);
   }
   --thread_count;  // to satisfy compiler

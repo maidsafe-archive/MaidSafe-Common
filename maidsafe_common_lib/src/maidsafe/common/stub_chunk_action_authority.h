@@ -48,6 +48,7 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
   virtual ~StubChunkActionAuthority() {}
   virtual bool ValidName(const std::string &name) const;
   virtual bool Cacheable(const std::string &name) const;
+  virtual bool Modifiable(const std::string &name) const;
   virtual bool ValidChunk(const std::string &name) const;
   virtual std::string Version(const std::string &name) const;
 
@@ -65,7 +66,6 @@ class StubChunkActionAuthority : public ChunkActionAuthority {
                           const asymm::PublicKey &public_key) const;
   virtual int ValidModify(const std::string &name,
                           const std::string &content,
-                          const std::string &version,
                           const asymm::PublicKey &public_key,
                           int64_t *size_difference,
                           std::string *new_content = NULL) const;

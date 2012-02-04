@@ -74,13 +74,11 @@ class ChunkActionAuthority {
                       const asymm::PublicKey &public_key);
   virtual bool Modify(const std::string &name,
                       const std::string &content,
-                      const std::string &version,
                       const asymm::PublicKey &public_key,
                       int64_t *size_difference);
   virtual bool Modify(const std::string &name,
                       const fs::path &source_file_name,
                       bool delete_source_file,
-                      const std::string &version,
                       const asymm::PublicKey &public_key,
                       int64_t *size_difference);
   virtual bool Has(const std::string &name,
@@ -89,6 +87,7 @@ class ChunkActionAuthority {
 
   virtual bool ValidName(const std::string &name) const = 0;
   virtual bool Cacheable(const std::string &name) const = 0;
+  virtual bool Modifiable(const std::string &name) const = 0;
   virtual bool ValidChunk(const std::string &name) const = 0;
   virtual std::string Version(const std::string &name) const = 0;
 
@@ -106,7 +105,6 @@ class ChunkActionAuthority {
                           const asymm::PublicKey &public_key) const = 0;
   virtual int ValidModify(const std::string &name,
                           const std::string &content,
-                          const std::string &version,
                           const asymm::PublicKey &public_key,
                           int64_t *size_difference,
                           std::string *new_content = NULL) const = 0;

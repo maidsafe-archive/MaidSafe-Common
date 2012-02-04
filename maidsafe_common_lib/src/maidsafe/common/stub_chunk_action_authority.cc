@@ -40,6 +40,10 @@ bool StubChunkActionAuthority::Cacheable(const std::string &/*name*/) const {
   return true;
 }
 
+bool StubChunkActionAuthority::Modifiable(const std::string &/*name*/) const {
+  return true;
+}
+
 bool StubChunkActionAuthority::ValidChunk(const std::string &/*name*/) const {
   return true;
 }
@@ -74,7 +78,6 @@ int StubChunkActionAuthority::ValidDelete(
 int StubChunkActionAuthority::ValidModify(
     const std::string &/*name*/,
     const std::string &/*content*/,
-    const std::string &/*version*/,
     const asymm::PublicKey &/*public_key*/,
     int64_t * /*size_difference*/,
     std::string * /*new_content*/) const {
