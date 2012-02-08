@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char **argv) {
   // Initialising logging
-  google::InitGoogleLogging(argv[0]);
+  maidsafe::InitLogging(argv[0]);
 
   // Choose to direct output to stderr instead of logfiles.
   FLAGS_logtostderr = true;

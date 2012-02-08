@@ -25,6 +25,57 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "maidsafe/common/log.h"
+#include <string>
+#include "boost/filesystem/path.hpp"
+#include "google/protobuf/stubs/common.h"
+
+
+namespace maidsafe {
+
+namespace {
+
+void ProtobufLogHandler(google::protobuf::LogLevel level,
+                        const char *filename,
+                        int line,
+                        const std::string &message) {
+  boost::filesystem::path full(filename);
+  boost::filesystem::path parent(full.parent_path().filename());
+  boost::filesystem::path slash("/");
+  std::string full_message("[... ");
+  full_message += (slash.make_preferred() / parent / full.filename()).string();
+  full_message += ":" + std::to_string(static_cast<uint64_t>(line)) + "] ";
+  full_message += message;
+
+  switch (level) {
+    // Protobuf throws an exception containing the message for LOGLEVEL_FATAL
+    // level, in which case the message should be received and output in the
+    // appropriate catch block, so no need to output message here.
+    case google::protobuf::LOGLEVEL_FATAL:
+      break;
+    case google::protobuf::LOGLEVEL_ERROR:
+      DLOG(ERROR) << full_message;
+      break;
+    case google::protobuf::LOGLEVEL_WARNING:
+      DLOG(WARNING) << full_message;
+      break;
+    case google::protobuf::LOGLEVEL_INFO:
+    default:
+      DLOG(INFO) << full_message;
+      break;
+  }
+}
+
+}  // unnamed namespace
+
+
+void InitLogging(const char *argv0) {
+  google::InitGoogleLogging(argv0);
+  google::protobuf::SetLogHandler(maidsafe::ProtobufLogHandler);
+}
+
+}  // namespace maidsafe
+
 int FLAGS_ms_logging_user = 3;
 int FLAGS_ms_logging_benchmark = 3;
 

@@ -154,6 +154,14 @@ namespace google {
 #endif
 }  // google
 
+
+namespace maidsafe {
+
+void InitLogging(const char *argv0);
+
+}  // namespace maidsafe
+
+
 extern int FLAGS_ms_logging_user;
 extern int FLAGS_ms_logging_benchmark;
 
