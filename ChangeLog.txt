@@ -1,6 +1,39 @@
-v0.10.05 (WIP)
+v0.11.00 (WIP)
 --------------
 
+
+v0.10.05
+--------
+* Replaced ChunkValidation class with ChunkActionAuthority class.
+* Removed ChunkActionAuthority from chunkstores.
+* Changed ChunkStore methods to receive a ValidationData struct in place of Identity.
+* Added public_key_id parameter to many ChunkStore methods.
+* Refactored Modify tests for chunkstores
+* Removed NonHashable test from ChunkStores as no longer appropriate.
+* Added check for compiler support of required C++11 features.
+* Removed combined Encrypt methods
+* Encrypt/Decrypt uses combined encryption if required, otherwise uses pure RSA.
+* Made string Encoding and Decoding methods threadsafe.
+* Added function to compare private keys, amended function to compare public keys, and added test for both
+* Added level parameter to ValidateKey methods.
+* Added test for validate keys
+* Added a helper class for using asio io_service.
+* Added a handler for Protobuf logging.
+* Improved logging for CreateTestPath deletion.
+* Updated cpplint.py script.
+* Removed requirement for python version < 3.0 in CMake script.
+* Removed Python version from cpplint.py and re-added Doxygen comment exceptions.
+* Updated CMake clone script.
+* Updated dashboard script.
+* Included the date_time library from boost
+* Upgraded QT requirement to v4.8
+* Updated CMake utils to exclude pb.h files from header version checks.
+* Removed log.h from rsa.h
+* Added checks for null pointers in RSA functions.
+* Updated the serialisation methods of Public and Private Keys.
+* Clear strings and return empty strings for uninitialised keys in Encode methods
+* Fixed unhandled exception in Serialise test of RSA.
+* Fixed CreateTestPath to handle destruction after main has exited.
 
 v0.10.04
 --------
