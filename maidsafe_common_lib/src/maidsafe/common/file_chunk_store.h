@@ -50,7 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/stub_chunk_action_authority.h"
 #include "maidsafe/common/version.h"
 
-#if MAIDSAFE_COMMON_VERSION != 1005
+#if MAIDSAFE_COMMON_VERSION != 1100
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
