@@ -38,6 +38,12 @@ AsioService::~AsioService() {
 }
 
 void AsioService::Start(const uint32_t &thread_count) {
+  if (work_) {
+    DLOG(ERROR) << "AsioService is already running with "
+                << thread_group_->size() << " threads.";
+    return;
+  }
+  service_.reset();
   work_.reset(new boost::asio::io_service::work(service_));
   thread_group_.reset(new boost::thread_group);
   for (uint32_t i = 0; i != thread_count; ++i) {
