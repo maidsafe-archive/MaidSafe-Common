@@ -65,8 +65,10 @@ void AsioService::Start(const uint32_t &thread_count) {
 void AsioService::Stop() {
   work_.reset();
   service_.stop();
-  if (thread_group_)
+  if (thread_group_) {
+    thread_group_->interrupt_all();
     thread_group_->join_all();
+  }
 }
 
 boost::asio::io_service& AsioService::service() {
