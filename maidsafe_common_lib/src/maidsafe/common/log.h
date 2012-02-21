@@ -63,90 +63,94 @@ namespace google {
 #undef LOG
 #undef DLOG
 
+#define LOG_SEPARATOR ':'
+
 #if GOOGLE_STRIP_LOG == 0
-#  define COMPACT_GOOGLE_LOG_INFO(project, separator) \
+#  define COMPACT_GOOGLE_LOG_INFO(project) \
           (FLAGS_ms_logging_ ## project > 0) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__)
-#  define LOG_TO_STRING_INFO(project, separator, message) \
+#  define LOG_TO_STRING_INFO(project, message) \
           (FLAGS_ms_logging_ ## project > 0) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::INFO, message)
 #else
-#  define COMPACT_GOOGLE_LOG_INFO(project, separator) google::NullStream()
-#  define LOG_TO_STRING_INFO(project, separator, message) google::NullStream()
+#  define COMPACT_GOOGLE_LOG_INFO(project) google::NullStream()
+#  define LOG_TO_STRING_INFO(project, message) google::NullStream()
 #endif
 
 #if GOOGLE_STRIP_LOG <= 1
-#  define COMPACT_GOOGLE_LOG_WARNING(project, separator) \
+#  define COMPACT_GOOGLE_LOG_WARNING(project) \
           (FLAGS_ms_logging_ ## project > 1) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::WARNING)
-#  define LOG_TO_STRING_WARNING(project, separator, message) \
+#  define LOG_TO_STRING_WARNING(project, message) \
           (FLAGS_ms_logging_ ## project > 1) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::WARNING, message)
 #else
-#  define COMPACT_GOOGLE_LOG_WARNING(project, separator) google::NullStream()
-#  define LOG_TO_STRING_WARNING(project, separator, message) \
+#  define COMPACT_GOOGLE_LOG_WARNING(project) google::NullStream()
+#  define LOG_TO_STRING_WARNING(project, message) \
           google::NullStream()
 #endif
 
 #if GOOGLE_STRIP_LOG <= 2
-#  define COMPACT_GOOGLE_LOG_ERROR(project, separator) \
+#  define COMPACT_GOOGLE_LOG_ERROR(project) \
           (FLAGS_ms_logging_ ## project > 2) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::ERROR)
-#  define LOG_TO_STRING_ERROR(project, separator, message) \
+#  define LOG_TO_STRING_ERROR(project, message) \
           (FLAGS_ms_logging_ ## project > 2) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::ERROR, message)
 #else
-#  define COMPACT_GOOGLE_LOG_ERROR(project, separator) google::NullStream()
-#  define LOG_TO_STRING_ERROR(project, separator, message) google::NullStream()
+#  define COMPACT_GOOGLE_LOG_ERROR(project) google::NullStream()
+#  define LOG_TO_STRING_ERROR(project, message) google::NullStream()
 #endif
 
 #if GOOGLE_STRIP_LOG <= 3
-#  define COMPACT_GOOGLE_LOG_FATAL(project, separator) \
+#  define COMPACT_GOOGLE_LOG_FATAL(project) \
           (FLAGS_ms_logging_ ## project > 3) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessageFatal( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__)
-#  define LOG_TO_STRING_FATAL(project, separator, message) \
+#  define LOG_TO_STRING_FATAL(project, message) \
           (FLAGS_ms_logging_ ## project > 3) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::FATAL, message)
 #else
-#  define COMPACT_GOOGLE_LOG_FATAL(project, separator) google::NullStreamFatal()
-#  define LOG_TO_STRING_FATAL(project, separator, message) \
+#  define COMPACT_GOOGLE_LOG_FATAL(project) google::NullStreamFatal()
+#  define LOG_TO_STRING_FATAL(project, message) \
           google::NullStreamFatal()
 #endif
 
 #ifdef NDEBUG
 #  define COMPACT_GOOGLE_LOG_DFATAL COMPACT_GOOGLE_LOG_ERROR
 #elif GOOGLE_STRIP_LOG <= 3
-#  define COMPACT_GOOGLE_LOG_DFATAL(project, separator) \
+#  define COMPACT_GOOGLE_LOG_DFATAL(project) \
           !(FLAGS_ms_logging_ ## project) ? (void) 0 : \
           google::LogMessageVoidify() & google::LogMessage( \
-          std::string((std::string(__FILE__) + #separator + \
+          std::string((std::string(__FILE__) + LOG_SEPARATOR + \
           #project)).c_str(), __LINE__, google::FATAL)
 #else
-#  define COMPACT_GOOGLE_LOG_DFATAL(project, separator) \
+#  define COMPACT_GOOGLE_LOG_DFATAL(project) \
           google::NullStreamFatal()
 #endif
 
 
-#define ULOG(severity) COMPACT_GOOGLE_LOG_ ## severity(user, :).stream()
-#define BLOG(severity) COMPACT_GOOGLE_LOG_ ## severity(benchmark, :).stream()
+#define ULOG(severity) COMPACT_GOOGLE_LOG_ ## severity(user).stream()
+#define BLOG(severity) COMPACT_GOOGLE_LOG_ ## severity(benchmark).stream()
 
-#define LOG(severity) COMPACT_GOOGLE_LOG_ ## severity(common, :).stream()
+#define MAIDSAFE_LOG(project, severity) COMPACT_GOOGLE_LOG_ ## severity(\
+        ##project).stream()
+#define LOG(severity) MAIDSAFE_LOG(common, severity)
 #ifndef NDEBUG
 #  define DLOG(severity) LOG(severity)
 #else
