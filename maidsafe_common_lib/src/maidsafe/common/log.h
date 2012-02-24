@@ -149,7 +149,7 @@ namespace google {
 #define BLOG(severity) COMPACT_GOOGLE_LOG_ ## severity(benchmark).stream()
 
 #define MAIDSAFE_LOG(project, severity) COMPACT_GOOGLE_LOG_ ## severity(\
-        ##project).stream()
+        project).stream()
 #define LOG(severity) MAIDSAFE_LOG(common, severity)
 #ifndef NDEBUG
 #  define DLOG(severity) LOG(severity)
