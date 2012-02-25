@@ -84,6 +84,7 @@ int FLAGS_ms_logging_private = 3;
 int FLAGS_ms_logging_transport = 3;
 int FLAGS_ms_logging_encrypt = 3;
 int FLAGS_ms_logging_dht = 3;
+int FLAGS_ms_logging_routing = 3;
 int FLAGS_ms_logging_pki = 3;
 int FLAGS_ms_logging_passport = 3;
 int FLAGS_ms_logging_pd = 3;
