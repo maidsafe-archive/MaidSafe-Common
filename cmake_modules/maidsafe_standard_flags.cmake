@@ -103,12 +103,10 @@ IF(MSVC)
   # Zi -   Produce a program database (.pdb) that contains type information and
   #        symbolic debugging information.
   # Od -   No optimizations in the program (speeds compilation).
-  # RTCc - Reports when a value is assigned to a smaller data type and results
-  #        in a data loss.
   # RTC1 - Enables stack frame run-time error checking and checking for
   #        unintialised variables.
   # MTd -  Use the debug multithread, static version of the C run-time library.
-  SET(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od /D \"_DEBUG\" /D \"DEBUG\" /RTCc /RTC1 /MTd")
+  SET(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od /D \"_DEBUG\" /D \"DEBUG\" /RTC1 /MTd")
   SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT")
   SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT")
 
