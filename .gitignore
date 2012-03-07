@@ -8,3 +8,6 @@ desktop.ini
 *.pb.h
 *.pb.cc
 installed
+/maidsafe_common_lib/nbproject/private/
+.DS_Store
+
