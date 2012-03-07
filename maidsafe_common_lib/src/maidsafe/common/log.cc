@@ -92,6 +92,7 @@ int FLAGS_ms_logging_lifestuff = 3;
 int FLAGS_ms_logging_lifestuff_gui = 3;
 int FLAGS_ms_logging_file_browser = 3;
 int FLAGS_ms_logging_drive = 3;
+int FLAGS_ms_logging_crash_utils = 3;
 
 int FLAGS_ms_logging_sigmoid_storage_director = 3;
 int FLAGS_ms_logging_sigmoid_core = 3;
