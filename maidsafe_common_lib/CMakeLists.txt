@@ -208,6 +208,8 @@ IF(MSVC)
 ELSEIF(UNIX)
   SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc
                                 PROPERTIES COMPILE_FLAGS "-w")
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/threadsafe_chunk_store_test.cc
+                                PROPERTIES COMPILE_FLAGS "-Wstrict-overflow=2")
 ENDIF()
 
 ###################################################################################################
