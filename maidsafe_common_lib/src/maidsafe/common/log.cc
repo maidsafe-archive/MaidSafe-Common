@@ -84,6 +84,7 @@ int FLAGS_ms_logging_private = 3;
 int FLAGS_ms_logging_transport = 3;
 int FLAGS_ms_logging_encrypt = 3;
 int FLAGS_ms_logging_dht = 3;
+int FLAGS_ms_logging_routing = 3;
 int FLAGS_ms_logging_pki = 3;
 int FLAGS_ms_logging_passport = 3;
 int FLAGS_ms_logging_pd = 3;
@@ -91,6 +92,7 @@ int FLAGS_ms_logging_lifestuff = 3;
 int FLAGS_ms_logging_lifestuff_gui = 3;
 int FLAGS_ms_logging_file_browser = 3;
 int FLAGS_ms_logging_drive = 3;
+int FLAGS_ms_logging_crash_utils = 3;
 
 int FLAGS_ms_logging_sigmoid_storage_director = 3;
 int FLAGS_ms_logging_sigmoid_core = 3;

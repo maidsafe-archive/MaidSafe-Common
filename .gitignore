@@ -8,3 +8,5 @@ desktop.ini
 *.pb.h
 *.pb.cc
 installed
+.DS_Store
+

@@ -68,10 +68,13 @@ IF(MSVC)
   # prevents from automatic linking of boost libraries
   ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
 
-  # EHsc catches C++ exceptions only and tells the compiler to assume that
-  # extern C functions never throw a C++ exception.
-  # Set warning level 4 and treat warnings as errors.
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /W4 /WX")
+  # W4 -   Set warning level 4.
+  # WX -   Treat warnings as errors.
+  # MP7 -  Enable multi-processor compilation (max 7).
+  # EHsc - Catches C++ exceptions only and tells the compiler to assume that
+  #        extern C functions never throw a C++ exception.
+  # TP -   Treat sources as C++
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /MP7 /EHsc /TP")
 
   # C4351 'new behavior: elements of array 'array' will be default initialized'
   # unneeded for new code (only applies to code previously compiled with VS 2005).
@@ -83,12 +86,27 @@ IF(MSVC)
   # Disabled as per advice at https://svn.boost.org/trac/boost/wiki/Guidelines/WarningsGuidelines
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4351 /wd4503 /wd4512 /wd4996")
 
-  SET(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Ot /Oy /GL /D \"NDEBUG\" /MT /Gy /Zi")
-  IF(CMAKE_CL_64)
-    SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /Zi /TP")
-  ELSE()
-    SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /ZI /TP")
-  ENDIF()
+  # O2 - Optimise code for maximum speed.  Implies the following:
+  #      Og (global optimisations)
+  #      Oi (replace some function calls with intrinsic functions),
+  #      Ot (favour fast code),
+  #      Oy (suppress creation of frame pointers on the call stack),
+  #      Ob2 (auto inline),
+  #      Gs (control stack probes),
+  #      GF (eliminate duplicate strings),
+  #      Gy (allows the compiler to package individual functions in the form of
+  #          packaged functions)
+  # GL - Whole program optimisation
+  # MT - Use the multithread, static version of the C run-time library.
+  SET(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /D \"NDEBUG\" /MT")
+
+  # Zi -   Produce a program database (.pdb) that contains type information and
+  #        symbolic debugging information.
+  # Od -   No optimizations in the program (speeds compilation).
+  # RTC1 - Enables stack frame run-time error checking and checking for
+  #        unintialised variables.
+  # MTd -  Use the debug multithread, static version of the C run-time library.
+  SET(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od /D \"_DEBUG\" /D \"DEBUG\" /RTC1 /MTd")
   SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT")
   SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT")
 

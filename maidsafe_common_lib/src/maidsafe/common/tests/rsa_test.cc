@@ -54,7 +54,7 @@ class RSATest : public testing::Test {
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
 #pragma omp parallel
-  { // NOLINT (dirvine)
+  {  // NOLINT (dirvine)
     EXPECT_TRUE(ValidateKey(keys_.public_key));
     EXPECT_TRUE(ValidateKey(keys_.private_key));
     std::string encoded_private_key, encoded_public_key;
@@ -71,7 +71,7 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
 
 TEST_F(RSATest, FUNC_ValidateKeys) {
 #pragma omp parallel
-  { // NOLINT (dirvine)
+  {  // NOLINT (dirvine)
     PublicKey public_key;
     EXPECT_FALSE(ValidateKey(public_key));
     DecodePublicKey("Just some string", &public_key);
@@ -212,7 +212,7 @@ TEST_F(RSATest, BEH_Serialise) {
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
 #pragma omp parallel
-  { // NOLINT (dirvine)
+  {  // NOLINT (dirvine)
     Keys k1, k2;
     EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));

@@ -174,6 +174,7 @@ extern int FLAGS_ms_logging_private;
 extern int FLAGS_ms_logging_transport;
 extern int FLAGS_ms_logging_encrypt;
 extern int FLAGS_ms_logging_dht;
+extern int FLAGS_ms_logging_routing;
 extern int FLAGS_ms_logging_pki;
 extern int FLAGS_ms_logging_passport;
 extern int FLAGS_ms_logging_pd;
@@ -181,6 +182,7 @@ extern int FLAGS_ms_logging_lifestuff;
 extern int FLAGS_ms_logging_lifestuff_gui;
 extern int FLAGS_ms_logging_file_browser;
 extern int FLAGS_ms_logging_drive;
+extern int FLAGS_ms_logging_crash_utils;
 
 extern int FLAGS_ms_logging_sigmoid_storage_director;
 extern int FLAGS_ms_logging_sigmoid_core;
