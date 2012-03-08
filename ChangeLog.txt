@@ -1,6 +1,19 @@
-v0.11.00 (WIP)
+v0.12.00 (WIP)
 --------------
+*
 
+v0.11.00
+--------
+* Moved chunk stores to private.
+* Removed chunk action authority interface and mock implementation.
+* CMake changes to bring OSX up to scratch with other OS.
+* AsioService class proxy round boost io_service.
+* Test for validate keys.
+* Added checks for null pointers in RSA functions.
+* Modified dashboard script to include maidsafe-private.
+* Added nullptr test.
+* Added check for compiler support of required C++11 features.
+* Combined encryption if required, otherwise use pure RSA, allowing chained blocks if required by programmer.
 
 v0.10.05
 --------
@@ -14,7 +27,7 @@ v0.10.05
 * Removed combined Encrypt methods
 * Encrypt/Decrypt uses combined encryption if required, otherwise uses pure RSA.
 * Made string Encoding and Decoding methods threadsafe.
-* Added function to compare private keys, amended function to compare public keys, and added test for both
+* Added function to compare private keys, amended function to compare public keys, and added test for both.
 * Added level parameter to ValidateKey methods.
 * Added test for validate keys
 * Added a helper class for using asio io_service.
