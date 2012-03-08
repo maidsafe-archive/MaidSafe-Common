@@ -192,7 +192,7 @@ bool BufferedChunkStore::PermanentStore(const std::string &name) {
   {
     boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
     RemoveDeletionMarks(name);
-    while (pending_xfers_.count(name) > 0)
+    while (pending_xfers_.find(name) != pending_xfers_.end())
       xfer_cond_var_.wait(xfer_lock);
     if (perm_chunk_store_.Has(name))
       return true;
@@ -217,7 +217,7 @@ bool BufferedChunkStore::Delete(const std::string &name,
   bool file_delete_result(false);
   {
     boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
-    while (pending_xfers_.count(name) > 0)
+    while (pending_xfers_.find(name) != pending_xfers_.end())
       xfer_cond_var_.wait(xfer_lock);
     file_delete_result = perm_chunk_store_.Delete(name);
     perm_size_ = perm_chunk_store_.Size();
@@ -246,7 +246,7 @@ bool BufferedChunkStore::Modify(const std::string &name,
   boost::mutex::scoped_lock lock(xfer_mutex_);
   RemoveDeletionMarks(name);
 
-  while (pending_xfers_.count(name) > 0)
+  while (pending_xfers_.find(name) != pending_xfers_.end())
     xfer_cond_var_.wait(lock);
 
   if (perm_chunk_store_.Has(name)) {
@@ -376,7 +376,7 @@ bool BufferedChunkStore::MoveTo(const std::string &name,
   bool chunk_moved(false);
   {
     boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
-    while (pending_xfers_.count(name) > 0)
+    while (pending_xfers_.find(name) != pending_xfers_.end())
       xfer_cond_var_.wait(xfer_lock);
     chunk_moved = perm_chunk_store_.MoveTo(name, sink_chunk_store);
     perm_size_ = perm_chunk_store_.Size();
@@ -413,7 +413,7 @@ bool BufferedChunkStore::PermanentHas(const std::string &name) const {
   }
 
   boost::mutex::scoped_lock xfer_lock(xfer_mutex_);
-  while (pending_xfers_.count(name) > 0)
+  while (pending_xfers_.find(name) != pending_xfers_.end())
     xfer_cond_var_.wait(xfer_lock);
   uintmax_t rem_count(0);
   for (auto it = removable_chunks_.begin(); it != removable_chunks_.end(); ++it)
@@ -487,7 +487,7 @@ uintmax_t BufferedChunkStore::Count(const std::string &name) const {
   }
 
   boost::mutex::scoped_lock lock(xfer_mutex_);
-  while (pending_xfers_.count(name) > 0)
+  while (pending_xfers_.find(name) != pending_xfers_.end())
     xfer_cond_var_.wait(lock);
   return perm_chunk_store_.Count(name);
 }
