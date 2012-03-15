@@ -74,11 +74,13 @@ TEST_F(RSATest, FUNC_ValidateKeys) {
   {  // NOLINT (dirvine)
     PublicKey public_key;
     EXPECT_FALSE(ValidateKey(public_key));
+    EXPECT_FALSE(ValidateKey(public_key, 0));
     DecodePublicKey("Just some string", &public_key);
     EXPECT_FALSE(ValidateKey(public_key));
-
+    
     PrivateKey private_key;
     EXPECT_FALSE(ValidateKey(private_key));
+    EXPECT_FALSE(ValidateKey(private_key, 0));
     DecodePublicKey("Just some string", &private_key);
     EXPECT_FALSE(ValidateKey(private_key));
 
