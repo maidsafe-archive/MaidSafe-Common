@@ -70,7 +70,7 @@ typedef std::function<bool(PlainText, Signature, PublicKey)> ValidateFunctor;  /
 
 struct Keys {
  public:
-  enum { kKeySize = 4096 };
+  enum { kKeySize = 2048 };
   Keys() : identity(), private_key(), public_key(), validation_token() {}
   Identity identity;
   PrivateKey private_key;
