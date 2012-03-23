@@ -264,6 +264,11 @@ boost::posix_time::time_duration GetDurationSinceEpoch() {
   return boost::posix_time::microsec_clock::universal_time() - kMaidSafeEpoch;
 }
 
+uint32_t GetFractionalSecondsSinceEpoch() {
+  boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
+  return since_epoch.fractional_seconds();
+}
+
 bool ReadFile(const fs::path &file_path, std::string *content) {
   if (!content) {
     DLOG(ERROR) << "Failed to read file " << file_path
