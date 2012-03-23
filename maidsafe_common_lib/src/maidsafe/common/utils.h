@@ -152,7 +152,7 @@ std::string Base32Substr(const std::string &non_base32);
 // Return the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();
 
-uint32_t GetFractionalSecondsSinceEpoch();
+uint32_t GetTimeStamp();
 
 // Reads the given file and returns the contents as a string.
 bool ReadFile(const fs::path &file_path, std::string *content);
