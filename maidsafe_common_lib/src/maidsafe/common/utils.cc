@@ -266,7 +266,7 @@ boost::posix_time::time_duration GetDurationSinceEpoch() {
 
 uint32_t GetTimeStamp() {
   boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
-  return since_epoch.fractional_seconds();
+  return since_epoch.total_seconds();
 }
 
 bool ReadFile(const fs::path &file_path, std::string *content) {
