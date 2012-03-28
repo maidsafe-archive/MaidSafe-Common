@@ -94,53 +94,53 @@ class Stats {
   T sum_;
 };
 
-// Converts num bytes to nearest integral decimal SI value
+// Converts num bytes to nearest integral decimal SI value.
 std::string BytesToDecimalSiUnits(const uint64_t &num);
 
-// Converts num bytes to nearest integral binary SI value
+// Converts num bytes to nearest integral binary SI value.
 std::string BytesToBinarySiUnits(const uint64_t &num);
 
-// Generate a cryptographically-secure 32bit signed integer
+// Generates a cryptographically-secure 32bit signed integer.
 int32_t SRandomInt32();
 
-// Generate a non-cryptographically-secure 32bit signed integer
+// Generates a non-cryptographically-secure 32bit signed integer.
 int32_t RandomInt32();
 
-// Generate a cryptographically-secure 32bit unsigned integer
+// Generates a cryptographically-secure 32bit unsigned integer.
 uint32_t SRandomUint32();
 
-// Generate a non-cryptographically-secure 32bit unsigned integer
+// Generates a non-cryptographically-secure 32bit unsigned integer.
 uint32_t RandomUint32();
 
-// Generate a cryptographically-secure random string.
+// Generates a cryptographically-secure random string.
 std::string SRandomString(const size_t &length);
 
-// Generate a non-cryptographically-secure random string.
+// Generates a non-cryptographically-secure random string.
 std::string RandomString(const size_t &length);
 
-// Generate a non-cryptographically-secure random string containing only
+// Generates a non-cryptographically-secure random string containing only
 // alphanumeric characters.
 std::string RandomAlphaNumericString(const size_t &length);
 
-// Convert from int to string.
+// Converts from int to string.
 std::string IntToString(const int &value);
 
-// Encode a string to hex.
+// Encodes a string to hex.
 std::string EncodeToHex(const std::string &non_hex_input);
 
-// Encode a string to Base64.
+// Encodes a string to Base64.
 std::string EncodeToBase64(const std::string &non_base64_input);
 
-// Encode a string to Base32.
+// Encodes a string to Base32.
 std::string EncodeToBase32(const std::string &non_base32_input);
 
-// Decode a string from hex.
+// Decodes a string from hex.
 std::string DecodeFromHex(const std::string &hex_input);
 
-// Decode a string from Base64.
+// Decodes a string from Base64.
 std::string DecodeFromBase64(const std::string &base64_input);
 
-// Decode a string from Base32.
+// Decodes a string from Base32.
 std::string DecodeFromBase32(const std::string &base32_input);
 
 // Returns an appreviated hex representation of a hash or other small data.
@@ -149,9 +149,10 @@ std::string HexSubstr(const std::string &non_hex);
 // Returns an appreviated Base 32 representation of a hash or other small data.
 std::string Base32Substr(const std::string &non_base32);
 
-// Return the duration since kMaidsafeEpoch (1st January 2000).
+// Returns the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();
 
+// Returns the number of seconds since kMaidsafeEpoch (1st January 2000).
 uint32_t GetTimeStamp();
 
 // Reads the given file and returns the contents as a string.

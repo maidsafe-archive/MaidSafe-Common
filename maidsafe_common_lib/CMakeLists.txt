@@ -201,16 +201,7 @@ TARGET_LINK_LIBRARIES(TESTboost maidsafe_common_static glog_static boost_unit_te
 # Set compiler and linker flags                                                                   #
 ###################################################################################################
 INCLUDE(maidsafe_standard_flags)
-IF(MSVC)
-  # Warnings switched off for protocol buffer generated files
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc
-                                PROPERTIES COMPILE_FLAGS "/W0")
-ELSEIF(UNIX)
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc
-                                PROPERTIES COMPILE_FLAGS "-w")
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/threadsafe_chunk_store_test.cc
-                                PROPERTIES COMPILE_FLAGS "-Wstrict-overflow=2")
-ENDIF()
+MS_DISABLE_WARNINGS(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc)
 
 ###################################################################################################
 # Tests                                                                                           #
