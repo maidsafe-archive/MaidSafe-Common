@@ -345,6 +345,15 @@ TEST(UtilsTest, BEH_Base32Substr) {
   EXPECT_EQ(16U, Base32Substr(RandomString(16 + RandomUint32() % 20)).size());
 }
 
+TEST(UtilsTest, BEH_Base64Substr) {
+  EXPECT_TRUE(Base64Substr("").empty());
+  EXPECT_EQ("QQ==", Base64Substr("A"));
+  EXPECT_EQ("WFla", Base64Substr("XYZ"));
+  EXPECT_EQ("YWJjZGVmZ2g=", Base64Substr("abcdefgh"));
+  EXPECT_EQ("YWJjZGV..mtsbW5v", Base64Substr("abcdefghijklmno"));
+  EXPECT_EQ(16U, Base64Substr(RandomString(32 + RandomUint32() % 20)).size());
+}
+
 TEST(UtilsTest, BEH_TimeFunctions) {
   uint64_t s, ms, ns;
   bptime::time_duration since_epoch(GetDurationSinceEpoch());
