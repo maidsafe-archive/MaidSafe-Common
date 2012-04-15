@@ -285,19 +285,24 @@ IF((${BUILD_TARGET} MATCHES "PROTOBUF") OR (${BUILD_TARGET} MATCHES "ALL"))
     FIND_FILE(LIBPROTOBUF_PROJECT NAMES libprotobuf.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
     FIND_FILE(LIBPROTOC_PROJECT NAMES libprotoc.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
     FIND_FILE(PROTOC_PROJECT NAMES protoc.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
+    IF(CMAKE_CL_64)
+      SET(PLATFORM "Platform=x64")
+    ELSE()
+      SET(PLATFORM "Platform=Win32")
+    ENDIF()
     # Build libprotobuf Debug
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} /property:Configuration=Debug OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} "/property:Configuration=Debug;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
     SET(PROTOBUF_OUTVAR "${OUTVAR}")
     MESSAGE("-- Building Google Protocol Buffers Release libraries and compiler")
     MESSAGE("     This may take a few minutes...")
     # Build libprotobuf Release
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} /property:Configuration=Release OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
     SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
     # Build libprotoc Release
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOC_PROJECT} /property:Configuration=Release OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOC_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
     SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
     # Build protoc Release
-    EXECUTE_PROCESS(COMMAND msbuild ${PROTOC_PROJECT} /property:Configuration=Release OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    EXECUTE_PROCESS(COMMAND msbuild ${PROTOC_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
     SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
     # Extract headers
     EXECUTE_PROCESS(COMMAND CMD /C CALL extract_includes.bat WORKING_DIRECTORY ${CURRENT_DIR}/src/protobuf/vsprojects OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
@@ -331,13 +336,13 @@ IF((${BUILD_TARGET} MATCHES "PROTOBUF") OR (${BUILD_TARGET} MATCHES "ALL"))
 ENDIF()
 
 FIND_LIBRARY(Protobuf_LIBRARY_RELEASE NAMES libprotobuf.a libprotobuf.lib
-               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Release
+               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Release ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Release
                NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 FIND_LIBRARY(Protobuf_LIBRARY_DEBUG NAMES libprotobuf.a libprotobuf.lib
-               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Debug
+               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Debug ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Debug
                NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 FIND_PROGRAM(Protoc_EXE NAMES protoc
-               PATHS ${CURRENT_DIR}/build_protobuf/bin ${CURRENT_DIR}/src/protobuf/vsprojects/Release
+               PATHS ${CURRENT_DIR}/build_protobuf/bin ${CURRENT_DIR}/src/protobuf/vsprojects/Release ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Release
                NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 FIND_PATH(Protobuf_INCLUDE_DIR google/protobuf/service.h
             PATHS ${CURRENT_DIR}/build_protobuf/include ${CURRENT_DIR}/src/protobuf/vsprojects/include
@@ -384,18 +389,15 @@ IF((${BUILD_TARGET} MATCHES "GLOG") OR (${BUILD_TARGET} MATCHES "ALL"))
     MESSAGE("     This may take a few minutes...")
     FIND_FILE(LIBGLOG_PROJECT NAMES libglog_static.vcxproj PATHS ${CURRENT_DIR}/src/glog/vsprojects/libglog_static NO_DEFAULT_PATH)
     IF(CMAKE_CL_64)
-      EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Debug;Platform=x64" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+      SET(PLATFORM "Platform=x64")
     ELSE()
-      EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Debug;Platform=Win32" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+      SET(PLATFORM "Platform=Win32")
     ENDIF()
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Debug;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
     SET(GLOG_OUTVAR "${OUTVAR}")
     MESSAGE("-- Building Google Logging Release libraries")
     MESSAGE("     This may take a few minutes...")
-    IF(CMAKE_CL_64)
-      EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Release;Platform=x64" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    ELSE()
-      EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Release;Platform=Win32" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    ENDIF()
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
     SET(GLOG_OUTVAR "${GLOG_OUTVAR}${SEPARATOR}${OUTVAR}")
   ELSE()
     UNSET(GLOG_CONFIGURE CACHE)
@@ -419,10 +421,10 @@ IF((${BUILD_TARGET} MATCHES "GLOG") OR (${BUILD_TARGET} MATCHES "ALL"))
 ENDIF()
 
 FIND_LIBRARY(Glog_LIBRARY_RELEASE NAMES libglog.a libglog_static.lib
-               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Release
+               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Release ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/x64/Release
                NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 FIND_LIBRARY(Glog_LIBRARY_DEBUG NAMES libglog.a libglog_static.lib
-               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Debug
+               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Debug ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/x64/Debug
                NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 IF(WIN32)
   FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
