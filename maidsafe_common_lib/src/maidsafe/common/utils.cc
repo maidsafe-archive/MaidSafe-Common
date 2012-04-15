@@ -265,6 +265,14 @@ std::string Base32Substr(const std::string &non_base32) {
     return base32;
 }
 
+std::string Base64Substr(const std::string &non_base64) {
+  std::string base64(EncodeToBase64(non_base64));
+  if (base64.size() > 16)
+    return (base64.substr(0, 7) + ".." + base64.substr(base64.size() - 7));
+  else
+    return base64;
+}
+
 boost::posix_time::time_duration GetDurationSinceEpoch() {
   return boost::posix_time::microsec_clock::universal_time() - kMaidSafeEpoch;
 }
