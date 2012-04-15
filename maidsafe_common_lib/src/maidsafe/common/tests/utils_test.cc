@@ -451,6 +451,36 @@ TEST(UtilsTest, BEH_GetMaidSafeVersion) {
   EXPECT_EQ("56", patch_version);
 }
 
+TEST(UtilsTest, BEH_GetHomeDir) {
+  EXPECT_FALSE(GetHomeDir().empty());
+  DLOG(INFO) << " I think your home directory is "
+             << GetHomeDir().string();
+}
+
+TEST(UtilsTest, BEH_GetUserAppDir) {
+  EXPECT_FALSE(GetUserAppDir().empty());
+  DLOG(INFO) << " I think your user app directory is "
+             << GetUserAppDir().string();
+}
+
+TEST(UtilsTest, BEH_GetSystemAppDir) {
+  EXPECT_FALSE(GetSystemAppDir().empty());
+  DLOG(INFO) << " I think your System app directory is "
+             << GetSystemAppDir().string();
+}
+
+TEST(UtilsTest, BEH_AppDir) {
+  EXPECT_NE(GetSystemAppDir(), GetUserAppDir());
+  EXPECT_NE(GetSystemAppDir(), GetHomeDir());
+  EXPECT_NE(GetUserAppDir(), GetHomeDir());
+  std::string home(GetHomeDir().string());
+  std::string system(GetSystemAppDir().string());
+  std::string user_app(GetUserAppDir().string());
+  EXPECT_TRUE(user_app.find(home) != std::string::npos);
+  EXPECT_TRUE(system.find(home) == std::string::npos);
+}
+
+
 namespace {
 
 void CleanupTest(fs::path *&test_path) {

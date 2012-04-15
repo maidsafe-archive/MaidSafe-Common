@@ -164,6 +164,24 @@ bool WriteFile(const fs::path &file_path, const std::string &content);
 // Causes running thread to sleep for specified duration.
 void Sleep(const boost::posix_time::time_duration &duration);
 
+const static std::string kPlatform(BOOST_PLATFORM);
+
+// used to set Application dir for config files etc.
+static std::string kCompanyName("maidsafe");
+// used to set Application dir for config files etc.
+static std::string kApplicationName("lifestuff");
+// NOTE: DOES NOT CREATE PATH
+// retrieve homedir from environment
+boost::filesystem3::path GetHomeDir();
+// NOTE: DOES NOT CREATE PATH
+// application support directory in userspace
+// uses kCompanyName and kApplicationName
+boost::filesystem3::path GetUserAppDir();
+// NOTE: DOES NOT CREATE PATH
+//application support directory for all users
+// uses kCompanyName and kApplicationName
+boost::filesystem3::path GetSystemAppDir();
+
 // Takes a MaidSafe version as an int and returns the string form, e.g. 901
 // returns "v0.09.01".
 std::string GetMaidSafeVersion(int version,
