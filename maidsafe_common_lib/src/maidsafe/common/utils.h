@@ -167,7 +167,7 @@ bool WriteFile(const fs::path &file_path, const std::string &content);
 // Causes running thread to sleep for specified duration.
 void Sleep(const boost::posix_time::time_duration &duration);
 
-const static std::string kPlatform(BOOST_PLATFORM);
+static const std::string kPlatform(BOOST_PLATFORM);
 
 // used to set Application dir for config files etc.
 static std::string kCompanyName("maidsafe");
@@ -181,7 +181,7 @@ boost::filesystem3::path GetHomeDir();
 // uses kCompanyName and kApplicationName
 boost::filesystem3::path GetUserAppDir();
 // NOTE: DOES NOT CREATE PATH
-//application support directory for all users
+// application support directory for all users
 // uses kCompanyName and kApplicationName
 boost::filesystem3::path GetSystemAppDir();
 

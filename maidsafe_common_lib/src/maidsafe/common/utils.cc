@@ -53,9 +53,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"
 #include "cryptopp/hex.h"
-#if defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) || (defined(linux) || \
-defined(__linux) || defined(__linux__) || defined(__GNU__) || defined(__GLIBC__)) && !defined(_CRAYC)
-  #include  "pwd.h"
+#if defined(macintosh) || defined(__APPLE__) || \
+defined(__APPLE_CC__) || (defined(linux) || \
+defined(__linux) || defined(__linux__) || defined(__GNU__) \
+|| defined(__GLIBC__)) && !defined(_CRAYC)
+  #include  "pwd.h"  //NOLINT (dirvine)
   #include "sys/param.h"
 #endif
 
@@ -362,19 +364,19 @@ std::string GetMaidSafeVersion(int version,
 }
 
 fs::path GetHomeDir() {
-  if (( kPlatform == "Win32" ) || ( kPlatform == "Win64" )) {
+  if ((kPlatform == "Win32") || (kPlatform == "Win64")) {
     std::string env_home2(getenv("HOMEPATH"));
     std::string env_home_drive(getenv("HOMEDRIVE"));
     if ((!env_home2.empty()) && (!env_home_drive.empty()))
       return fs::path(env_home_drive + env_home2);
   }
   if ((kPlatform == "Mac OS") || (kPlatform == "linux")) {
-    struct passwd *p = getpwuid(getuid());
+    struct passwd *p = getpwuid(getuid());  // NOLINT (dirvine)
     std::string home(p->pw_dir);
     if (!home.empty())
       return fs::path(home);
     std::string env_home(getenv("HOME"));
-    if(!env_home.empty())
+    if (!env_home.empty())
       return fs::path(env_home);
   }
   DLOG(ERROR) << " Cannot deduce home directory path !";
@@ -385,9 +387,11 @@ fs::path GetUserAppDir() {
   if (GetHomeDir().empty())
     return fs::path("");  // empty path
   if (kPlatform == "Mac OS")
-    return fs::path(GetHomeDir() / "/Library/Application Support/" / kCompanyName / kApplicationName);
+    return fs::path(GetHomeDir() / "/Library/Application Support/"
+                                / kCompanyName / kApplicationName);
   if (( kPlatform == "Win32" ) || ( kPlatform == "Win64" ))
-    return fs::path(GetHomeDir() / getenv("APPDATA") / kCompanyName / kApplicationName);
+    return fs::path(GetHomeDir() / getenv("APPDATA")
+                                 / kCompanyName / kApplicationName);
   if (kPlatform == "linux")
     return fs::path(GetHomeDir() / ".config" / kCompanyName / kApplicationName);
   DLOG(ERROR) << " Cannot deduce user application directory path !";
@@ -396,9 +400,11 @@ fs::path GetUserAppDir() {
 
 fs::path GetSystemAppDir() {
   if (kPlatform == "Mac OS")
-    return fs::path(fs::path("/Library/Application Support/") / kCompanyName / kApplicationName);
+    return fs::path(fs::path("/Library/Application Support/")
+                             / kCompanyName / kApplicationName);
   if (( kPlatform == "Win32" ) || ( kPlatform == "Win64" ))
-    return fs::path(fs::path(getenv("ALLUSERSPROFILE")) / kCompanyName / kApplicationName);
+    return fs::path(fs::path(getenv("ALLUSERSPROFILE")) / kCompanyName
+                            / kApplicationName);
   if (kPlatform == "linux")
     return fs::path(fs::path("/usr/share/") / kCompanyName / kApplicationName);
   DLOG(ERROR) << " Cannot deduce system wide application directory path !";
