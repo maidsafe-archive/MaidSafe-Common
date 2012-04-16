@@ -25,9 +25,11 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <future>
+#include <array>
+#include <thread>
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/archive/text_iarchive.hpp"
-
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/omp.h"
@@ -50,11 +52,22 @@ class RSATest : public testing::Test {
     ASSERT_EQ(kSuccess, GenerateKeyPair(&keys_));
   }
   Keys keys_;
+  void RunInParallel(std::function<void()>, int num_threads = 6);
 };
 
+void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
+  std::vector<std::future<void>> vec;;
+for (int i = 0; i < num_threads; ++i) {
+  vec.emplace_back(std::async(std::launch::async, f));
+}
+for (auto &i : vec )  //  wait on all threads finishing (check)
+  i.get();
+}
+
+
 TEST_F(RSATest, FUNC_RsaKeyPair) {
-#pragma omp parallel
-  {  // NOLINT (dirvine)
+auto f([&]
+  {
     EXPECT_TRUE(ValidateKey(keys_.public_key));
     EXPECT_TRUE(ValidateKey(keys_.private_key));
     std::string encoded_private_key, encoded_public_key;
@@ -66,12 +79,13 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
     DecodePublicKey(encoded_public_key, &public_key);
     EXPECT_TRUE(CheckRoundtrip(public_key, keys_.private_key));
     EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
-  }
+  });
+RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, FUNC_ValidateKeys) {
-#pragma omp parallel
-  {  // NOLINT (dirvine)
+auto f([&]
+  {
     PublicKey public_key;
     EXPECT_FALSE(ValidateKey(public_key));
     EXPECT_FALSE(ValidateKey(public_key, 0));
@@ -90,12 +104,13 @@ TEST_F(RSATest, FUNC_ValidateKeys) {
     private_key = keys.private_key;
     EXPECT_TRUE(ValidateKey(private_key));
     EXPECT_TRUE(ValidateKey(public_key));
-  }
+  });
+RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
-#pragma omp parallel
-  {  // NOLINT (dirvine)
+auto f([&]
+  {
     const std::string kSmallData(RandomString(21));
     std::string encrypted_data, recovered_data;
     EXPECT_EQ(kSuccess, Encrypt(kSmallData, keys_.public_key, &encrypted_data));
@@ -129,12 +144,13 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
     EXPECT_EQ(kInvalidPrivateKey,
               Decrypt(kLargeData, PrivateKey(), &recovered_data));
     EXPECT_TRUE(recovered_data.empty());
-  }
+  });
+RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_SignValidate) {
-#pragma omp parallel
-  {  // NOLINT (dirvine)
+auto f([&]
+  {
     PrivateKey empty_priv_key;
     PublicKey empty_pub_key;
     const std::string kData(RandomString(470));
@@ -159,7 +175,8 @@ TEST_F(RSATest, BEH_SignValidate) {
     std::string bad_signature("bad");
     EXPECT_EQ(kRSAInvalidSignature,
               CheckSignature(kData, bad_signature, keys_.public_key));
-  }
+  });
+RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_Serialise) {
@@ -213,8 +230,8 @@ TEST_F(RSATest, BEH_Serialise) {
 }
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
-#pragma omp parallel
-  {  // NOLINT (dirvine)
+auto f([&]
+  {
     Keys k1, k2;
     EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
@@ -224,7 +241,8 @@ TEST_F(RSATest, BEH_RsaKeysComparing) {
     k2.private_key = k1.private_key;
     EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
-  }
+  });
+RunInParallel(f);
 }
 
 }  // namespace test
