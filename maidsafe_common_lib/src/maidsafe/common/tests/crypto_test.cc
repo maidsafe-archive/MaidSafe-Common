@@ -182,8 +182,9 @@ TEST(CryptoTest, BEH_Hash) {
       fs::path input_path(*test_dir);
       input_path /= "Input" + boost::lexical_cast<std::string>(i) + ".txt";
       input_files.push_back(input_path);
-      std::fstream input_file(input_path.c_str(),
-                              std::ios::out | std::ios::trunc | std::ios::binary);
+      std::fstream input_file(
+          input_path.c_str(),
+          std::ios::out | std::ios::trunc | std::ios::binary);
       input_file << test_data.at(i).input;
       input_file.close();
     }

@@ -67,6 +67,7 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/platform_config.h"
 
 namespace maidsafe {
 
@@ -136,6 +137,14 @@ std::string BytesToSiUnits(const uint64_t &num) {
 }
 
 }  // unnamed namespace
+
+
+const boost::posix_time::ptime kMaidSafeEpoch(
+    boost::posix_time::from_iso_string("20000101T000000"));
+
+const std::string kCompanyName("maidsafe");
+
+const std::string kApplicationName("lifestuff");
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
   return BytesToSiUnits<DecimalUnit>(num);
@@ -342,6 +351,58 @@ void Sleep(const boost::posix_time::time_duration &duration) {
   boost::this_thread::sleep(duration);
 }
 
+fs::path GetHomeDir() {
+#if defined(MAIDSAFE_WIN32)
+  std::string env_home2(getenv("HOMEPATH"));
+  std::string env_home_drive(getenv("HOMEDRIVE"));
+  if ((!env_home2.empty()) && (!env_home_drive.empty()))
+    return fs::path(env_home_drive + env_home2);
+#elif defined(MAIDSAFE_APPLE) || defined(MAIDSAFE_POSIX)
+  struct passwd *p = getpwuid(getuid());  // NOLINT (dirvine)
+  std::string home(p->pw_dir);
+  if (!home.empty())
+    return fs::path(home);
+  std::string env_home(getenv("HOME"));
+  if (!env_home.empty())
+    return fs::path(env_home);
+#endif
+  DLOG(ERROR) << "Cannot deduce home directory path";
+  return fs::path();
+}
+
+fs::path GetUserAppDir() {
+  const fs::path kHomeDir(GetHomeDir());
+  if (kHomeDir.empty()) {
+    DLOG(ERROR) << "Cannot deduce user application directory path";
+    return fs::path();
+  }
+#if defined(MAIDSAFE_WIN32)
+  return fs::path(getenv("APPDATA")) / kCompanyName / kApplicationName;
+#elif defined(MAIDSAFE_APPLE)
+  return kHomeDir / "/Library/Application Support/" / kCompanyName /
+         kApplicationName;
+#elif defined(MAIDSAFE_POSIX)
+  return kHomeDir / ".config" / kCompanyName / kApplicationName;
+#else
+  DLOG(ERROR) << "Cannot deduce user application directory path";
+  return fs::path();
+#endif
+}
+
+fs::path GetSystemAppDir() {
+#if defined(MAIDSAFE_WIN32)
+  return fs::path(getenv("ALLUSERSPROFILE")) / kCompanyName / kApplicationName;
+#elif defined(MAIDSAFE_APPLE)
+  return fs::path("/Library/Application Support/") / kCompanyName /
+         kApplicationName;
+#elif defined(MAIDSAFE_POSIX)
+  return fs::path("/usr/share/") / kCompanyName / kApplicationName;
+#else
+  DLOG(ERROR) << "Cannot deduce system wide application directory path";
+  return fs::path();
+#endif
+}
+
 std::string GetMaidSafeVersion(int version,
                                std::string *major_version,
                                std::string *minor_version,
@@ -362,55 +423,6 @@ std::string GetMaidSafeVersion(int version,
     *patch_version = patch_ver;
   return "v" + major_ver + "." + minor_ver + "." + patch_ver;
 }
-
-fs::path GetHomeDir() {
-  if ((kPlatform == "Win32") || (kPlatform == "Win64")) {
-    std::string env_home2(getenv("HOMEPATH"));
-    std::string env_home_drive(getenv("HOMEDRIVE"));
-    if ((!env_home2.empty()) && (!env_home_drive.empty()))
-      return fs::path(env_home_drive + env_home2);
-  }
-  if ((kPlatform == "Mac OS") || (kPlatform == "linux")) {
-    struct passwd *p = getpwuid(getuid());  // NOLINT (dirvine)
-    std::string home(p->pw_dir);
-    if (!home.empty())
-      return fs::path(home);
-    std::string env_home(getenv("HOME"));
-    if (!env_home.empty())
-      return fs::path(env_home);
-  }
-  DLOG(ERROR) << " Cannot deduce home directory path !";
-  return boost::filesystem3::path("");  // empty path
-}
-
-fs::path GetUserAppDir() {
-  if (GetHomeDir().empty())
-    return fs::path("");  // empty path
-  if (kPlatform == "Mac OS")
-    return fs::path(GetHomeDir() / "/Library/Application Support/"
-                                / kCompanyName / kApplicationName);
-  if (( kPlatform == "Win32" ) || ( kPlatform == "Win64" ))
-    return fs::path(GetHomeDir() / getenv("APPDATA")
-                                 / kCompanyName / kApplicationName);
-  if (kPlatform == "linux")
-    return fs::path(GetHomeDir() / ".config" / kCompanyName / kApplicationName);
-  DLOG(ERROR) << " Cannot deduce user application directory path !";
-  return boost::filesystem3::path("");  // empty path
-}
-
-fs::path GetSystemAppDir() {
-  if (kPlatform == "Mac OS")
-    return fs::path(fs::path("/Library/Application Support/")
-                             / kCompanyName / kApplicationName);
-  if (( kPlatform == "Win32" ) || ( kPlatform == "Win64" ))
-    return fs::path(fs::path(getenv("ALLUSERSPROFILE")) / kCompanyName
-                            / kApplicationName);
-  if (kPlatform == "linux")
-    return fs::path(fs::path("/usr/share/") / kCompanyName / kApplicationName);
-  DLOG(ERROR) << " Cannot deduce system wide application directory path !";
-  return boost::filesystem3::path("");  // empty path
-}
-
 
 
 namespace test {
