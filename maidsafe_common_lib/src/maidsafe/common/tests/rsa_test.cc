@@ -25,19 +25,20 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+
+#include "maidsafe/common/rsa.h"
+
 #include <future>
-#include <array>
 #include <thread>
+
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/archive/text_iarchive.hpp"
-#include "maidsafe/common/crypto.h"
+
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/omp.h"
-#include "maidsafe/common/rsa.h"
+#include "maidsafe/common/return_codes.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/return_codes.h"
-namespace fs = boost::filesystem;
+
 
 namespace maidsafe {
 namespace rsa {
@@ -59,14 +60,13 @@ void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
   std::vector<std::future<void>> vec;
   for (int i = 0; i < num_threads; ++i)
     vec.emplace_back(std::async(std::launch::async, f));
-
-  for (auto &i : vec)  //  wait on all threads finishing (check)
+  // wait for all threads to finish
+  for (auto &i : vec)  // NOLINT (Fraser)
     i.get();
 }
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
-auto f([&]
-  {
+  auto f([&] {
     EXPECT_TRUE(ValidateKey(keys_.public_key));
     EXPECT_TRUE(ValidateKey(keys_.private_key));
     std::string encoded_private_key, encoded_public_key;
@@ -79,12 +79,11 @@ auto f([&]
     EXPECT_TRUE(CheckRoundtrip(public_key, keys_.private_key));
     EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
   });
-RunInParallel(f, 100);
+  RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, FUNC_ValidateKeys) {
-auto f([&]
-  {
+  auto f([&] {
     PublicKey public_key;
     EXPECT_FALSE(ValidateKey(public_key));
     EXPECT_FALSE(ValidateKey(public_key, 0));
@@ -104,12 +103,11 @@ auto f([&]
     EXPECT_TRUE(ValidateKey(private_key));
     EXPECT_TRUE(ValidateKey(public_key));
   });
-RunInParallel(f);
+  RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
-auto f([&]
-  {
+  auto f([&] {
     const std::string kSmallData(RandomString(21));
     std::string encrypted_data, recovered_data;
     EXPECT_EQ(kSuccess, Encrypt(kSmallData, keys_.public_key, &encrypted_data));
@@ -144,12 +142,11 @@ auto f([&]
               Decrypt(kLargeData, PrivateKey(), &recovered_data));
     EXPECT_TRUE(recovered_data.empty());
   });
-RunInParallel(f);
+  RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_SignValidate) {
-auto f([&]
-  {
+  auto f([&] {
     PrivateKey empty_priv_key;
     PublicKey empty_pub_key;
     const std::string kData(RandomString(470));
@@ -175,62 +172,64 @@ auto f([&]
     EXPECT_EQ(kRSAInvalidSignature,
               CheckSignature(kData, bad_signature, keys_.public_key));
   });
-RunInParallel(f, 100);
+  RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, BEH_Serialise) {
-  EXPECT_TRUE(ValidateKey(keys_.public_key));
-  EXPECT_TRUE(ValidateKey(keys_.private_key));
+  auto f([&] {
+    EXPECT_TRUE(ValidateKey(keys_.public_key));
+    EXPECT_TRUE(ValidateKey(keys_.private_key));
 
-  std::ostringstream oss;
-  boost::archive::text_oarchive output_archive(oss);
-  const PrivateKey kOriginalPrivateKey(keys_.private_key);
-  const PublicKey kOriginalPublicKey(keys_.public_key);
-  output_archive << kOriginalPrivateKey << kOriginalPublicKey;
-  std::string encoded(oss.str());
+    std::ostringstream oss;
+    boost::archive::text_oarchive output_archive(oss);
+    const PrivateKey kOriginalPrivateKey(keys_.private_key);
+    const PublicKey kOriginalPublicKey(keys_.public_key);
+    output_archive << kOriginalPrivateKey << kOriginalPublicKey;
+    std::string encoded(oss.str());
 
-  PrivateKey recovered_private_key;
-  PublicKey recovered_public_key;
-  std::istringstream iss1(encoded);
-  boost::archive::text_iarchive input_archive1(iss1);
-  input_archive1 >> recovered_public_key >> recovered_private_key;
-  EXPECT_FALSE(ValidateKey(recovered_public_key));
-  EXPECT_FALSE(ValidateKey(recovered_private_key));
+    PrivateKey recovered_private_key;
+    PublicKey recovered_public_key;
+    std::istringstream iss1(encoded);
+    boost::archive::text_iarchive input_archive1(iss1);
+    input_archive1 >> recovered_public_key >> recovered_private_key;
+    EXPECT_FALSE(ValidateKey(recovered_public_key));
+    EXPECT_FALSE(ValidateKey(recovered_private_key));
 
-  boost::archive::archive_exception arch_exception(
-      boost::archive::archive_exception::no_exception);
-  try {
-    input_archive1 >> recovered_private_key >> recovered_public_key;
-  }
-  catch(const boost::archive::archive_exception &e) {
-    arch_exception = e;
-    EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
-              arch_exception.code);
-  }
-  catch(const std::exception &std_e) {
-    DLOG(INFO) << std_e.what();
-  }
-  EXPECT_FALSE(ValidateKey(recovered_public_key));
-  EXPECT_FALSE(ValidateKey(recovered_private_key));
+    boost::archive::archive_exception arch_exception(
+        boost::archive::archive_exception::no_exception);
+    try {
+      input_archive1 >> recovered_private_key >> recovered_public_key;
+    }
+    catch(const boost::archive::archive_exception &e) {
+      arch_exception = e;
+      EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
+                arch_exception.code);
+    }
+    catch(const std::exception &std_e) {
+      DLOG(INFO) << std_e.what();
+    }
+    EXPECT_FALSE(ValidateKey(recovered_public_key));
+    EXPECT_FALSE(ValidateKey(recovered_private_key));
 
-  try {
-    std::istringstream iss2(encoded);
-    boost::archive::text_iarchive input_archive2(iss2);
-    input_archive2 >> recovered_private_key >> recovered_public_key;
-  }
-  catch(const std::exception &e) {
-    FAIL() << e.what();
-  }
-  EXPECT_TRUE(ValidateKey(recovered_public_key));
-  EXPECT_TRUE(ValidateKey(recovered_private_key));
+    try {
+      std::istringstream iss2(encoded);
+      boost::archive::text_iarchive input_archive2(iss2);
+      input_archive2 >> recovered_private_key >> recovered_public_key;
+    }
+    catch(const std::exception &e) {
+      FAIL() << e.what();
+    }
+    EXPECT_TRUE(ValidateKey(recovered_public_key));
+    EXPECT_TRUE(ValidateKey(recovered_private_key));
 
-  EXPECT_TRUE(CheckRoundtrip(recovered_public_key, kOriginalPrivateKey));
-  EXPECT_TRUE(CheckRoundtrip(recovered_public_key, recovered_private_key));
+    EXPECT_TRUE(CheckRoundtrip(recovered_public_key, kOriginalPrivateKey));
+    EXPECT_TRUE(CheckRoundtrip(recovered_public_key, recovered_private_key));
+  });
+  RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
-auto f([&]
-  {
+  auto f([&] {
     Keys k1, k2;
     EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
@@ -241,7 +240,7 @@ auto f([&]
     EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
   });
-RunInParallel(f);
+  RunInParallel(f);
 }
 
 }  // namespace test
