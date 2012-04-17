@@ -59,6 +59,10 @@ IF(MSVC)
   ADD_DEFINITIONS(-D__MSVC__ -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x501)
   ADD_DEFINITIONS(-D_CONSOLE -D_UNICODE -DUNICODE -D_BIND_TO_CURRENT_VCLIBS_VERSION=1)
 
+  # VC11 contains std::tuple with variadic templates emulation macro.
+  # _VARIADIC_MAX defaulted to 5 but gtest requires 10.
+  ADD_DEFINITIONS(-D_VARIADIC_MAX=10)
+
   # prevents std::min() and std::max() to be overwritten
   ADD_DEFINITIONS(-DNOMINMAX)
 

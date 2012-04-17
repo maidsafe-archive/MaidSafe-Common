@@ -59,8 +59,14 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 // 01 Jan 2000
-const boost::posix_time::ptime kMaidSafeEpoch(
-    boost::posix_time::from_iso_string("20000101T000000"));
+extern const boost::posix_time::ptime kMaidSafeEpoch;
+
+// Used to set Application dir for config files, etc.
+extern const std::string kCompanyName;
+
+// Used to set Application dir for config files, etc.
+extern const std::string kApplicationName;
+
 
 // A simple class to determine statistical properties of a data set, computed
 // without storing the values. Data type must be numerical.
@@ -167,23 +173,19 @@ bool WriteFile(const fs::path &file_path, const std::string &content);
 // Causes running thread to sleep for specified duration.
 void Sleep(const boost::posix_time::time_duration &duration);
 
-static const std::string kPlatform(BOOST_PLATFORM);
+// NOTE: DOES NOT CREATE PATH
+// Retrieve homedir from environment
+fs::path GetHomeDir();
 
-// used to set Application dir for config files etc.
-static std::string kCompanyName("maidsafe");
-// used to set Application dir for config files etc.
-static std::string kApplicationName("lifestuff");
 // NOTE: DOES NOT CREATE PATH
-// retrieve homedir from environment
-boost::filesystem3::path GetHomeDir();
-// NOTE: DOES NOT CREATE PATH
-// application support directory in userspace
+// Application support directory in userspace,
 // uses kCompanyName and kApplicationName
-boost::filesystem3::path GetUserAppDir();
+fs::path GetUserAppDir();
+
 // NOTE: DOES NOT CREATE PATH
-// application support directory for all users
+// Application support directory for all users,
 // uses kCompanyName and kApplicationName
-boost::filesystem3::path GetSystemAppDir();
+fs::path GetSystemAppDir();
 
 // Takes a MaidSafe version as an int and returns the string form, e.g. 901
 // returns "v0.09.01".
