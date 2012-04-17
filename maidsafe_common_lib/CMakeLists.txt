@@ -69,24 +69,6 @@ IF(MSVC)
   ENDIF()
 ENDIF()
 
-# Check compiler can handle required C++11 features
-MESSAGE("-- Checking required C++11 features supported")
-SET(ERROR_LOG ${PROJECT_BINARY_DIR}/C++11_features_compile_message.txt)
-SET(TRY_COMPILE_FILE ${PROJECT_SOURCE_DIR}/build/C++11_features.cc)
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E remove ${ERROR_LOG})
-IF(WIN32)
-  TRY_COMPILE(C++11_CAPABLE ${PROJECT_BINARY_DIR} ${TRY_COMPILE_FILE} OUTPUT_VARIABLE OUT_VAR)
-ELSE()
-  TRY_COMPILE(C++11_CAPABLE ${PROJECT_BINARY_DIR} ${TRY_COMPILE_FILE} COMPILE_DEFINITIONS -std=c++0x OUTPUT_VARIABLE OUT_VAR)
-ENDIF()
-IF(NOT C++11_CAPABLE)
-  FILE(WRITE ${ERROR_LOG} "${OUT_VAR}")
-  SET(MSG "\n\nYour selected compiler does not implement all of the C++11 features required for this project.\n")
-  SET(MSG "${MSG}To see all the features required, look in ${TRY_COMPILE_FILE}\n")
-  SET(MSG "${MSG}To see the output from trying to compile this file, look in ${ERROR_LOG}\n\n")
-  MESSAGE(FATAL_ERROR ${MSG})
-ENDIF()
-
 
 ###################################################################################################
 # Third party library search                                                                      #
