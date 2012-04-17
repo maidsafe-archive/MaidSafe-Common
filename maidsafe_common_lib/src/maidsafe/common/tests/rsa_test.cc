@@ -56,14 +56,13 @@ class RSATest : public testing::Test {
 };
 
 void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
-  std::vector<std::future<void>> vec;;
-for (int i = 0; i < num_threads; ++i) {
-  vec.emplace_back(std::async(std::launch::async, f));
-}
-for (auto &i : vec )  //  wait on all threads finishing (check)
-  i.get();
-}
+  std::vector<std::future<void>> vec;
+  for (int i = 0; i < num_threads; ++i)
+    vec.emplace_back(std::async(std::launch::async, f));
 
+  for (auto &i : vec)  //  wait on all threads finishing (check)
+    i.get();
+}
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
 auto f([&]
@@ -176,7 +175,7 @@ auto f([&]
     EXPECT_EQ(kRSAInvalidSignature,
               CheckSignature(kData, bad_signature, keys_.public_key));
   });
-RunInParallel(f);
+RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, BEH_Serialise) {
