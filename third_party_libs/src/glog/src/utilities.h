@@ -103,7 +103,7 @@
 
 #if defined(HAVE_LIB_UNWIND)
 # define STACKTRACE_H "stacktrace_libunwind-inl.h"
-#elif !defined(NO_FRAME_POINTER)
+#elif !defined(NO_FRAME_POINTER) && !defined(__clang__)
 # if defined(__i386__) && __GNUC__ >= 2
 #  define STACKTRACE_H "stacktrace_x86-inl.h"
 # elif defined(__x86_64__) && __GNUC__ >= 2
@@ -140,9 +140,11 @@ namespace glog_internal_namespace_ {
 
 #ifdef HAVE___ATTRIBUTE__
 # define ATTRIBUTE_NOINLINE __attribute__ ((noinline))
+# define ATTRIBUTE_NORETURN __attribute__ ((noreturn))
 # define HAVE_ATTRIBUTE_NOINLINE
 #else
 # define ATTRIBUTE_NOINLINE
+# define ATTRIBUTE_NORETURN
 #endif
 
 const char* ProgramInvocationShortName();

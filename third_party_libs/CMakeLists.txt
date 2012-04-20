@@ -80,6 +80,117 @@ FUNCTION(APPEND_TO_EXPORT_FILE LINE)
   FILE(APPEND ${EXPORT_FILE} "${LINE}\n")
 ENDFUNCTION()
 
+
+###################################################################################################
+# Google Protocol Buffers                                                                         #
+###################################################################################################
+IF((${BUILD_TARGET} MATCHES "PROTOBUF") OR (${BUILD_TARGET} MATCHES "ALL"))
+  IF(MSVC)
+    MESSAGE("-- Building Google Protocol Buffers Debug libraries")
+    MESSAGE("     This may take a few minutes...")
+    FIND_FILE(LIBPROTOBUF_PROJECT NAMES libprotobuf.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
+    FIND_FILE(LIBPROTOC_PROJECT NAMES libprotoc.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
+    FIND_FILE(PROTOC_PROJECT NAMES protoc.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
+    IF(CMAKE_CL_64)
+      SET(PLATFORM "Platform=x64")
+    ELSE()
+      SET(PLATFORM "Platform=Win32")
+    ENDIF()
+    # Build libprotobuf Debug
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} "/property:Configuration=Debug;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${OUTVAR}")
+    MESSAGE("-- Building Google Protocol Buffers Release libraries and compiler")
+    MESSAGE("     This may take a few minutes...")
+    # Build libprotobuf Release
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
+    # Build libprotoc Release
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOC_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
+    # Build protoc Release
+    EXECUTE_PROCESS(COMMAND msbuild ${PROTOC_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
+    # Extract headers
+    EXECUTE_PROCESS(COMMAND CMD /C CALL extract_includes.bat WORKING_DIRECTORY ${CURRENT_DIR}/src/protobuf/vsprojects OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
+  ELSE()
+    UNSET(PROTOBUF_AUTOGEN CACHE)
+    UNSET(PROTOBUF_CONFIGURE CACHE)
+    SET(PROTOBUF_BUILD_DIR ${CURRENT_DIR}/build_protobuf)
+    # Make a copy of protobuf to work with to avoid modified files being accidentally committed to repository
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CURRENT_DIR}/src/protobuf ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+    FIND_FILE(PROTOBUF_AUTOGEN autogen.sh PATHS ${PROTOBUF_BUILD_DIR} NO_DEFAULT_PATH)
+    MESSAGE("-- Generating configure file for Google Protocol Buffers")
+    MESSAGE("     This may take a few minutes...")
+    EXECUTE_PROCESS(COMMAND sh ${PROTOBUF_AUTOGEN} WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${OUTVAR}")
+    FIND_FILE(PROTOBUF_CONFIGURE configure PATHS ${PROTOBUF_BUILD_DIR} NO_DEFAULT_PATH)
+    IF(NOT PROTOBUF_CONFIGURE)
+      SET(ERROR_MESSAGE "${OUTVAR}\n${ERRVAR}\nCould not create configure file for Google Protocol Buffers.\n\n")
+      SET(ERROR_MESSAGE "${ERROR_MESSAGE}*** This needs autoconf and libtool to complete successfully. ***\n")
+      MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
+    ENDIF()
+    MESSAGE("-- Configuring Google Protocol Buffers")
+    MESSAGE("     This may take a few minutes...")
+    IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+      EXECUTE_PROCESS(COMMAND sh ${PROTOBUF_CONFIGURE} --prefix=${PROTOBUF_BUILD_DIR} --enable-shared=no "CXXFLAGS=-std=c++11 -stdlib=libc++" WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+    ELSE()
+      EXECUTE_PROCESS(COMMAND sh ${PROTOBUF_CONFIGURE} --prefix=${PROTOBUF_BUILD_DIR} --enable-shared=no CXXFLAGS=-std=c++11 WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+    ENDIF()
+    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
+    MESSAGE("-- Making Google Protocol Buffers")
+    MESSAGE("     This may take a few minutes...")
+    EXECUTE_PROCESS(COMMAND make install WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
+  ENDIF()
+ENDIF()
+
+FIND_LIBRARY(Protobuf_LIBRARY_RELEASE NAMES libprotobuf.a libprotobuf.lib
+               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Release ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Release
+               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_LIBRARY(Protobuf_LIBRARY_DEBUG NAMES libprotobuf.a libprotobuf.lib
+               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Debug ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Debug
+               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_PROGRAM(Protoc_EXE NAMES protoc
+               PATHS ${CURRENT_DIR}/build_protobuf/bin ${CURRENT_DIR}/src/protobuf/vsprojects/Release ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Release
+               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_PATH(Protobuf_INCLUDE_DIR google/protobuf/service.h
+            PATHS ${CURRENT_DIR}/build_protobuf/include ${CURRENT_DIR}/src/protobuf/vsprojects/include
+            NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+
+IF(NOT Protobuf_LIBRARY_RELEASE OR NOT Protobuf_LIBRARY_DEBUG OR NOT Protoc_EXE OR NOT Protobuf_INCLUDE_DIR)
+  MESSAGE(FATAL_ERROR "${PROTOBUF_OUTVAR}")
+ENDIF()
+
+MESSAGE("-- Found Google Protocol Buffers")
+GET_FILENAME_COMPONENT(Protobuf_LIBRARY_RELEASE_NAME ${Protobuf_LIBRARY_RELEASE} NAME)
+GET_FILENAME_COMPONENT(Protobuf_LIBRARY_DEBUG_NAME ${Protobuf_LIBRARY_DEBUG} NAME)
+GET_FILENAME_COMPONENT(Protoc_EXE_NAME ${Protoc_EXE} NAME)
+SET(Protobuf_LIBRARY_RELEASE_INSTALLED ${LIB_PREFIX_RELEASE}${Protobuf_LIBRARY_RELEASE_NAME})
+SET(Protobuf_LIBRARY_DEBUG_INSTALLED ${LIB_PREFIX_DEBUG}${Protobuf_LIBRARY_DEBUG_NAME})
+SET(Protoc_EXE_INSTALLED ${BIN_DIR}${Protoc_EXE_NAME})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Protobuf_LIBRARY_RELEASE} ${LIB_PREFIX_RELEASE})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Protobuf_LIBRARY_DEBUG} ${LIB_PREFIX_DEBUG})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Protoc_EXE} ${BIN_DIR})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${Protobuf_INCLUDE_DIR} ${INC_DIR})
+MESSAGE("-- Installed ${Protobuf_LIBRARY_RELEASE_INSTALLED}")
+MESSAGE("-- Installed ${Protobuf_LIBRARY_DEBUG_INSTALLED}")
+MESSAGE("-- Installed ${Protoc_EXE_INSTALLED}")
+FILE(GLOB_RECURSE HEADERS ${INC_DIR} "${INC_DIR}google/*")
+FOREACH(HEADER ${HEADERS})
+  MESSAGE("-- Installed ${HEADER}")
+ENDFOREACH()
+
+APPEND_TO_EXPORT_FILE("ADD_LIBRARY(protobuf_static STATIC IMPORTED)")
+APPEND_TO_EXPORT_FILE("SET_TARGET_PROPERTIES(protobuf_static PROPERTIES")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_CONFIGURATIONS \"RELEASE;DEBUG\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_RELEASE \"${Protobuf_LIBRARY_RELEASE_INSTALLED}\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Protobuf_LIBRARY_DEBUG_INSTALLED}\")\n")
+
+APPEND_TO_EXPORT_FILE("SET(Protoc_EXE \"${Protoc_EXE_INSTALLED}\")\n")
+
+
+
 ###################################################################################################
 # GoogleMock and GoogleTest                                                                       #
 ###################################################################################################
@@ -214,10 +325,11 @@ IF(WIN32)
 ENDIF()
 FIND_PATH(Cryptopp_INCLUDE_DIR cryptopp/config.h PATHS ${CURRENT_DIR}/build_cryptopp/include
             NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+
 FIND_PROGRAM(Cryptopp_TEST_EXE cryptest PATHS ${CURRENT_DIR}/build_cryptopp
                PATH_SUFFIXES Release NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
 
-IF(NOT Cryptopp_LIBRARY_RELEASE OR NOT Cryptopp_LIBRARY_DEBUG OR NOT Cryptopp_INCLUDE_DIR OR NOT Cryptopp_TEST_EXE)
+IF(NOT Cryptopp_LIBRARY_RELEASE OR NOT Cryptopp_LIBRARY_DEBUG OR NOT Cryptopp_INCLUDE_DIR OR ( NOT Cryptopp_TEST_EXE AND NOT ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")))
   MESSAGE(FATAL_ERROR "${CRYPTOPP_OUTVAR}")
 ENDIF()
 
@@ -275,110 +387,6 @@ APPEND_TO_CRYPTO_TEST_FILE("  SET_PROPERTY(TEST CrypoppTest.BEH_RSA_PKCS1_1_5 PR
 APPEND_TO_CRYPTO_TEST_FILE("ENDIF()")
 
 
-###################################################################################################
-# Google Protocol Buffers                                                                         #
-###################################################################################################
-IF((${BUILD_TARGET} MATCHES "PROTOBUF") OR (${BUILD_TARGET} MATCHES "ALL"))
-  IF(MSVC)
-    MESSAGE("-- Building Google Protocol Buffers Debug libraries")
-    MESSAGE("     This may take a few minutes...")
-    FIND_FILE(LIBPROTOBUF_PROJECT NAMES libprotobuf.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
-    FIND_FILE(LIBPROTOC_PROJECT NAMES libprotoc.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
-    FIND_FILE(PROTOC_PROJECT NAMES protoc.vcxproj PATHS ${CURRENT_DIR}/src/protobuf/vsprojects NO_DEFAULT_PATH)
-    IF(CMAKE_CL_64)
-      SET(PLATFORM "Platform=x64")
-    ELSE()
-      SET(PLATFORM "Platform=Win32")
-    ENDIF()
-    # Build libprotobuf Debug
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} "/property:Configuration=Debug;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${OUTVAR}")
-    MESSAGE("-- Building Google Protocol Buffers Release libraries and compiler")
-    MESSAGE("     This may take a few minutes...")
-    # Build libprotobuf Release
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOBUF_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
-    # Build libprotoc Release
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBPROTOC_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
-    # Build protoc Release
-    EXECUTE_PROCESS(COMMAND msbuild ${PROTOC_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
-    # Extract headers
-    EXECUTE_PROCESS(COMMAND CMD /C CALL extract_includes.bat WORKING_DIRECTORY ${CURRENT_DIR}/src/protobuf/vsprojects OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
-  ELSE()
-    UNSET(PROTOBUF_AUTOGEN CACHE)
-    UNSET(PROTOBUF_CONFIGURE CACHE)
-    SET(PROTOBUF_BUILD_DIR ${CURRENT_DIR}/build_protobuf)
-    # Make a copy of protobuf to work with to avoid modified files being accidentally committed to repository
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CURRENT_DIR}/src/protobuf ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
-    FIND_FILE(PROTOBUF_AUTOGEN autogen.sh PATHS ${PROTOBUF_BUILD_DIR} NO_DEFAULT_PATH)
-    MESSAGE("-- Generating configure file for Google Protocol Buffers")
-    MESSAGE("     This may take a few minutes...")
-    EXECUTE_PROCESS(COMMAND sh ${PROTOBUF_AUTOGEN} WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${OUTVAR}")
-    FIND_FILE(PROTOBUF_CONFIGURE configure PATHS ${PROTOBUF_BUILD_DIR} NO_DEFAULT_PATH)
-    IF(NOT PROTOBUF_CONFIGURE)
-      SET(ERROR_MESSAGE "${OUTVAR}\n${ERRVAR}\nCould not create configure file for Google Protocol Buffers.\n\n")
-      SET(ERROR_MESSAGE "${ERROR_MESSAGE}*** This needs autoconf and libtool to complete successfully. ***\n")
-      MESSAGE(FATAL_ERROR "${ERROR_MESSAGE}")
-    ENDIF()
-    MESSAGE("-- Configuring Google Protocol Buffers")
-    MESSAGE("     This may take a few minutes...")
-    EXECUTE_PROCESS(COMMAND sh ${PROTOBUF_CONFIGURE} --prefix=${PROTOBUF_BUILD_DIR} --enable-shared=no CXXFLAGS=-std=c++11 WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
-    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
-    MESSAGE("-- Making Google Protocol Buffers")
-    MESSAGE("     This may take a few minutes...")
-    EXECUTE_PROCESS(COMMAND make install WORKING_DIRECTORY ${PROTOBUF_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(PROTOBUF_OUTVAR "${PROTOBUF_OUTVAR}${SEPARATOR}${OUTVAR}")
-  ENDIF()
-ENDIF()
-
-FIND_LIBRARY(Protobuf_LIBRARY_RELEASE NAMES libprotobuf.a libprotobuf.lib
-               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Release ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Release
-               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-FIND_LIBRARY(Protobuf_LIBRARY_DEBUG NAMES libprotobuf.a libprotobuf.lib
-               PATHS ${CURRENT_DIR}/build_protobuf/lib ${CURRENT_DIR}/src/protobuf/vsprojects/Debug ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Debug
-               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-FIND_PROGRAM(Protoc_EXE NAMES protoc
-               PATHS ${CURRENT_DIR}/build_protobuf/bin ${CURRENT_DIR}/src/protobuf/vsprojects/Release ${CURRENT_DIR}/src/protobuf/vsprojects/x64/Release
-               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-FIND_PATH(Protobuf_INCLUDE_DIR google/protobuf/service.h
-            PATHS ${CURRENT_DIR}/build_protobuf/include ${CURRENT_DIR}/src/protobuf/vsprojects/include
-            NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-
-IF(NOT Protobuf_LIBRARY_RELEASE OR NOT Protobuf_LIBRARY_DEBUG OR NOT Protoc_EXE OR NOT Protobuf_INCLUDE_DIR)
-  MESSAGE(FATAL_ERROR "${PROTOBUF_OUTVAR}")
-ENDIF()
-
-MESSAGE("-- Found Google Protocol Buffers")
-GET_FILENAME_COMPONENT(Protobuf_LIBRARY_RELEASE_NAME ${Protobuf_LIBRARY_RELEASE} NAME)
-GET_FILENAME_COMPONENT(Protobuf_LIBRARY_DEBUG_NAME ${Protobuf_LIBRARY_DEBUG} NAME)
-GET_FILENAME_COMPONENT(Protoc_EXE_NAME ${Protoc_EXE} NAME)
-SET(Protobuf_LIBRARY_RELEASE_INSTALLED ${LIB_PREFIX_RELEASE}${Protobuf_LIBRARY_RELEASE_NAME})
-SET(Protobuf_LIBRARY_DEBUG_INSTALLED ${LIB_PREFIX_DEBUG}${Protobuf_LIBRARY_DEBUG_NAME})
-SET(Protoc_EXE_INSTALLED ${BIN_DIR}${Protoc_EXE_NAME})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Protobuf_LIBRARY_RELEASE} ${LIB_PREFIX_RELEASE})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Protobuf_LIBRARY_DEBUG} ${LIB_PREFIX_DEBUG})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Protoc_EXE} ${BIN_DIR})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${Protobuf_INCLUDE_DIR} ${INC_DIR})
-MESSAGE("-- Installed ${Protobuf_LIBRARY_RELEASE_INSTALLED}")
-MESSAGE("-- Installed ${Protobuf_LIBRARY_DEBUG_INSTALLED}")
-MESSAGE("-- Installed ${Protoc_EXE_INSTALLED}")
-FILE(GLOB_RECURSE HEADERS ${INC_DIR} "${INC_DIR}google/*")
-FOREACH(HEADER ${HEADERS})
-  MESSAGE("-- Installed ${HEADER}")
-ENDFOREACH()
-
-APPEND_TO_EXPORT_FILE("ADD_LIBRARY(protobuf_static STATIC IMPORTED)")
-APPEND_TO_EXPORT_FILE("SET_TARGET_PROPERTIES(protobuf_static PROPERTIES")
-APPEND_TO_EXPORT_FILE("                        IMPORTED_CONFIGURATIONS \"RELEASE;DEBUG\"")
-APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_RELEASE \"${Protobuf_LIBRARY_RELEASE_INSTALLED}\"")
-APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Protobuf_LIBRARY_DEBUG_INSTALLED}\")\n")
-
-APPEND_TO_EXPORT_FILE("SET(Protoc_EXE \"${Protoc_EXE_INSTALLED}\")\n")
-
 
 ###################################################################################################
 # Google Logging library                                                                          #
@@ -410,7 +418,12 @@ IF((${BUILD_TARGET} MATCHES "GLOG") OR (${BUILD_TARGET} MATCHES "ALL"))
     ENDIF()
     MESSAGE("-- Configuring Google Logging library")
     MESSAGE("     This may take a few minutes...")
-    EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no CXXFLAGS=-std=c++11 WORKING_DIRECTORY ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+# message("sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no CXXFLAGS=\"-std=c++11 -stdlib=libc++ \"")
+      EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no "CXXFLAGS=-I /usr/local/include/c++/v1/ -I /usr/local/lib/clang/3.2/include/ -std=c++11 -stdlib=libc++ -Wno-reserved-user-defined-literal" WORKING_DIRECTORY ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    ELSE() 
+      EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no CXXFLAGS=-std=c++11 WORKING_DIRECTORY${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    ENDIF()
     SET(GLOG_OUTVAR "${OUTVAR}")
     MESSAGE("-- Making Google Logging library")
     MESSAGE("     This may take a few minutes...")
@@ -468,7 +481,7 @@ APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Glog_
 ###################################################################################################
 
 # Currently not supporting breakpad using OSX
-IF (NOT APPLE)
+IF (FALSE)
 IF((${BUILD_TARGET} MATCHES "BREAKPAD") OR (${BUILD_TARGET} MATCHES "ALL"))
   MESSAGE("-- Building Google Breakpad Client")
   MESSAGE("     This may take a few minutes...")

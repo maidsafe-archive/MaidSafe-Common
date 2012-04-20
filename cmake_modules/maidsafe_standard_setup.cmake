@@ -78,8 +78,7 @@ IF(NOT DEFINED ${KDEV})
 ENDIF()
 
 INCLUDE_DIRECTORIES(${MaidSafeCommon_INCLUDE_DIR}/maidsafe)
-IF(CMAKE_COMPILER_IS_GNUCC)
-  # Need to set these CMake variables as they're not correctly set when using g++-mp-4.6 on OSX.
+IF(UNIX)
   SET(CMAKE_INCLUDE_SYSTEM_FLAG_C "-isystem ")
   SET(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 ENDIF()
@@ -128,7 +127,7 @@ ENDIF()
 INCLUDE(maidsafe_find_openmp)
 
 IF(UNIX)
-  SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /usr/lib/i386-linux-gnu/ /usr/lib/x86_64-linux-gnu/)
+  SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /usr/lib/i386-linux-gnu/ /usr/lib/x86_64-linux-gnu/ /usr/lib/)
   SET(CMAKE_THREAD_PREFER_PTHREAD true)
   FIND_PACKAGE(Threads REQUIRED)
   SET(SYS_LIB ${CMAKE_THREAD_LIBS_INIT})

@@ -131,6 +131,7 @@ static void DumpStackTrace(int skip_count, DebugWriter *writerfn, void *arg) {
   }
 }
 
+static void DumpStackTraceAndExit() ATTRIBUTE_NORETURN;
 static void DumpStackTraceAndExit() {
   DumpStackTrace(1, DebugWriteToStderr, NULL);
 

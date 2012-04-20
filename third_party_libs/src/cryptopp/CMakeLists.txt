@@ -101,16 +101,20 @@ LIST(REMOVE_ITEM cryptopp_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/validate.h")
 SET(cryptopp_TEST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/bench.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/factory.h
                           ${CMAKE_CURRENT_SOURCE_DIR}/validate.h)
+
+
 ADD_EXECUTABLE(cryptest ${cryptopp_TEST_SOURCES} ${cryptopp_TEST_HEADERS})
 
 ADD_LIBRARY(cryptopp_static STATIC ${cryptopp_SOURCES} ${cryptopp_HEADERS})
 SET_TARGET_PROPERTIES(cryptopp_static PROPERTIES OUTPUT_NAME cryptopp)
 
 IF(NOT MSVC)
+
   SET_TARGET_PROPERTIES(cryptest PROPERTIES
                           DEBUG_OUTPUT_NAME cryptest${CMAKE_DEBUG_POSTFIX}
                           RELWITHDEBINFO_OUTPUT_NAME cryptest${CMAKE_RELWITHDEBINFO_POSTFIX}
                           MINSIZEREL_OUTPUT_NAME cryptest${CMAKE_MINSIZEREL_POSTFIX})
+
 ENDIF()
 
 INSTALL(TARGETS cryptopp_static ARCHIVE DESTINATION lib)
@@ -119,12 +123,20 @@ IF(NOT WIN32)
   ADD_DEFINITIONS(-DNDEBUG)
 ENDIF()
 
-TARGET_LINK_LIBRARIES(cryptest cryptopp_static)
+
+  TARGET_LINK_LIBRARIES(cryptest cryptopp_static)
+
 IF(APPLE)
   ADD_DEFINITIONS(-DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_AESNI)
   SET_TARGET_PROPERTIES(cryptopp_static PROPERTIES COMPILE_FLAGS "-O2 -fPIC -w -finline-functions")
 ELSEIF(UNIX)
+  IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  ADD_DEFINITIONS(-DCRYPTOPP_DISABLE_ASM)
+  SET_TARGET_PROPERTIES(cryptopp_static PROPERTIES COMPILE_FLAGS "-O2 -w -finline-functions -Wno-tautological-compare -pipe -stdlib=libc++ -Wno-c++11-narrowing")
+SET_TARGET_PROPERTIES(cryptest PROPERTIES COMPILE_FLAGS "-O2 -w -finline-functions -Wno-tautological-compare -pipe -stdlib=libc++ -Wno-c++11-narrowing" LINK_FLAGS_RELEASE "-stdlib=libc++" LINK_FLAGS_DEBUG "-stdlib=libc++")
+  ELSE()
   SET_TARGET_PROPERTIES(cryptopp_static PROPERTIES COMPILE_FLAGS "-O2 -fPIC -w -pipe -finline-functions -std=c++11")
+  ENDIF()
 ELSEIF(WIN32 AND MSVC)
   CMAKE_POLICY(SET CMP0008 NEW)
   SET_TARGET_PROPERTIES(cryptopp_static PROPERTIES COMPILE_FLAGS "/D_WINDOWS /DUSE_PRECOMPILED_HEADERS /DWIN32 /D_VC80_UPGRADE=0x0710 /EHsc /W3")
