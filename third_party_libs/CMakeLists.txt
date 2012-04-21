@@ -82,6 +82,93 @@ ENDFUNCTION()
 
 
 ###################################################################################################
+# Google Logging library                                                                          #
+###################################################################################################
+IF((${BUILD_TARGET} MATCHES "GLOG") OR (${BUILD_TARGET} MATCHES "ALL"))
+  IF(MSVC)
+    MESSAGE("-- Building Google Logging Debug libraries")
+    MESSAGE("     This may take a few minutes...")
+    FIND_FILE(LIBGLOG_PROJECT NAMES libglog_static.vcxproj PATHS ${CURRENT_DIR}/src/glog/vsprojects/libglog_static NO_DEFAULT_PATH)
+    IF(CMAKE_CL_64)
+      SET(PLATFORM "Platform=x64")
+    ELSE()
+      SET(PLATFORM "Platform=Win32")
+    ENDIF()
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Debug;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(GLOG_OUTVAR "${OUTVAR}")
+    MESSAGE("-- Building Google Logging Release libraries")
+    MESSAGE("     This may take a few minutes...")
+    EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(GLOG_OUTVAR "${GLOG_OUTVAR}${SEPARATOR}${OUTVAR}")
+  ELSE()
+    UNSET(GLOG_CONFIGURE CACHE)
+    SET(GLOG_BUILD_DIR ${CURRENT_DIR}/build_glog)
+    # Make a copy of glog to work with to avoid modified files being accidentally committed to repository
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CURRENT_DIR}/src/glog ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
+    FIND_FILE(GLOG_CONFIGURE configure PATHS ${GLOG_BUILD_DIR} NO_DEFAULT_PATH)
+    IF(NOT GLOG_CONFIGURE)
+      MESSAGE(FATAL_ERROR "${OUTVAR}\n${ERRVAR}\nCould not configure Google Logging.\n\n")
+    ENDIF()
+    MESSAGE("-- Configuring Google Logging library")
+    MESSAGE("     This may take a few minutes...")
+      IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no "CXXFLAGS=-std=c++11 -stdlib=libc++ -Wno-reserved-user-defined-literal" WORKING_DIRECTORY ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+     ELSE()
+       EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no CXXFLAGS=-std=c++11 WORKING_DIRECTORY ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    ENDIF()
+    SET(GLOG_OUTVAR "${OUTVAR}")
+    MESSAGE("-- Making Google Logging library")
+    MESSAGE("     This may take a few minutes...")
+    EXECUTE_PROCESS(COMMAND chmod u+x configure install-sh WORKING_DIRECTORY ${GLOG_BUILD_DIR})
+    EXECUTE_PROCESS(COMMAND make -i -C ${GLOG_BUILD_DIR} install-libLTLIBRARIES OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
+    SET(GLOG_OUTVAR "${GLOG_OUTVAR}${SEPARATOR}${OUTVAR}")
+  ENDIF()
+ENDIF()
+
+FIND_LIBRARY(Glog_LIBRARY_RELEASE NAMES libglog.a libglog_static.lib
+               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Release ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/x64/Release
+               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+FIND_LIBRARY(Glog_LIBRARY_DEBUG NAMES libglog.a libglog_static.lib
+               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Debug ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/x64/Debug
+               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+IF(WIN32)
+  FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
+              PATHS ${CURRENT_DIR}/src/glog/src/windows
+              NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+ELSE()
+  FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
+              PATHS ${CURRENT_DIR}/build_glog/src
+              NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
+ENDIF()
+
+IF(NOT Glog_LIBRARY_RELEASE OR NOT Glog_LIBRARY_DEBUG OR NOT Glog_INCLUDE_DIR)
+  MESSAGE(FATAL_ERROR "${GLOG_OUTVAR}")
+ENDIF()
+
+MESSAGE("-- Found Google Logging")
+GET_FILENAME_COMPONENT(Glog_LIBRARY_RELEASE_NAME ${Glog_LIBRARY_RELEASE} NAME)
+GET_FILENAME_COMPONENT(Glog_LIBRARY_DEBUG_NAME ${Glog_LIBRARY_DEBUG} NAME)
+SET(Glog_LIBRARY_RELEASE_INSTALLED ${LIB_PREFIX_RELEASE}${Glog_LIBRARY_RELEASE_NAME})
+SET(Glog_LIBRARY_DEBUG_INSTALLED ${LIB_PREFIX_DEBUG}${Glog_LIBRARY_DEBUG_NAME})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_LIBRARY_RELEASE} ${LIB_PREFIX_RELEASE})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_LIBRARY_DEBUG} ${LIB_PREFIX_DEBUG})
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_INCLUDE_DIR}/glog/logging.h ${INC_DIR}/glog/logging.h)
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_INCLUDE_DIR}/glog/log_severity.h ${INC_DIR}/glog/log_severity.h)
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_INCLUDE_DIR}/glog/vlog_is_on.h ${INC_DIR}/glog/vlog_is_on.h)
+MESSAGE("-- Installed ${Glog_LIBRARY_RELEASE_INSTALLED}")
+MESSAGE("-- Installed ${Glog_LIBRARY_DEBUG_INSTALLED}")
+FILE(GLOB_RECURSE HEADERS ${INC_DIR} "${INC_DIR}glog/*")
+FOREACH(HEADER ${HEADERS})
+  MESSAGE("-- Installed ${HEADER}")
+ENDFOREACH()
+
+APPEND_TO_EXPORT_FILE("ADD_LIBRARY(glog_static STATIC IMPORTED)")
+APPEND_TO_EXPORT_FILE("SET_TARGET_PROPERTIES(glog_static PROPERTIES")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_CONFIGURATIONS \"RELEASE;DEBUG\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_RELEASE \"${Glog_LIBRARY_RELEASE_INSTALLED}\"")
+APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Glog_LIBRARY_DEBUG_INSTALLED}\")\n")
+
+###################################################################################################
 # Google Protocol Buffers                                                                         #
 ###################################################################################################
 IF((${BUILD_TARGET} MATCHES "PROTOBUF") OR (${BUILD_TARGET} MATCHES "ALL"))
@@ -386,95 +473,6 @@ APPEND_TO_CRYPTO_TEST_FILE("  SET_PROPERTY(TEST CrypoppTest.BEH_RSA_PKCS1_1_5 PR
 APPEND_TO_CRYPTO_TEST_FILE("  SET_PROPERTY(TEST CrypoppTest.BEH_RSA_PKCS1_1_5 PROPERTY TIMEOUT 60)")
 APPEND_TO_CRYPTO_TEST_FILE("ENDIF()")
 
-
-
-###################################################################################################
-# Google Logging library                                                                          #
-###################################################################################################
-IF((${BUILD_TARGET} MATCHES "GLOG") OR (${BUILD_TARGET} MATCHES "ALL"))
-  IF(MSVC)
-    MESSAGE("-- Building Google Logging Debug libraries")
-    MESSAGE("     This may take a few minutes...")
-    FIND_FILE(LIBGLOG_PROJECT NAMES libglog_static.vcxproj PATHS ${CURRENT_DIR}/src/glog/vsprojects/libglog_static NO_DEFAULT_PATH)
-    IF(CMAKE_CL_64)
-      SET(PLATFORM "Platform=x64")
-    ELSE()
-      SET(PLATFORM "Platform=Win32")
-    ENDIF()
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Debug;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(GLOG_OUTVAR "${OUTVAR}")
-    MESSAGE("-- Building Google Logging Release libraries")
-    MESSAGE("     This may take a few minutes...")
-    EXECUTE_PROCESS(COMMAND msbuild ${LIBGLOG_PROJECT} "/property:Configuration=Release;${PLATFORM}" OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(GLOG_OUTVAR "${GLOG_OUTVAR}${SEPARATOR}${OUTVAR}")
-  ELSE()
-    UNSET(GLOG_CONFIGURE CACHE)
-    SET(GLOG_BUILD_DIR ${CURRENT_DIR}/build_glog)
-    # Make a copy of glog to work with to avoid modified files being accidentally committed to repository
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CURRENT_DIR}/src/glog ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR)
-    FIND_FILE(GLOG_CONFIGURE configure PATHS ${GLOG_BUILD_DIR} NO_DEFAULT_PATH)
-    IF(NOT GLOG_CONFIGURE)
-      MESSAGE(FATAL_ERROR "${OUTVAR}\n${ERRVAR}\nCould not configure Google Logging.\n\n")
-    ENDIF()
-    MESSAGE("-- Configuring Google Logging library")
-    MESSAGE("     This may take a few minutes...")
-    IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-# message("sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no CXXFLAGS=\"-std=c++11 -stdlib=libc++ \"")
-      EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no "CXXFLAGS=-I /usr/local/include/c++/v1/ -I /usr/local/lib/clang/3.2/include/ -std=c++11 -stdlib=libc++ -Wno-reserved-user-defined-literal" WORKING_DIRECTORY ${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    ELSE() 
-      EXECUTE_PROCESS(COMMAND sh ${GLOG_CONFIGURE} --prefix=${GLOG_BUILD_DIR} --enable-shared=no CXXFLAGS=-std=c++11 WORKING_DIRECTORY${GLOG_BUILD_DIR} OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    ENDIF()
-    SET(GLOG_OUTVAR "${OUTVAR}")
-    MESSAGE("-- Making Google Logging library")
-    MESSAGE("     This may take a few minutes...")
-    EXECUTE_PROCESS(COMMAND chmod u+x configure install-sh WORKING_DIRECTORY ${GLOG_BUILD_DIR})
-    EXECUTE_PROCESS(COMMAND make -i -C ${GLOG_BUILD_DIR} install-libLTLIBRARIES OUTPUT_VARIABLE OUTVAR RESULT_VARIABLE RESVAR ERROR_VARIABLE ERRVAR)
-    SET(GLOG_OUTVAR "${GLOG_OUTVAR}${SEPARATOR}${OUTVAR}")
-  ENDIF()
-ENDIF()
-
-FIND_LIBRARY(Glog_LIBRARY_RELEASE NAMES libglog.a libglog_static.lib
-               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Release ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/x64/Release
-               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-FIND_LIBRARY(Glog_LIBRARY_DEBUG NAMES libglog.a libglog_static.lib
-               PATHS ${CURRENT_DIR}/build_glog/lib ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/Debug ${CURRENT_DIR}/src/glog/vsprojects/libglog_static/x64/Debug
-               NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-IF(WIN32)
-  FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
-              PATHS ${CURRENT_DIR}/src/glog/src/windows
-              NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-ELSE()
-  FIND_PATH(Glog_INCLUDE_DIR glog/logging.h
-              PATHS ${CURRENT_DIR}/build_glog/src
-              NO_CMAKE_PATH NO_SYSTEM_ENVIRONMENT_PATH NO_CMAKE_SYSTEM_PATH)
-ENDIF()
-
-IF(NOT Glog_LIBRARY_RELEASE OR NOT Glog_LIBRARY_DEBUG OR NOT Glog_INCLUDE_DIR)
-  MESSAGE(FATAL_ERROR "${GLOG_OUTVAR}")
-ENDIF()
-
-MESSAGE("-- Found Google Logging")
-GET_FILENAME_COMPONENT(Glog_LIBRARY_RELEASE_NAME ${Glog_LIBRARY_RELEASE} NAME)
-GET_FILENAME_COMPONENT(Glog_LIBRARY_DEBUG_NAME ${Glog_LIBRARY_DEBUG} NAME)
-SET(Glog_LIBRARY_RELEASE_INSTALLED ${LIB_PREFIX_RELEASE}${Glog_LIBRARY_RELEASE_NAME})
-SET(Glog_LIBRARY_DEBUG_INSTALLED ${LIB_PREFIX_DEBUG}${Glog_LIBRARY_DEBUG_NAME})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_LIBRARY_RELEASE} ${LIB_PREFIX_RELEASE})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_LIBRARY_DEBUG} ${LIB_PREFIX_DEBUG})
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_INCLUDE_DIR}/glog/logging.h ${INC_DIR}/glog/logging.h)
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_INCLUDE_DIR}/glog/log_severity.h ${INC_DIR}/glog/log_severity.h)
-EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${Glog_INCLUDE_DIR}/glog/vlog_is_on.h ${INC_DIR}/glog/vlog_is_on.h)
-MESSAGE("-- Installed ${Glog_LIBRARY_RELEASE_INSTALLED}")
-MESSAGE("-- Installed ${Glog_LIBRARY_DEBUG_INSTALLED}")
-FILE(GLOB_RECURSE HEADERS ${INC_DIR} "${INC_DIR}glog/*")
-FOREACH(HEADER ${HEADERS})
-  MESSAGE("-- Installed ${HEADER}")
-ENDFOREACH()
-
-APPEND_TO_EXPORT_FILE("ADD_LIBRARY(glog_static STATIC IMPORTED)")
-APPEND_TO_EXPORT_FILE("SET_TARGET_PROPERTIES(glog_static PROPERTIES")
-APPEND_TO_EXPORT_FILE("                        IMPORTED_CONFIGURATIONS \"RELEASE;DEBUG\"")
-APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_RELEASE \"${Glog_LIBRARY_RELEASE_INSTALLED}\"")
-APPEND_TO_EXPORT_FILE("                        IMPORTED_LOCATION_DEBUG \"${Glog_LIBRARY_DEBUG_INSTALLED}\")\n")
 
 ###################################################################################################
 # Google Breakpad                                                                                 #

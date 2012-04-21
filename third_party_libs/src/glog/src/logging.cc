@@ -1230,8 +1230,10 @@ void LogMessage::RecordCrashReason(
   reason->depth = 0;
 #endif
 }
-
+#ifdef __clang__
 static void logging_fail() ATTRIBUTE_NORETURN;
+#endif
+
 static void logging_fail() {
 #if defined(_DEBUG) && defined(_MSC_VER)
   // When debugging on windows, avoid the obnoxious dialog and make
@@ -1243,9 +1245,22 @@ static void logging_fail() {
 #endif
 }
 
+#ifndef __clang__
+#ifdef HAVE___ATTRIBUTE__
+GOOGLE_GLOG_DLL_DECL
+void (*g_logging_fail_func)() __attribute__((noreturn)) = &logging_fail;
+#else
+GOOGLE_GLOG_DLL_DECL void (*g_logging_fail_func)() = &logging_fail;
+#endif  // HAVE_ATTRIBUTE
+#else // __clang__
 GOOGLE_GLOG_DLL_DECL void (*g_logging_fail_func)() ATTRIBUTE_NORETURN = &logging_fail;
+#endif
 
+#ifdef __clang__
 void InstallFailureFunction(void (*fail_func)() ATTRIBUTE_NORETURN) {
+#else
+void InstallFailureFunction(void (*fail_func)()) {
+#endif
   g_logging_fail_func = fail_func;
 }
 
