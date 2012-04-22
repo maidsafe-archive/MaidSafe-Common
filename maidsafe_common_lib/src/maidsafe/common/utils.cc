@@ -34,6 +34,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <random>
+#include <mutex>
+#include <chrono>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
