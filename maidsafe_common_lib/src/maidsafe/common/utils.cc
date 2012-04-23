@@ -337,6 +337,10 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
     }
     fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |
                                      std::ios::binary);
+    if (!file_out.good()) {
+      DLOG(ERROR) << "Can't get ofstream created for " << file_path;
+      return false;
+    }
     file_out.write(content.data(), content.size());
     file_out.close();
   }
