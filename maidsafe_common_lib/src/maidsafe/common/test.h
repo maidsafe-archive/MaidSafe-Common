@@ -28,10 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TEST_H_
 #define MAIDSAFE_COMMON_TEST_H_
 
-#if defined(__clang)
-#define GTEST_HAS_TR1_TUPLE=0
-#endif
-
 #ifdef __MSVC__
 #  pragma warning(push, 1)
 #endif

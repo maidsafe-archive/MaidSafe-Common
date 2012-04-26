@@ -1,28 +1,28 @@
-PROJECT(breakpad-client)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.4)
+project(breakpad-client)
+cmake_minimum_required(VERSION 2.8.4)
 
-SET(CMAKE_DEBUG_POSTFIX _d)
+set(CMAKE_DEBUG_POSTFIX _d)
 
-SET(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
-SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_INCLUDE_DIRECTORIES_PROJECT_BEFORE ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-INCLUDE_DIRECTORIES(src)
+include_directories(src)
 
-SET(SOURCES)
+set(SOURCES)
 
-IF(UNIX)
-  ADD_DEFINITIONS(-Wall)
-  SET(SOURCES
+if(UNIX)
+  add_definitions(-Wall)
+  set(SOURCES
     src/client/minidump_file_writer.cc
     src/common/convert_UTF.c
     src/common/string_conversion.cc
   )
-  IF(APPLE)
-    INCLUDE_DIRECTORIES(/Developer/Headers/FlatCarbon)
-    FIND_LIBRARY(COCOA_LIBRARY COCOA)
-    MARK_AS_ADVANCED(COCOA_LIBRARY)
-    SET(EXTRA_LIBS crypto ${COCOA_LIBRARY})
-    SET(SOURCES ${SOURCES}
+  if(APPLE)
+    include_directories(/Developer/Headers/FlatCarbon)
+    find_library(COCOA_LIBRARY COCOA)
+    mark_as_advanced(COCOA_LIBRARY)
+    set(EXTRA_LIBS crypto ${COCOA_LIBRARY})
+    set(SOURCES ${SOURCES}
 	src/client/mac/handler/breakpad_nlist_64.cc
 	src/client/mac/handler/dynamic_images.cc
 	src/client/mac/handler/exception_handler.cc
@@ -38,8 +38,8 @@ IF(UNIX)
 	src/common/mac/macho_walker.cc
 	src/common/mac/string_utilities.cc    
 )
-  ELSE()
-    SET(SOURCES ${SOURCES}
+  else()
+    set(SOURCES ${SOURCES}
       src/client/linux/handler/exception_handler.cc
       #src/client/linux/handler/linux_thread.cc
       #src/client/linux/handler/minidump_generator.cc
@@ -61,9 +61,9 @@ IF(UNIX)
       src/common/linux/elf_symbols_to_module.cc
       src/common/stabs_to_module.cc
     )
-  ENDIF()
-ELSEIF(WIN32)
-  SET(SOURCES
+  endif()
+elseif(WIN32)
+  set(SOURCES
     src/common/windows/guid_string.cc
     src/client/windows/crash_generation/crash_generation_client.cc
     src/client/windows/crash_generation/client_info.cc
@@ -71,23 +71,23 @@ ELSEIF(WIN32)
     src/client/windows/handler/exception_handler.cc
   )
   #ADD_DEFINITIONS(/Zc:wchar_t-)
-  ADD_DEFINITIONS(/D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_UNICODE" /D "UNICODE" /EHsc)
-  SET(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Ot /Oy /GL /D \"NDEBUG\" /MT /Gy /Zi")
-  IF(CMAKE_CL_64)
-    SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /Zi /TP")
-  ELSE()
-    SET(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /ZI /TP")
-  ENDIF()
-ENDIF()
+  add_definitions(/D "WIN32" /D "WIN32_LEAN_AND_MEAN" /D "_UNICODE" /D "UNICODE" /EHsc)
+  set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /Ot /Oy /GL /D \"NDEBUG\" /MT /Gy /Zi")
+  if(CMAKE_CL_64)
+    set(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /Zi /TP")
+  else()
+    set(CMAKE_CXX_FLAGS_DEBUG "/Od /Ot /Oy /D \"_DEBUG\" /D \"DEBUG\" /MTd /c /ZI /TP")
+  endif()
+endif()
 
-ADD_LIBRARY(breakpad STATIC ${SOURCES})
+add_library(breakpad STATIC ${SOURCES})
 
-IF(UNIX AND NOT APPLE)
-  IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    SET_TARGET_PROPERTIES(breakpad PROPERTIES COMPILE_FLAGS "-fPIC -stdlib=libc++ -std=c++11")
-  ELSE()
-    SET_TARGET_PROPERTIES(breakpad PROPERTIES COMPILE_FLAGS "-fPIC -std=c++11")
-  ENDIF()
-ENDIF()
+if(UNIX AND NOT APPLE)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set_target_properties(breakpad PROPERTIES COMPILE_FLAGS "-fPIC -stdlib=libc++ -std=c++11")
+  else()
+    set_target_properties(breakpad PROPERTIES COMPILE_FLAGS "-fPIC -std=c++11")
+  endif()
+endif()
 
-TARGET_LINK_LIBRARIES(breakpad ${EXTRA_LIBS})
+target_link_libraries(breakpad ${EXTRA_LIBS})

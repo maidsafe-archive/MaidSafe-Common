@@ -37,39 +37,40 @@
 #                                                                              #
 #==============================================================================#
 
-ADD_DEFINITIONS(-DSTATICLIB)
-ADD_DEFINITIONS(-DBOOST_FILESYSTEM_NO_DEPRECATED -DBOOST_FILESYSTEM_VERSION=3)
 
-IF(CMAKE_BUILD_TYPE MATCHES "Debug")
-  ADD_DEFINITIONS(-DDEBUG)
-ENDIF()
+add_definitions(-DSTATICLIB)
+add_definitions(-DBOOST_FILESYSTEM_NO_DEPRECATED -DBOOST_FILESYSTEM_VERSION=3)
+
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+  add_definitions(-DDEBUG)
+endif()
 
 # Enable OpenMP if available
-IF(OPENMP_FOUND)
-  ADD_DEFINITIONS(-DMAIDSAFE_OMP_ENABLED)
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-ENDIF()
+if(OPENMP_FOUND)
+  add_definitions(-DMAIDSAFE_OMP_ENABLED)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
-IF(WIN32)
-  ADD_DEFINITIONS(-DWIN32 -D_WIN32 -D__WINDOWS__ -D__WIN32__ -DMAIDSAFE_WIN32)
-ENDIF()
+if(WIN32)
+  add_definitions(-DWIN32 -D_WIN32 -D__WINDOWS__ -D__WIN32__ -DMAIDSAFE_WIN32)
+endif()
 
-IF(MSVC)
-  ADD_DEFINITIONS(-D__MSVC__ -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x501)
-  ADD_DEFINITIONS(-D_CONSOLE -D_UNICODE -DUNICODE -D_BIND_TO_CURRENT_VCLIBS_VERSION=1)
+if(MSVC)
+  add_definitions(-D__MSVC__ -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x501)
+  add_definitions(-D_CONSOLE -D_UNICODE -DUNICODE -D_BIND_TO_CURRENT_VCLIBS_VERSION=1)
 
   # VC11 contains std::tuple with variadic templates emulation macro.
   # _VARIADIC_MAX defaulted to 5 but gtest requires 10.
-  ADD_DEFINITIONS(-D_VARIADIC_MAX=10)
+  add_definitions(-D_VARIADIC_MAX=10)
 
   # prevents std::min() and std::max() to be overwritten
-  ADD_DEFINITIONS(-DNOMINMAX)
+  add_definitions(-DNOMINMAX)
 
   # flag to link to static version of Google Glog
-  ADD_DEFINITIONS(-DGOOGLE_GLOG_DLL_DECL=)
+  add_definitions(-DGOOGLE_GLOG_DLL_DECL=)
 
   # prevents from automatic linking of boost libraries
-  ADD_DEFINITIONS(-DBOOST_ALL_NO_LIB)
+  add_definitions(-DBOOST_ALL_NO_LIB)
 
   # W4 -   Set warning level 4.
   # WX -   Treat warnings as errors.
@@ -77,7 +78,7 @@ IF(MSVC)
   # EHsc - Catches C++ exceptions only and tells the compiler to assume that
   #        extern C functions never throw a C++ exception.
   # TP -   Treat sources as C++
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /MP7 /EHsc /TP")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /MP7 /EHsc /TP")
 
   # C4351 'new behavior: elements of array 'array' will be default initialized'
   # unneeded for new code (only applies to code previously compiled with VS 2005).
@@ -87,7 +88,7 @@ IF(MSVC)
   # Disabled as per advice at http://lists.boost.org/boost-users/2009/01/44368.php
   # C4996 'Function call with parameters that may be unsafe' caused by boost signals2
   # Disabled as per advice at https://svn.boost.org/trac/boost/wiki/Guidelines/WarningsGuidelines
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4351 /wd4503 /wd4512 /wd4996")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4351 /wd4503 /wd4512 /wd4996")
 
   # O2 - Optimise code for maximum speed.  Implies the following:
   #      Og (global optimisations)
@@ -101,7 +102,7 @@ IF(MSVC)
   #          packaged functions)
   # GL - Whole program optimisation
   # MT - Use the multithread, static version of the C run-time library.
-  SET(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /D \"NDEBUG\" /MT")
+  set(CMAKE_CXX_FLAGS_RELEASE "/O2 /GL /D \"NDEBUG\" /MT")
 
   # Zi -   Produce a program database (.pdb) that contains type information and
   #        symbolic debugging information.
@@ -109,13 +110,13 @@ IF(MSVC)
   # RTC1 - Enables stack frame run-time error checking and checking for
   #        unintialised variables.
   # MTd -  Use the debug multithread, static version of the C run-time library.
-  SET(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od /D \"_DEBUG\" /D \"DEBUG\" /RTC1 /MTd")
-  SET(CMAKE_CXX_FLAGS_MINSIZEREL "/MT")
-  SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT")
+  set(CMAKE_CXX_FLAGS_DEBUG "/Zi /Od /D \"_DEBUG\" /D \"DEBUG\" /RTC1 /MTd")
+  set(CMAKE_CXX_FLAGS_MINSIZEREL "/MT")
+  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MT")
 
-  SET_TARGET_PROPERTIES(${ALL_LIBRARIES} PROPERTIES STATIC_LIBRARY_FLAGS_RELEASE "/LTCG")
+  set_target_properties(${ALL_LIBRARIES} PROPERTIES STATIC_LIBRARY_FLAGS_RELEASE "/LTCG")
 
-  SET_TARGET_PROPERTIES(${ALL_EXECUTABLES} PROPERTIES
+  set_target_properties(${ALL_EXECUTABLES} PROPERTIES
                           LINK_FLAGS_RELEASE "/OPT:REF /OPT:ICF /LTCG /INCREMENTAL:NO ${LINKER_LIBS_DIRS_RELEASE}"
                           LINK_FLAGS_DEBUG "${LINKER_LIBS_DIRS_DEBUG}"
                           LINK_FLAGS_RELWITHDEBINFO "${LINKER_LIBS_DIRS_DEBUG} /LTCG /INCREMENTAL:NO"
@@ -123,54 +124,52 @@ IF(MSVC)
 
   # Given a link dir of "a/b/c", MSVC adds "a/b/c/" AND "a/b/c/CMAKE_BUILD_TYPE" as link dirs, so we
   # can't just use "LINK_DIRECTORIES" as some Google debug libs have the same name as the release version.
-  FOREACH(LIBS_DIR ${LIBS_DIRS})
-    STRING(REPLACE "\\" "\\\\" LIBS_DIR ${LIBS_DIR})
-    SET(LINKER_LIBS_DIRS_RELEASE "${LINKER_LIBS_DIRS_RELEASE} /LIBPATH:\"${LIBS_DIR}\"")
-  ENDFOREACH()
-  FOREACH(LIBS_DIR_DEBUG ${LIBS_DIRS_DEBUG})
-    STRING(REPLACE "\\" "\\\\" LIBS_DIR_DEBUG ${LIBS_DIR_DEBUG})
-    SET(LINKER_LIBS_DIRS_DEBUG "${LINKER_LIBS_DIRS_DEBUG} /LIBPATH:\"${LIBS_DIR_DEBUG}\"")
-  ENDFOREACH()
-ELSEIF(UNIX)
-  IF(DEFINED COVERAGE)
-    IF(${COVERAGE})
-      SET(COVERAGE_FLAGS "-pg -fprofile-arcs -ftest-coverage")
-    ELSE()
-      SET(COVERAGE_FLAGS)
-    ENDIF()
-  ELSE()
-    IF($ENV{COVERAGE})
-      SET(COVERAGE_FLAGS "-pg -fprofile-arcs -ftest-coverage")
-      SET(COVERAGE ON)
-    ELSE()
-      SET(COVERAGE_FLAGS)
-    ENDIF()
-  ENDIF()
-  IF(${COVERAGE})
-    MESSAGE("-- Coverage ON")
-    MESSAGE("================================================================================")
-  ELSE()
-    MESSAGE("-- Coverage OFF.  To enable, do:   export COVERAGE=ON   and re-run CMake")
-    MESSAGE("================================================================================")
-  ENDIF()
-  SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 -fno-inline -fno-eliminate-unused-debug-types -g3 -ggdb ${COVERAGE_FLAGS}")
-  IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    ADD_DEFINITIONS(-DGTEST_USE_OWN_TR1_TUPLE=1)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ldl -lcxxrt")
-    include_directories("/usr/local/include/c++/v1")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++")
-  ELSE()
-     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-  ENDIF()
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wunused-parameter -Wno-system-headers -Wno-deprecated")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wwrite-strings -Wundef -std=c++11 -D_FORTIFY_SOURCE=2 -D_FILE_OFFSET_BITS=64")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-equal -Wstrict-overflow=5 -Wredundant-decls")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -pedantic -pedantic-errors -Weffc++")
-  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -ggdb ${COVERAGE_FLAGS}")
-  SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
-  SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${COVERAGE_FLAGS}")
-  IF(APPLE)
-    ADD_DEFINITIONS(-DMAIDSAFE_APPLE) # -DBSD)
+  foreach(LIBS_DIR ${LIBS_DIRS})
+    string(REPLACE "\\" "\\\\" LIBS_DIR ${LIBS_DIR})
+    set(LINKER_LIBS_DIRS_RELEASE "${LINKER_LIBS_DIRS_RELEASE} /LIBPATH:\"${LIBS_DIR}\"")
+  endforeach()
+  foreach(LIBS_DIR_DEBUG ${LIBS_DIRS_DEBUG})
+    string(REPLACE "\\" "\\\\" LIBS_DIR_DEBUG ${LIBS_DIR_DEBUG})
+    set(LINKER_LIBS_DIRS_DEBUG "${LINKER_LIBS_DIRS_DEBUG} /LIBPATH:\"${LIBS_DIR_DEBUG}\"")
+  endforeach()
+elseif(UNIX)
+  if(DEFINED COVERAGE)
+    if(${COVERAGE})
+      set(COVERAGE_FLAGS "-pg -fprofile-arcs -ftest-coverage")
+    else()
+      set(COVERAGE_FLAGS)
+    endif()
+  else()
+    if($ENV{COVERAGE})
+      set(COVERAGE_FLAGS "-pg -fprofile-arcs -ftest-coverage")
+      set(COVERAGE ON)
+    else()
+      set(COVERAGE_FLAGS)
+    endif()
+  endif()
+  if(${COVERAGE})
+    message("-- Coverage ON")
+    message("================================================================================")
+  else()
+    message("-- Coverage OFF.  To enable, do:   export COVERAGE=ON   and re-run CMake")
+    message("================================================================================")
+  endif()
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g -O0 -fno-inline -fno-eliminate-unused-debug-types -g3 -ggdb ${COVERAGE_FLAGS}")
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -stdlib=libc++ -ldl -lcxxrt")
+  else()
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+  endif()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -Wextra -Wunused-parameter -Wno-system-headers -Wno-deprecated")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wwrite-strings -Wundef -std=c++11 -D_FORTIFY_SOURCE=2 -D_FILE_OFFSET_BITS=64")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-equal -Wstrict-overflow=5 -Wredundant-decls")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -pedantic -pedantic-errors -Weffc++")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -ggdb ${COVERAGE_FLAGS}")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2")
+  set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${COVERAGE_FLAGS}")
+  if(APPLE)
+    add_definitions(-DMAIDSAFE_APPLE) # -DBSD)
 #    SET(CMAKE_AR "/usr/bin/libtool")
 #    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_DARWIN_C_SOURCE")
 #    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -finline-functions -funswitch-loops -fgcse-after-reload -ftree-vectorize -D__FreeBSD__=10")
@@ -178,8 +177,8 @@ ELSEIF(UNIX)
 #    IF(${COVERAGE})
 #      SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} -lgcov")
 #    ENDIF()
-  ELSE()
-    ADD_DEFINITIONS(-DMAIDSAFE_LINUX)
-  ENDIF()
-  UNSET(COVERAGE CACHE)
-ENDIF()
+  else()
+    add_definitions(-DMAIDSAFE_LINUX)
+  endif()
+  unset(COVERAGE CACHE)
+endif()
