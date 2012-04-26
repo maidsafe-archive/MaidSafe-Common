@@ -76,9 +76,6 @@ endif()
 list(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/eccrypto.cpp")
 list(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/eprecomp.cpp")
 list(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/cryptlib_bds.cpp")
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  list(REMOVE_ITEM cryptopp_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/wake.cpp")
-endif()
 
 
 # Set up test
@@ -136,8 +133,9 @@ endif()
 target_link_libraries(cryptest cryptopp_static)
 
 if(APPLE)
-  add_definitions(-DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_AESNI)
-  set_target_properties(cryptopp_static PROPERTIES COMPILE_FLAGS "-O2 -fPIC -w -finline-functions")
+#  add_definitions(-DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_AESNI)
+#  set_target_properties(cryptopp_static PROPERTIES COMPILE_FLAGS "-O2 -fPIC -w -finline-functions")
+  set_target_properties(cryptopp_static PROPERTIES COMPILE_FLAGS "-O2 -w -finline-functions")
 endif()
 
 if(UNIX)

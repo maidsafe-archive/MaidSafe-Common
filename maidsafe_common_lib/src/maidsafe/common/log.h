@@ -151,10 +151,17 @@ namespace google {
 #define MAIDSAFE_LOG(project, severity) COMPACT_GOOGLE_LOG_ ## severity(\
         project).stream()
 #define LOG(severity) MAIDSAFE_LOG(common, severity)
+
+class Nullstream {
+ public:
+  Nullstream() {}
+  template<typename T> Nullstream& operator<<(T const&) { return *this; }
+};
+
 #ifndef NDEBUG
 #  define DLOG(severity) LOG(severity)
 #else
-#  define DLOG(severity) true ? (void) 0 : google::NullStream()
+#  define DLOG(severity) google::Nullstream()
 #endif
 }  // google
 
