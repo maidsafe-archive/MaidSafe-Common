@@ -154,7 +154,7 @@ namespace google {
 #ifndef NDEBUG
 #  define DLOG(severity) LOG(severity)
 #else
-#  define DLOG(severity) google::NullStream()
+#  define DLOG(severity) true ? (void) 0 : google::NullStream()
 #endif
 }  // google
 
