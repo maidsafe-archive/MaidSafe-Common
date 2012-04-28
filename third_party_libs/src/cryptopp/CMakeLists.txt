@@ -141,7 +141,7 @@ endif()
 if(UNIX)
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     include_directories("/usr/local/include/c++/v1") 
-    add_definitions(-DCRYPTOPP_DISABLE_ASM)
+    add_definitions(-DCRYPTOPP_DISABLE_ASM -DCRYPTOPP_DISABLE_UNCAUGHT_EXCEPTION )
     set_target_properties(cryptopp_static PROPERTIES
                             COMPILE_FLAGS "-Wno-tautological-compare -pipe -std=c++11 -stdlib=libc++ -Wno-c++11-narrowing")
     set_target_properties(cryptest PROPERTIES

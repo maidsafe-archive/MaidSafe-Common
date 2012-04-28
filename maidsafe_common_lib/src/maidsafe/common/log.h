@@ -24,11 +24,22 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+// compile away DLOG and LOG statements
+class NullStream {
+    public:
+    NullStream() { }
+    template<typename T> NullStream& operator<<(T const&) { return *this; }
+};
 
 
+//#if defined(NDEBUG)
+#define LOG(level) NullStream()
+#define DLOG(level) NullStream()
+//#endif
 #ifndef MAIDSAFE_COMMON_LOG_H_
 #define MAIDSAFE_COMMON_LOG_H_
 
+/*
 #include <string>
 // For MSVC, we need to include windows.h which in turn includes WinGDI.h
 // which defines ERROR (which conflicts with Glog's ERROR definition)
@@ -151,17 +162,10 @@ namespace google {
 #define MAIDSAFE_LOG(project, severity) COMPACT_GOOGLE_LOG_ ## severity(\
         project).stream()
 #define LOG(severity) MAIDSAFE_LOG(common, severity)
-
-class Nullstream {
- public:
-  Nullstream() {}
-  template<typename T> Nullstream& operator<<(T const&) { return *this; }
-};
-
 #ifndef NDEBUG
 #  define DLOG(severity) LOG(severity)
 #else
-#  define DLOG(severity) google::Nullstream()
+#  define DLOG(severity) google::NullStream()
 #endif
 }  // google
 
@@ -196,5 +200,5 @@ extern int FLAGS_ms_logging_sigmoid_storage_director;
 extern int FLAGS_ms_logging_sigmoid_core;
 extern int FLAGS_ms_logging_sigmoid_pro;
 
-
+*/
 #endif  // MAIDSAFE_COMMON_LOG_H_

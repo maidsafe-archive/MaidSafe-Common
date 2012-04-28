@@ -62,8 +62,7 @@ config_compiler_and_linker()  # from ${gtest_dir}/cmake/internal_utils.cmake
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   add_definitions(-DGTEST_USE_OWN_TR1_TUPLE=1)
-  include_directories("/usr/local/include/c++/v1")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -ldl -lcxxrt")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -std=c++11")
 endif()
 
 # Adds Google Mock's and Google Test's header directories to the search path.
