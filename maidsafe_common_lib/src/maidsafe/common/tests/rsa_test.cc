@@ -79,7 +79,7 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
     EXPECT_TRUE(CheckRoundtrip(public_key, keys_.private_key));
     EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
   });
-  RunInParallel(f);
+  RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, FUNC_ValidateKeys) {

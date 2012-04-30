@@ -24,7 +24,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
 TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-/*
+
 #include "maidsafe/common/log.h"
 #include <string>
 #include "boost/filesystem/path.hpp"
@@ -98,4 +98,3 @@ int FLAGS_ms_logging_crash_utils = 3;
 int FLAGS_ms_logging_sigmoid_storage_director = 3;
 int FLAGS_ms_logging_sigmoid_core = 3;
 int FLAGS_ms_logging_sigmoid_pro = 3;
-*/

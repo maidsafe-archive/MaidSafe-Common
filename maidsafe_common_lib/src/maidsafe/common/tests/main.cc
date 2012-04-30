@@ -31,26 +31,26 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char **argv) {
   // Initialising logging
-//   maidsafe::InitLogging(argv[0]);
-// 
-//   // Choose to direct output to stderr instead of logfiles.
-//   FLAGS_logtostderr = true;
-// 
-//   // Choose to direct output to stderr as well as to logfiles.
-//   FLAGS_alsologtostderr = false;
-// 
-//   // Log messages at or above this level. Severity levels are INFO, WARNING,
-//   // ERROR, and FATAL (0 to 3 respectively).
-//   FLAGS_ms_logging_common = google::FATAL;
-// 
-//   // Prepend the log prefix to the start of each log line
-//   FLAGS_log_prefix = true;
-// 
-//   // Logfiles are written into this directory instead of the default logging one
-// //  FLAGS_log_dir = boost::filesystem::temp_directory_path().string();
-// 
-//   // Show all VLOG(m) messages for m <= this.
-//   FLAGS_v = 0;
+  maidsafe::InitLogging(argv[0]);
+
+  // Choose to direct output to stderr instead of logfiles.
+  FLAGS_logtostderr = true;
+
+  // Choose to direct output to stderr as well as to logfiles.
+  FLAGS_alsologtostderr = false;
+
+  // Log messages at or above this level. Severity levels are INFO, WARNING,
+  // ERROR, and FATAL (0 to 3 respectively).
+  FLAGS_ms_logging_common = google::FATAL;
+
+  // Prepend the log prefix to the start of each log line
+  FLAGS_log_prefix = true;
+
+  // Logfiles are written into this directory instead of the default logging one
+//  FLAGS_log_dir = boost::filesystem::temp_directory_path().string();
+
+  // Show all VLOG(m) messages for m <= this.
+  FLAGS_v = 0;
 
   testing::InitGoogleTest(&argc, argv);
   int result(RUN_ALL_TESTS());

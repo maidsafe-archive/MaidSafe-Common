@@ -78,7 +78,6 @@ void DecodeKey(const std::string &key, CryptoPP::BufferedTransformation *bt) {
 
 typedef std::unique_ptr<int, std::function<void(int*)>> LoggingDisabler;  // NOLINT (Fraser)
 
-/*
 LoggingDisabler DisableLogging() {
   int *ms_logging_common_before(new int);
   *ms_logging_common_before = FLAGS_ms_logging_common;
@@ -90,11 +89,10 @@ LoggingDisabler DisableLogging() {
                           });
 }
 
-*/
 bool ParseSafeEncrypt(const std::string &serialised_safe_encrypt,
                       SafeEncrypt *safe_encrypt) {
 #ifdef DEBUG
-//  LoggingDisabler temp_log_disable(DisableLogging());
+  LoggingDisabler temp_log_disable(DisableLogging());
 #endif
   return safe_encrypt->ParseFromString(serialised_safe_encrypt);
 }
