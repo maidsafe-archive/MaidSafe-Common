@@ -22,8 +22,12 @@ message("=======================================================================
 project(common)
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 include_directories("${PROJECT_SOURCE_DIR}/include")
-
-
+include_directories("${PROJECT_SOURCE_DIR}/src")
+include_directories("${CMAKE_SOURCE_DIR}/src/third_party_libs/")  # cryptopp
+include_directories("${CMAKE_SOURCE_DIR}/src/third_party_libs/protobuf/src")  # protobuf
+include_directories("${CMAKE_SOURCE_DIR}/src/third_party_libs/googlemock/gtest/include")
+include_directories("${CMAKE_SOURCE_DIR}/src/third_party_libs/googlemock/include")
+include_directories("${CMAKE_SOURCE_DIR}/src/third_party_libs/glog/src")
 ###################################################################################################
 # Set up all files as GLOBs                                                                       #
 ###################################################################################################
@@ -75,9 +79,9 @@ ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
 ms_add_executable(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 ms_add_executable(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
-target_link_libraries(maidsafe_common cryptopp protobuf glog date_time filesystem serialization system thread ${SYS_LIB})
+target_link_libraries(maidsafe_common cryptopp protobuf  date_time filesystem serialization system thread ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common gtest)
-target_link_libraries(TESTboost maidsafe_common glog unit_test_framework gtest ${SYS_LIB})
+target_link_libraries(TESTboost maidsafe_common  gtest ${SYS_LIB})
 
 
 ###################################################################################################
