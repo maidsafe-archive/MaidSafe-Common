@@ -77,11 +77,11 @@ source_group("common boost tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST
 ###################################################################################################
 ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
 ms_add_executable(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
-ms_add_executable(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
+#ms_add_executable(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
 target_link_libraries(maidsafe_common cryptopp protobuf glog  boost_thread-static  boost_date_time-static  boost_filesystem-static boost_serialization-static  boost_system-static ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common gtest)
-target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
+#target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 
 
 ###################################################################################################
@@ -100,7 +100,7 @@ list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_enc
 list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.proto")
 add_style_test(${STYLE_TESTS})
 add_gtests(TESTcommon)
-add_gtests(TESTboost)
+#add_gtests(TESTboost)
 
 test_summary_output()
 
