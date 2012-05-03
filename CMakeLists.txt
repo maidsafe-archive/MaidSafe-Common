@@ -79,9 +79,9 @@ ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
 ms_add_executable(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 ms_add_executable(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
-target_link_libraries(maidsafe_common cryptopp protobuf  date_time filesystem serialization system thread ${SYS_LIB})
+target_link_libraries(maidsafe_common cryptopp protobuf glog  boost_thread-static  boost_date_time-static  boost_filesystem-static boost_serialization-static  boost_system-static ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common gtest)
-target_link_libraries(TESTboost maidsafe_common  gtest ${SYS_LIB})
+target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 
 
 ###################################################################################################
