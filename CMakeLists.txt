@@ -17,10 +17,9 @@ set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
-message("================================================================================\n")
-
 project(common)
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
+
 
 ###################################################################################################
 # Set up all files as GLOBs                                                                       #
@@ -73,8 +72,18 @@ ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
 ms_add_executable(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
 #ms_add_executable(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
-target_link_libraries(maidsafe_common cryptopp protobuf glog gmock gtest boost_date_time-static boost_filesystem-static boost_serialization-static boost_system-static boost_thread-static
- ${SYS_LIB})
+target_link_libraries(maidsafe_common
+                        cryptopp
+                        protobuf
+                        glog
+                        gmock
+                        gtest
+                        boost_date_time-static
+                        boost_filesystem-static
+                        boost_serialization-static
+                        boost_system-static
+                        boost_thread-static
+                        ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common)
 #target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 
