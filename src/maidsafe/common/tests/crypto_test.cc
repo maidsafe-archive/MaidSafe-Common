@@ -247,15 +247,10 @@ TEST(CryptoTest, BEH_Hash) {
     }
 
     // Check using invalid filename
-    EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("/")).empty());
     EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("NonExistent")).empty());
-    EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("/")).empty());
     EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("NonExistent")).empty());
-    EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("/")).empty());
     EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("NonExistent")).empty());
-    EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("/")).empty());
     EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("NonExistent")).empty());
-    EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("/")).empty());
     EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("NonExistent")).empty());
   }
 }
