@@ -18,17 +18,15 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
 cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
 project(common)
+
+set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/common/*.proto")
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
 
 ###################################################################################################
 # Set up all files as GLOBs                                                                       #
 ###################################################################################################
-set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-file(GLOB PROTO_FILES_COMMON RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/common/*.proto")
-set(PROTO_FILES "${PROTO_FILES_COMMON}")
-include(maidsafe_run_protoc)
-
 file(GLOB SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.cc")
 file(GLOB HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.h")
 file(GLOB PROTO_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.proto")
@@ -86,6 +84,7 @@ target_link_libraries(maidsafe_common
                         ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common)
 #target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
+rename_outdated_built_exes()
 
 
 ###################################################################################################
@@ -132,23 +131,6 @@ add_memcheck_ignore(CrypoppTest.BEH_RSA_PSS)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_OAEP)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_PKCS1_1_5)
 
-
-###################################################################################################
-# Install details                                                                                 #
-###################################################################################################
-rename_outdated_built_exes()
-
-#file(STRINGS ${PROJECT_SOURCE_DIR}/src/maidsafe/common/version.h MAIDSAFE_COMMON_VERSION
-#       REGEX "VERSION [0-9]+$")
-#string(REGEX MATCH "[0-9]+$" MAIDSAFE_COMMON_VERSION ${MAIDSAFE_COMMON_VERSION})
-
-#ms_install_libs(maidsafe_common)
-#list(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
-#list(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt_pb.h")
-#ms_install_headers(common ${HEADER_FILES_COMMON_DIR})
-
-# install(FILES ${EXPORT_BOOST_CMAKE} DESTINATION share/maidsafe)
-#ms_install_export()
 
 find_file(CONINUOUS_SCRIPT_CMAKE maidsafe_dashboard.cmake PATHS ${CMAKE_MODULE_PATH})
 if(CONINUOUS_SCRIPT_CMAKE)
