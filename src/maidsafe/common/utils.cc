@@ -67,7 +67,7 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/platform_config.h"
+
 
 namespace maidsafe {
 

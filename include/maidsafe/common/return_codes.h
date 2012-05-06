@@ -14,12 +14,6 @@
 #ifndef MAIDSAFE_COMMON_RETURN_CODES_H_
 #define MAIDSAFE_COMMON_RETURN_CODES_H_
 
-#include "maidsafe/common/version.h"
-
-#if MAIDSAFE_COMMON_VERSION != 1200
-# error This API is not compatible with the installed library.\
-Please update the library.
-#endif
 
 namespace maidsafe {
 

@@ -52,7 +52,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/thread/mutex.hpp"
 
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/platform_config.h"
 #include "maidsafe/common/return_codes.h"
 #include "maidsafe/common/utils.h"
 
