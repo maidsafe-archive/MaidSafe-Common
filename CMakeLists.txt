@@ -67,8 +67,8 @@ source_group("common boost tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST
 # Define MaidSafe libraries and executables                                                       #
 ###################################################################################################
 ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
-ms_add_executable(TESTcommon Tests ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
-#ms_add_executable(TESTboost Tests ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
+ms_add_executable(TESTcommon "Tests/Common" ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
+#ms_add_executable(TESTboost "Tests/Common" ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 
 target_link_libraries(maidsafe_common
                         cryptopp
