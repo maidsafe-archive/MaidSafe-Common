@@ -181,6 +181,7 @@ fs::path GetUserAppDir();
 // uses kCompanyName and kApplicationName
 fs::path GetSystemAppDir();
 
+uint16_t Concurrency();
 // Takes a MaidSafe version as an int and returns the string form, e.g. 901
 // returns "v0.09.01".
 std::string GetMaidSafeVersion(int version,

@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <thread>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -361,7 +362,7 @@ fs::path GetHomeDir() {
   std::string env_home_drive(getenv("HOMEDRIVE"));
   if ((!env_home2.empty()) && (!env_home_drive.empty()))
     return fs::path(env_home_drive + env_home2);
-#elif defined(MAIDSAFE_APPLE) || defined(MAIDSAFE_POSIX)
+#elif defined(MAIDSAFE_APPLE) || defined(MAIDSAFE_LINUX)
   struct passwd *p = getpwuid(getuid());  // NOLINT (dirvine)
   std::string home(p->pw_dir);
   if (!home.empty())
@@ -385,7 +386,7 @@ fs::path GetUserAppDir() {
 #elif defined(MAIDSAFE_APPLE)
   return kHomeDir / "/Library/Application Support/" / kCompanyName /
          kApplicationName;
-#elif defined(MAIDSAFE_POSIX)
+#elif defined(MAIDSAFE_LINUX)
   return kHomeDir / ".config" / kCompanyName / kApplicationName;
 #else
   DLOG(ERROR) << "Cannot deduce user application directory path";
@@ -399,12 +400,16 @@ fs::path GetSystemAppDir() {
 #elif defined(MAIDSAFE_APPLE)
   return fs::path("/Library/Application Support/") / kCompanyName /
          kApplicationName;
-#elif defined(MAIDSAFE_POSIX)
+#elif defined(MAIDSAFE_LINUX)
   return fs::path("/usr/share/") / kCompanyName / kApplicationName;
 #else
   DLOG(ERROR) << "Cannot deduce system wide application directory path";
   return fs::path();
 #endif
+}
+
+uint16_t Concurrency() {
+  return std::max(std::thread::hardware_concurrency(), 2U);
 }
 
 std::string GetMaidSafeVersion(int version,

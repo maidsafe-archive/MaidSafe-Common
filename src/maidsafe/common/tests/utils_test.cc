@@ -489,6 +489,9 @@ TEST(UtilsTest, BEH_AppDir) {
   EXPECT_TRUE(system.find(home) == std::string::npos);
 }
 
+TEST(UtilsTest, BEH_Concurrency) {
+  EXPECT_TRUE(Concurrency() >= 2);
+}
 
 namespace {
 
