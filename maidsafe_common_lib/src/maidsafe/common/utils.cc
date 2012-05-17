@@ -302,6 +302,26 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
 
   try {
     uintmax_t file_size(fs::file_size(file_path));
+    if (file_size > std::numeric_limits<unsigned int>::max()) {
+      DLOG(ERROR) << "Failed to read file " << file_path << ": File size "
+                  << file_size << " too large (over "
+                  << std::numeric_limits<unsigned int>::max() << ")";
+      return false;
+    }
+
+    uint16_t i(0), seed(10 + RandomUint32() % 10);
+
+    while ((i < 5) && (file_size == 0U)) {
+      Sleep(boost::posix_time::milliseconds(seed));
+      file_size = fs::file_size(file_path);
+      ++i;
+      DLOG(WARNING) << "\n\nFile size was zero, get a new read after sleep "
+                    << seed << " milliseconds, with new read file size is "
+                    << file_size << " , during the " << i
+                    << " times of attempt \n\n";
+      seed *= 2;
+    }
+
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
     if (!file_in.good()) {
       DLOG(ERROR) << "Failed to read file " << file_path << ": Bad filestream";
@@ -311,12 +331,7 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
       content->clear();
       return true;
     }
-    if (file_size > std::numeric_limits<unsigned int>::max()) {
-      DLOG(ERROR) << "Failed to read file " << file_path << ": File size "
-                  << file_size << " too large (over "
-                  << std::numeric_limits<unsigned int>::max() << ")";
-      return false;
-    }
+
     content->resize(static_cast<unsigned int>(file_size));
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
