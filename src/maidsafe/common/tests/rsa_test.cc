@@ -56,7 +56,7 @@ class RSATest : public testing::Test {
   void RunInParallel(std::function<void()>, int num_threads = 6);
 };
 
-void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
+void RSATest::RunInParallel(std::function<void()> /*f*/, int /*num_threads*/) {
   //TODO(divrine) FIXME
 //   std::vector<std::future<void>> vec;
 //   for (int i = 0; i < num_threads; ++i)

@@ -423,7 +423,7 @@ fs::path GetSystemAppDir() {
 #endif
 }
 
-uint16_t Concurrency() {
+unsigned int Concurrency() {
   return std::max(std::thread::hardware_concurrency(), 2U);
 }
 
