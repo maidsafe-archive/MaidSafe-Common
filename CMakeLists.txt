@@ -53,14 +53,14 @@ set(TEST_MAIN "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/main.cc")
 file(GLOB SOURCE_FILES_COMMON_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/*.cc")
 file(GLOB HEADER_FILES_COMMON_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/*.h")
 set(ALL_FILES_COMMON_TESTS_DIR ${SOURCE_FILES_COMMON_TESTS_DIR} ${HEADER_FILES_COMMON_TESTS_DIR})
-source_group("common tests Source Files" FILES ${SOURCE_FILES_COMMON_TESTS_DIR})
-source_group("common tests Header Files" FILES ${HEADER_FILES_COMMON_TESTS_DIR})
+source_group("Tests Source Files" FILES ${SOURCE_FILES_COMMON_TESTS_DIR})
+source_group("Tests Header Files" FILES ${HEADER_FILES_COMMON_TESTS_DIR})
 
 file(GLOB SOURCE_FILES_COMMON_BOOST_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/boost/*.cc")
 file(GLOB HEADER_FILES_COMMON_BOOST_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/boost/*.h")
 set(ALL_FILES_COMMON_BOOST_TESTS_DIR ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR} ${HEADER_FILES_COMMON_BOOST_TESTS_DIR})
-source_group("common boost tests Source Files" FILES ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR})
-source_group("common boost tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST_TESTS_DIR})
+source_group("Boost Tests Source Files" FILES ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR})
+source_group("Boost Tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST_TESTS_DIR})
 
 
 ###################################################################################################
