@@ -76,11 +76,11 @@ target_link_libraries(maidsafe_common
                         glog
                         gmock
                         gtest
-                        boost_date_time-static
-                        boost_filesystem-static
-                        boost_serialization-static
-                        boost_system-static
-                        boost_thread-static
+                        ${BoostDateTimeLibs}
+                        ${BoostFilesystemLibs}
+                        ${BoostSerializationLibs}
+                        ${BoostSystemLibs}
+                        ${BoostThreadLibs}
                         ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common)
 #target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
