@@ -105,6 +105,7 @@ add_style_test(${STYLE_TESTS})
 add_gtests(TESTcommon)
 #add_gtests(TESTboost)
 
+add_project_experimental()
 test_summary_output()
 
 # Remove files from coverage stats
