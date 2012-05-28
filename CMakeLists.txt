@@ -81,6 +81,7 @@ target_link_libraries(maidsafe_common
                         ${BoostSerializationLibs}
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
+                        ${BoostRegexLibs}
                         ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common)
 #target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
