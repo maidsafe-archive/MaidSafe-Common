@@ -138,3 +138,5 @@ if(CONINUOUS_SCRIPT_CMAKE)
   configure_file(${CONINUOUS_SCRIPT_CMAKE} ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake @ONLY)
   install(FILES ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake DESTINATION share/maidsafe/cmake_modules)
 endif()
+
+add_subdirectory(include/maidsafe/common/detail)

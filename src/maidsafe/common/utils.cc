@@ -472,20 +472,10 @@ TestPath CreateTestPath(std::string test_prefix) {
           boost::system::error_code ec;
           // Can't use LOG in case glog has been unloaded already
           if (fs::remove_all(*delete_path, ec) == 0) {
-#ifndef NDEBUG
-            if (FLAGS_ms_logging_common < 2) {
-              std::cerr << "Test directory " << debug << " already deleted."
-                        << std::endl;
-            }
-#endif
+
           }
           if (ec.value() != 0) {
-#ifndef NDEBUG
-            if (FLAGS_ms_logging_common < 3) {
-              std::cerr << "Failed to clean up test directory " << debug
-                        << "  (" << ec.message() << ")" << std::endl;
-            }
-#endif
+
           }
         }
         delete delete_path;
