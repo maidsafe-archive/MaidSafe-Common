@@ -132,10 +132,3 @@ add_memcheck_ignore(CrypoppTest.BEH_SHA)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_PSS)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_OAEP)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_PKCS1_1_5)
-
-
-find_file(CONINUOUS_SCRIPT_CMAKE maidsafe_dashboard.cmake PATHS ${CMAKE_MODULE_PATH})
-if(CONINUOUS_SCRIPT_CMAKE)
-  configure_file(${CONINUOUS_SCRIPT_CMAKE} ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake @ONLY)
-  install(FILES ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake DESTINATION share/maidsafe/cmake_modules)
-endif()
