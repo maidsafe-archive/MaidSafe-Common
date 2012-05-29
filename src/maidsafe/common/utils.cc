@@ -457,7 +457,7 @@ TestPath CreateTestPath(std::string test_prefix) {
 
   if (test_prefix.substr(0, 13) != "MaidSafe_Test" &&
       test_prefix.substr(0, 12) != "Sigmoid_Test") {
-    LOG(WARNING) << "Test prefix should preferably be \"MaidSafe_Test<optional"
+    DLOG(WARNING) << "Test prefix should preferably be \"MaidSafe_Test<optional"
                  << " test name>\" or \"Sigmoid_Test<optional test name>\".";
   }
 
@@ -481,17 +481,17 @@ TestPath CreateTestPath(std::string test_prefix) {
         delete delete_path;
       });
   if (error_code) {
-    LOG(WARNING) << "Can't get a temp directory: " << error_code.message();
+    DLOG(WARNING) << "Can't get a temp directory: " << error_code.message();
     return TestPath(new fs::path);
   }
 
   if (!fs::create_directories(*test_path, error_code) || error_code) {
-    LOG(WARNING) << "Failed to create test directory " << *test_path
+    DLOG(WARNING) << "Failed to create test directory " << *test_path
                  << "  (error message: " << error_code.message() << ")";
     return TestPath(new fs::path);
   }
 
-  LOG(INFO) << "Created test directory " << *test_path;
+  DLOG(INFO) << "Created test directory " << *test_path;
   return test_path_ptr;
 }
 

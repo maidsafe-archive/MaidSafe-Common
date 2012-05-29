@@ -35,9 +35,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <iostream>
 #include <cstdarg>
-#include <chrono>
+#include <memory>
 
-class LogWorker;
+#include "maidsafe/common/active.h"
+
 // compile away DLOG and LOG statements
 class NullStream {
     public:
@@ -45,38 +46,33 @@ class NullStream {
     template<typename T> NullStream& operator<<(T const&) { return *this; }
 };
 
-
 const int INFO = 1, WARNING = 2, ERROR = 3, FATAL = 4;
 
-#define G2_LOG_INFO  g2::internal::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"INFO")
-#define G2_LOG_WARNING  g2::internal::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"WARNING")
-#define G2_LOG_ERROR  g2::internal::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"ERROR")
-#define G2_LOG_FATAL  g2::internal::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"FATAL")
+#define LOG_INFO  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"INFO")
+#define LOG_WARNING  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"WARNING")
+#define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"ERROR")
+#define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"FATAL")
 
-#ifdef DEBUG
-#define LOG(level) G2_LOG_##level.messageStream()
-#define DLOG(level) G2_LOG_##level.messageStream()
+#ifndef NDEBUG
+#define DLOG(_) NullStream()
 #else
-#define LOG(level) NullStream()
-#define DLOG(level) NullStream()
+#define DLOG(level) LOG_##level.messageStream()
 #endif
 
 namespace maidsafe {
-  
 namespace log {
 
-void initializeLogging(LogWorker *logger);
-
-namespace internal {
 typedef const std::string& LogEntry;
 
 class LogMessage {
  public:
-  LogMessage(const std::string &file, const int line, const std::string& function_, const std::string &level);
-  virtual ~LogMessage(); // at destruction will flush the message
+  LogMessage(const std::string &file,
+             const int line,
+             const std::string& function,
+             const std::string &level);
+  ~LogMessage();
   std::ostringstream& messageStream(){return stream_;}
-  void messageSave(const char *printf_like_message, ...);
- protected:
+ private:
   const std::string file_;
   const int line_;
   const std::string function_;
@@ -85,7 +81,21 @@ class LogMessage {
   std::string log_entry_;
 };
 
-}  // internal
+class Logging {
+ public:
+  Logging();
+  void Send(std::function<void> function);
+  void SetLogLevel(std::string log_level) { log_levels_ = log_level; }
+  static std::string LogLevel() {return log_levels_; }
+  void SetFilter(std::string filter) { filter_ = filter; }
+  static std::string Filter() { return filter_; }
+ private:
+  std::unique_ptr<maidsafe::Active> background_;
+  static std::string log_levels_;
+  static std::string filter_;
+};
+
+
 }  // log
 }  // maidsafe
 
