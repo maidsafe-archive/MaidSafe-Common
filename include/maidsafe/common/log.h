@@ -44,6 +44,7 @@ class NullStream {
     public:
     NullStream() { }
     template<typename T> NullStream& operator<<(T const&) { return *this; }
+    explicit operator bool() const{ return false; }
 };
 
 const int INFO = 1, WARNING = 2, ERROR = 3, FATAL = 4;
@@ -53,8 +54,8 @@ const int INFO = 1, WARNING = 2, ERROR = 3, FATAL = 4;
 #define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"ERROR")
 #define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"FATAL")
 
-#ifndef NDEBUG
-#define DLOG(_) NullStream()
+#ifdef NDEBUG
+#define DLOG(_) false && NullStream()
 #else
 #define DLOG(level) LOG_##level.messageStream()
 #endif
@@ -84,17 +85,17 @@ class LogMessage {
 class Logging {
  public:
   Logging();
-  void Send(std::function<void> function);
+  typedef std::function<void()> functor ;
+  void Send(functor function);
   void SetLogLevel(std::string log_level) { log_levels_ = log_level; }
-  static std::string LogLevel() {return log_levels_; }
+  std::string LogLevel() {return log_levels_; }
   void SetFilter(std::string filter) { filter_ = filter; }
-  static std::string Filter() { return filter_; }
+  std::string Filter() { return filter_; }
  private:
   std::unique_ptr<maidsafe::Active> background_;
-  static std::string log_levels_;
-  static std::string filter_;
+  std::string log_levels_;
+  std::string filter_;
 };
-
 
 }  // log
 }  // maidsafe
