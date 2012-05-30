@@ -49,10 +49,10 @@ class NullStream {
 
 const int INFO = 1, WARNING = 2, ERROR = 3, FATAL = 4;
 
-#define LOG_INFO  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"INFO")
-#define LOG_WARNING  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"WARNING")
-#define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"ERROR")
-#define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,"FATAL")
+#define LOG_INFO  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,1)
+#define LOG_WARNING  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,2)
+#define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,3)
+#define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,4)
 
 #ifdef NDEBUG
 #define DLOG(_) false && NullStream()
@@ -70,30 +70,34 @@ class LogMessage {
   LogMessage(const std::string &file,
              const int line,
              const std::string& function,
-             const std::string &level);
+             const int level);
   ~LogMessage();
   std::ostringstream& messageStream(){return stream_;}
  private:
   const std::string file_;
   const int line_;
   const std::string function_;
-  const std::string level_;
+  const int level_;
   std::ostringstream stream_;
   std::string log_entry_;
 };
 
 class Logging {
  public:
-  Logging();
+  static Logging& instance() {
+    static Logging l;
+    return l;
+  }
   typedef std::function<void()> functor ;
   void Send(functor function);
-  void SetLogLevel(std::string log_level) { log_levels_ = log_level; }
-  std::string LogLevel() {return log_levels_; }
+  void SetLogLevel(int log_level) { log_levels_ = log_level; }
+  int LogLevel() {return log_levels_; }
   void SetFilter(std::string filter) { filter_ = filter; }
   std::string Filter() { return filter_; }
  private:
+  Logging();
   std::unique_ptr<maidsafe::Active> background_;
-  std::string log_levels_;
+  int log_levels_;
   std::string filter_;
 };
 

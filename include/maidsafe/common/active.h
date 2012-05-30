@@ -53,7 +53,7 @@ class Active {
   void Run();
   SafeQueue<Callback> message_queue_;
   std::thread thread_;
-  std::atomic_bool done_;
+  std::atomic<bool> done_;
 };
 
 } // namespace maidsafe

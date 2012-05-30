@@ -17,23 +17,17 @@
 #include <signal.h>
 #include <algorithm>
 #include "boost/tokenizer.hpp"
+#include "boost/filesystem.hpp"
 #include "maidsafe/log/logworker.h"
 
 namespace maidsafe {
 
 namespace log {
 
-std::string splitFileName(const std::string& str) {
-  size_t found;
-  found = str.find_last_of("(/\\");
-  return str.substr(found+1);
-}
-
-
 LogMessage::LogMessage(const std::string &file,
                        const int line,
                        const std::string& function,
-                       const std::string &level)
+                       const int level)
   : file_(file),
     line_(line),
     function_(function),
@@ -41,32 +35,46 @@ LogMessage::LogMessage(const std::string &file,
 
 LogMessage::~LogMessage() {
   std::ostringstream oss;
-//  boost::char_separator<char> seperator(", ");
-//  boost::tokenizer< boost::char_separator<char>> tokens(Logging::Filter(), seperator);
-//  bool test(false);
-//  for(auto &t : tokens) {
-//      if (function_.find(t) == std::string::npos)
-//        test = true;
-//   }
-//   if (LogLevel().find(level_) == std::string::npos)
-//     return;
-//   if (test)
-//     return;
-   oss << level_ << " [ file " << splitFileName(file_);
-   oss << " line:" << line_ ;
-   oss << " thread id: " <<  std::this_thread::get_id();
-   oss <<  " in function: " << function_ << "] ";
+    boost::char_separator<char> seperator(", ");
+  boost::tokenizer< boost::char_separator<char>> tokens(Logging::instance().Filter(), seperator);
+
+  for(auto &t : tokens) {
+      if ((function_.find(t) == std::string::npos) || (Logging::instance().LogLevel() < level_))
+        return;
+   }
+
+   std::string log_level;
+   switch (level_) {
+     case 0:
+       log_level = "INFO";
+       break;
+     case 1:
+       log_level = "WARNING";
+       break;
+     case 2:
+       log_level = "ERROR";
+       break;
+     case 3:
+       log_level = "FATAL";
+       break;
+     default:
+       log_level = "Unknown";
+   }
+
+   oss << log_level << " [" << boost::filesystem3::path(file_).filename().string();
+   oss << " Line:" << line_ ;
+   oss << " Thread ID: " <<  std::this_thread::get_id();
+   oss <<  " Function: " << function_ << "] ";
    const std::string str(stream_.str());
    if(!str.empty())
         oss << '"' << str << '"';
-  log_entry_ += oss.str();
-  auto f = [=] () { std::cout << log_entry_;} ;
-  Logging::Send(f); // message saved
+  std::string log_entry(oss.str());
+  Logging::instance().Send([=] () { std::cout << log_entry << std::endl;} ); // message saved
 }
 
 Logging::Logging() :
     background_(maidsafe::Active::createActive()),
-    log_levels_(),
+    log_levels_(FATAL),  // Default on (fatal
     filter_() {}
 
 void Logging::Send(functor voidfunction) {

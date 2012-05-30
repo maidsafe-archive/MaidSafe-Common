@@ -81,12 +81,6 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
     EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
   });
    RunInParallel(f, 100);
-   DLOG(INFO) << "a wee test" ;
-   DLOG(INFO) << "a wee test" ;
-      DLOG(INFO) << "a wee test" ;
-         DLOG(INFO) << "a wee test" ;
-            DLOG(INFO) << "a wee test" ;
-               DLOG(INFO) << "a wee test" ;
 }
 
 TEST_F(RSATest, FUNC_ValidateKeys) {

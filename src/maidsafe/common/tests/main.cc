@@ -30,6 +30,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/log.h"
 
 int main(int argc, char **argv) {
+  // report only >= those listed (INFO, WARNING, ERROR, FATAL)
+  maidsafe::log::Logging::instance().SetLogLevel(INFO);
+  // i.e. maidsafe::crypto for only that namespace
+  maidsafe::log::Logging::instance().SetFilter("maidsafe::");
+  // You can add as many namespaces as you wish and output will be limited to these namespaces
+  // empty for all.
+  // logging is DISABLED IN RELEASE MODE
 
   testing::InitGoogleTest(&argc, argv);
   int result(RUN_ALL_TESTS());
