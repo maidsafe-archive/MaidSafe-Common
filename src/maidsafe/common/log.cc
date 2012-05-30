@@ -18,7 +18,7 @@
 #include <algorithm>
 #include "boost/tokenizer.hpp"
 #include "boost/filesystem.hpp"
-#include "maidsafe/log/logworker.h"
+
 
 namespace maidsafe {
 
