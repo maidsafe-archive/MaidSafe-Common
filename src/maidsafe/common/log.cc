@@ -62,8 +62,8 @@ LogMessage::~LogMessage() {
    }
 
    oss << log_level << " [" << boost::filesystem3::path(file_).filename().string();
-   oss << " Line:" << line_ ;
-   oss << " Thread ID: " <<  std::this_thread::get_id();
+   oss << " :" << line_ ;
+   oss << " Thread : " <<  std::this_thread::get_id();
    oss <<  " Function: " << function_ << "] ";
    const std::string str(stream_.str());
    if(!str.empty())
