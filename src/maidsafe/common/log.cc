@@ -69,7 +69,7 @@ LogMessage::~LogMessage() {
    if(!str.empty())
         oss << '"' << str << '"';
   std::string log_entry(oss.str());
-  Logging::instance().Send([=] () { std::cout << log_entry << std::endl;} ); // message saved
+  Logging::instance().Send([=] () { printf("%s \n", log_entry.c_str()); } ); // message saved
 }
 
 Logging::Logging() :

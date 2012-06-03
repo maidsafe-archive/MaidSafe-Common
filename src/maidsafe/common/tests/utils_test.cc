@@ -52,6 +52,7 @@ void GenerateRandomStrings(const int &string_count, const size_t &string_size) {
 
 
 TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
+  DLOG(ERROR) << "Heloo ssssssssssssssssssssssssssssssssssssssssssssssss";
   EXPECT_EQ("0 B", BytesToDecimalSiUnits(0U));
   EXPECT_EQ("1 B", BytesToDecimalSiUnits(1U));
   EXPECT_EQ("12 B", BytesToDecimalSiUnits(12U));

@@ -47,12 +47,12 @@ class NullStream {
     explicit operator bool() const{ return false; }
 };
 
-const int INFO = 1, WARNING = 2, ERROR = 3, FATAL = 4;
+const int INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3;
 
-#define LOG_INFO  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,1)
-#define LOG_WARNING  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,2)
-#define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,3)
-#define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,4)
+#define LOG_INFO  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,0)
+#define LOG_WARNING  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,1)
+#define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,2)
+#define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,3)
 
 #ifdef NDEBUG
 #define DLOG(_) false && NullStream()

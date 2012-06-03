@@ -60,14 +60,14 @@ void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
   //TODO(divrine) FIXME
    std::vector<std::future<void>> vec;
    for (int i = 0; i < num_threads; ++i)
-     vec.push_back(std::async(std::launch::async, f));
-   // wait for all threads to finish
-   for (auto &i : vec)  // NOLINT (Fraser)
+     vec.push_back(std::async(f));
+   for (auto &i : vec)
      i.get();
 }
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
   auto f([&] {
+   DLOG(INFO) << "hi ";
     EXPECT_TRUE(ValidateKey(keys_.public_key));
     EXPECT_TRUE(ValidateKey(keys_.private_key));
     std::string encoded_private_key, encoded_public_key;
