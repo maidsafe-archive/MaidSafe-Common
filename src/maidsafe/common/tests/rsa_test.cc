@@ -57,11 +57,13 @@ class RSATest : public testing::Test {
 };
 
 void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
-  std::vector<std::future<void>> vec;
-  for (int i = 0; i < num_threads; ++i)
-    vec.push_back(std::async(f));
-  for (auto &i : vec)
-    i.get();
+  //TODO(divrine) FIXME
+   std::vector<std::future<void>> vec;
+   for (int i = 0; i < num_threads; ++i)
+     vec.push_back(std::async(std::launch::async, f));
+   // wait for all threads to finish
+   for (auto &i : vec)  // NOLINT (Fraser)
+     i.get();
 }
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
