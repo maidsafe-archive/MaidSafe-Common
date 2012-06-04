@@ -57,11 +57,11 @@ class RSATest : public testing::Test {
 };
 
 void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
-   std::vector<std::future<void>> vec;
-   for (int i = 0; i < num_threads; ++i)
-     vec.push_back(std::async(f));
-   for (auto &i : vec)
-     i.get();
+  std::vector<std::future<void>> vec;
+  for (int i = 0; i < num_threads; ++i)
+    vec.push_back(std::async(f));
+  for (auto &i : vec)
+    i.get();
 }
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
@@ -194,6 +194,7 @@ TEST_F(RSATest, BEH_Serialise) {
     input_archive1 >> recovered_public_key >> recovered_private_key;
     EXPECT_FALSE(ValidateKey(recovered_public_key));
     EXPECT_FALSE(ValidateKey(recovered_private_key));
+
 
     try {
       std::istringstream iss2(encoded);

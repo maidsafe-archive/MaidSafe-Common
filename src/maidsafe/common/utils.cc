@@ -28,7 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/utils.h"
 
 #include <ctype.h>
-
+#if defined(macintosh) || defined(__APPLE__) || \
+defined(__APPLE_CC__) || (defined(linux) || \
+defined(__linux) || defined(__linux__) || defined(__GNU__) \
+|| defined(__GLIBC__)) && !defined(_CRAYC)
+  #include  "pwd.h"  //NOLINT (dirvine)
+  #include "sys/param.h"
+#endif
 #include <array>
 #include <cstdint>
 #include <algorithm>
@@ -54,13 +60,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"
 #include "cryptopp/hex.h"
-#if defined(macintosh) || defined(__APPLE__) || \
-defined(__APPLE_CC__) || (defined(linux) || \
-defined(__linux) || defined(__linux__) || defined(__GNU__) \
-|| defined(__GLIBC__)) && !defined(_CRAYC)
-  #include  "pwd.h"  //NOLINT (dirvine)
-  #include "sys/param.h"
-#endif
+
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -472,10 +472,8 @@ TestPath CreateTestPath(std::string test_prefix) {
           boost::system::error_code ec;
           // Can't use LOG in case glog has been unloaded already
           if (fs::remove_all(*delete_path, ec) == 0) {
-
           }
           if (ec.value() != 0) {
-
           }
         }
         delete delete_path;
