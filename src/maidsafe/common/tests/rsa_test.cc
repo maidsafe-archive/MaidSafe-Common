@@ -146,18 +146,20 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
 
 TEST_F(RSATest, BEH_SignValidate) {
   auto f([&] {
+    Keys keys;
+    EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
     PrivateKey empty_priv_key;
     PublicKey empty_pub_key;
     const std::string kData(RandomString(470));
     std::string signature;
 
-    EXPECT_EQ(kSuccess, Sign(kData, keys_.private_key, &signature));
-    EXPECT_EQ(kSuccess, CheckSignature(kData, signature, keys_.public_key));
+    EXPECT_EQ(kSuccess, Sign(kData, keys.private_key, &signature));
+    EXPECT_EQ(kSuccess, CheckSignature(kData, signature, keys.public_key));
 
     std::string empty_data;
-    EXPECT_EQ(kDataEmpty, Sign(empty_data, keys_.private_key, &signature));
+    EXPECT_EQ(kDataEmpty, Sign(empty_data, keys.private_key, &signature));
     EXPECT_EQ(kDataEmpty, CheckSignature(empty_data, signature,
-                                         keys_.public_key));
+                                         keys.public_key));
 
     EXPECT_EQ(kInvalidPrivateKey, Sign(kData, empty_priv_key, &signature));
     EXPECT_EQ(kInvalidPublicKey,
@@ -165,24 +167,23 @@ TEST_F(RSATest, BEH_SignValidate) {
 
     std::string empty_signature;
     EXPECT_EQ(kRSASignatureEmpty,
-              CheckSignature(kData, empty_signature, keys_.public_key));
+              CheckSignature(kData, empty_signature, keys.public_key));
 
     std::string bad_signature("bad");
     EXPECT_EQ(kRSAInvalidSignature,
-              CheckSignature(kData, bad_signature, keys_.public_key));
+              CheckSignature(kData, bad_signature, keys.public_key));
   });
   RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, BEH_Serialise) {
-  auto f([&] {
-    EXPECT_TRUE(ValidateKey(keys_.public_key));
-    EXPECT_TRUE(ValidateKey(keys_.private_key));
-
+  auto f([] {
+    Keys keys;
+    EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
     std::ostringstream oss;
     boost::archive::text_oarchive output_archive(oss);
-    const PrivateKey kOriginalPrivateKey(keys_.private_key);
-    const PublicKey kOriginalPublicKey(keys_.public_key);
+    const PrivateKey kOriginalPrivateKey(keys.private_key);
+    const PublicKey kOriginalPublicKey(keys.public_key);
     output_archive << kOriginalPrivateKey << kOriginalPublicKey;
     std::string encoded(oss.str());
 
@@ -194,29 +195,13 @@ TEST_F(RSATest, BEH_Serialise) {
     EXPECT_FALSE(ValidateKey(recovered_public_key));
     EXPECT_FALSE(ValidateKey(recovered_private_key));
 
-    boost::archive::archive_exception arch_exception(
-        boost::archive::archive_exception::no_exception);
-    try {
-      input_archive1 >> recovered_private_key >> recovered_public_key;
-    }
-    catch(const boost::archive::archive_exception &e) {
-      arch_exception = e;
-      EXPECT_EQ(boost::archive::archive_exception::input_stream_error,
-                arch_exception.code);
-    }
-    catch(const std::exception &std_e) {
-      DLOG(INFO) << std_e.what();
-    }
-    EXPECT_FALSE(ValidateKey(recovered_public_key));
-    EXPECT_FALSE(ValidateKey(recovered_private_key));
-
     try {
       std::istringstream iss2(encoded);
       boost::archive::text_iarchive input_archive2(iss2);
       input_archive2 >> recovered_private_key >> recovered_public_key;
     }
     catch(const std::exception &e) {
-      FAIL() << e.what();
+      DLOG(INFO) << e.what();
     }
     EXPECT_TRUE(ValidateKey(recovered_public_key));
     EXPECT_TRUE(ValidateKey(recovered_private_key));
@@ -224,7 +209,7 @@ TEST_F(RSATest, BEH_Serialise) {
     EXPECT_TRUE(CheckRoundtrip(recovered_public_key, kOriginalPrivateKey));
     EXPECT_TRUE(CheckRoundtrip(recovered_public_key, recovered_private_key));
   });
-//  RunInParallel(f);
+  RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
