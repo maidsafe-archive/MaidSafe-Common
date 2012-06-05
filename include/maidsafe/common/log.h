@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_LOG_H_
 
 #include "boost/current_function.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include <string>
 #include <sstream>
@@ -39,45 +40,54 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/active.h"
 
-// compile away DLOG and LOG statements
-class NullStream {
-    public:
-    NullStream() { }
-    template<typename T> NullStream& operator<<(T const&) { return *this; }
-    explicit operator bool() const{ return false; }
-};
-
-const int INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3;
-
-#define LOG_INFO  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,0)
-#define LOG_WARNING  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,1)
-#define LOG_ERROR  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,2)
-#define LOG_FATAL  maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,3)
-
-#ifdef NDEBUG
-#define DLOG(_) false && NullStream()
-#else
-#define DLOG(level) LOG_##level.messageStream()
-#endif
 
 namespace maidsafe {
+
 namespace log {
+
+#ifdef MAIDSAFE_WIN32
+#  undef ERROR
+class NullStream {
+ public:
+  NullStream() {}
+  template<typename T> NullStream& operator<<(T const&) { return *this; }
+  operator bool() const { return false; }
+};
+#else
+// compile away DLOG and LOG statements
+class NullStream {
+ public:
+  NullStream() {}
+  template<typename T> NullStream& operator<<(T const&) { return *this; }
+  explicit operator bool() const { return false; }
+};
+#endif
+
+extern const int INFO, WARNING, ERROR, FATAL;
+
+#define LOG_INFO maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,0)
+#define LOG_WARNING maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,1)
+#define LOG_ERROR maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,2)
+#define LOG_FATAL maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,3)
+
+#ifdef NDEBUG
+#  define DLOG(_) false && NullStream()
+#else
+#  define DLOG(level) LOG_##level.messageStream()
+#endif
 
 typedef const std::string& LogEntry;
 
 class LogMessage {
  public:
-  LogMessage(const std::string &file,
-             const int line,
-             const std::string& function,
-             const int level);
+  LogMessage(const std::string &file, int line, const std::string &function, int level);
   ~LogMessage();
-  std::ostringstream& messageStream(){return stream_;}
+  std::ostringstream& messageStream() { return stream_; }
  private:
-  const std::string file_;
-  const int line_;
-  const std::string function_;
-  const int level_;
+  const boost::filesystem::path kFile_;
+  const int kLine_;
+  const std::string kFunction_;
+  const int kLevel_;
   std::ostringstream stream_;
   std::string log_entry_;
 };
@@ -90,15 +100,18 @@ class Logging {
   }
   typedef std::function<void()> functor ;
   void Send(functor function);
-  void SetLogLevel(int log_level) { log_levels_ = log_level; }
-  int LogLevel() {return log_levels_; }
+  void SetLogLevel(int log_level) { log_level_ = log_level; }
+  int LogLevel() const { return log_level_; }
   void SetFilter(std::string filter) { filter_ = filter; }
-  std::string Filter() { return filter_; }
+  std::string Filter() const { return filter_; }
+  void SetColour(bool colour) { colour_ = colour; }
+  bool Colour() const { return colour_; }
  private:
   Logging();
   std::unique_ptr<maidsafe::Active> background_;
-  int log_levels_;
+  int log_level_;
   std::string filter_;
+  bool colour_;
 };
 
 }  // log
