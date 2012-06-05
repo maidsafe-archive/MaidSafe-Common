@@ -31,9 +31,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char **argv) {
   // report only >= those listed (INFO, WARNING, ERROR, FATAL)
-  maidsafe::log::Logging::instance().SetLogLevel(INFO);
+  maidsafe::log::Logging::instance().SetLogLevel(maidsafe::log::INFO);
   // i.e. maidsafe::crypto for only that namespace
-  maidsafe::log::Logging::instance().SetFilter("maidsafe::");
+  maidsafe::log::Logging::instance().SetFilter("common");
   // You can add as many namespaces as you wish and output will be limited to these namespaces
   // empty for all.
   // logging is DISABLED IN RELEASE MODE

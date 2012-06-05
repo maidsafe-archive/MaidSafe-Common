@@ -81,6 +81,7 @@ target_link_libraries(maidsafe_common
                         ${BoostSerializationLibs}
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
+                        ${BoostRegexLibs}
                         ${SYS_LIB})
 target_link_libraries(TESTcommon maidsafe_common)
 #target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
@@ -131,12 +132,3 @@ add_memcheck_ignore(CrypoppTest.BEH_SHA)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_PSS)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_OAEP)
 add_memcheck_ignore(CrypoppTest.BEH_RSA_PKCS1_1_5)
-
-
-find_file(CONINUOUS_SCRIPT_CMAKE maidsafe_dashboard.cmake PATHS ${CMAKE_MODULE_PATH})
-if(CONINUOUS_SCRIPT_CMAKE)
-  configure_file(${CONINUOUS_SCRIPT_CMAKE} ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake @ONLY)
-  install(FILES ${CMAKE_BINARY_DIR}/maidsafe_dashboard.cmake DESTINATION share/maidsafe/cmake_modules)
-endif()
-
-add_subdirectory(include/maidsafe/common/detail)
