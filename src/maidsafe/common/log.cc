@@ -32,11 +32,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>  // NOLINT(dirvine)
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <ctime>
 #ifdef MAIDSAFE_WIN32
 #  include <Windows.h>
 #  undef ERROR
 #endif
 #include "boost/tokenizer.hpp"
+#include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
 
@@ -105,10 +108,18 @@ LogMessage::~LogMessage() {
   }
 
   std::ostringstream oss;
-  oss << log_level << "  " << std::this_thread::get_id();
-  oss << '\t' << current_file.string();
+  oss << log_level << " " << std::this_thread::get_id();
+//  std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+// TODO(dirvine) format time properly
+//  oss << std::ctime(&t) << " ";
+  oss << " Time " << GetTimeStamp() << " ";
+#if defined(WIN32)
+  oss << '\t' ;
+#endif
+  oss << current_file.string();
   oss << ":" << kLine_ << "] ";
 //  oss << " Function: " << function_ << "] ";
+
   oss << stream_.str();
   std::string log_entry(oss.str());
   bool colour(Logging::instance().Colour());
