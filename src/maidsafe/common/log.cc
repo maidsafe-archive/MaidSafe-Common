@@ -27,7 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 
-#include <iostream>  // NOLINT(dirvine)
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <stdexcept>
@@ -58,7 +58,7 @@ LogMessage::~LogMessage() {
   boost::char_separator<char> seperator(", ");
   boost::tokenizer< boost::char_separator<char>> tokens(Logging::instance().Filter(), seperator);
 
-  for(auto &t : tokens) {
+  for (auto &t : tokens) {
     if ((function_.find(t) == std::string::npos) || (Logging::instance().LogLevel() < level_))
       return;
   }
@@ -82,14 +82,16 @@ LogMessage::~LogMessage() {
   }
 
   oss << log_level << " [" << boost::filesystem3::path(file_).filename().string();
-  oss << " :" << line_ ;
+  oss << " :" << line_;
   oss << " Thread : " <<  std::this_thread::get_id();
   oss <<  " Function: " << function_ << "] ";
   const std::string str(stream_.str());
-  if(!str.empty())
+  if (!str.empty())
     oss << '"' << str << '"';
   std::string log_entry(oss.str());
-  Logging::instance().Send([=] () { printf("%s \n", log_entry.c_str()); } ); // message saved
+  Logging::instance().Send([=] ()
+    { printf("%s \n", log_entry.c_str()); }
+  ); //message saved
 }
 
 Logging::Logging() :

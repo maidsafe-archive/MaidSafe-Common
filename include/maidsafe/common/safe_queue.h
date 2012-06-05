@@ -28,8 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_SAFE_QUEUE_H_
 #define MAIDSAFE_COMMON_SAFE_QUEUE_H_
 
-#include <queue>
 #include <mutex>
+#include <queue>
 #include <condition_variable>
 
 // thread and exception safe queue

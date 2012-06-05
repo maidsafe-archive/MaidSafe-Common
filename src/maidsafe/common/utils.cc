@@ -28,6 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/utils.h"
 
 #include <ctype.h>
+#include <array>
+#include <cstdint>
+#include <algorithm>
+#include <limits>
+#include <string>
+#include <thread>
+
 #if defined(macintosh) || defined(__APPLE__) || \
 defined(__APPLE_CC__) || (defined(linux) || \
 defined(__linux) || defined(__linux__) || defined(__GNU__) \
@@ -35,12 +42,6 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
   #include  "pwd.h"  //NOLINT (dirvine)
   #include "sys/param.h"
 #endif
-#include <array>
-#include <cstdint>
-#include <algorithm>
-#include <limits>
-#include <string>
-#include <thread>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
