@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <mutex>
 #include <queue>
 #include <condition_variable>
+#include <atomic>
 
 // thread and exception safe queue
 // pop elements by reference to not throw :)
@@ -41,7 +42,8 @@ public:
   SafeQueue() :
     queue_(),
     mutex_(),
-    condition_() {};
+    condition_(),
+    done_(false) {};
     // move OK copy disallowed
   SafeQueue(const SafeQueue&& other) {
     other.queue_(std::move(queue_));
@@ -77,19 +79,22 @@ public:
   }
   void WaitAndPop(T &element) {
     std::unique_lock<std::mutex> lock(mutex_);
-    while(queue_.empty()) {
+    while(queue_.empty() && !done_) {
       condition_.wait(lock);  // needs unique_lock
     }
     element = queue_.front();
     queue_.pop();
   }
-
+  void Stop() {
+    done_ = true;
+  }
 private:
   SafeQueue& operator=(const SafeQueue&);
   SafeQueue(const SafeQueue& other);
   std::queue<T> queue_;
   mutable std::mutex mutex_;
   std::condition_variable condition_;
+  std::atomic<bool> done_;
 };
 
 #endif  // MAIDSAFE_COMMON_SAFE_QUEUE_H_

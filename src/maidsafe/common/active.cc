@@ -53,6 +53,7 @@ void Active::Run() {
 
 void Active::Done() {
      done_ = true;
+     message_queue_.Stop();
 }
 
 std::unique_ptr<Active> Active::createActive(){
