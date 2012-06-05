@@ -110,15 +110,15 @@ LogMessage::~LogMessage() {
 
   std::ostringstream oss;
   oss << log_level << " " << std::this_thread::get_id();
-  std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  std::string time = std::ctime(&t);
-  time.resize(time.size() -5);
-   std::string ftime = time.substr(12,8);
-  oss << " " << ftime << " ";
-
 #if defined(WIN32)
-  oss << '\t' ;
+  oss << '\t';
 #endif
+//  std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+//  std::string time = std::ctime(&t);
+//  time.resize(time.size() - 5);
+//  std::string ftime = time.substr(12,8);
+//  oss << " " << ftime << " ";
+  oss << boost::posix_time::microsec_clock().universal_time().time_of_day() << " ";
   oss << current_file.string();
   oss << ":" << kLine_ << "] ";
 //  oss << " Function: " << function_ << "] ";
