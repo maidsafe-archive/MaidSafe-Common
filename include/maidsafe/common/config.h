@@ -33,7 +33,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 namespace maidsafe {
-// to change these or pass compiler flag -DCOMPANY_NAME and -DAPPLICATION_NAME
+// to set these pass compiler flag -DCOMPANY_NAME and -DAPPLICATION_NAME
+// or edit this file in place
 
 #if !defined(COMPANY_NAME)
 std::string kCompanyName("maidsafe");
@@ -46,7 +47,6 @@ std::string kApplicationName("lifestuff");
 #else
 std::string kApplicationName(APPLICATION_NAME);
 #endif
-
 
 
 }  // namespace maidsafe
