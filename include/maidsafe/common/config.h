@@ -1,4 +1,4 @@
-/* Copyright (c) 2009 maidsafe.net limited
+/* Copyright (c) 2012 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -25,21 +25,32 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "maidsafe/common/test.h"
-#include "maidsafe/common/log.h"
 
-int main(int argc, char **argv) {
-  // report only >= those listed (INFO, WARNING, ERROR, FATAL)
-  maidsafe::log::Logging::instance().SetLogLevel(maidsafe::log::INFO);
-  // i.e. maidsafe::crypto for only that namespace
-  maidsafe::log::Logging::instance().SetFilter("common");
-  // You can add as many namespaces as you wish and output will be limited to these namespaces
-  // empty for all.
-  // logging is DISABLED IN RELEASE MODE
+#ifndef MAIDSAFE_COMMON_CONFIG_H_
+#define MAIDSAFE_COMMON_CONFIG_H_
+
+#include <string>
 
 
-  testing::InitGoogleTest(&argc, argv);
-  int result(RUN_ALL_TESTS());
-  int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
-  return (test_count == 0) ? -1 : result;
-}
+namespace maidsafe {
+// to change these or pass compiler flag -DCOMPANY_NAME and -DAPPLICATION_NAME
+
+#if !defined(COMPANY_NAME)
+std::string kCompanyName("maidsafe");
+#else
+std::string kCompanyName(COMPANY_NAME);
+#endif
+
+#if !defined(APPLICATION_NAME)
+std::string kApplicationName("lifestuff");
+#else
+std::string kApplicationName(APPLICATION_NAME);
+#endif
+
+
+
+}  // namespace maidsafe
+
+
+
+#endif  // MAIDSAFE_COMMON_CONFIG_H_

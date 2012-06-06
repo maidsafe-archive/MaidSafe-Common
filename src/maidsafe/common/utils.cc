@@ -66,7 +66,7 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #ifdef __MSVC__
 #  pragma warning(pop)
 #endif
-
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 
@@ -144,9 +144,7 @@ std::string BytesToSiUnits(const uint64_t &num) {
 const boost::posix_time::ptime kMaidSafeEpoch(
     boost::posix_time::from_iso_string("20000101T000000"));
 
-const std::string kCompanyName("maidsafe");
 
-const std::string kApplicationName("lifestuff");
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
   return BytesToSiUnits<DecimalUnit>(num);
@@ -372,6 +370,7 @@ void Sleep(const boost::posix_time::time_duration &duration) {
   boost::this_thread::sleep(duration);
 }
 
+
 fs::path GetHomeDir() {
 #if defined(MAIDSAFE_WIN32)
   std::string env_home2(getenv("HOMEPATH"));
@@ -409,6 +408,7 @@ fs::path GetUserAppDir() {
   return fs::path();
 #endif
 }
+
 
 fs::path GetSystemAppDir() {
 #if defined(MAIDSAFE_WIN32)
