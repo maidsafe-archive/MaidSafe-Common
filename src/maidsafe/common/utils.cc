@@ -28,12 +28,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/utils.h"
 
 #include <ctype.h>
+#include <thread>
 #include <array>
 #include <cstdint>
 #include <algorithm>
 #include <limits>
 #include <string>
-#include <thread>
 
 #if defined(macintosh) || defined(__APPLE__) || \
 defined(__APPLE_CC__) || (defined(linux) || \
@@ -315,10 +315,8 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
       Sleep(boost::posix_time::milliseconds(seed));
       file_size = fs::file_size(file_path);
       ++i;
-      DLOG(WARNING) << "\n\nFile size was zero, get a new read after sleep "
-                    << seed << " milliseconds, with new read file size is "
-                    << file_size << " , during the " << i
-                    << " times of attempt \n\n";
+      DLOG(WARNING) << "Re-read attempt " << i << " after sleeping for " << seed
+                    << " ms, file size is " << file_size;
       seed *= 2;
     }
 

@@ -31,7 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-AsioService::AsioService() : service_(), work_(), thread_group_() {}
+AsioService::AsioService() : service_(), work_(), threads_() {}
 
 AsioService::~AsioService() {
   Stop();
@@ -40,14 +40,13 @@ AsioService::~AsioService() {
 void AsioService::Start(const uint32_t &thread_count) {
   if (work_) {
     DLOG(ERROR) << "AsioService is already running with "
-                << thread_group_->size() << " threads.";
+                << threads_.size() << " threads.";
     return;
   }
   service_.reset();
   work_.reset(new boost::asio::io_service::work(service_));
-  thread_group_.reset(new boost::thread_group);
   for (uint32_t i = 0; i != thread_count; ++i) {
-    thread_group_->create_thread([&]() {
+    threads_.emplace_back([&]() {
         for (;;) {
           try {
             service_.run();
@@ -64,9 +63,9 @@ void AsioService::Start(const uint32_t &thread_count) {
 
 void AsioService::Stop() {
   work_.reset();
-  if (thread_group_) {
-    thread_group_->interrupt_all();
-    thread_group_->join_all();
+  for (boost::thread &thread : threads_) {
+    thread.interrupt();
+    thread.join();
   }
 }
 

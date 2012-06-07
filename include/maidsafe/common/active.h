@@ -28,12 +28,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_ACTIVE_H_
 #define MAIDSAFE_COMMON_ACTIVE_H_
 
-#include <thread>
-#include <functional>
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <thread>
+#include <functional>
 #include <memory>
-#include <atomic>
+
+#include "boost/thread/thread.hpp"
 
 #include "maidsafe/common/safe_queue.h"
 
@@ -52,10 +54,10 @@ class Active {
   void Done();
   void Run();
   SafeQueue<Callback> message_queue_;
-  std::thread thread_;
+  boost::thread thread_;
   std::atomic<bool> done_;
 };
 
-} // namespace maidsafe
+}  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_ACTIVE_H_

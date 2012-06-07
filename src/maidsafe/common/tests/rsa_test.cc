@@ -56,13 +56,13 @@ class RSATest : public testing::Test {
 };
 
 void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
-  //TODO(divrine) FIXME
-   std::vector<std::future<void>> vec;
-   for (int i = 0; i < num_threads; ++i)
-     vec.push_back(std::async(std::launch::async, f));
-   // wait for all threads to finish
-   for (auto &i : vec)  // NOLINT (Fraser)
-     i.get();
+  // TODO(divrine) FIXME
+  std::vector<std::future<void>> vec;
+  for (int i = 0; i < num_threads; ++i)
+    vec.push_back(std::async(std::launch::async, f));
+  // wait for all threads to finish
+  for (auto &i : vec)
+    i.get();
 }
 
 TEST_F(RSATest, FUNC_RsaKeyPair) {
@@ -79,7 +79,7 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
     EXPECT_TRUE(CheckRoundtrip(public_key, keys_.private_key));
     EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
   });
-   RunInParallel(f, 100);
+  RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, FUNC_ValidateKeys) {

@@ -29,14 +29,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_LOG_H_
 #define MAIDSAFE_COMMON_LOG_H_
 
-#include "boost/current_function.hpp"
-#include "boost/filesystem/path.hpp"
-
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <cstdarg>
 #include <memory>
+
+#include "boost/current_function.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/active.h"
 
@@ -63,17 +63,24 @@ class NullStream {
 };
 #endif
 
-extern const int INFO, WARNING, ERROR, FATAL;
+struct Envoid {
+ public:
+  Envoid() {}
+  // This has to be an operator with a precedence lower than << but higher than ?:
+  void operator&(NullStream&) {}
+};
 
-#define LOG_INFO maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,0)
-#define LOG_WARNING maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,1)
-#define LOG_ERROR maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,2)
-#define LOG_FATAL maidsafe::log::LogMessage(__FILE__,__LINE__,BOOST_CURRENT_FUNCTION,3)
+
+const int INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3;
 
 #ifdef NDEBUG
-#  define DLOG(_) false && NullStream()
+#  define DLOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #else
-#  define DLOG(level) LOG_##level.messageStream()
+#  define DLOG(level) \
+    maidsafe::log::LogMessage(__FILE__, \
+                              __LINE__, \
+                              BOOST_CURRENT_FUNCTION, \
+                              maidsafe::log::level).messageStream()
 #endif
 
 typedef const std::string& LogEntry;
@@ -98,7 +105,7 @@ class Logging {
     static Logging l;
     return l;
   }
-  typedef std::function<void()> functor ;
+  typedef std::function<void()> functor;
   void Send(functor function);
   void SetLogLevel(int log_level) { log_level_ = log_level; }
   int LogLevel() const { return log_level_; }
@@ -114,7 +121,8 @@ class Logging {
   bool colour_;
 };
 
-}  // log
-}  // maidsafe
+}  // namespace log
+
+}  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_LOG_H_

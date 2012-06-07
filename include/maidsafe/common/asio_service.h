@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "boost/asio/io_service.hpp"
 #include "boost/thread/thread.hpp"
@@ -50,7 +51,7 @@ class AsioService {
  private:
   boost::asio::io_service service_;
   std::shared_ptr<boost::asio::io_service::work> work_;
-  std::shared_ptr<boost::thread_group> thread_group_;
+  std::vector<boost::thread> threads_;
 };
 
 }  // namespace maidsafe

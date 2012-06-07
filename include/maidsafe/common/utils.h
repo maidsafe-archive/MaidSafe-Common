@@ -25,19 +25,12 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string>
-namespace maidsafe {
-
-// allow this tyo appear in every compilation unit that may require it
-// (do not hide it behind a guard)
-}
-
 #ifndef MAIDSAFE_COMMON_UTILS_H_
 #define MAIDSAFE_COMMON_UTILS_H_
 
 #include <cstdint>
-
 #include <memory>
+#include <string>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)

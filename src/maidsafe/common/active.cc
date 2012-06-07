@@ -31,15 +31,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-Active::Active(): done_(false){}
+Active::Active() : done_(false) {}
 
 Active::~Active() {
-  Callback quit_token = std::bind(&Active::Done, this);
+  Callback quit_token = boost::bind(&Active::Done, this);
   Send(quit_token);
   thread_.join();
 }
 
-void Active::Send(Callback message){
+void Active::Send(Callback message) {
   message_queue_.Push(message);
 }
 
@@ -52,14 +52,14 @@ void Active::Run() {
 }
 
 void Active::Done() {
-     done_ = true;
-     message_queue_.Stop();
+  done_ = true;
+  message_queue_.Stop();
 }
 
-std::unique_ptr<Active> Active::createActive(){
+std::unique_ptr<Active> Active::createActive() {
   std::unique_ptr<Active> ptr(new Active());
-  ptr->thread_ = std::thread(&Active::Run, ptr.get());
+  ptr->thread_ = boost::thread(&Active::Run, ptr.get());
   return ptr;
 }
 
-} // namespace maidsafe
+}  // namespace maidsafe

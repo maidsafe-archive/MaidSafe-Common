@@ -26,20 +26,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/log.h"
-#include "time.h"
-#include "stdio.h"
-#include <algorithm>
-#include <cstdio>
-#include <iostream>  // NOLINT(dirvine)
-#include <sstream>
-#include <string>
-#include <chrono>
-#include <ctime>
+
 #ifdef MAIDSAFE_WIN32
 #  include <Windows.h>
 #  undef ERROR
 #endif
+#include <chrono>
+#include <ctime>
+#include <algorithm>
+#include <cstdio>
+#include <iostream>
+#include <sstream>
+#include <string>
+
 #include "boost/tokenizer.hpp"
+
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -48,8 +49,6 @@ namespace fs = boost::filesystem;
 namespace maidsafe {
 
 namespace log {
-
-const int INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3;
 
 LogMessage::LogMessage(const std::string &file, int line, const std::string &function, int level)
     : kFile_(file),
@@ -80,13 +79,8 @@ LogMessage::~LogMessage() {
   for (; itr != kFile_.end(); ++itr)
     current_file /= *itr;
 
-//  for(auto &token : tokens) {
-//    if ((kFunction_.find(token) == std::string::npos) || (Logging::instance().LogLevel() > kLevel_))
-//      return;
-//  }
-
   char log_level;
-  unsigned short console_colour(0);
+  unsigned short console_colour(0);  // NOLINT (Fraser)
   switch (kLevel_) {
     case INFO:
       log_level = 'I';

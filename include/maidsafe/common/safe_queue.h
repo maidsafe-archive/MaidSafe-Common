@@ -28,67 +28,67 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_SAFE_QUEUE_H_
 #define MAIDSAFE_COMMON_SAFE_QUEUE_H_
 
+#include <atomic>
+#include <condition_variable>
 #include <mutex>
 #include <queue>
-#include <condition_variable>
-#include <atomic>
 
 // thread and exception safe queue
 // pop elements by reference to not throw :)
 
 template<typename T>
 class SafeQueue {
-public:
-  SafeQueue() :
-    queue_(),
-    mutex_(),
-    condition_(),
-    done_(false) {};
-    // move OK copy disallowed
+ public:
+  SafeQueue() : queue_(), mutex_(), condition_(), done_(false) {}
+
   SafeQueue(const SafeQueue&& other) {
     other.queue_(std::move(queue_));
     other.condition_(std::move(condition_));
     other.mutex_(std::move(mutex_));
   }
+
   SafeQueue& operator=(const SafeQueue&& other) {
     other.queue_ = (std::move(queue_));
     other.condition_ = (std::move(condition_));
     other.mutex_ = (std::move(mutex_));
   }
+
   bool Empty() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.empty();
   }
+
   unsigned Size() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.size();
   }
-  void Push(T element){
+
+  void Push(T element) {
     std::lock_guard<std::mutex> lock(mutex_);
     queue_.push(element);
     condition_.notify_one();
   }
+
   bool TryPop(T &element) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if(queue_.empty()){
+    if (queue_.empty())
       return false;
-    }
     element = queue_.front();
     queue_.pop();
     return true;
   }
+
   void WaitAndPop(T &element) {
     std::unique_lock<std::mutex> lock(mutex_);
-    while(queue_.empty() && !done_) {
-      condition_.wait(lock);  // needs unique_lock
-    }
+    while (queue_.empty() && !done_)
+      condition_.wait(lock);
     element = queue_.front();
     queue_.pop();
   }
-  void Stop() {
-    done_ = true;
-  }
-private:
+
+  void Stop() { done_ = true; }
+
+ private:
   SafeQueue& operator=(const SafeQueue&);
   SafeQueue(const SafeQueue& other);
   std::queue<T> queue_;
