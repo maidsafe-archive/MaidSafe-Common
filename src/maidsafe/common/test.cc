@@ -27,9 +27,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/test.h"
 
-int ExecuteMain(int argc, char **argv, int log_level, std::string filter, bool colour) {
-  maidsafe::log::Logging::instance().SetLogLevel(log_level);
-  maidsafe::log::Logging::instance().SetFilter(filter);
+int ExecuteMain(int argc, char **argv, maidsafe::log::Filter filter, bool colour) {
+  if (filter.empty())
+    maidsafe::log::Logging::instance().AddFilter("*", maidsafe::log::kFatal);
+  else
+    maidsafe::log::Logging::instance().SetFilter(filter);
+
   maidsafe::log::Logging::instance().SetColour(colour);
 
   testing::InitGoogleTest(&argc, argv);

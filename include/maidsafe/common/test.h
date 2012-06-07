@@ -44,14 +44,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 
-// log_level can be one of kInfo, kWarning, kError, or kFatal.  All LOG
-// messages >= log_level will be output.
-// filter is a comma separated list of projects to include in logging,
-// e.g. "common, private, rudp", or for all projects use "*".
 int ExecuteMain(int argc,
                 char **argv,
-                int log_level = maidsafe::log::kFatal,
-                std::string filter = "*",
+                maidsafe::log::Filter filter = maidsafe::log::Filter(),
                 bool colour = true);
 
 #endif  // MAIDSAFE_COMMON_TEST_H_

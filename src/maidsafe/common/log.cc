@@ -32,13 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include <chrono>
 #include <ctime>
-#include <algorithm>
 #include <cstdio>
-#include <iostream>
-#include <sstream>
-#include <string>
-
-#include "boost/tokenizer.hpp"
 
 #include "maidsafe/common/utils.h"
 
@@ -56,9 +50,6 @@ LogMessage::LogMessage(const std::string &file, int line, const std::string &fun
       kLevel_(level) {}
 
 LogMessage::~LogMessage() {
-  if (Logging::instance().LogLevel() > kLevel_)
-    return;
-
   auto itr(kFile_.end()), begin_itr(kFile_.begin());
   std::string project;
   while (itr != begin_itr) {
@@ -68,13 +59,16 @@ LogMessage::~LogMessage() {
     }
   }
 
-  std::string filter(Logging::instance().Filter());
-  if (filter != "*") {
-    boost::char_separator<char> separator(", ");
-    boost::tokenizer<boost::char_separator<char>> tokens(filter, separator);
-    if (std::find(tokens.begin(), tokens.end(), project) == tokens.end())
-      return;
+  Filter filter(Logging::instance().Filter());
+  auto filter_itr(filter.find("*"));
+  if (filter_itr == filter.end()) {
+    filter_itr = filter.find(project);
   }
+  if (filter_itr == filter.end())
+    return;
+
+  if ((*filter_itr).second > kLevel_)
+    return;
 
   fs::path current_file;
   for (; itr != kFile_.end(); ++itr)
@@ -125,12 +119,21 @@ LogMessage::~LogMessage() {
   Logging::instance().Send([log_entry, colour, console_colour] {
     if (colour) {
 #ifdef MAIDSAFE_WIN32
+      CONSOLE_SCREEN_BUFFER_INFO console_info_before;
       HANDLE console_handle(GetStdHandle(STD_OUTPUT_HANDLE));
-      if (console_handle != INVALID_HANDLE_VALUE)
+      if (console_handle != INVALID_HANDLE_VALUE) {
+        int got_console_info = GetConsoleScreenBufferInfo(console_handle, &console_info_before);
         SetConsoleTextAttribute(console_handle, console_colour);
+        printf("%s\n", log_entry.c_str());
+        if (got_console_info != 0)
+          SetConsoleTextAttribute(console_handle, console_info_before.wAttributes);
+      } else {
+        printf("%s\n", log_entry.c_str());
+      }
 #endif
+    } else {
+      printf("%s\n", log_entry.c_str());
     }
-    printf("%s\n", log_entry.c_str());
   });  // message saved
 }
 

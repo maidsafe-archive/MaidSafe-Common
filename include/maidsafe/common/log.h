@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <iostream>
 #include <cstdarg>
+#include <map>
 #include <memory>
 
 #include "boost/current_function.hpp"
@@ -44,6 +45,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace maidsafe {
 
 namespace log {
+
+typedef std::map<std::string, int> Filter;
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
@@ -106,17 +109,16 @@ class Logging {
   }
   typedef std::function<void()> functor;
   void Send(functor function);
-  void SetLogLevel(int log_level) { log_level_ = log_level; }
-  int LogLevel() const { return log_level_; }
-  void SetFilter(std::string filter) { filter_ = filter; }
-  std::string Filter() const { return filter_; }
+  void SetFilter(Filter filter) { filter_ = filter; }
+  void AddFilter(std::string project, int level) { filter_[project] = level; }
+  Filter Filter() const { return filter_; }
   void SetColour(bool colour) { colour_ = colour; }
   bool Colour() const { return colour_; }
  private:
   Logging();
   std::unique_ptr<maidsafe::Active> background_;
   int log_level_;
-  std::string filter_;
+  std::map<std::string, int> filter_;
   bool colour_;
 };
 
