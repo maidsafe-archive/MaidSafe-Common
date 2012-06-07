@@ -27,7 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/test.h"
 
-int ExecuteMain(int argc, char **argv, maidsafe::log::Filter filter, bool colour) {
+int ExecuteMain(int argc, char **argv, maidsafe::log::FilterMap filter, bool colour) {
   if (filter.empty())
     maidsafe::log::Logging::instance().AddFilter("*", maidsafe::log::kFatal);
   else

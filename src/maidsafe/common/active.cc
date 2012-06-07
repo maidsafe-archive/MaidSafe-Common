@@ -31,7 +31,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-Active::Active() : done_(false) {}
+Active::Active()
+  : message_queue_(),
+    thread_(),
+    done_(false) {}
 
 Active::~Active() {
   Callback quit_token = boost::bind(&Active::Done, this);

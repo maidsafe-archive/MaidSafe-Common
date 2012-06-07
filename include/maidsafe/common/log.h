@@ -46,7 +46,7 @@ namespace maidsafe {
 
 namespace log {
 
-typedef std::map<std::string, int> Filter;
+typedef std::map<std::string, int> FilterMap;
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
@@ -109,16 +109,16 @@ class Logging {
   }
   typedef std::function<void()> functor;
   void Send(functor function);
-  void SetFilter(Filter filter) { filter_ = filter; }
+  void SetFilter(FilterMap filter) { filter_ = filter; }
   void AddFilter(std::string project, int level) { filter_[project] = level; }
-  Filter Filter() const { return filter_; }
+  FilterMap Filter() const { return filter_; }
   void SetColour(bool colour) { colour_ = colour; }
   bool Colour() const { return colour_; }
  private:
   Logging();
   std::unique_ptr<maidsafe::Active> background_;
   int log_level_;
-  std::map<std::string, int> filter_;
+  FilterMap filter_;
   bool colour_;
 };
 

@@ -46,7 +46,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int ExecuteMain(int argc,
                 char **argv,
-                maidsafe::log::Filter filter = maidsafe::log::Filter(),
+                maidsafe::log::FilterMap filter = maidsafe::log::FilterMap(),
                 bool colour = true);
 
 #endif  // MAIDSAFE_COMMON_TEST_H_

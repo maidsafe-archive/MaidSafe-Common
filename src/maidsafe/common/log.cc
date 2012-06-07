@@ -47,7 +47,9 @@ LogMessage::LogMessage(const std::string &file, int line, const std::string &fun
     : kFile_(file),
       kLine_(line),
       kFunction_(function),
-      kLevel_(level) {}
+      kLevel_(level),
+      stream_(),
+      log_entry_() {}
 
 LogMessage::~LogMessage() {
   auto itr(kFile_.end()), begin_itr(kFile_.begin());
@@ -59,7 +61,7 @@ LogMessage::~LogMessage() {
     }
   }
 
-  Filter filter(Logging::instance().Filter());
+  FilterMap filter(Logging::instance().Filter());
   auto filter_itr(filter.find("*"));
   if (filter_itr == filter.end()) {
     filter_itr = filter.find(project);
