@@ -48,7 +48,7 @@ source_group("Common Header Files" FILES ${HEADER_FILES_COMMON_DIR})
 source_group("Common Proto Files" FILES ${PROTO_FILES_COMMON_DIR} ${SOURCE_PROTO_FILES_COMMON_DIR} ${HEADER_PROTO_FILES_COMMON_DIR} ${MS_HEADER_PROTO_FILES_COMMON_DIR})
 source_group("Common API Files" FILES ${API_FILES_COMMON_DIR})
 
-set(TEST_MAIN "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/main.cc")
+set(TEST_MAIN "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/tests_main.cc")
 
 file(GLOB SOURCE_FILES_COMMON_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/*.cc")
 file(GLOB HEADER_FILES_COMMON_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/*.h")

@@ -1,4 +1,4 @@
-/* Copyright (c) 2011 maidsafe.net limited
+/* Copyright (c) 2009 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -25,33 +25,8 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_TEST_H_
-#define MAIDSAFE_COMMON_TEST_H_
+#include "maidsafe/common/test.h"
 
-
-#include <string>
-
-#ifdef __MSVC__
-#  pragma warning(push, 1)
-#endif
-
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
-
-#include "maidsafe/common/log.h"
-
-// log_level can be one of kInfo, kWarning, kError, or kFatal.  All LOG
-// messages >= log_level will be output.
-// filter is a comma separated list of projects to include in logging,
-// e.g. "common, private, rudp", or for all projects use "*".
-int ExecuteMain(int argc,
-                char **argv,
-                int log_level = maidsafe::log::kFatal,
-                std::string filter = "*",
-                bool colour = true);
-
-#endif  // MAIDSAFE_COMMON_TEST_H_
+int main(int argc, char **argv) {
+  return ExecuteMain(argc, argv);
+}

@@ -71,7 +71,7 @@ CryptoPP::RandomNumberGenerator &rng() {
 std::string XOR(const std::string &first, const std::string &second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
-    DLOG(WARNING) << "Size mismatch or zero.";
+    LOG(kWarning) << "Size mismatch or zero.";
     return "";
   }
 
@@ -94,7 +94,7 @@ int SecurePassword(const std::string &password,
                            std::string *derived_password,
                            const std::string &label) {
   if (password.empty() || salt.empty() || pin == 0 || label.empty()) {
-    DLOG(WARNING) << "Invalid parameter.";
+    LOG(kWarning) << "Invalid parameter.";
     return kGeneralError;
   }
   uint16_t iter = (pin % 10000) + 10000;
@@ -117,7 +117,7 @@ std::string SymmEncrypt(const std::string &input,
                         const std::string &initialisation_vector) {
   if (key.size() < AES256_KeySize ||
       initialisation_vector.size() < AES256_IVSize) {
-    DLOG(WARNING) << "Undersized key or IV.";
+    LOG(kWarning) << "Undersized key or IV.";
     return "";
   }
 
@@ -139,7 +139,7 @@ std::string SymmEncrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed symmetric encryption: " << e.what();
+    LOG(kError) << "Failed symmetric encryption: " << e.what();
     return "";
   }
 }
@@ -150,7 +150,7 @@ std::string SymmDecrypt(const std::string &input,
   if (key.size() < AES256_KeySize ||
       initialisation_vector.size() < AES256_IVSize ||
       input.empty()) {
-    DLOG(WARNING) << "Undersized key or IV or input.";
+    LOG(kWarning) << "Undersized key or IV or input.";
     return "";
   }
 
@@ -172,7 +172,7 @@ std::string SymmDecrypt(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed symmetric decryption: " << e.what();
+    LOG(kError) << "Failed symmetric decryption: " << e.what();
     return "";
   }
 }
@@ -188,7 +188,7 @@ std::string Compress(const std::string &input,
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed compressing: " << e.what();
+    LOG(kError) << "Failed compressing: " << e.what();
     return "";
   }
 }
@@ -201,7 +201,7 @@ std::string Uncompress(const std::string &input) {
     return result;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed uncompressing: " << e.what();
+    LOG(kError) << "Failed uncompressing: " << e.what();
     return "";
   }
 }

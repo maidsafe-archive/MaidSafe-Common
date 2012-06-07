@@ -85,7 +85,7 @@ bool ParseSafeEncrypt(const std::string &serialised_safe_encrypt,
 
 int GenerateKeyPair(Keys *keypair) {
   if (!keypair) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return kNullParameter;
   }
   CryptoPP::InvertibleRSAFunction parameters;
@@ -93,7 +93,7 @@ int GenerateKeyPair(Keys *keypair) {
     parameters.GenerateRandomWithKeySize(rng(), Keys::kKeySize);
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed generating keypair: " << e.what();
+    LOG(kError) << "Failed generating keypair: " << e.what();
     return kKeyGenerationError;
   }
   PrivateKey private_key(parameters);
@@ -111,16 +111,16 @@ int Encrypt(const PlainText &data,
             const PublicKey &public_key,
             CipherText *result) {
   if (!result) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return kNullParameter;
   }
   result->clear();
   if (data.empty()) {
-    DLOG(ERROR) << "No data";
+    LOG(kError) << "No data";
     return kDataEmpty;
   }
   if (!public_key.Validate(rng(), 0)) {
-    DLOG(ERROR) << "Bad public key";
+    LOG(kError) << "Bad public key";
     return kInvalidPublicKey;
   }
 
@@ -140,7 +140,7 @@ int Encrypt(const PlainText &data,
               new CryptoPP::StringSink(encryption_key_encrypted)));
       safe_enc.set_key(encryption_key_encrypted);
       if (!safe_enc.SerializeToString(result)) {
-        DLOG(ERROR) << "Failed to serialise PB";
+        LOG(kError) << "Failed to serialise PB";
         result->clear();
         return kRSASerialisationError;
       }
@@ -151,7 +151,7 @@ int Encrypt(const PlainText &data,
     }
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed encryption: " << e.what();
+    LOG(kError) << "Failed encryption: " << e.what();
     return kRSAEncryptError;
   }
 
@@ -162,16 +162,16 @@ int Decrypt(const CipherText &data,
             const PrivateKey &private_key,
             PlainText *result) {
   if (!result) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return kNullParameter;
   }
   result->clear();
   if (data.empty()) {
-    DLOG(ERROR) << "No data";
+    LOG(kError) << "No data";
     return kDataEmpty;
   }
   if (!private_key.Validate(rng(), 0)) {
-    DLOG(ERROR) << "Bad private key";
+    LOG(kError) << "Bad private key";
     return kInvalidPrivateKey;
   }
 
@@ -194,12 +194,12 @@ int Decrypt(const CipherText &data,
     }
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed decryption: " << e.what();
+    LOG(kError) << "Failed decryption: " << e.what();
     return kRSADecryptError;
   }
 
   if (result->empty()) {
-    DLOG(ERROR) << "Failed decryption";
+    LOG(kError) << "Failed decryption";
     return kRSADecryptError;
   }
 
@@ -210,15 +210,15 @@ int Sign(const std::string &data,
          const PrivateKey &private_key,
          std::string *signature) {
   if (!signature) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return kNullParameter;
   }
   if (!private_key.Validate(rng(), 0)) {
-    DLOG(ERROR) << "Bad private key";
+    LOG(kError) << "Bad private key";
     return kInvalidPrivateKey;
   }
   if (data.empty()) {
-    DLOG(ERROR) << "No data";
+    LOG(kError) << "No data";
     return kDataEmpty;
   }
 
@@ -229,7 +229,7 @@ int Sign(const std::string &data,
             new CryptoPP::StringSink(*signature)));
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed asymmetric signing: " << e.what();
+    LOG(kError) << "Failed asymmetric signing: " << e.what();
     return kRSASigningError;
   }
   return kSuccess;
@@ -239,15 +239,15 @@ int CheckSignature(const PlainText &data,
                    const Signature &signature,
                    const PublicKey &public_key) {
   if (!public_key.Validate(rng(), 0)) {
-    DLOG(ERROR) << "Bad public key";
+    LOG(kError) << "Bad public key";
     return kInvalidPublicKey;
   }
   if (data.empty()) {
-    DLOG(ERROR) << "No data";
+    LOG(kError) << "No data";
     return kDataEmpty;
   }
   if (signature.empty()) {
-    DLOG(ERROR) << "No signature";
+    LOG(kError) << "No signature";
     return kRSASignatureEmpty;
   }
 
@@ -263,19 +263,19 @@ int CheckSignature(const PlainText &data,
        return kRSAInvalidSignature;
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << "Failed signature check: " << e.what();
+    LOG(kError) << "Failed signature check: " << e.what();
     return kRSAInvalidSignature;
   }
 }
 
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
   if (!private_key) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return;
   }
   private_key->clear();
   if (!ValidateKey(key)) {
-    DLOG(ERROR) << "Not a valid key";
+    LOG(kError) << "Not a valid key";
     return;
   }
 
@@ -285,19 +285,19 @@ void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
     EncodeKey(queue, private_key);
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    LOG(kError) << e.what();
     private_key->clear();
   }
 }
 
 void EncodePublicKey(const PublicKey &key, std::string *public_key) {
   if (!public_key) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return;
   }
   public_key->clear();
   if (!ValidateKey(key)) {
-    DLOG(ERROR) << "Not a valid key";
+    LOG(kError) << "Not a valid key";
     return;
   }
 
@@ -307,14 +307,14 @@ void EncodePublicKey(const PublicKey &key, std::string *public_key) {
     EncodeKey(queue, public_key);
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    LOG(kError) << e.what();
     public_key->clear();
   }
 }
 
 void DecodePrivateKey(const std::string &private_key, PrivateKey *key) {
   if (!key) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return;
   }
   try {
@@ -325,14 +325,14 @@ void DecodePrivateKey(const std::string &private_key, PrivateKey *key) {
                               static_cast<size_t>(queue.MaxRetrievable()));
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    LOG(kError) << e.what();
     *key = PrivateKey();
   }
 }
 
 void DecodePublicKey(const std::string &public_key, PublicKey *key) {
   if (!key) {
-    DLOG(ERROR) << "NULL pointer passed";
+    LOG(kError) << "NULL pointer passed";
     return;
   }
   try {
@@ -343,7 +343,7 @@ void DecodePublicKey(const std::string &public_key, PublicKey *key) {
                             static_cast<size_t>(queue.MaxRetrievable()));
   }
   catch(const CryptoPP::Exception &e) {
-    DLOG(ERROR) << e.what();
+    LOG(kError) << e.what();
     *key = PublicKey();
   }
 }

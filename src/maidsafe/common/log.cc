@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef MAIDSAFE_WIN32
 #  include <Windows.h>
-#  undef ERROR
 #endif
 #include <chrono>
 #include <ctime>
@@ -70,10 +69,12 @@ LogMessage::~LogMessage() {
   }
 
   std::string filter(Logging::instance().Filter());
-  boost::char_separator<char> separator(", ");
-  boost::tokenizer<boost::char_separator<char>> tokens(filter, separator);
-  if (std::find(tokens.begin(), tokens.end(), project) == tokens.end())
-    return;
+  if (filter != "*") {
+    boost::char_separator<char> separator(", ");
+    boost::tokenizer<boost::char_separator<char>> tokens(filter, separator);
+    if (std::find(tokens.begin(), tokens.end(), project) == tokens.end())
+      return;
+  }
 
   fs::path current_file;
   for (; itr != kFile_.end(); ++itr)
@@ -82,19 +83,19 @@ LogMessage::~LogMessage() {
   char log_level;
   unsigned short console_colour(0);  // NOLINT (Fraser)
   switch (kLevel_) {
-    case INFO:
+    case kInfo:
       log_level = 'I';
       console_colour = 7U;
       break;
-    case WARNING:
+    case kWarning:
       log_level = 'W';
       console_colour = 14U;
       break;
-    case ERROR:
+    case kError:
       log_level = 'E';
       console_colour = 12U;
       break;
-    case FATAL:
+    case kFatal:
       log_level = 'F';
       console_colour = 12U;
       break;
@@ -135,7 +136,7 @@ LogMessage::~LogMessage() {
 
 Logging::Logging()
     : background_(maidsafe::Active::createActive()),
-      log_level_(FATAL),
+      log_level_(kFatal),
       filter_(),
       colour_(true) {}
 

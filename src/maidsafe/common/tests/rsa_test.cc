@@ -203,7 +203,7 @@ TEST_F(RSATest, BEH_Serialise) {
       input_archive2 >> recovered_private_key >> recovered_public_key;
     }
     catch(const std::exception &e) {
-      DLOG(INFO) << e.what();
+      LOG(kInfo) << e.what();
     }
     EXPECT_TRUE(ValidateKey(recovered_public_key));
     EXPECT_TRUE(ValidateKey(recovered_private_key));

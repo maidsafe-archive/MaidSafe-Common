@@ -39,7 +39,7 @@ AsioService::~AsioService() {
 
 void AsioService::Start(const uint32_t &thread_count) {
   if (work_) {
-    DLOG(ERROR) << "AsioService is already running with "
+    LOG(kError) << "AsioService is already running with "
                 << threads_.size() << " threads.";
     return;
   }
@@ -54,7 +54,7 @@ void AsioService::Start(const uint32_t &thread_count) {
               break;
           }
           catch(const boost::system::system_error &e) {
-            DLOG(ERROR) << e.what();
+            LOG(kError) << e.what();
           }
         }
     });

@@ -462,19 +462,19 @@ TEST(UtilsTest, BEH_GetMaidSafeVersion) {
 
 TEST(UtilsTest, BEH_GetHomeDir) {
   EXPECT_FALSE(GetHomeDir().empty());
-  DLOG(INFO) << " I think your home directory is "
+  LOG(kInfo) << " I think your home directory is "
              << GetHomeDir().string();
 }
 
 TEST(UtilsTest, BEH_GetUserAppDir) {
   EXPECT_FALSE(GetUserAppDir().empty());
-  DLOG(INFO) << " I think your user app directory is "
+  LOG(kInfo) << " I think your user app directory is "
              << GetUserAppDir().string();
 }
 
 TEST(UtilsTest, BEH_GetSystemAppDir) {
   EXPECT_FALSE(GetSystemAppDir().empty());
-  DLOG(INFO) << " I think your System app directory is "
+  LOG(kInfo) << " I think your System app directory is "
              << GetSystemAppDir().string();
 }
 
@@ -499,9 +499,9 @@ void CleanupTest(fs::path *&test_path) {
   if (!test_path->empty()) {
     boost::system::error_code error_code;
     if (fs::remove_all(*test_path, error_code) == 0)
-      DLOG(WARNING) << "Test directory " << *test_path << " already deleted.";
+      LOG(kWarning) << "Test directory " << *test_path << " already deleted.";
     if (error_code)
-      DLOG(WARNING) << "Failed to clean up test directory " << *test_path
+      LOG(kWarning) << "Failed to clean up test directory " << *test_path
                    << "  (error message: " << error_code.message() << ")";
   }
   delete test_path;

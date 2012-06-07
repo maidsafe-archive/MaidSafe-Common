@@ -46,7 +46,6 @@ namespace maidsafe {
 namespace log {
 
 #ifdef MAIDSAFE_WIN32
-#  undef ERROR
 class NullStream {
  public:
   NullStream() {}
@@ -71,12 +70,12 @@ struct Envoid {
 };
 
 
-const int INFO = 0, WARNING = 1, ERROR = 2, FATAL = 3;
+const int kInfo = 0, kWarning = 1, kError = 2, kFatal = 3;
 
 #ifdef NDEBUG
-#  define DLOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
+#  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #else
-#  define DLOG(level) \
+#  define LOG(level) \
     maidsafe::log::LogMessage(__FILE__, \
                               __LINE__, \
                               BOOST_CURRENT_FUNCTION, \
@@ -102,8 +101,8 @@ class LogMessage {
 class Logging {
  public:
   static Logging& instance() {
-    static Logging l;
-    return l;
+    static Logging logging;
+    return logging;
   }
   typedef std::function<void()> functor;
   void Send(functor function);

@@ -295,7 +295,7 @@ uint32_t GetTimeStamp() {
 
 bool ReadFile(const fs::path &file_path, std::string *content) {
   if (!content) {
-    DLOG(ERROR) << "Failed to read file " << file_path
+    LOG(kError) << "Failed to read file " << file_path
                 << ": NULL pointer passed";
     return false;
   }
@@ -303,7 +303,7 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
   try {
     uintmax_t file_size(fs::file_size(file_path));
     if (file_size > std::numeric_limits<unsigned int>::max()) {
-      DLOG(ERROR) << "Failed to read file " << file_path << ": File size "
+      LOG(kError) << "Failed to read file " << file_path << ": File size "
                   << file_size << " too large (over "
                   << std::numeric_limits<unsigned int>::max() << ")";
       return false;
@@ -315,14 +315,14 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
       Sleep(boost::posix_time::milliseconds(seed));
       file_size = fs::file_size(file_path);
       ++i;
-      DLOG(WARNING) << "Re-read attempt " << i << " after sleeping for " << seed
+      LOG(kWarning) << "Re-read attempt " << i << " after sleeping for " << seed
                     << " ms, file size is " << file_size;
       seed *= 2;
     }
 
     fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
     if (!file_in.good()) {
-      DLOG(ERROR) << "Failed to read file " << file_path << ": Bad filestream";
+      LOG(kError) << "Failed to read file " << file_path << ": Bad filestream";
       return false;
     }
     if (file_size == 0U) {
@@ -335,7 +335,7 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
     file_in.close();
   }
   catch(const std::exception &e) {
-    DLOG(ERROR) << "Failed to read file " << file_path << ": " << e.what();
+    LOG(kError) << "Failed to read file " << file_path << ": " << e.what();
     return false;
   }
   return true;
@@ -344,21 +344,21 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
 bool WriteFile(const fs::path &file_path, const std::string &content) {
   try {
     if (!file_path.has_filename()) {
-      DLOG(ERROR) << "Failed to write: file_path " << file_path
+      LOG(kError) << "Failed to write: file_path " << file_path
                   << " has no filename";
       return false;
     }
     fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |
                                      std::ios::binary);
     if (!file_out.good()) {
-      DLOG(ERROR) << "Can't get ofstream created for " << file_path;
+      LOG(kError) << "Can't get ofstream created for " << file_path;
       return false;
     }
     file_out.write(content.data(), content.size());
     file_out.close();
   }
   catch(const std::exception &e) {
-    DLOG(ERROR) << "Failed to write file " << file_path << ": " << e.what();
+    LOG(kError) << "Failed to write file " << file_path << ": " << e.what();
     return false;
   }
   return true;
@@ -384,14 +384,14 @@ fs::path GetHomeDir() {
   if (!env_home.empty())
     return fs::path(env_home);
 #endif
-  DLOG(ERROR) << "Cannot deduce home directory path";
+  LOG(kError) << "Cannot deduce home directory path";
   return fs::path();
 }
 
 fs::path GetUserAppDir() {
   const fs::path kHomeDir(GetHomeDir());
   if (kHomeDir.empty()) {
-    DLOG(ERROR) << "Cannot deduce user application directory path";
+    LOG(kError) << "Cannot deduce user application directory path";
     return fs::path();
   }
 #if defined(MAIDSAFE_WIN32)
@@ -402,7 +402,7 @@ fs::path GetUserAppDir() {
 #elif defined(MAIDSAFE_LINUX)
   return kHomeDir / ".config" / kCompanyName / kApplicationName;
 #else
-  DLOG(ERROR) << "Cannot deduce user application directory path";
+  LOG(kError) << "Cannot deduce user application directory path";
   return fs::path();
 #endif
 }
@@ -417,7 +417,7 @@ fs::path GetSystemAppDir() {
 #elif defined(MAIDSAFE_LINUX)
   return fs::path("/usr/share/") / kCompanyName / kApplicationName;
 #else
-  DLOG(ERROR) << "Cannot deduce system wide application directory path";
+  LOG(kError) << "Cannot deduce system wide application directory path";
   return fs::path();
 #endif
 }
@@ -456,7 +456,7 @@ TestPath CreateTestPath(std::string test_prefix) {
 
   if (test_prefix.substr(0, 13) != "MaidSafe_Test" &&
       test_prefix.substr(0, 12) != "Sigmoid_Test") {
-    DLOG(WARNING) << "Test prefix should preferably be \"MaidSafe_Test<optional"
+    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional"
                  << " test name>\" or \"Sigmoid_Test<optional test name>\".";
   }
 
@@ -478,17 +478,17 @@ TestPath CreateTestPath(std::string test_prefix) {
         delete delete_path;
       });
   if (error_code) {
-    DLOG(WARNING) << "Can't get a temp directory: " << error_code.message();
+    LOG(kWarning) << "Can't get a temp directory: " << error_code.message();
     return TestPath(new fs::path);
   }
 
   if (!fs::create_directories(*test_path, error_code) || error_code) {
-    DLOG(WARNING) << "Failed to create test directory " << *test_path
+    LOG(kWarning) << "Failed to create test directory " << *test_path
                  << "  (error message: " << error_code.message() << ")";
     return TestPath(new fs::path);
   }
 
-  DLOG(INFO) << "Created test directory " << *test_path;
+  LOG(kInfo) << "Created test directory " << *test_path;
   return test_path_ptr;
 }
 

@@ -118,7 +118,7 @@ std::string HashFile(const boost::filesystem::path &file_path) {
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
   catch(...) {
-    // DLOG(ERROR) << e.what();
+    // LOG(kError) << e.what();
     result.clear();
   }
   return result;
