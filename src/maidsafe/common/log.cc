@@ -132,6 +132,8 @@ LogMessage::~LogMessage() {
       } else {
         printf("%s\n", log_entry.c_str());
       }
+#else
+      printf("%s\n", log_entry.c_str());
 #endif
     } else {
       printf("%s\n", log_entry.c_str());
