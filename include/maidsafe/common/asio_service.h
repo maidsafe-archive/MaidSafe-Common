@@ -42,9 +42,9 @@ namespace maidsafe {
 
 class AsioService {
  public:
-  AsioService();
+  AsioService(const uint32_t &thread_count);
   ~AsioService();
-  void Start(const uint32_t &thread_count);
+  void Start();
   void Stop();
   boost::asio::io_service& service();
 
