@@ -49,11 +49,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace fs = boost::filesystem;
 
-template<typename T, typename ...Args>
-std::unique_ptr<T> make_unique( Args&& ...args ) {
-    return std::unique_ptr<T>( new T( std::forward<Args>(args)... ) );
-}
-
 namespace maidsafe {
 
 // 01 Jan 2000
