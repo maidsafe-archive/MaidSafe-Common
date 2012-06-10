@@ -31,7 +31,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-AsioService::AsioService(const uint32_t &thread_count) : service_(), work_(), threads_(thread_count) {}
+AsioService::AsioService(const uint32_t &thread_count)
+    : service_(),
+      work_(),
+      threads_(thread_count) {}
 
 AsioService::~AsioService() {
   Stop();
