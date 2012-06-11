@@ -73,7 +73,7 @@ struct Envoid {
 };
 
 
-const int kInfo = 0, kWarning = 1, kError = 2, kFatal = 3;
+const int kVerbose = -1, kInfo = 0, kWarning = 1, kError = 2, kFatal = 3;
 
 #ifdef NDEBUG
 #  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()

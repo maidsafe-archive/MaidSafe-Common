@@ -42,7 +42,7 @@ namespace maidsafe {
 
 class AsioService {
  public:
-  AsioService(const uint32_t &thread_count);
+  explicit AsioService(const uint32_t &thread_count);
   ~AsioService();
   void Start();
   void Stop();

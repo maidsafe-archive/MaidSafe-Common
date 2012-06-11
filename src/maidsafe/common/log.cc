@@ -79,6 +79,10 @@ LogMessage::~LogMessage() {
   char log_level;
   unsigned short console_colour(0);  // NOLINT (Fraser)
   switch (kLevel_) {
+    case kVerbose:
+      log_level = 'V';
+      console_colour = 10U;
+      break;
     case kInfo:
       log_level = 'I';
       console_colour = 7U;
