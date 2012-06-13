@@ -107,6 +107,8 @@ LogMessage::~LogMessage() {
   oss << log_level << " " << std::this_thread::get_id();
 #if defined(WIN32)
   oss << '\t';
+#else
+  oss << ' ';
 #endif
 //  std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 //  std::string time = std::ctime(&t);
