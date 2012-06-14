@@ -25,38 +25,40 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_ACTIVE_H_
-#define MAIDSAFE_COMMON_ACTIVE_H_
-
-#include <atomic>
-#include <mutex>
-#include <condition_variable>
-#include <functional>
-#include <queue>
-
-#include "boost/thread/thread.hpp"
+#include "maidsafe/common/active.h"
 
 
 namespace maidsafe {
 
-class Active {
- public:
-  typedef std::function<void()> Functor;
-  Active();
-  ~Active();
-  void Send(Functor functor);
+Active::Active() : done_(false),
+                   functors_(),
+                   mutex_(),
+                   condition_(),
+                   thread_([=] { Run(); }) {}
 
- private:
-  Active(const Active&);
-  Active& operator=(const Active&);
-  void Run();
-  bool done_;
-  std::queue<Functor> functors_;
-  std::mutex mutex_;
-  std::condition_variable condition_;
-  boost::thread thread_;
-};
+Active::~Active() {
+  Send([&] { done_ = true; });  // NOLINT (Fraser)
+  thread_.join();
+}
+
+void Active::Send(Functor functor) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  functors_.push(functor);
+  condition_.notify_one();
+}
+
+void Active::Run() {
+  while (!done_) {
+    Functor functor;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      while (functors_.empty())
+        condition_.wait(lock);
+      functor = functors_.front();
+      functors_.pop();
+    }
+    functor();
+  }
+}
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_ACTIVE_H_

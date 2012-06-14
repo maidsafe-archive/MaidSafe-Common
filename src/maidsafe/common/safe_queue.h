@@ -28,7 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_SAFE_QUEUE_H_
 #define MAIDSAFE_COMMON_SAFE_QUEUE_H_
 
-#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
@@ -39,18 +38,18 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 template<typename T>
 class SafeQueue {
  public:
-  SafeQueue() : queue_(), mutex_(), condition_(), done_(false) {}
+  SafeQueue() : queue_(), mutex_(), condition_() {}
 
   SafeQueue(const SafeQueue&& other) {
     other.queue_(std::move(queue_));
-    other.condition_(std::move(condition_));
     other.mutex_(std::move(mutex_));
+    other.condition_(std::move(condition_));
   }
 
   SafeQueue& operator=(const SafeQueue&& other) {
     other.queue_ = (std::move(queue_));
-    other.condition_ = (std::move(condition_));
     other.mutex_ = (std::move(mutex_));
+    other.condition_ = (std::move(condition_));
   }
 
   bool Empty() const {
@@ -80,13 +79,11 @@ class SafeQueue {
 
   void WaitAndPop(T &element) {
     std::unique_lock<std::mutex> lock(mutex_);
-    while (queue_.empty() && !done_)
+    while (queue_.empty())
       condition_.wait(lock);
     element = queue_.front();
     queue_.pop();
   }
-
-  void Stop() { done_ = true; }
 
  private:
   SafeQueue& operator=(const SafeQueue&);
@@ -94,7 +91,6 @@ class SafeQueue {
   std::queue<T> queue_;
   mutable std::mutex mutex_;
   std::condition_variable condition_;
-  std::atomic<bool> done_;
 };
 
 #endif  // MAIDSAFE_COMMON_SAFE_QUEUE_H_
