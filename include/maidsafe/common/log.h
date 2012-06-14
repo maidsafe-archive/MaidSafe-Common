@@ -116,7 +116,7 @@ class Logging {
   bool Colour() const { return colour_; }
  private:
   Logging();
-  std::unique_ptr<maidsafe::Active> background_;
+  maidsafe::Active background_;
   int log_level_;
   FilterMap filter_;
   bool colour_;

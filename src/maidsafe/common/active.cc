@@ -29,40 +29,37 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cassert>
 
 
-namespace maidsafe {
+//namespace maidsafe {
 
-Active::Active()
-  : message_queue_(),
-    thread_(),
-    done_(false) {}
+//Active::Active() : done(false) {
+//  thd = unique_ptr<thread>(new std::thread( [=]{ this->Run(); } ) );
+//}
 
-Active::~Active() {
-  Callback quit_token = boost::bind(&Active::Done, this);
-  Send(quit_token);
-  thread_.join();
-}
+//Active::~Active() {
+//  Send( [&]{ done = true; } ); ;
+//  thd->join();
+//}
 
-void Active::Send(Callback message) {
-  message_queue_.Push(message);
-}
+//void Active::Send(Callback message) {
+//  message_queue_.Push(message);
+//}
 
-void Active::Run() {
-  while (!done_) {
-    Callback func;
-    message_queue_.WaitAndPop(func);
-    func();
-  }
-}
+//void Active::Run() {
+//  while( !done ) {
+//    Message msg = mess .receive();
+//    msg();            // execute message
+//  } // note: last message sets done to true
+//}
 
-void Active::Done() {
-  done_ = true;
-  message_queue_.Stop();
-}
+//void Active::Done() {
+//  done_ = true;
+//  message_queue_.Stop();
+//}
 
-std::unique_ptr<Active> Active::createActive() {
-  std::unique_ptr<Active> ptr(new Active());
-  ptr->thread_ = boost::thread(&Active::Run, ptr.get());
-  return ptr;
-}
+//std::unique_ptr<Active> Active::createActive() {
+//  std::unique_ptr<Active> ptr(new Active());
+//  ptr->thread_ = boost::thread(&Active::Run, ptr.get());
+//  return ptr;
+//}
 
-}  // namespace maidsafe
+//}  // namespace maidsafe

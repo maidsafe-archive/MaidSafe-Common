@@ -146,13 +146,13 @@ LogMessage::~LogMessage() {
 }
 
 Logging::Logging()
-    : background_(maidsafe::Active::createActive()),
+    : background_(),
       log_level_(kFatal),
       filter_(),
       colour_(true) {}
 
 void Logging::Send(functor voidfunction) {
-  background_->Send(voidfunction);
+  background_.Send(voidfunction);
 }
 
 

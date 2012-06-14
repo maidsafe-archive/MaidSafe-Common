@@ -40,22 +40,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/safe_queue.h"
 
 namespace maidsafe {
-typedef std::function<void()> Callback;
-
 class Active {
- public:
-  virtual ~Active();
-  void Send(Callback message);
-  static std::unique_ptr<Active> createActive();
- private:
-  Active(const Active&);
-  Active& operator=(const Active&);
-  Active();
-  void Done();
-  void Run();
-  SafeQueue<Callback> message_queue_;
-  boost::thread thread_;
-  std::atomic<bool> done_;
+public:
+  typedef std::function<void()> Message;
+  Active() : done(false) {
+    thd = std::unique_ptr<std::thread>(
+                  new std::thread( [=]{ this->Run(); } ) );
+  }
+
+  ~Active() {
+    Send( [&]{ done = true; } );
+    thd->join();
+  }
+  void Send( Message m ) { mq.Push( m ); }
+private:
+  Active( const Active& );           // no copying
+  void operator=( const Active& );    // no copying
+  bool done;                         // le flag
+  SafeQueue<Message> mq;        // le queue
+  std::unique_ptr<std::thread> thd;          // le thread
+  void Run() {
+    while( !done ) {
+      Message msg;
+      mq.WaitAndPop(msg);
+      msg();  // execute message
+    } // note: last message sets done to true
+  }
 };
 
 }  // namespace maidsafe
