@@ -41,30 +41,29 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 class Active {
-public:
-  typedef std::function<void()> Message;
+ public:
+  typedef std::function<void()> Functor;
   Active() : done(false) {
-    thd = std::unique_ptr<std::thread>(
-                  new std::thread( [=]{ this->Run(); } ) );
+    thread_ = std::unique_ptr<std::thread>(new std::thread( [=]{ this->Run(); } ) );
   }
-
   ~Active() {
     Send( [&]{ done = true; } );
-    thd->join();
+    thread_->join();
   }
-  void Send( Message m ) { mq.Push( m ); }
-private:
-  Active( const Active& );           // no copying
-  void operator=( const Active& );    // no copying
-  bool done;                         // le flag
-  SafeQueue<Message> mq;        // le queue
-  std::unique_ptr<std::thread> thd;          // le thread
+  void Send( Functor m ) { message_queue_.Push( m ); }
+
+ private:
+  Active( const Active& );
+  void operator=( const Active& );
+  bool done;
+  SafeQueue<Functor> message_queue_;
+  std::unique_ptr<std::thread> thread_;
   void Run() {
     while( !done ) {
-      Message msg;
-      mq.WaitAndPop(msg);
-      msg();  // execute message
-    } // note: last message sets done to true
+      Functor msg;
+      message_queue_.WaitAndPop(msg);
+      msg();
+    } // dtctr sets done to true
   }
 };
 
