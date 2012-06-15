@@ -30,20 +30,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_CONFIG_H_
 
 #include <string>
-
+#include "boost/preprocessor/stringize.hpp"
 
 namespace maidsafe {
 
 #if !defined(COMPANY_NAME)
 const std::string kCompanyName("maidsafe");
 #else
-const std::string kCompanyName("COMPANY_NAME");
+const std::string kCompanyName(BOOST_PP_STRINGIZE(COMPANY_NAME));
 #endif
 
 #if !defined(APPLICATION_NAME)
 const std::string kApplicationName("lifestuff");
 #else
-const std::string kApplicationName("APPLICATION_NAME");
+const std::string kApplicationName(BOOST_PP_STRINGIZE(APPLICATION_NAME));
 #endif
 
 }  // namespace maidsafe

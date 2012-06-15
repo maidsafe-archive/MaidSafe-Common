@@ -32,6 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/omp.h"
@@ -50,6 +51,11 @@ void GenerateRandomStrings(const int &string_count, const size_t &string_size) {
     RandomString(string_size);
 }
 
+
+TEST(UtilsTest, BEH_Names) {
+  ASSERT_EQ(kCompanyName, "maidsafe");
+  ASSERT_EQ(kApplicationName, "lifestuff");
+}
 
 TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
   EXPECT_EQ("0 B", BytesToDecimalSiUnits(0U));
