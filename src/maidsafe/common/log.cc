@@ -44,13 +44,72 @@ namespace maidsafe {
 
 namespace log {
 
+namespace {
+
+#ifdef MAIDSAFE_WIN32
+
+WORD GetColourAttribute(Colour colour) {
+  switch (colour) {
+    case Colour::kRed:
+      return FOREGROUND_RED | FOREGROUND_INTENSITY;
+    case Colour::kGreen:
+      return FOREGROUND_GREEN | FOREGROUND_INTENSITY;
+    case Colour::kYellow:
+      return FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY;
+    default:
+      return FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
+  }
+}
+
+void ColouredPrint(Colour colour, const std::string &text) {
+  CONSOLE_SCREEN_BUFFER_INFO console_info_before;
+  const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
+  if (kConsoleHandle != INVALID_HANDLE_VALUE) {
+    int got_console_info = GetConsoleScreenBufferInfo(kConsoleHandle, &console_info_before);
+    fflush(stdout);
+    SetConsoleTextAttribute(kConsoleHandle, GetColourAttribute(colour));
+    printf("%s", text.c_str());
+    fflush(stdout);
+    if (got_console_info != 0)
+      SetConsoleTextAttribute(kConsoleHandle, console_info_before.wAttributes);
+  } else {
+    printf("%s", text.c_str());
+  }
+  fflush(stdout);
+}
+
+#else
+
+const char* GetAnsiColourCode(Colour colour) {
+  switch (colour) {
+    case Colour::kRed:
+      return "1";
+    case Colour::kGreen:
+      return "2";
+    case Colour::kYellow:
+      return "3";
+    default:
+      return nullptr;
+  }
+}
+
+void ColouredPrint(Colour colour, const std::string &text) {
+  printf("\033[0;3%sm", GetAnsiColourCode(colour));
+  printf("%s", text.c_str());
+  printf("\033[m");
+  fflush(stdout);
+}
+
+#endif
+
+}  // unnamed namespace
+
 LogMessage::LogMessage(const std::string &file, int line, const std::string &function, int level)
     : kFile_(file),
       kLine_(line),
       kFunction_(function),
       kLevel_(level),
-      stream_(),
-      log_entry_() {}
+      stream_() {}
 
 LogMessage::~LogMessage() {
   auto itr(kFile_.end()), begin_itr(kFile_.begin());
@@ -78,27 +137,27 @@ LogMessage::~LogMessage() {
     current_file /= *itr;
 
   char log_level;
-  unsigned short console_colour(0);  // NOLINT (Fraser)
+  Colour colour(Colour::kDefaultColour);
   switch (kLevel_) {
     case kVerbose:
       log_level = 'V';
-      console_colour = 10U;
+      colour = Colour::kGreen;
       break;
     case kInfo:
       log_level = 'I';
-      console_colour = 7U;
+      colour = Colour::kDefaultColour;
       break;
     case kWarning:
       log_level = 'W';
-      console_colour = 14U;
+      colour = Colour::kYellow;
       break;
     case kError:
       log_level = 'E';
-      console_colour = 12U;
+      colour = Colour::kRed;
       break;
     case kFatal:
       log_level = 'F';
-      console_colour = 12U;
+      colour = Colour::kRed;
       break;
     default:
       log_level = ' ';
@@ -121,31 +180,26 @@ LogMessage::~LogMessage() {
   oss << ":" << kLine_ << "] ";
 //  oss << " Function: " << function_ << "] ";
 
-  oss << stream_.str();
+  oss << stream_.str() << '\n';
   std::string log_entry(oss.str());
-  bool colour(Logging::instance().Colour());
+  bool use_colour(Logging::instance().Colour());
 
-  Logging::instance().Send([log_entry, colour, console_colour] {
-    if (colour) {
-#ifdef MAIDSAFE_WIN32
-      CONSOLE_SCREEN_BUFFER_INFO console_info_before;
-      HANDLE console_handle(GetStdHandle(STD_OUTPUT_HANDLE));
-      if (console_handle != INVALID_HANDLE_VALUE) {
-        int got_console_info = GetConsoleScreenBufferInfo(console_handle, &console_info_before);
-        SetConsoleTextAttribute(console_handle, console_colour);
-        printf("%s\n", log_entry.c_str());
-        if (got_console_info != 0)
-          SetConsoleTextAttribute(console_handle, console_info_before.wAttributes);
-      } else {
-        printf("%s\n", log_entry.c_str());
-      }
-#else
-      printf("%s\n", log_entry.c_str());
-#endif
+  Logging::instance().Send([colour, log_entry, use_colour] {
+    if (use_colour) {
+      ColouredPrint(colour, log_entry);
     } else {
-      printf("%s\n", log_entry.c_str());
+      printf("%s", log_entry.c_str());
+      fflush(stdout);
     }
-  });  // message saved
+  });
+}
+
+GtestLogMessage::GtestLogMessage(Colour colour) : kColour_(colour), stream_() {}
+
+GtestLogMessage::~GtestLogMessage() {
+  std::string log_entry(stream_.str());
+  Colour colour(kColour_);
+  Logging::instance().Send([colour, log_entry] { ColouredPrint(colour, log_entry); });  // NOLINT (Fraser)
 }
 
 Logging::Logging()

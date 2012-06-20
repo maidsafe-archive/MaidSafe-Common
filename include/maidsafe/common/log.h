@@ -48,6 +48,8 @@ namespace log {
 
 typedef std::map<std::string, int> FilterMap;
 
+enum class Colour { kDefaultColour, kRed, kGreen, kYellow };
+
 #ifdef MAIDSAFE_WIN32
 class NullStream {
  public:
@@ -78,12 +80,12 @@ const int kVerbose = -1, kInfo = 0, kWarning = 1, kError = 2, kFatal = 3;
 #ifdef NDEBUG
 #  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #else
-#  define LOG(level) \
-    maidsafe::log::LogMessage(__FILE__, \
-                              __LINE__, \
-                              BOOST_CURRENT_FUNCTION, \
-                              maidsafe::log::level).messageStream()
+#  define LOG(level) maidsafe::log::LogMessage(__FILE__, \
+                                               __LINE__, \
+                                               BOOST_CURRENT_FUNCTION, \
+                                               maidsafe::log::level).messageStream()
 #endif
+#define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
 
 typedef const std::string& LogEntry;
 
@@ -98,7 +100,16 @@ class LogMessage {
   const std::string kFunction_;
   const int kLevel_;
   std::ostringstream stream_;
-  std::string log_entry_;
+};
+
+class GtestLogMessage {
+ public:
+  explicit GtestLogMessage(Colour colour);
+  ~GtestLogMessage();
+  std::ostringstream& messageStream() { return stream_; }
+ private:
+  const Colour kColour_;
+  std::ostringstream stream_;
 };
 
 class Logging {
