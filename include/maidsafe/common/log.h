@@ -123,6 +123,8 @@ class Logging {
   void SetFilter(FilterMap filter) { filter_ = filter; }
   void AddFilter(std::string project, int level) { filter_[project] = level; }
   FilterMap Filter() const { return filter_; }
+  void SetAsync(bool async) { async_ = async; }
+  bool Async() const { return async_; }
   void SetColour(bool colour) { colour_ = colour; }
   bool Colour() const { return colour_; }
  private:
@@ -130,7 +132,7 @@ class Logging {
   maidsafe::Active background_;
   int log_level_;
   FilterMap filter_;
-  bool colour_;
+  bool async_, colour_;
 };
 
 }  // namespace log
