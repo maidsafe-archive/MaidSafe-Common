@@ -29,6 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef MAIDSAFE_WIN32
 #  include <Windows.h>
+#else
+#  include <unistd.h>
 #endif
 #include <chrono>
 #include <thread>
@@ -94,9 +96,21 @@ const char* GetAnsiColourCode(Colour colour) {
 }
 
 void ColouredPrint(Colour colour, const std::string &text) {
-  printf("\033[0;3%sm", GetAnsiColourCode(colour));
+  // On non-Windows platforms, we rely on the TERM variable.
+  const std::string kTerm(getenv("TERM"));
+  const bool kTermSupportsColour(kTerm == "xterm" ||
+                                 kTerm == "xterm-color" ||
+                                 kTerm == "xterm-256color" ||
+                                 kTerm == "screen" ||
+                                 kTerm == "linux" ||
+                                 kTerm == "cygwin");
+  static const bool in_colour_mode = ((isatty(fileno(stdout)) != 0) && kTermSupportsColour);
+  const bool kUseColour = in_colour_mode && (colour != Colour::kDefaultColour);
+  if (kUseColour)
+    printf("\033[0;3%sm", GetAnsiColourCode(colour));
   printf("%s", text.c_str());
-  printf("\033[m");
+  if (kUseColour)
+    printf("\033[m");
   fflush(stdout);
 }
 
