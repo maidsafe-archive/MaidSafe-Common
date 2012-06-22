@@ -144,12 +144,12 @@ std::string Compress(const std::string &input,
 // Uncompress a string using gzip.
 std::string Uncompress(const std::string &input);
 
-void SecretRecoverData(const uint8_t &threshold,
+void SecretRecoverData(const int32_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data);
 
-void SecretShareData(const uint8_t &threshold,
-                     const uint8_t &nShares,
+void SecretShareData(const int32_t &threshold,
+                     const int32_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings);
 

@@ -206,8 +206,8 @@ std::string Uncompress(const std::string &input) {
   }
 }
 
-void SecretShareData(const uint8_t &threshold,
-                     const uint8_t &nShares,
+void SecretShareData(const int32_t &threshold,
+                     const int32_t &nShares,
                      const std::string &data,
                      std::vector<std::string> *out_strings) {
 CryptoPP::ChannelSwitch * channelswitch = new CryptoPP::ChannelSwitch;
@@ -232,11 +232,11 @@ CryptoPP::StringSource source(
   source.PumpAll();
 }
 
-void SecretRecoverData(const uint8_t &threshold,
+void SecretRecoverData(const int32_t &threshold,
                        const std::vector<std::string> &in_strings,
                        std::string *data) {
-  uint8_t size(static_cast<uint8_t>(in_strings.size()));
-  uint8_t num_to_check = std::min(size, threshold);
+  int32_t size(static_cast<int32_t>(in_strings.size()));
+  int32_t num_to_check = std::min(size, threshold);
 
   CryptoPP::SecretRecovery recovery(num_to_check,
                                     new CryptoPP::StringSink(*data));
