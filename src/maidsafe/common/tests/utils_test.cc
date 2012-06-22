@@ -51,6 +51,9 @@ void GenerateRandomStrings(const int &string_count, const size_t &string_size) {
     RandomString(string_size);
 }
 
+TEST(UtilsTest, BEH_Cpu_Size) {
+  ASSERT_TRUE(CpuSize() == 32 || CpuSize() == 64);
+}
 
 TEST(UtilsTest, BEH_Names) {
   ASSERT_EQ(kCompanyName, "maidsafe");

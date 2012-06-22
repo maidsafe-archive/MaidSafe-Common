@@ -86,6 +86,9 @@ class Stats {
   T sum_;
 };
 
+// Return CPU size (i.e. 32 64 bit etc.)
+int32_t CpuSize();
+
 // Converts num bytes to nearest integral decimal SI value.
 std::string BytesToDecimalSiUnits(const uint64_t &num);
 

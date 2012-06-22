@@ -75,6 +75,7 @@ namespace maidsafe {
 
 namespace {
 
+
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
@@ -140,6 +141,10 @@ std::string BytesToSiUnits(const uint64_t &num) {
 
 }  // unnamed namespace
 
+
+int32_t CpuSize() {
+  return (sizeof(void *) * 8);
+}
 
 const boost::posix_time::ptime kMaidSafeEpoch(
     boost::posix_time::from_iso_string("20000101T000000"));
