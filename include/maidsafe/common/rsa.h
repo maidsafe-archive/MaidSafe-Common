@@ -116,6 +116,10 @@ bool MatchingPublicKeys(const PublicKey &public_key1,
 bool MatchingPrivateKeys(const PrivateKey &private_key1,
                          const PrivateKey &private_key2);
 
+bool SerialiseKeys(const Keys& keys, std::string& serialised_keys);
+
+bool ParseKeys(const std::string& serialised_keys, Keys& keys);
+
 }  // namespace rsa
 
 namespace asymm = rsa;

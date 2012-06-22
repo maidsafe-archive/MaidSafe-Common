@@ -27,12 +27,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/test.h"
 
-int ExecuteMain(int argc, char **argv, maidsafe::log::FilterMap filter, bool colour) {
+int ExecuteMain(int argc, char **argv, maidsafe::log::FilterMap filter, bool async, bool colour) {
   if (filter.empty())
     maidsafe::log::Logging::instance().AddFilter("*", maidsafe::log::kFatal);
   else
     maidsafe::log::Logging::instance().SetFilter(filter);
 
+  maidsafe::log::Logging::instance().SetAsync(async);
   maidsafe::log::Logging::instance().SetColour(colour);
 
   testing::InitGoogleTest(&argc, argv);

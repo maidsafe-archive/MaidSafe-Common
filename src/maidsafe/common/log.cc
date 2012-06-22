@@ -197,23 +197,32 @@ LogMessage::~LogMessage() {
   oss << stream_.str() << '\n';
   std::string log_entry(oss.str());
   bool use_colour(Logging::instance().Colour());
-
-  Logging::instance().Send([colour, log_entry, use_colour] {
-    if (use_colour) {
-      ColouredPrint(colour, log_entry);
-    } else {
-      printf("%s", log_entry.c_str());
-      fflush(stdout);
-    }
+  auto print_functor([colour, log_entry, use_colour] {
+      if (use_colour) {
+        ColouredPrint(colour, log_entry);
+      } else {
+        printf("%s", log_entry.c_str());
+        fflush(stdout);
+      }
   });
+
+  if (Logging::instance().Async()) {
+    Logging::instance().Send(print_functor);
+  } else {
+    print_functor();
+  }
 }
 
 GtestLogMessage::GtestLogMessage(Colour colour) : kColour_(colour), stream_() {}
 
 GtestLogMessage::~GtestLogMessage() {
-  std::string log_entry(stream_.str());
-  Colour colour(kColour_);
-  Logging::instance().Send([colour, log_entry] { ColouredPrint(colour, log_entry); });  // NOLINT (Fraser)
+  if (Logging::instance().Async()) {
+    std::string log_entry(stream_.str());
+    Colour colour(kColour_);
+    Logging::instance().Send([colour, log_entry] { ColouredPrint(colour, log_entry); });  // NOLINT (Fraser)
+  } else {
+    ColouredPrint(kColour_, stream_.str());
+  }
 }
 
 Logging::Logging()
