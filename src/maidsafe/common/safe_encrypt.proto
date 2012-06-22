@@ -4,3 +4,10 @@ message SafeEncrypt {
   required bytes key = 1;
   required bytes data = 2;
 }
+
+message KeysContainer {
+  required bytes identity = 1;
+  required bytes encoded_public_key = 2;
+  required bytes encoded_private_key = 3;
+  required bytes validation_token = 4;
+}

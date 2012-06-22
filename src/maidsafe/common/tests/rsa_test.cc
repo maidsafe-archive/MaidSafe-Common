@@ -229,6 +229,26 @@ TEST_F(RSATest, BEH_RsaKeysComparing) {
   RunInParallel(f);
 }
 
+TEST_F(RSATest, BEH_RsaKeysSerialisationAndParsing) {
+  auto f([&] {
+    Keys keys;
+    std::string serialised_keys_1, serialised_keys_2;
+    ASSERT_FALSE(SerialiseKeys(keys, serialised_keys_1));
+
+    GenerateKeyPair(&keys);
+    keys.identity = RandomString(64);
+    keys.validation_token = RandomString(128);
+    ASSERT_TRUE(SerialiseKeys(keys, serialised_keys_1));
+    ASSERT_TRUE(SerialiseKeys(keys, serialised_keys_2));
+    ASSERT_EQ(serialised_keys_1, serialised_keys_2);
+
+    keys.identity += keys.identity;
+    ASSERT_TRUE(SerialiseKeys(keys, serialised_keys_1));
+    ASSERT_NE(serialised_keys_1, serialised_keys_2);
+  });
+  RunInParallel(f);
+}
+
 }  // namespace test
 }  // namespace rsa
 }  // namespace maidsafe

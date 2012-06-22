@@ -384,6 +384,62 @@ bool MatchingPrivateKeys(const PrivateKey &private_key1,
   return encoded_key1 == encoded_key2;
 }
 
+bool SerialiseKeys(const Keys& keys, std::string& serialised_keys) {
+  KeysContainer container;
+  container.set_identity(keys.identity);
+  container.set_validation_token(keys.validation_token);
+  std::string public_key, private_key;
+  EncodePublicKey(keys.public_key, &public_key);
+  if (public_key.empty()) {
+    LOG(kError) << "Failed to encode public key.";
+    return false;
+  }
+
+  EncodePrivateKey(keys.private_key, &private_key);
+  if (private_key.empty()) {
+    LOG(kError) << "Failed to encode private key.";
+    return false;
+  }
+
+  container.set_encoded_public_key(public_key);
+  container.set_encoded_private_key(private_key);
+  try {
+    serialised_keys = container.SerializeAsString();
+  }
+  catch(...) {
+    LOG(kError) << "Failed to serialise PB.";
+    return false;
+  }
+
+  return true;
+}
+
+bool ParseKeys(const std::string& serialised_keys, Keys& keys) {
+  KeysContainer container;
+  try {
+    if (!container.ParseFromString(serialised_keys)) {
+        LOG(kError) << "";
+      return false;
+    }
+  }
+  catch(...) {
+    LOG(kError) << "Failed to serialise PB.";
+    return false;
+  }
+
+  keys.identity = container.identity();
+  keys.validation_token = container.validation_token();
+
+  DecodePublicKey(container.encoded_public_key(), &keys.public_key);
+  DecodePublicKey(container.encoded_private_key(), &keys.private_key);
+  if (!ValidateKey(keys.public_key) || ValidateKey(keys.private_key)) {
+    LOG(kError) << "Failed to decode public or private key.";
+    return false;
+  }
+
+  return true;
+}
+
 }  // namespace rsa
 
 }  // namespace maidsafe
