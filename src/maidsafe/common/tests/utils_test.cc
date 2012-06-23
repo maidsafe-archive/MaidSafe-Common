@@ -190,7 +190,7 @@ TEST(UtilsTest, BEH_BytesToBinarySiUnits) {
   EXPECT_EQ("16 EiB", BytesToBinarySiUnits(18446744073709551615U));
 }
 
-TEST(UtilsTest, FUNC_RandomStringMultiThread) {
+TEST(UtilsTest, BEH_RandomStringMultiThread) {
   int thread_count(20);
 #pragma omp parallel num_threads(thread_count)
   {  // NOLINT (dirvine)

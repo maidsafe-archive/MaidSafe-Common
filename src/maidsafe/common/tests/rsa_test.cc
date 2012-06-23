@@ -65,7 +65,7 @@ void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
     i.get();
 }
 
-TEST_F(RSATest, FUNC_RsaKeyPair) {
+TEST_F(RSATest, BEH_RsaKeyPair) {
   auto f([&] {
     EXPECT_TRUE(ValidateKey(keys_.public_key));
     EXPECT_TRUE(ValidateKey(keys_.private_key));
@@ -82,7 +82,7 @@ TEST_F(RSATest, FUNC_RsaKeyPair) {
   RunInParallel(f, 100);
 }
 
-TEST_F(RSATest, FUNC_ValidateKeys) {
+TEST_F(RSATest, BEH_ValidateKeys) {
   auto f([&] {
     PublicKey public_key;
     EXPECT_FALSE(ValidateKey(public_key));

@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 #include <chrono>
 #include <thread>
+#include <mutex>
 #include <ctime>
 #include <cstdio>
 
@@ -47,6 +48,8 @@ namespace maidsafe {
 namespace log {
 
 namespace {
+
+std::mutex g_console_mutex;
 
 #ifdef MAIDSAFE_WIN32
 
@@ -66,6 +69,7 @@ WORD GetColourAttribute(Colour colour) {
 void ColouredPrint(Colour colour, const std::string &text) {
   CONSOLE_SCREEN_BUFFER_INFO console_info_before;
   const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
+  std::lock_guard<std::mutex> lock(g_console_mutex);
   if (kConsoleHandle != INVALID_HANDLE_VALUE) {
     int got_console_info = GetConsoleScreenBufferInfo(kConsoleHandle, &console_info_before);
     fflush(stdout);
@@ -97,6 +101,7 @@ const char* GetAnsiColourCode(Colour colour) {
 
 void ColouredPrint(Colour colour, const std::string &text) {
   // On non-Windows platforms, we rely on the TERM variable.
+  std::lock_guard<std::mutex> lock(g_console_mutex);
   const std::string kTerm(getenv("TERM"));
   const bool kTermSupportsColour(kTerm == "xterm" ||
                                  kTerm == "xterm-color" ||
@@ -229,6 +234,7 @@ Logging::Logging()
     : background_(),
       log_level_(kFatal),
       filter_(),
+      async_(true),
       colour_(true) {}
 
 void Logging::Send(functor voidfunction) {

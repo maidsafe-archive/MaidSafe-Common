@@ -142,14 +142,13 @@ std::string BytesToSiUnits(const uint64_t &num) {
 }  // unnamed namespace
 
 
-int32_t CpuSize() {
-  return (sizeof(void *) * 8);
-}
-
 const boost::posix_time::ptime kMaidSafeEpoch(
     boost::posix_time::from_iso_string("20000101T000000"));
 
 
+int32_t CpuSize() {
+  return (sizeof(void *) * 8);  // NOLINT (Fraser)
+}
 
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
   return BytesToSiUnits<DecimalUnit>(num);
