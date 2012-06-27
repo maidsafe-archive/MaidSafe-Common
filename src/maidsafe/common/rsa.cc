@@ -418,12 +418,12 @@ bool ParseKeys(const std::string& serialised_keys, Keys& keys) {
   KeysContainer container;
   try {
     if (!container.ParseFromString(serialised_keys)) {
-        LOG(kError) << "";
+        LOG(kError) << "Failed to parse into PB.";
       return false;
     }
   }
   catch(...) {
-    LOG(kError) << "Failed to serialise PB.";
+    LOG(kError) << "Failed to parse into PB.";
     return false;
   }
 
