@@ -48,7 +48,7 @@ namespace log {
 
 typedef std::map<std::string, int> FilterMap;
 
-enum class Colour { kDefaultColour, kRed, kGreen, kYellow };
+enum class Colour { kDefaultColour, kRed, kGreen, kYellow, kCyan };
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
@@ -75,7 +75,7 @@ struct Envoid {
 };
 
 
-const int kVerbose = -1, kInfo = 0, kWarning = 1, kError = 2, kFatal = 3;
+const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
 
 #ifdef NDEBUG
 #  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()

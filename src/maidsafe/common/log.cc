@@ -61,6 +61,8 @@ WORD GetColourAttribute(Colour colour) {
       return FOREGROUND_GREEN | FOREGROUND_INTENSITY;
     case Colour::kYellow:
       return FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY;
+    case Colour::kCyan:
+      return FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY;
     default:
       return FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED;
   }
@@ -94,6 +96,8 @@ const char* GetAnsiColourCode(Colour colour) {
       return "2";
     case Colour::kYellow:
       return "3";
+    case Colour::kCyan:
+      return "6";
     default:
       return nullptr;
   }
@@ -161,11 +165,15 @@ LogMessage::~LogMessage() {
   switch (kLevel_) {
     case kVerbose:
       log_level = 'V';
-      colour = Colour::kGreen;
+      colour = Colour::kCyan;
       break;
     case kInfo:
       log_level = 'I';
       colour = Colour::kDefaultColour;
+      break;
+    case kSuccess:
+      log_level = 'S';
+      colour = Colour::kGreen;
       break;
     case kWarning:
       log_level = 'W';
@@ -190,26 +198,24 @@ LogMessage::~LogMessage() {
 #else
   oss << ' ';
 #endif
-//  std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-//  std::string time = std::ctime(&t);
-//  time.resize(time.size() - 5);
-//  std::string ftime = time.substr(12,8);
-//  oss << " " << ftime << " ";
-  oss << boost::posix_time::microsec_clock().universal_time().time_of_day() << " ";
-  oss << current_file.string();
-  oss << ":" << kLine_ << "] ";
+  oss << boost::posix_time::microsec_clock().universal_time().time_of_day();
+  std::string coloured_log_entry(oss.str());
+  oss.str("");
+
+  oss << " " << current_file.string() << ":" << kLine_ << "] ";
 //  oss << " Function: " << function_ << "] ";
 
   oss << stream_.str() << '\n';
-  std::string log_entry(oss.str());
+  std::string plain_log_entry(oss.str());
   bool use_colour(Logging::instance().Colour());
-  auto print_functor([colour, log_entry, use_colour] {
+  auto print_functor([colour, coloured_log_entry, plain_log_entry, use_colour] {
       if (use_colour) {
-        ColouredPrint(colour, log_entry);
+        ColouredPrint(colour, coloured_log_entry);
       } else {
-        printf("%s", log_entry.c_str());
-        fflush(stdout);
+        printf("%s", coloured_log_entry.c_str());
       }
+      printf("%s", plain_log_entry.c_str());
+      fflush(stdout);
   });
 
   if (Logging::instance().Async()) {
