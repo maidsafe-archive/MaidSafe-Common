@@ -431,8 +431,8 @@ bool ParseKeys(const std::string& serialised_keys, Keys& keys) {
   keys.validation_token = container.validation_token();
 
   DecodePublicKey(container.encoded_public_key(), &keys.public_key);
-  DecodePublicKey(container.encoded_private_key(), &keys.private_key);
-  if (!ValidateKey(keys.public_key) || ValidateKey(keys.private_key)) {
+  DecodePrivateKey(container.encoded_private_key(), &keys.private_key);
+  if (!ValidateKey(keys.public_key) || !ValidateKey(keys.private_key)) {
     LOG(kError) << "Failed to decode public or private key.";
     return false;
   }
