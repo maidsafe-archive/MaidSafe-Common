@@ -76,8 +76,7 @@ void DecodeKey(const std::string &key, CryptoPP::BufferedTransformation *bt) {
 }
 
 
-bool ParseSafeEncrypt(const std::string &serialised_safe_encrypt,
-                      SafeEncrypt *safe_encrypt) {
+bool ParseSafeEncrypt(const std::string &serialised_safe_encrypt, SafeEncrypt *safe_encrypt) {
   return safe_encrypt->ParseFromString(serialised_safe_encrypt);
 }
 
@@ -100,8 +99,7 @@ int GenerateKeyPair(Keys *keypair) {
   PublicKey public_key(parameters);
   keypair->private_key = private_key;
   keypair->public_key = public_key;
-  if (keypair->private_key.Validate(rng(), 2) &&
-      keypair->public_key.Validate(rng(), 2))
+  if (keypair->private_key.Validate(rng(), 2) && keypair->public_key.Validate(rng(), 2))
     return kSuccess;
   else
     return kGeneralError;
@@ -130,14 +128,15 @@ int Encrypt(const PlainText &data,
     if (data.size() > encryptor.FixedMaxPlaintextLength()) {
       std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
       std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-      safe_enc.set_data(crypto::SymmEncrypt(data,
-                                            symm_encryption_key,
-                                            symm_encryption_iv));
+      safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv));
       BOOST_ASSERT(!safe_enc.data().empty());
       std::string encryption_key_encrypted;
-      CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv, true,
-          new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-              new CryptoPP::StringSink(encryption_key_encrypted)));
+      CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv,
+                             true,
+                             new CryptoPP::PK_EncryptorFilter(rng(),
+                                                              encryptor,
+                                                              new CryptoPP::StringSink(
+                                                                  encryption_key_encrypted)));
       safe_enc.set_key(encryption_key_encrypted);
       if (!safe_enc.SerializeToString(result)) {
         LOG(kError) << "Failed to serialise PB";
@@ -145,9 +144,11 @@ int Encrypt(const PlainText &data,
         return kRSASerialisationError;
       }
     } else {
-      CryptoPP::StringSource(data, true,
-          new CryptoPP::PK_EncryptorFilter(rng(), encryptor,
-              new CryptoPP::StringSink(*result)));
+      CryptoPP::StringSource(data,
+                             true,
+                             new CryptoPP::PK_EncryptorFilter(rng(),
+                                                              encryptor,
+                                                              new CryptoPP::StringSink(*result)));
     }
   }
   catch(const CryptoPP::Exception &e) {
@@ -158,9 +159,7 @@ int Encrypt(const PlainText &data,
   return kSuccess;
 }
 
-int Decrypt(const CipherText &data,
-            const PrivateKey &private_key,
-            PlainText *result) {
+int Decrypt(const CipherText &data, const PrivateKey &private_key, PlainText *result) {
   if (!result) {
     LOG(kError) << "NULL pointer passed";
     return kNullParameter;
@@ -180,17 +179,21 @@ int Decrypt(const CipherText &data,
     SafeEncrypt safe_enc;
     if (ParseSafeEncrypt(data, &safe_enc)) {
       std::string out_data;
-      CryptoPP::StringSource(safe_enc.key(), true,
-          new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
-              new CryptoPP::StringSink(out_data)));
+      CryptoPP::StringSource(safe_enc.key(),
+                             true,
+                             new CryptoPP::PK_DecryptorFilter(rng(),
+                                                              decryptor,
+                                                              new CryptoPP::StringSink(out_data)));
       *result = crypto::SymmDecrypt(safe_enc.data(),
                                     out_data.substr(0, crypto::AES256_KeySize),
                                     out_data.substr(crypto::AES256_KeySize,
                                                     crypto::AES256_IVSize));
     } else {
-      CryptoPP::StringSource(data, true,
-          new CryptoPP::PK_DecryptorFilter(rng(), decryptor,
-              new CryptoPP::StringSink(*result)));
+      CryptoPP::StringSource(data,
+                             true,
+                             new CryptoPP::PK_DecryptorFilter(rng(),
+                                                              decryptor,
+                                                              new CryptoPP::StringSink(*result)));
     }
   }
   catch(const CryptoPP::Exception &e) {
@@ -206,9 +209,7 @@ int Decrypt(const CipherText &data,
   return kSuccess;
 }
 
-int Sign(const std::string &data,
-         const PrivateKey &private_key,
-         std::string *signature) {
+int Sign(const std::string &data, const PrivateKey &private_key, std::string *signature) {
   if (!signature) {
     LOG(kError) << "NULL pointer passed";
     return kNullParameter;
@@ -224,9 +225,11 @@ int Sign(const std::string &data,
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
-    CryptoPP::StringSource(data, true,
-        new CryptoPP::SignerFilter(rng(), signer,
-            new CryptoPP::StringSink(*signature)));
+    CryptoPP::StringSource(data,
+                           true,
+                           new CryptoPP::SignerFilter(rng(),
+                                                      signer,
+                                                      new CryptoPP::StringSink(*signature)));
   }
   catch(const CryptoPP::Exception &e) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
@@ -235,9 +238,7 @@ int Sign(const std::string &data,
   return kSuccess;
 }
 
-int CheckSignature(const PlainText &data,
-                   const Signature &signature,
-                   const PublicKey &public_key) {
+int CheckSignature(const PlainText &data, const Signature &signature, const PublicKey &public_key) {
   if (!public_key.Validate(rng(), 0)) {
     LOG(kError) << "Bad public key";
     return kInvalidPublicKey;
@@ -251,8 +252,7 @@ int CheckSignature(const PlainText &data,
     return kRSASignatureEmpty;
   }
 
-  CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier
-      verifier(public_key);
+  CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
     if (verifier.VerifyMessage(reinterpret_cast<const byte*>(data.c_str()),
                                data.size(),
@@ -321,8 +321,8 @@ void DecodePrivateKey(const std::string &private_key, PrivateKey *key) {
     CryptoPP::ByteQueue queue;
     DecodeKey(private_key, &queue);
     key->BERDecodePrivateKey(queue,
-                              false /*paramsPresent*/,
-                              static_cast<size_t>(queue.MaxRetrievable()));
+                             false /*paramsPresent*/,
+                             static_cast<size_t>(queue.MaxRetrievable()));
   }
   catch(const CryptoPP::Exception &e) {
     LOG(kError) << e.what();
@@ -348,8 +348,7 @@ void DecodePublicKey(const std::string &public_key, PublicKey *key) {
   }
 }
 
-bool CheckRoundtrip(const PublicKey &public_key,
-                    const PrivateKey &private_key) {
+bool CheckRoundtrip(const PublicKey &public_key, const PrivateKey &private_key) {
   return (public_key.GetModulus() != private_key.GetModulus() ||
           public_key.GetPublicExponent() != private_key.GetPrivateExponent());
 }
@@ -362,22 +361,18 @@ bool ValidateKey(const PublicKey &public_key, unsigned int level) {
   return public_key.Validate(rng(), level);
 }
 
-bool Validate(const PlainText &data,
-              const Signature &signature,
-              const PublicKey &public_key) {
+bool Validate(const PlainText &data, const Signature &signature, const PublicKey &public_key) {
   return (kSuccess == CheckSignature(data, signature, public_key));
 }
 
-bool MatchingPublicKeys(const PublicKey &public_key1,
-                        const PublicKey &public_key2) {
+bool MatchingPublicKeys(const PublicKey &public_key1, const PublicKey &public_key2) {
   std::string encoded_key1, encoded_key2;
   EncodePublicKey(public_key1, &encoded_key1);
   EncodePublicKey(public_key2, &encoded_key2);
   return encoded_key1 == encoded_key2;
 }
 
-bool MatchingPrivateKeys(const PrivateKey &private_key1,
-                         const PrivateKey &private_key2) {
+bool MatchingPrivateKeys(const PrivateKey &private_key1, const PrivateKey &private_key2) {
   std::string encoded_key1, encoded_key2;
   EncodePrivateKey(private_key1, &encoded_key1);
   EncodePrivateKey(private_key2, &encoded_key2);
