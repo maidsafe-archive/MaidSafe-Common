@@ -48,6 +48,6 @@ int ExecuteMain(int argc,
                 char **argv,
                 maidsafe::log::FilterMap filter = maidsafe::log::FilterMap(),
                 bool async = true,
-                bool colour = true);
+                maidsafe::log::ColourMode colour_mode = maidsafe::log::ColourMode::kPartialLine);
 
 #endif  // MAIDSAFE_COMMON_TEST_H_

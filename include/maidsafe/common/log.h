@@ -49,6 +49,7 @@ namespace log {
 typedef std::map<std::string, int> FilterMap;
 
 enum class Colour { kDefaultColour, kRed, kGreen, kYellow, kCyan };
+enum class ColourMode { kFullLine, kPartialLine, kNone };
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
@@ -114,25 +115,27 @@ class GtestLogMessage {
 
 class Logging {
  public:
+  typedef std::function<void()> functor;
   static Logging& instance() {
     static Logging logging;
     return logging;
   }
-  typedef std::function<void()> functor;
   void Send(functor function);
   void SetFilter(FilterMap filter) { filter_ = filter; }
   void AddFilter(std::string project, int level) { filter_[project] = level; }
   FilterMap Filter() const { return filter_; }
   void SetAsync(bool async) { async_ = async; }
   bool Async() const { return async_; }
-  void SetColour(bool colour) { colour_ = colour; }
-  bool Colour() const { return colour_; }
+  void SetColour(ColourMode colour_mode) { colour_mode_ = colour_mode; }
+  ColourMode Colour() const { return colour_mode_; }
+
  private:
   Logging();
   maidsafe::Active background_;
   int log_level_;
   FilterMap filter_;
-  bool async_, colour_;
+  bool async_;
+  ColourMode colour_mode_;
 };
 
 }  // namespace log

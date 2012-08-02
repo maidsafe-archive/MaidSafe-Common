@@ -207,14 +207,16 @@ LogMessage::~LogMessage() {
 
   oss << stream_.str() << '\n';
   std::string plain_log_entry(oss.str());
-  bool use_colour(Logging::instance().Colour());
-  auto print_functor([colour, coloured_log_entry, plain_log_entry, use_colour] {
-      if (use_colour) {
+  ColourMode colour_mode(Logging::instance().Colour());
+  auto print_functor([colour, coloured_log_entry, plain_log_entry, colour_mode] {
+      if (colour_mode == ColourMode::kFullLine) {
+        ColouredPrint(colour, coloured_log_entry + plain_log_entry);
+      } else if (colour_mode == ColourMode::kPartialLine) {
         ColouredPrint(colour, coloured_log_entry);
+        printf("%s", plain_log_entry.c_str());
       } else {
-        printf("%s", coloured_log_entry.c_str());
+        printf("%s%s", coloured_log_entry.c_str(), plain_log_entry.c_str());
       }
-      printf("%s", plain_log_entry.c_str());
       fflush(stdout);
   });
 
@@ -242,7 +244,7 @@ Logging::Logging()
       log_level_(kFatal),
       filter_(),
       async_(true),
-      colour_(true) {}
+      colour_mode_(ColourMode::kPartialLine) {}
 
 void Logging::Send(functor voidfunction) {
   background_.Send(voidfunction);
