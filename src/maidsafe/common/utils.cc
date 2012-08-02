@@ -368,8 +368,15 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
   return true;
 }
 
-void Sleep(const boost::posix_time::time_duration &duration) {
-  boost::this_thread::sleep(duration);
+bool Sleep(const boost::posix_time::time_duration &duration) {
+  try {
+    boost::this_thread::sleep(duration);
+  }
+  catch(const boost::thread_interrupted&) {
+    LOG(kWarning) << "Thread was interrupted while sleeping for " << duration;
+    return false;
+  }
+  return true;
 }
 
 

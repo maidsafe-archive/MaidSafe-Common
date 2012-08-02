@@ -159,8 +159,9 @@ bool ReadFile(const fs::path &file_path, std::string *content);
 // Writes the given content string to a file, overwriting if applicable.
 bool WriteFile(const fs::path &file_path, const std::string &content);
 
-// Causes running thread to sleep for specified duration.
-void Sleep(const boost::posix_time::time_duration &duration);
+// Causes running thread to sleep for specified duration.  Returns true if sleep completes full
+// duration, returns false if the sleep is interrupted.
+bool Sleep(const boost::posix_time::time_duration &duration);
 
 // NOTE: DOES NOT CREATE PATH
 // Retrieve homedir from environment

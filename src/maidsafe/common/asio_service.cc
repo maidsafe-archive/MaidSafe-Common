@@ -29,6 +29,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/log.h"
 
 
+namespace bptime = boost::posix_time;
+
 namespace maidsafe {
 
 AsioService::AsioService(const uint32_t &thread_count)
@@ -42,14 +44,13 @@ AsioService::~AsioService() {
 
 void AsioService::Start() {
   if (work_) {
-    LOG(kError) << "AsioService is already running with "
-                << threads_.size() << " threads.";
+    LOG(kError) << "AsioService is already running with " << threads_.size() << " threads.";
     return;
   }
   service_.reset();
   work_.reset(new boost::asio::io_service::work(service_));
-  for (uint32_t i = 0; i != threads_.size(); ++i) {
-      threads_[i] = std::move(boost::thread([&]() {
+  for (boost::thread &asio_thread : threads_) {
+    asio_thread = std::move(boost::thread([&] {
         for (;;) {
           try {
             service_.run();
@@ -66,10 +67,25 @@ void AsioService::Start() {
 
 void AsioService::Stop() {
   work_.reset();
-  for (boost::thread &thread : threads_) {
-    thread.interrupt();
-    thread.join();
+  // Interrupt and join all asio worker threads concurrently
+  std::vector<boost::thread> joining_workers;
+  for (boost::thread &asio_thread : threads_) {
+    joining_workers.push_back(std::move(boost::thread([&asio_thread] {
+        while (asio_thread.joinable()) {
+          try {
+            asio_thread.interrupt();
+            asio_thread.timed_join(bptime::milliseconds(1));
+          }
+          catch(const boost::thread_interrupted&) {
+            LOG(kError) << "Exception joining boost thread with ID " << asio_thread.get_id();
+            boost::this_thread::yield();
+          }
+        }
+    })));
   }
+
+  for (boost::thread &joining_worker : joining_workers)
+    joining_worker.join();
 }
 
 boost::asio::io_service& AsioService::service() {
