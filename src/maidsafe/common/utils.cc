@@ -480,10 +480,12 @@ TestPath CreateTestPath(std::string test_prefix) {
   TestPath test_path_ptr(test_path, [debug](fs::path *delete_path) {
         if (!delete_path->empty()) {
           boost::system::error_code ec;
-          // Can't use LOG in case glog has been unloaded already
           if (fs::remove_all(*delete_path, ec) == 0) {
+            LOG(kWarning) << "Failed to remove " << *delete_path;
           }
           if (ec.value() != 0) {
+            LOG(kWarning) << "Error removing " << *delete_path << "  "
+                          << ec.message();
           }
         }
         delete delete_path;
