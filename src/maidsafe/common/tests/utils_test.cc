@@ -25,9 +25,11 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <thread>
 #include <algorithm>
 #include <cstdlib>
 #include <set>
+#include <vector>
 
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
@@ -45,11 +47,6 @@ namespace bptime = boost::posix_time;
 namespace maidsafe {
 
 namespace test {
-
-void GenerateRandomStrings(const int &string_count, const size_t &string_size) {
-  for (int i = 0; i < string_count; ++i)
-    RandomString(string_size);
-}
 
 TEST(UtilsTest, BEH_Cpu_Size) {
   ASSERT_TRUE(CpuSize() == 32 || CpuSize() == 64);
@@ -191,16 +188,15 @@ TEST(UtilsTest, BEH_BytesToBinarySiUnits) {
 }
 
 TEST(UtilsTest, BEH_RandomStringMultiThread) {
-  int thread_count(20);
-#pragma omp parallel num_threads(thread_count)
-  {  // NOLINT (dirvine)
-    int string_count(1000);
-    size_t string_size(4096);
-    test::GenerateRandomStrings(string_count, string_size);
-  }
-  --thread_count;  // to satisfy compiler
+  std::vector<std::thread> threads;
+  for (int i(0); i != 20; ++i)
+    threads.push_back(std::move(std::thread([] {
+      for (int j(0); j != 1000; ++j)
+        RandomString(4096);
+    })));
+  for (std::thread& thread : threads)
+    thread.join();
 }
-
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {
   std::set<std::string>random_strings;
