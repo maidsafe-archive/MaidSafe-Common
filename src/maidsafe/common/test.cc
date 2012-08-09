@@ -40,6 +40,7 @@ int ExecuteMain(int argc,
   maidsafe::log::Logging::instance().SetAsync(async);
   maidsafe::log::Logging::instance().SetColour(colour_mode);
 
+  testing::FLAGS_gtest_catch_exceptions = false;
   testing::InitGoogleTest(&argc, argv);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
