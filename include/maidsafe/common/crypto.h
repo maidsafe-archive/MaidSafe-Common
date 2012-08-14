@@ -52,7 +52,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __MSVC__
 #  pragma warning(pop)
-#  pragma warning(disable: 4505)
 #endif
 
 #include "maidsafe/common/rsa.h"

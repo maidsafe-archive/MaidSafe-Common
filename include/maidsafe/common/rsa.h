@@ -39,7 +39,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "cryptopp/rsa.h"
 #ifdef __MSVC__
 #  pragma warning(pop)
-#  pragma warning(disable: 4505)
 #endif
 
 #include "boost/function.hpp"
