@@ -424,47 +424,6 @@ TEST(UtilsTest, BEH_Sleep) {
   EXPECT_GE((third_time - first_time).total_milliseconds(), 100);
 }
 
-TEST(UtilsTest, BEH_GetMaidSafeVersion) {
-  EXPECT_EQ("v0.00.00", GetMaidSafeVersion(0));
-  EXPECT_EQ("v0.00.01", GetMaidSafeVersion(1));
-  EXPECT_EQ("v0.00.10", GetMaidSafeVersion(10));
-  EXPECT_EQ("v0.01.00", GetMaidSafeVersion(100));
-  EXPECT_EQ("v0.01.01", GetMaidSafeVersion(101));
-  EXPECT_EQ("v0.01.10", GetMaidSafeVersion(110));
-  EXPECT_EQ("v0.10.00", GetMaidSafeVersion(1000));
-  EXPECT_EQ("v0.10.01", GetMaidSafeVersion(1001));
-  EXPECT_EQ("v0.10.10", GetMaidSafeVersion(1010));
-  EXPECT_EQ("v1.00.00", GetMaidSafeVersion(10000));
-  EXPECT_EQ("v1.00.01", GetMaidSafeVersion(10001));
-  EXPECT_EQ("v1.00.10", GetMaidSafeVersion(10010));
-  EXPECT_EQ("v1.01.00", GetMaidSafeVersion(10100));
-  EXPECT_EQ("v1.01.01", GetMaidSafeVersion(10101));
-  EXPECT_EQ("v1.01.10", GetMaidSafeVersion(10110));
-  EXPECT_EQ("v1.10.00", GetMaidSafeVersion(11000));
-  EXPECT_EQ("v1.10.01", GetMaidSafeVersion(11001));
-  EXPECT_EQ("v1.10.10", GetMaidSafeVersion(11010));
-  EXPECT_EQ("v10.00.00", GetMaidSafeVersion(100000));
-  EXPECT_EQ("v10.00.01", GetMaidSafeVersion(100001));
-  EXPECT_EQ("v10.00.10", GetMaidSafeVersion(100010));
-  EXPECT_EQ("v10.01.00", GetMaidSafeVersion(100100));
-  EXPECT_EQ("v10.01.01", GetMaidSafeVersion(100101));
-  EXPECT_EQ("v10.01.10", GetMaidSafeVersion(100110));
-  EXPECT_EQ("v10.10.00", GetMaidSafeVersion(101000));
-  EXPECT_EQ("v10.10.01", GetMaidSafeVersion(101001));
-  EXPECT_EQ("v10.10.10", GetMaidSafeVersion(101010));
-  std::string major_version, minor_version, patch_version;
-  EXPECT_EQ("v1.01.01", GetMaidSafeVersion(10101, &major_version,
-                                           &minor_version, &patch_version));
-  EXPECT_EQ("1", major_version);
-  EXPECT_EQ("01", minor_version);
-  EXPECT_EQ("01", patch_version);
-  EXPECT_EQ("v12.34.56", GetMaidSafeVersion(123456, &major_version,
-                                            &minor_version, &patch_version));
-  EXPECT_EQ("12", major_version);
-  EXPECT_EQ("34", minor_version);
-  EXPECT_EQ("56", patch_version);
-}
-
 TEST(UtilsTest, BEH_GetHomeDir) {
   EXPECT_FALSE(GetHomeDir().empty());
   LOG(kInfo) << " I think your home directory is "

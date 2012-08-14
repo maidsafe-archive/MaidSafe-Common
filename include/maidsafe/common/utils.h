@@ -180,12 +180,6 @@ fs::path GetSystemAppDir();
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
 
-// Takes a MaidSafe version as an int and returns the string form, e.g. 901
-// returns "v0.09.01".
-std::string GetMaidSafeVersion(int version,
-                               std::string *major_version = NULL,
-                               std::string *minor_version = NULL,
-                               std::string *patch_version = NULL);
 
 namespace test {
 

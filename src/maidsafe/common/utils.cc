@@ -437,27 +437,6 @@ unsigned int Concurrency() {
   return std::max(std::thread::hardware_concurrency(), 2U);
 }
 
-std::string GetMaidSafeVersion(int version,
-                               std::string *major_version,
-                               std::string *minor_version,
-                               std::string *patch_version) {
-  std::string full_version(boost::lexical_cast<std::string>(version));
-  size_t padding_count(6 - full_version.size());
-  full_version.insert(0, padding_count, '0');
-  std::string major_ver(full_version.substr(0, 2));
-  std::string minor_ver(full_version.substr(2, 2));
-  std::string patch_ver(full_version.substr(4, 2));
-  if (major_ver.at(0) == '0')
-    major_ver.assign(major_ver.substr(1, 1));
-  if (major_version)
-    *major_version = major_ver;
-  if (minor_version)
-    *minor_version = minor_ver;
-  if (patch_version)
-    *patch_version = patch_ver;
-  return "v" + major_ver + "." + minor_ver + "." + patch_ver;
-}
-
 
 namespace test {
 
