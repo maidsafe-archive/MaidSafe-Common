@@ -125,30 +125,22 @@ int Encrypt(const PlainText &data,
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   SafeEncrypt safe_enc;
   try {
-    if (data.size() > encryptor.FixedMaxPlaintextLength()) {
-      std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
-      std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-      safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv));
-      BOOST_ASSERT(!safe_enc.data().empty());
-      std::string encryption_key_encrypted;
-      CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv,
-                             true,
-                             new CryptoPP::PK_EncryptorFilter(rng(),
-                                                              encryptor,
-                                                              new CryptoPP::StringSink(
-                                                                  encryption_key_encrypted)));
-      safe_enc.set_key(encryption_key_encrypted);
-      if (!safe_enc.SerializeToString(result)) {
-        LOG(kError) << "Failed to serialise PB";
-        result->clear();
-        return kRSASerialisationError;
-      }
-    } else {
-      CryptoPP::StringSource(data,
-                             true,
-                             new CryptoPP::PK_EncryptorFilter(rng(),
-                                                              encryptor,
-                                                              new CryptoPP::StringSink(*result)));
+    std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
+    std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
+    safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv));
+    BOOST_ASSERT(!safe_enc.data().empty());
+    std::string encryption_key_encrypted;
+    CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv,
+                            true,
+                            new CryptoPP::PK_EncryptorFilter(rng(),
+                                                            encryptor,
+                                                            new CryptoPP::StringSink(
+                                                                encryption_key_encrypted)));
+    safe_enc.set_key(encryption_key_encrypted);
+    if (!safe_enc.SerializeToString(result)) {
+      LOG(kError) << "Failed to serialise PB";
+      result->clear();
+      return kRSASerialisationError;
     }
   }
   catch(const CryptoPP::Exception &e) {
@@ -189,11 +181,8 @@ int Decrypt(const CipherText &data, const PrivateKey &private_key, PlainText *re
                                     out_data.substr(crypto::AES256_KeySize,
                                                     crypto::AES256_IVSize));
     } else {
-      CryptoPP::StringSource(data,
-                             true,
-                             new CryptoPP::PK_DecryptorFilter(rng(),
-                                                              decryptor,
-                                                              new CryptoPP::StringSink(*result)));
+      LOG(kError) << "Failed to ParseSafeEncrypt.";
+      return kRSADecryptError;
     }
   }
   catch(const CryptoPP::Exception &e) {
