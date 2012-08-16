@@ -241,7 +241,6 @@ GtestLogMessage::~GtestLogMessage() {
 
 Logging::Logging()
     : background_(),
-      log_level_(kFatal),
       filter_(),
       async_(true),
       colour_mode_(ColourMode::kPartialLine) {}

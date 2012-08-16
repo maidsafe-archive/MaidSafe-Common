@@ -132,7 +132,6 @@ class Logging {
  private:
   Logging();
   maidsafe::Active background_;
-  int log_level_;
   FilterMap filter_;
   bool async_;
   ColourMode colour_mode_;
