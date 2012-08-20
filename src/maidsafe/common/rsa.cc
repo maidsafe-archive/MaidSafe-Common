@@ -257,6 +257,21 @@ int CheckSignature(const PlainText &data, const Signature &signature, const Publ
   }
 }
 
+int CheckFileSignature(const std::string &filename, const Signature &signature, const PublicKey &public_key) {
+
+  CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
+  try {
+    CryptoPP::VerifierFilter *verifierFilter = new CryptoPP::VerifierFilter(verifier);
+    verifierFilter->Put(reinterpret_cast<const byte*>(signature.c_str()), verifier.SignatureLength());
+    CryptoPP::FileSource f(reinterpret_cast<const char *>(filename.c_str()), true, verifierFilter);
+    return verifierFilter->GetLastResult() ? kSuccess : kRSAInvalidSignature;
+  } catch(const CryptoPP::Exception &e) {
+    LOG(kError) << "Failed signature check: " << e.what();
+    return kRSAInvalidSignature;
+  }
+} 
+
+
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
   if (!private_key) {
     LOG(kError) << "NULL pointer passed";

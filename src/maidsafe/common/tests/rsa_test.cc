@@ -174,7 +174,23 @@ TEST_F(RSATest, BEH_SignValidate) {
     EXPECT_EQ(kRSAInvalidSignature,
               CheckSignature(kData, bad_signature, keys.public_key));
   });
-  RunInParallel(f, 100);
+   RunInParallel(f, 100);
+}
+
+TEST_F(RSATest, BEH_SignFileValidate) {
+    Keys keys;
+    EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
+    PrivateKey empty_priv_key;
+    PublicKey empty_pub_key;
+    const std::string kData(RandomString(470));
+    std::string signature;
+
+    EXPECT_EQ(kSuccess, Sign(kData, keys.private_key, &signature));
+    EXPECT_EQ(kSuccess, CheckSignature(kData, signature, keys.public_key));
+    EXPECT_TRUE(WriteFile("signtest", kData));
+    EXPECT_EQ(kSuccess, CheckFileSignature("signtest", signature, keys.public_key));
+    boost::filesystem3::path file("signature");
+    boost::filesystem3::remove(file);
 }
 
 TEST_F(RSATest, BEH_Serialise) {

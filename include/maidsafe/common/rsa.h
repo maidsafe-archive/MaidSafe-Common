@@ -89,6 +89,10 @@ int CheckSignature(const PlainText &data,
                    const Signature &signature,
                    const PublicKey &public_key);
 
+int CheckFileSignature(const std::string &filename, 
+                       const Signature &signature, 
+                       const PublicKey &public_key); 
+
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key);
 
 void EncodePublicKey(const PublicKey &key, std::string *public_key);
