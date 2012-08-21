@@ -41,7 +41,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
+
 namespace rsa {
+
 namespace test {
 
 class RSATest : public testing::Test {
@@ -179,31 +181,36 @@ TEST_F(RSATest, BEH_SignValidate) {
 }
 
 TEST_F(RSATest, BEH_SignFileValidate) {
-  Keys keys;
-  EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
-  PrivateKey empty_priv_key;
-  PublicKey empty_pub_key;
-  const std::string kData(RandomString(20 * 1024 * 1024));
-  std::string signature;
+  auto f([&] {
+    Keys keys;
+    EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
+    const std::string kData(RandomString(20 * 1024 * 1024));
+    maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestRSA"));
+    std::string file_name("signtest" + RandomAlphaNumericString(5));
+    boost::filesystem::path test_file(*test_path / file_name);
+    EXPECT_TRUE(WriteFile(test_file, kData));
+    ASSERT_FALSE(test_path->empty());
 
-  EXPECT_EQ(kSuccess, Sign(kData, keys.private_key, &signature));
-  EXPECT_EQ(kSuccess, CheckSignature(kData, signature, keys.public_key));
+    std::string signature, empty_signature, bad_signature("bad");
+    PrivateKey empty_private_key;
+    EXPECT_EQ(kSuccess, SignFile(test_file, keys.private_key, signature));
+    EXPECT_EQ(kInvalidPrivateKey,
+              SignFile(test_file.string(), empty_private_key, signature));
+    EXPECT_EQ(kRSASigningError,
+              SignFile(boost::filesystem::path(RandomAlphaNumericString(9)),
+                       keys.private_key,
+                       signature));
 
-  maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestRSA"));
-  ASSERT_FALSE(test_path->empty());
-  boost::filesystem::path test_file(*test_path / "signtest");
-
-  EXPECT_TRUE(WriteFile(test_file, kData));
-  EXPECT_EQ(kSuccess, CheckFileSignature(test_file.string(), signature, keys.public_key));
-  EXPECT_EQ(kInvalidPublicKey, CheckFileSignature(test_file.string(), signature, empty_pub_key));
-
-  std::string empty_signature;
-  EXPECT_EQ(kRSASignatureEmpty,
-            CheckFileSignature(test_file.string(), empty_signature, keys.public_key));
-
-  std::string bad_signature("bad");
-  EXPECT_EQ(kRSAInvalidSignature,
-            CheckFileSignature(test_file.string(), bad_signature, keys.public_key));
+    PublicKey empty_public_key;
+    EXPECT_EQ(kSuccess, CheckFileSignature(test_file, signature, keys.public_key));
+    EXPECT_EQ(kInvalidPublicKey,
+              CheckFileSignature(test_file.string(), signature, empty_public_key));
+    EXPECT_EQ(kRSASignatureEmpty,
+              CheckFileSignature(test_file.string(), empty_signature, keys.public_key));
+    EXPECT_EQ(kRSAInvalidSignature,
+              CheckFileSignature(test_file.string(), bad_signature, keys.public_key));
+  });
+  RunInParallel(f, 10);
 }
 
 TEST_F(RSATest, BEH_Serialise) {
@@ -279,5 +286,7 @@ TEST_F(RSATest, BEH_RsaKeysSerialisationAndParsing) {
 }
 
 }  // namespace test
+
 }  // namespace rsa
+
 }  // namespace maidsafe

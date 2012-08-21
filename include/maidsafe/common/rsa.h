@@ -4,12 +4,12 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice,
+   *  Redistributions of source code must retain the above copyright notice,
     this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright notice,
+   *  Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
     and/or other materials provided with the distribution.
-    * Neither the name of the maidsafe.net limited nor the names of its
+   *  Neither the name of the maidsafe.net limited nor the names of its
     contributors may be used to endorse or promote products derived from this
     software without specific prior written permission.
 
@@ -42,6 +42,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/function.hpp"
+#include "boost/filesystem/path.hpp"
 #include "boost/serialization/string.hpp"
 
 namespace maidsafe {
@@ -71,53 +72,44 @@ struct Keys {
   ValidationToken validation_token;  // certificate, additional signature etc.
 };
 
-int GenerateKeyPair(Keys *keypair);
+int GenerateKeyPair(Keys* keypair);
 
-int Encrypt(const PlainText &plain_text,
-            const PublicKey &public_key,
-            CipherText *result);
+int Encrypt(const PlainText& plain_text, const PublicKey& public_key, CipherText* result);
 
-int Decrypt(const CipherText &data,
-            const PrivateKey &private_key,
-            PlainText *result);
+int Decrypt(const CipherText& data, const PrivateKey& private_key, PlainText* result);
 
-int Sign(const PlainText &data,
-         const PrivateKey &private_key,
-         Signature *signature);
+int Sign(const PlainText& data, const PrivateKey& private_key, Signature* signature);
 
-int CheckSignature(const PlainText &data,
-                   const Signature &signature,
-                   const PublicKey &public_key);
+int SignFile(const boost::filesystem::path& filename,
+             const PrivateKey& private_key,
+             Signature& signature);
 
-int CheckFileSignature(const std::string &filename,
-                       const Signature &signature,
-                       const PublicKey &public_key);
+int CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
 
-void EncodePrivateKey(const PrivateKey &key, std::string *private_key);
+int CheckFileSignature(const boost::filesystem::path& filename,
+                       const Signature& signature,
+                       const PublicKey& public_key);
 
-void EncodePublicKey(const PublicKey &key, std::string *public_key);
+void EncodePrivateKey(const PrivateKey& key, std::string* private_key);
 
-void DecodePrivateKey(const std::string &private_key, PrivateKey *key);
+void EncodePublicKey(const PublicKey& key, std::string* public_key);
 
-void DecodePublicKey(const std::string &public_key, PublicKey *key);
+void DecodePrivateKey(const std::string& private_key, PrivateKey* key);
+
+void DecodePublicKey(const std::string& public_key, PublicKey* key);
 
 // check decoded keys were the same as encoded and pub key not replaced
-bool CheckRoundtrip(const PublicKey &public_key,
-                    const PrivateKey &private_key);
+bool CheckRoundtrip(const PublicKey& public_key, const PrivateKey& private_key);
 
-bool ValidateKey(const PrivateKey &private_key, unsigned int level = 2U);
+bool ValidateKey(const PrivateKey& private_key, unsigned int level = 2U);
 
-bool ValidateKey(const PublicKey &public_key, unsigned int level = 2U);
+bool ValidateKey(const PublicKey& public_key, unsigned int level = 2U);
 
-bool Validate(const PlainText &plain_text,
-              const Signature &signature,
-              const PublicKey &public_key);
+bool Validate(const PlainText& plain_text, const Signature& signature, const PublicKey& public_key);
 
-bool MatchingPublicKeys(const PublicKey &public_key1,
-                        const PublicKey &public_key2);
+bool MatchingPublicKeys(const PublicKey& public_key1, const PublicKey& public_key2);
 
-bool MatchingPrivateKeys(const PrivateKey &private_key1,
-                         const PrivateKey &private_key2);
+bool MatchingPrivateKeys(const PrivateKey& private_key1, const PrivateKey& private_key2);
 
 bool SerialiseKeys(const Keys& keys, std::string& serialised_keys);
 
@@ -138,13 +130,13 @@ namespace serialization {
 #  pragma warning(disable: 4127)
 #endif
 template <typename Archive>
-void serialize(Archive &archive,                              // NOLINT (Fraser)
-               maidsafe::rsa::PrivateKey &private_key,
+void serialize(Archive& archive,                              // NOLINT (Fraser)
+               maidsafe::rsa::PrivateKey& private_key,
                const unsigned int& /*version*/) {
   std::string encoded_private_key;
   if (Archive::is_saving::value)
     maidsafe::rsa::EncodePrivateKey(private_key, &encoded_private_key);
-  archive & encoded_private_key;
+  archive&  encoded_private_key;
   if (Archive::is_loading::value)
     maidsafe::rsa::DecodePrivateKey(encoded_private_key, &private_key);
 #ifdef __MSVC__
@@ -156,13 +148,13 @@ void serialize(Archive &archive,                              // NOLINT (Fraser)
 #  pragma warning(disable: 4127)
 #endif
 template <typename Archive>
-void serialize(Archive &archive,                              // NOLINT (Fraser)
-               maidsafe::rsa::PublicKey &public_key,
+void serialize(Archive& archive,                              // NOLINT (Fraser)
+               maidsafe::rsa::PublicKey& public_key,
                const unsigned int& /*version*/) {
   std::string encoded_public_key;
   if (Archive::is_saving::value)
     maidsafe::rsa::EncodePublicKey(public_key, &encoded_public_key);
-  archive & encoded_public_key;
+  archive&  encoded_public_key;
   if (Archive::is_loading::value)
     maidsafe::rsa::DecodePublicKey(encoded_public_key, &public_key);
 #ifdef __MSVC__
