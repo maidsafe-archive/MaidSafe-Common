@@ -257,20 +257,32 @@ int CheckSignature(const PlainText &data, const Signature &signature, const Publ
   }
 }
 
-int CheckFileSignature(const std::string &filename, const Signature &signature, const PublicKey &public_key) {
+int CheckFileSignature(const std::string &filename,
+                       const Signature &signature,
+                       const PublicKey &public_key) {
+  if (!public_key.Validate(rng(), 0)) {
+    LOG(kError) << "Bad public key";
+    return kInvalidPublicKey;
+  }
+  if (signature.empty()) {
+    LOG(kError) << "No signature";
+    return kRSASignatureEmpty;
+  }
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
-    CryptoPP::VerifierFilter *verifierFilter = new CryptoPP::VerifierFilter(verifier);
-    verifierFilter->Put(reinterpret_cast<const byte*>(signature.c_str()), verifier.SignatureLength());
-    CryptoPP::FileSource f(reinterpret_cast<const char *>(filename.c_str()), true, verifierFilter);
-    return verifierFilter->GetLastResult() ? kSuccess : kRSAInvalidSignature;
-  } catch(const CryptoPP::Exception &e) {
+    CryptoPP::VerifierFilter *verifier_filter = new CryptoPP::VerifierFilter(verifier);
+    verifier_filter->Put(reinterpret_cast<const byte*>(signature.c_str()),
+                         verifier.SignatureLength());
+    CryptoPP::FileSource file_source(reinterpret_cast<const char*>(filename.c_str()), true,
+                                     verifier_filter);
+    return verifier_filter->GetLastResult() ? kSuccess : kRSAInvalidSignature;
+  }
+  catch(const CryptoPP::Exception &e) {
     LOG(kError) << "Failed signature check: " << e.what();
     return kRSAInvalidSignature;
   }
-} 
-
+}
 
 void EncodePrivateKey(const PrivateKey &key, std::string *private_key) {
   if (!private_key) {
