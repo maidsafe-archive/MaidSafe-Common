@@ -234,6 +234,12 @@ int SignFile(const boost::filesystem::path& filename,
     LOG(kError) << "Bad private key";
     return kInvalidPrivateKey;
   }
+  boost::system::error_code error_code;
+  if (boost::filesystem::file_size(filename, error_code) == 0 || error_code) {
+    LOG(kError) << "File empty or inaccessible.";
+    return kRSAEmptyFileError;
+  }
+
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
     CryptoPP::FileSource(filename.c_str(),
@@ -297,8 +303,7 @@ int CheckFileSignature(const boost::filesystem::path& filename,
     CryptoPP::VerifierFilter* verifier_filter = new CryptoPP::VerifierFilter(verifier);
     verifier_filter->Put(reinterpret_cast<const byte*>(signature.c_str()),
                          verifier.SignatureLength());
-    CryptoPP::FileSource file_source(reinterpret_cast<const char*>(filename.c_str()), true,
-                                     verifier_filter);
+    CryptoPP::FileSource file_source(filename.c_str(), true, verifier_filter);
     return verifier_filter->GetLastResult() ? kSuccess : kRSAInvalidSignature;
   }
   catch(const CryptoPP::Exception& e) {

@@ -154,7 +154,7 @@ TEST_F(RSATest, BEH_SignValidate) {
     EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
     PrivateKey empty_priv_key;
     PublicKey empty_pub_key;
-    const std::string kData(RandomString(470));
+    const std::string kData(RandomString(RandomUint32() % (1024 * 1024)));
     std::string signature;
 
     EXPECT_EQ(kSuccess, Sign(kData, keys.private_key, &signature));
@@ -196,7 +196,7 @@ TEST_F(RSATest, BEH_SignFileValidate) {
     EXPECT_EQ(kSuccess, SignFile(test_file, keys.private_key, signature));
     EXPECT_EQ(kInvalidPrivateKey,
               SignFile(test_file.string(), empty_private_key, signature));
-    EXPECT_EQ(kRSASigningError,
+    EXPECT_EQ(kRSAEmptyFileError,
               SignFile(boost::filesystem::path(RandomAlphaNumericString(9)),
                        keys.private_key,
                        signature));

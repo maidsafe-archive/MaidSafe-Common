@@ -57,7 +57,7 @@ class SafeQueue {
     return queue_.empty();
   }
 
-  unsigned Size() const {
+  size_t Size() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.size();
   }
