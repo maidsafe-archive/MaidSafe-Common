@@ -39,8 +39,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 defined(__APPLE_CC__) || (defined(linux) || \
 defined(__linux) || defined(__linux__) || defined(__GNU__) \
 || defined(__GLIBC__)) && !defined(_CRAYC)
-  #include  "pwd.h"  //NOLINT (dirvine)
+  #include  "pwd.h"  // NOLINT (dirvine)
   #include "sys/param.h"
+#endif
+
+#ifdef __MSVC__
+  #include "windows.h"    // NOLINT - Viv
 #endif
 
 #ifdef __MSVC__
@@ -62,10 +66,10 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "cryptopp/base64.h"
 #include "cryptopp/hex.h"
 
-
 #ifdef __MSVC__
 #  pragma warning(pop)
 #endif
+
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
@@ -435,6 +439,37 @@ fs::path GetSystemAppDir() {
 
 unsigned int Concurrency() {
   return std::max(std::thread::hardware_concurrency(), 2U);
+}
+
+
+fs::path GetAppInstallDir() {
+  // TODO(David) Update App Install Path here for Mac & Linux
+
+#if defined(MAIDSAFE_WIN32)
+  std::string key_path("SOFTWARE\\" + kCompanyName + "\\" + kApplicationName);
+  HKEY handle;
+  char return_value[8192];
+  DWORD dword_size(8191);
+  DWORD dword_type;
+  fs::path return_path;
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE,
+                    key_path.c_str(), 0, KEY_QUERY_VALUE, &handle) == ERROR_SUCCESS) {
+    if (RegQueryValueExA(handle, "InstallRoot", NULL, &dword_type,
+                         reinterpret_cast<LPBYTE>(return_value), &dword_size) == ERROR_SUCCESS) {
+      return_path = return_value;
+    }
+  }
+  RegCloseKey(handle);
+  return return_path;
+// #elif defined(MAIDSAFE_APPLE)
+//   return fs::path("/Library/Application Support/") / kCompanyName /
+//          kApplicationName;
+// #elif defined(MAIDSAFE_LINUX)
+//   return fs::path("/usr/share/") / kCompanyName / kApplicationName;
+#else
+  LOG(kError) << "Cannot deduce application directory path";
+  return fs::path();
+#endif
 }
 
 

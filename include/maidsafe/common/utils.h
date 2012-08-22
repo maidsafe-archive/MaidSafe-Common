@@ -177,6 +177,11 @@ fs::path GetUserAppDir();
 // uses kCompanyName and kApplicationName
 fs::path GetSystemAppDir();
 
+// NOTE: DOES NOT CREATE PATH
+// Application install directory
+// uses kCompanyName and kApplicationName
+fs::path GetAppInstallDir();
+
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
 
