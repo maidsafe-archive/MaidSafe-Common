@@ -175,7 +175,7 @@ fs::path GetUserAppDir();
 // NOTE: DOES NOT CREATE PATH
 // Application support directory for all users,
 // uses kCompanyName and kApplicationName
-fs::path GetSystemAppDir();
+fs::path GetSystemAppSupportDir();
 
 // NOTE: DOES NOT CREATE PATH
 // Application install directory

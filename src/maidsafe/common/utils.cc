@@ -423,7 +423,7 @@ fs::path GetUserAppDir() {
 }
 
 
-fs::path GetSystemAppDir() {
+fs::path GetSystemAppSupportDir() {
 #if defined(MAIDSAFE_WIN32)
   return fs::path(getenv("ALLUSERSPROFILE")) / kCompanyName / kApplicationName;
 #elif defined(MAIDSAFE_APPLE)
@@ -441,10 +441,7 @@ unsigned int Concurrency() {
   return std::max(std::thread::hardware_concurrency(), 2U);
 }
 
-
 fs::path GetAppInstallDir() {
-  // TODO(David) Update App Install Path here for Mac & Linux
-
 #if defined(MAIDSAFE_WIN32)
   std::string key_path("SOFTWARE\\" + kCompanyName + "\\" + kApplicationName);
   HKEY handle;
@@ -461,11 +458,10 @@ fs::path GetAppInstallDir() {
   }
   RegCloseKey(handle);
   return return_path;
-// #elif defined(MAIDSAFE_APPLE)
-//   return fs::path("/Library/Application Support/") / kCompanyName /
-//          kApplicationName;
-// #elif defined(MAIDSAFE_LINUX)
-//   return fs::path("/usr/share/") / kCompanyName / kApplicationName;
+#elif defined(MAIDSAFE_APPLE)
+  return fs::path("/Library/Applications/");
+#elif defined(MAIDSAFE_LINUX)
+  return fs::path("/usr/bin/");
 #else
   LOG(kError) << "Cannot deduce application directory path";
   return fs::path();

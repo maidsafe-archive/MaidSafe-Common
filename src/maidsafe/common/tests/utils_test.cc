@@ -436,18 +436,18 @@ TEST(UtilsTest, BEH_GetUserAppDir) {
              << GetUserAppDir().string();
 }
 
-TEST(UtilsTest, BEH_GetSystemAppDir) {
-  EXPECT_FALSE(GetSystemAppDir().empty());
+TEST(UtilsTest, BEH_GetSystemAppSupportDir) {
+  EXPECT_FALSE(GetSystemAppSupportDir().empty());
   LOG(kInfo) << " I think your System app directory is "
-             << GetSystemAppDir().string();
+             << GetSystemAppSupportDir().string();
 }
 
 TEST(UtilsTest, BEH_AppDir) {
-  EXPECT_NE(GetSystemAppDir(), GetUserAppDir());
-  EXPECT_NE(GetSystemAppDir(), GetHomeDir());
+  EXPECT_NE(GetSystemAppSupportDir(), GetUserAppDir());
+  EXPECT_NE(GetSystemAppSupportDir(), GetHomeDir());
   EXPECT_NE(GetUserAppDir(), GetHomeDir());
   std::string home(GetHomeDir().string());
-  std::string system(GetSystemAppDir().string());
+  std::string system(GetSystemAppSupportDir().string());
   std::string user_app(GetUserAppDir().string());
   EXPECT_TRUE(user_app.find(home) != std::string::npos);
   EXPECT_TRUE(system.find(home) == std::string::npos);
