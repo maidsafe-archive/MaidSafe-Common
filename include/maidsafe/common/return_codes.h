@@ -31,10 +31,11 @@ enum CommonReturnCode {
   kRSAEncryptError = -100104,
   kRSADecryptError = -100105,
   kRSASigningError = -100106,
-  kRSAInvalidSignature = -100107,
-  kRSASignatureEmpty = -100108,
-  kRSASerialisationError = -100109,
-  kRSAParseError = -100110
+  kRSAEmptyFileError = -100107,
+  kRSAInvalidSignature = -100108,
+  kRSASignatureEmpty = -100109,
+  kRSASerialisationError = -100110,
+  kRSAParseError = -100111
 };
 
 }  // namespace maidsafe
