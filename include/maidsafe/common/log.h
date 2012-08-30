@@ -96,7 +96,7 @@ class LogMessage {
   ~LogMessage();
   std::ostringstream& messageStream() { return stream_; }
  private:
-  const boost::filesystem::path kFile_;
+  std::string file_;
   const int kLine_;
   const std::string kFunction_;
   const int kLevel_;

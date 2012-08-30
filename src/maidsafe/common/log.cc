@@ -38,9 +38,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctime>
 #include <cstdio>
 
-#include "maidsafe/common/utils.h"
+#include "boost/algorithm/string/replace.hpp"
 
-namespace fs = boost::filesystem;
+#include "maidsafe/common/utils.h"
 
 
 namespace maidsafe {
@@ -129,20 +129,20 @@ void ColouredPrint(Colour colour, const std::string &text) {
 }  // unnamed namespace
 
 LogMessage::LogMessage(const std::string &file, int line, const std::string &function, int level)
-    : kFile_(file),
+    : file_(file),
       kLine_(line),
       kFunction_(function),
       kLevel_(level),
       stream_() {}
 
 LogMessage::~LogMessage() {
-  auto itr(kFile_.end()), begin_itr(kFile_.begin());
+  boost::replace_all(file_, "\\", "/");
   std::string project;
-  while (itr != begin_itr) {
-    if (*(--itr) == "maidsafe") {
-      project = (*(++itr)).string();
-      break;
-    }
+  size_t position(file_.rfind("maidsafe"));
+  if (position != std::string::npos) {
+    file_ = file_.substr(position + 9);
+    position = file_.find('/');
+    project = file_.substr(0, position);
   }
 
   FilterMap filter(Logging::instance().Filter());
@@ -155,10 +155,6 @@ LogMessage::~LogMessage() {
 
   if ((*filter_itr).second > kLevel_)
     return;
-
-  fs::path current_file;
-  for (; itr != kFile_.end(); ++itr)
-    current_file /= *itr;
 
   char log_level;
   Colour colour(Colour::kDefaultColour);
@@ -202,7 +198,7 @@ LogMessage::~LogMessage() {
   std::string coloured_log_entry(oss.str());
   oss.str("");
 
-  oss << " " << current_file.string() << ":" << kLine_ << "] ";
+  oss << " " << file_ << ":" << kLine_ << "] ";
 //  oss << " Function: " << function_ << "] ";
 
   oss << stream_.str() << '\n';

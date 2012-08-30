@@ -76,6 +76,7 @@ target_link_libraries(maidsafe_common
 #                        glog
                         gmock
                         gtest
+                        ${BoostChronoLibs}
                         ${BoostDateTimeLibs}
                         ${BoostFilesystemLibs}
                         ${BoostSerializationLibs}
