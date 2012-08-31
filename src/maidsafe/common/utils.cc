@@ -459,7 +459,7 @@ fs::path GetAppInstallDir() {
   RegCloseKey(handle);
   return return_path;
 #elif defined(MAIDSAFE_APPLE)
-  return fs::path("/Library/Applications/");
+  return fs::path("/Applications/");
 #elif defined(MAIDSAFE_LINUX)
   return fs::path("/usr/bin/");
 #else
