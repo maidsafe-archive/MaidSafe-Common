@@ -73,13 +73,11 @@ ms_add_executable(TESTcommon "Tests/Common" ${TEST_MAIN} "${ALL_FILES_COMMON_TES
 target_link_libraries(maidsafe_common
                         cryptopp
                         protobuf
-#                        glog
                         gmock
                         gtest
                         ${BoostChronoLibs}
                         ${BoostDateTimeLibs}
                         ${BoostFilesystemLibs}
-                        ${BoostSerializationLibs}
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
                         ${BoostRegexLibs}

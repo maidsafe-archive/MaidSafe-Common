@@ -31,8 +31,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <future>
 #include <thread>
 
-#include "boost/archive/text_oarchive.hpp"
-#include "boost/archive/text_iarchive.hpp"
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/log.h"
@@ -217,35 +215,19 @@ TEST_F(RSATest, BEH_Serialise) {
   auto f([] {
     Keys keys;
     EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
-    std::ostringstream oss;
-    boost::archive::text_oarchive output_archive(oss);
-    const PrivateKey kOriginalPrivateKey(keys.private_key);
-    const PublicKey kOriginalPublicKey(keys.public_key);
-    output_archive << kOriginalPrivateKey << kOriginalPublicKey;
-    std::string encoded(oss.str());
+    const Keys kOriginalKeys(keys);
+    std::string serialised;
+    EXPECT_TRUE(SerialiseKeys(kOriginalKeys, serialised));
+    Keys recovered_keys;
+    EXPECT_FALSE(ParseKeys("Rubbish", recovered_keys));
+    EXPECT_FALSE(ValidateKey(recovered_keys.private_key));
 
-    PrivateKey recovered_private_key;
-    PublicKey recovered_public_key;
-    std::istringstream iss1(encoded);
-    boost::archive::text_iarchive input_archive1(iss1);
-    input_archive1 >> recovered_public_key >> recovered_private_key;
-    EXPECT_FALSE(ValidateKey(recovered_public_key));
-    EXPECT_FALSE(ValidateKey(recovered_private_key));
+    EXPECT_TRUE(ParseKeys(serialised, recovered_keys));
+    EXPECT_TRUE(ValidateKey(recovered_keys.public_key));
+    EXPECT_TRUE(ValidateKey(recovered_keys.private_key));
 
-
-    try {
-      std::istringstream iss2(encoded);
-      boost::archive::text_iarchive input_archive2(iss2);
-      input_archive2 >> recovered_private_key >> recovered_public_key;
-    }
-    catch(const std::exception &e) {
-      LOG(kInfo) << e.what();
-    }
-    EXPECT_TRUE(ValidateKey(recovered_public_key));
-    EXPECT_TRUE(ValidateKey(recovered_private_key));
-
-    EXPECT_TRUE(CheckRoundtrip(recovered_public_key, kOriginalPrivateKey));
-    EXPECT_TRUE(CheckRoundtrip(recovered_public_key, recovered_private_key));
+    EXPECT_TRUE(CheckRoundtrip(recovered_keys.public_key, kOriginalKeys.private_key));
+    EXPECT_TRUE(CheckRoundtrip(recovered_keys.public_key, recovered_keys.private_key));
   });
   RunInParallel(f);
 }

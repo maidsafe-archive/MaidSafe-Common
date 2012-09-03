@@ -43,7 +43,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/function.hpp"
 #include "boost/filesystem/path.hpp"
-#include "boost/serialization/string.hpp"
 
 namespace maidsafe {
 
@@ -120,51 +119,5 @@ bool ParseKeys(const std::string& serialised_keys, Keys& keys);
 namespace asymm = rsa;
 
 }  // namespace maidsafe
-
-
-namespace boost {
-
-namespace serialization {
-
-#ifdef __MSVC__
-#  pragma warning(disable: 4127)
-#endif
-template <typename Archive>
-void serialize(Archive& archive,                              // NOLINT (Fraser)
-               maidsafe::rsa::PrivateKey& private_key,
-               const unsigned int& /*version*/) {
-  std::string encoded_private_key;
-  if (Archive::is_saving::value)
-    maidsafe::rsa::EncodePrivateKey(private_key, &encoded_private_key);
-  archive&  encoded_private_key;
-  if (Archive::is_loading::value)
-    maidsafe::rsa::DecodePrivateKey(encoded_private_key, &private_key);
-#ifdef __MSVC__
-#  pragma warning(default: 4127)
-#endif
-}
-
-#ifdef __MSVC__
-#  pragma warning(disable: 4127)
-#endif
-template <typename Archive>
-void serialize(Archive& archive,                              // NOLINT (Fraser)
-               maidsafe::rsa::PublicKey& public_key,
-               const unsigned int& /*version*/) {
-  std::string encoded_public_key;
-  if (Archive::is_saving::value)
-    maidsafe::rsa::EncodePublicKey(public_key, &encoded_public_key);
-  archive&  encoded_public_key;
-  if (Archive::is_loading::value)
-    maidsafe::rsa::DecodePublicKey(encoded_public_key, &public_key);
-#ifdef __MSVC__
-#  pragma warning(default: 4127)
-#endif
-}
-
-}  // namespace serialization
-
-}  // namespace boost
-
 
 #endif  // MAIDSAFE_COMMON_RSA_H_
