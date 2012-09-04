@@ -54,6 +54,8 @@ namespace maidsafe {
 // 01 Jan 2000
 extern const boost::posix_time::ptime kMaidSafeEpoch;
 
+extern const int kInvalidVersion;
+
 // A simple class to determine statistical properties of a data set, computed
 // without storing the values. Data type must be numerical.
 template <typename T>
@@ -85,6 +87,15 @@ class Stats {
   T max_;
   T sum_;
 };
+
+// Takes a version as an int and returns the string form, e.g. 901 returns "0.09.01"
+std::string VersionToString(int version,
+                            std::string* major_version = nullptr,
+                            std::string* minor_version = nullptr,
+                            std::string* patch_version = nullptr);
+
+// Takes a version as a string and returns the int form, e.g. "0.09.01" returns 901
+int VersionToInt(const std::string& version);
 
 // Return CPU size (i.e. 32 64 bit etc.)
 int32_t CpuSize();

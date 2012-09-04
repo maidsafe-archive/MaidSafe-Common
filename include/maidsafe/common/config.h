@@ -46,6 +46,19 @@ const std::string kApplicationName("lifestuff");
 const std::string kApplicationName(BOOST_PP_STRINGIZE(APPLICATION_NAME));
 #endif
 
+#if !defined(APPLICATION_VERSION_MAJOR) || \
+    !defined(APPLICATION_VERSION_MINOR) || \
+    !defined(APPLICATION_VERSION_PATCH)
+#  error APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR and APPLICATION_VERSION_PATCH \
+         must be defined
+#else
+const std::string kApplicationVersion(BOOST_PP_STRINGIZE(APPLICATION_VERSION_MAJOR) +
+                                      std::string(".") +
+                                      BOOST_PP_STRINGIZE(APPLICATION_VERSION_MINOR) +
+                                      std::string(".") +
+                                      BOOST_PP_STRINGIZE(APPLICATION_VERSION_PATCH));
+#endif
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_CONFIG_H_
