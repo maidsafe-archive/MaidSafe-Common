@@ -506,7 +506,11 @@ unsigned int Concurrency() {
 fs::path GetAppInstallDir() {
 #if defined(MAIDSAFE_WIN32)
   char* program_files;
+#if defined(MAIDSAFE_WIN64)
+  program_files = getenv("ProgramFiles(x86)");
+#else
   program_files = getenv("ProgramFiles");
+#endif
   return fs::path(program_files) / kCompanyName / kApplicationName;
 #elif defined(MAIDSAFE_APPLE)
   return fs::path("/Applications/");
