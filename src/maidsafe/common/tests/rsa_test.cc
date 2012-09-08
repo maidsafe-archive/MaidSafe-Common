@@ -175,7 +175,7 @@ TEST_F(RSATest, BEH_SignValidate) {
     EXPECT_EQ(kRSAInvalidSignature,
               CheckSignature(kData, bad_signature, keys.public_key));
   });
-  RunInParallel(f, 100);
+  RunInParallel(f, 10);
 }
 
 TEST_F(RSATest, BEH_SignFileValidate) {
@@ -208,7 +208,7 @@ TEST_F(RSATest, BEH_SignFileValidate) {
     EXPECT_EQ(kRSAInvalidSignature,
               CheckFileSignature(test_file.string(), bad_signature, keys.public_key));
   });
-  RunInParallel(f, 10);
+  RunInParallel(f, 3);
 }
 
 TEST_F(RSATest, BEH_Serialise) {
@@ -229,7 +229,7 @@ TEST_F(RSATest, BEH_Serialise) {
     EXPECT_TRUE(CheckRoundtrip(recovered_keys.public_key, kOriginalKeys.private_key));
     EXPECT_TRUE(CheckRoundtrip(recovered_keys.public_key, recovered_keys.private_key));
   });
-  RunInParallel(f);
+  RunInParallel(f, 3);
 }
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
