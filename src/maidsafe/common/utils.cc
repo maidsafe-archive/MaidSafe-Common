@@ -56,6 +56,7 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "boost/filesystem/operations.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/scoped_array.hpp"
+#include "boost/asio.hpp"
 #include "boost/thread/mutex.hpp"
 #include "boost/thread/thread.hpp"
 #include "boost/random/mersenne_twister.hpp"
@@ -78,7 +79,6 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 namespace maidsafe {
 
 namespace {
-
 
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
@@ -144,6 +144,36 @@ std::string BytesToSiUnits(const uint64_t &num) {
 }
 
 }  // unnamed namespace
+
+uint16_t GetRandomPort() {
+  static std::set<uint16_t> already_used_ports;
+  bool unique(false);
+  uint16_t port(0);
+  uint16_t failed_attempts(0);
+  do {
+    port = (RandomUint32() % 48126) + 1025;
+    unique = (already_used_ports.insert(port)).second;
+  } while (!unique && failed_attempts++ < 1000);
+  if (failed_attempts > 1000)
+    LOG(kError) << "Unable to generate unique ports";
+  return port;
+}
+
+boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
+  boost::asio::io_service io_service;
+  boost::asio::ip::udp::socket socket(io_service);
+  try {
+    socket.connect(peer_endpoint);
+    if (socket.local_endpoint().address().is_unspecified() ||
+        socket.local_endpoint().address().is_loopback())
+      return boost::asio::ip::address();
+    return socket.local_endpoint().address();
+  }
+  catch(const std::exception& e) {
+    LOG(kError) << "Failed trying to connect to " << peer_endpoint << " - " << e.what();
+    return boost::asio::ip::address();
+  }
+}
 
 
 const boost::posix_time::ptime kMaidSafeEpoch(
