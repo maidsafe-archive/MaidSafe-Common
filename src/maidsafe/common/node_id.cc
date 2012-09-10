@@ -191,7 +191,7 @@ const std::string NodeId::ToStringEncoded(
 }
 
 bool NodeId::IsValid() const {
-  return ((raw_id_.size() == kKeySizeBytes) && (!raw_id_.empty()));
+  return raw_id_.size() == kKeySizeBytes;
 }
 
 bool NodeId::Empty() const {
