@@ -39,7 +39,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem.hpp"
-#include "boost/asio.hpp"
+#include "boost/asio/ip/address.hpp"
+#include "boost/asio/ip/udp.hpp"
 #include "boost/token_functions.hpp"
 
 #ifdef __MSVC__
@@ -57,12 +58,14 @@ extern const boost::posix_time::ptime kMaidSafeEpoch;
 
 extern const int kInvalidVersion;
 
-uint16_t GetRandomPort();
-
+// Makes a UDP socket connection to peer_endpoint.  Note, no data is sent, so no information about
+// the validity or availability of the peer is deduced.  If the retrieved local endpoint is
+// unspecified or is the loopback address, the function returns a default-constructed (unspecified)
+// address.
 boost::asio::ip::address GetLocalIp(
     boost::asio::ip::udp::endpoint peer_endpoint =
-    boost::asio::ip::udp::endpoint(
-      boost::asio::ip::address_v4::from_string("203.0.113.0"), 80));
+        boost::asio::ip::udp::endpoint(
+            boost::asio::ip::address_v4::from_string("203.0.113.0"), 80));
 
 // A simple class to determine statistical properties of a data set, computed
 // without storing the values. Data type must be numerical.
@@ -217,6 +220,9 @@ typedef std::shared_ptr<fs::path> TestPath;
 // The test_prefix should preferably be "MaidSafe_Test<optional test name>" or
 // "Sigmoid_Test<optional test name>".
 TestPath CreateTestPath(std::string test_prefix = "");
+
+// Returns a random port in the range [1025, 65535].
+uint16_t GetRandomPort();
 
 }  // namespace test
 

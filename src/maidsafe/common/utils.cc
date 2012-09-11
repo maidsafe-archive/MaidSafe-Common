@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <algorithm>
 #include <limits>
+#include <set>
 #include <string>
 
 #if defined(macintosh) || defined(__APPLE__) || \
@@ -56,7 +57,6 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "boost/filesystem/operations.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/scoped_array.hpp"
-#include "boost/asio.hpp"
 #include "boost/thread/mutex.hpp"
 #include "boost/thread/thread.hpp"
 #include "boost/random/mersenne_twister.hpp"
@@ -145,19 +145,11 @@ std::string BytesToSiUnits(const uint64_t &num) {
 
 }  // unnamed namespace
 
-uint16_t GetRandomPort() {
-  static std::set<uint16_t> already_used_ports;
-  bool unique(false);
-  uint16_t port(0);
-  uint16_t failed_attempts(0);
-  do {
-    port = (RandomUint32() % 48126) + 1025;
-    unique = (already_used_ports.insert(port)).second;
-  } while (!unique && failed_attempts++ < 1000);
-  if (failed_attempts > 1000)
-    LOG(kError) << "Unable to generate unique ports";
-  return port;
-}
+
+const boost::posix_time::ptime kMaidSafeEpoch(
+    boost::posix_time::from_iso_string("20000101T000000"));
+
+const int kInvalidVersion(-1);
 
 boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
   boost::asio::io_service io_service;
@@ -174,12 +166,6 @@ boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint
     return boost::asio::ip::address();
   }
 }
-
-
-const boost::posix_time::ptime kMaidSafeEpoch(
-    boost::posix_time::from_iso_string("20000101T000000"));
-
-const int kInvalidVersion(-1);
 
 std::string VersionToString(int version,
                             std::string* major_version,
@@ -597,6 +583,22 @@ TestPath CreateTestPath(std::string test_prefix) {
 
   LOG(kInfo) << "Created test directory " << *test_path;
   return test_path_ptr;
+}
+
+uint16_t GetRandomPort() {
+  static std::set<uint16_t> already_used_ports;
+  bool unique(false);
+  uint16_t port(0);
+  uint16_t failed_attempts(0);
+  do {
+    port = (RandomUint32() % 64511) + 1025;
+    unique = (already_used_ports.insert(port)).second;
+  } while (!unique && failed_attempts++ < 1000);
+  if (failed_attempts > 1000) {
+    LOG(kError) << "Unable to generate unique ports";
+    return 0;
+  }
+  return port;
 }
 
 }  // namespace test
