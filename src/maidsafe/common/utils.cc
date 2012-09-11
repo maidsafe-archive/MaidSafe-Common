@@ -589,14 +589,13 @@ uint16_t GetRandomPort() {
   static std::set<uint16_t> already_used_ports;
   bool unique(false);
   uint16_t port(0);
-  uint16_t failed_attempts(0);
   do {
     port = (RandomUint32() % 64511) + 1025;
     unique = (already_used_ports.insert(port)).second;
-  } while (!unique && failed_attempts++ < 1000);
-  if (failed_attempts > 1000) {
-    LOG(kError) << "Unable to generate unique ports";
-    return 0;
+  } while (!unique);
+  if (already_used_ports.size() == 10000) {
+    LOG(kInfo) << "Clearing already-used ports list.";
+    already_used_ports.clear();
   }
   return port;
 }
