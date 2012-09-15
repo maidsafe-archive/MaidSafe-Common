@@ -16,7 +16,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-
+#include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
@@ -41,6 +41,7 @@ class NodeId {
 
   // Creates a NodeId from a raw (decoded) string.
   explicit NodeId(const std::string& id);
+  explicit NodeId(const std::string& id, std::error_code &error);
 
   // Creates a NodeId from an encoded string.
   NodeId(const std::string& id, const EncodingType& encoding_type);

@@ -49,7 +49,14 @@ NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
 NodeId::NodeId(const std::string& id) : raw_id_(id) {
   if (!IsValid()) {
     raw_id_.clear();
-    LOG(kError) << "Attempt to create ID from string != " << kKeySizeBytes;
+    throw error::bad_string_length;
+  }
+}
+
+NodeId::NodeId(const std::string& id, std::error_code &error) : raw_id_(id) {
+  if (!IsValid()) {
+    raw_id_.clear();
+    error = error::bad_string_length;
   }
 }
 

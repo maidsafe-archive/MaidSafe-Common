@@ -14,6 +14,7 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -95,8 +96,17 @@ TEST(NodeIdTest, BEH_DefaultCtr) {
   ASSERT_EQ(hex_id, node_id.ToStringEncoded(NodeId::kHex));
   std::string bin_id(kKeySizeBytes * 8, '0');
   ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::kBinary));
-  NodeId dave("david");
-  ASSERT_NE("david", dave.String());
+  try {
+    NodeId dave("not64long");
+  } catch (error::maidsafe_error_code &error) {
+    EXPECT_TRUE(error == error::bad_string_length);
+  } catch (std::error_code  &error) {
+    std::cout << error.message();
+  }
+  std::error_code error;
+  NodeId dave("not64long", error);
+  EXPECT_TRUE(error == error::bad_string_length);
+  ASSERT_NE("not64long", dave.String());
 }
 
 TEST(NodeIdTest, BEH_CopyCtr) {
@@ -131,9 +141,14 @@ TEST(NodeIdTest, BEH_StringCtr) {
   std::string rand_str(RandomString(kKeySizeBytes));
   NodeId id1(rand_str);
   ASSERT_TRUE(id1.String() == rand_str);
+  try {
   NodeId id2(rand_str.substr(0, kKeySizeBytes - 1));
-  ASSERT_TRUE(id2.String().empty());
-  NodeId id3(rand_str + "a");
+  } catch (error::maidsafe_error_code &error) {
+  ASSERT_TRUE(error == error::maidsafe_error_code::bad_string_length );
+  }
+  std::error_code error;
+  NodeId id3(rand_str + "a", error);
+  // EXPECT_TRUE(error);
   ASSERT_TRUE(id3.String().empty());
 }
 
