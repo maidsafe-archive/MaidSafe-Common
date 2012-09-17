@@ -148,7 +148,6 @@ TEST(NodeIdTest, BEH_StringCtr) {
   }
   std::error_code error;
   NodeId id3(rand_str + "a", error);
-  // EXPECT_TRUE(error);
   ASSERT_TRUE(id3.String().empty());
 }
 
