@@ -10,15 +10,21 @@
  *  the explicit written permission of the board of directors of maidsafe.net. *
  ******************************************************************************/
 
-#ifndef MAIDSAFE_ERROR_H_
-#define MAIDSAFE_ERROR_H_
+#ifndef MAIDSAFE_COMMON_ERROR_H_
+#define MAIDSAFE_COMMON_ERROR_H_
+
+#ifdef MAIDSAFE_WIN32
+#define MAIDSAFE_NOEXCEPT
+#else
+#define MAIDSAFE_NOEXCEPT noexcept(true)
+#endif
 
 #include <system_error>
 #include <string>
+
 namespace maidsafe {
 
-namespace error {
-  enum maidsafe_error_code {
+enum class maidsafe_error_code {
     bad_string_length = 1,  // 0 would be no error
     no_private_key,
     no_public_key,
@@ -43,55 +49,47 @@ namespace error {
     get_failed,
     modify_failed,
     delete_failed
-  };
+};
 
-  enum maidsafe_error_condition {
+enum class maidsafe_error_condition {
     common,
     rudp,
     routing,
-    drive
-  };
+    drive,
+    unknown_error
+};
 
   std::error_code make_error_code(maidsafe_error_code e);
   std::error_condition make_error_condition(maidsafe_error_condition e);
-}  // namespace error
 
 class error_category_impl : public std::error_category {
  public:
     virtual std::string message(int ev) const;
-#ifdef MAIDSAFE_WIN32
-    virtual const char* name() const;  // msvc 11 does not support noexcept
-    virtual std::error_condition default_error_condition(int ev) const;
-    // virtual bool equivalent(const std::error_code& code, int condition) const;
-#else
-    virtual const char* name() const noexcept(true);  // gcc > 4.7 requires noexcept
-    virtual std::error_condition default_error_condition(int ev) const noexcept(true);
+    virtual const char* name() const MAIDSAFE_NOEXCEPT;
+    virtual std::error_condition default_error_condition(int ev) const MAIDSAFE_NOEXCEPT;
     // virtual bool equivalent(const std::error_code& code, int condition) const noexcept(true);
-#endif
 };
 
 const std::error_category& error_category();
-
-} // maidsafe
+}  // maidsafe
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Weffc++"
 #endif
-namespace std
-{
+namespace std {
     template <>
-    struct is_error_code_enum<maidsafe::error::maidsafe_error_code>
-      : public true_type {};
+    struct is_error_code_enum<maidsafe::maidsafe_error_code>
+      : public true_type {};  //NOLINT (dirvine)
 
     template <>
-    struct is_error_condition_enum<maidsafe::error::maidsafe_error_condition>
-      : public true_type {};
+    struct is_error_condition_enum<maidsafe::maidsafe_error_condition>
+      : public true_type {};  //NOLINT (dirvine)
 }
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif
 
-#endif  // MAIDSAFE_ERROR_H_
+#endif  // MAIDSAFE_COMMON_ERROR_H_
 

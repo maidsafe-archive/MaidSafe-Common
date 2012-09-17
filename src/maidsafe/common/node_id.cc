@@ -49,14 +49,14 @@ NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
 NodeId::NodeId(const std::string& id) : raw_id_(id) {
   if (!IsValid()) {
     raw_id_.clear();
-    throw error::bad_string_length;
+    throw maidsafe_error_code::bad_string_length;
   }
 }
 
 NodeId::NodeId(const std::string& id, std::error_code &error) : raw_id_(id) {
   if (!IsValid()) {
     raw_id_.clear();
-    error = error::bad_string_length;
+    error = maidsafe_error_code::bad_string_length;
   }
 }
 

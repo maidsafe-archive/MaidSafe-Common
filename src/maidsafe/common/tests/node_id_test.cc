@@ -98,14 +98,14 @@ TEST(NodeIdTest, BEH_DefaultCtr) {
   ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::kBinary));
   try {
     NodeId dave("not64long");
-  } catch (error::maidsafe_error_code &error) {
-    EXPECT_TRUE(error == error::bad_string_length);
-  } catch (std::error_code  &error) {
+  } catch(maidsafe_error_code &error) {
+    EXPECT_TRUE(error == maidsafe_error_code::bad_string_length);
+  } catch(std::error_code  &error) {
     std::cout << error.message();
   }
   std::error_code error;
   NodeId dave("not64long", error);
-  EXPECT_TRUE(error == error::bad_string_length);
+  EXPECT_TRUE(error == maidsafe_error_code::bad_string_length);
   ASSERT_NE("not64long", dave.String());
 }
 
@@ -142,9 +142,9 @@ TEST(NodeIdTest, BEH_StringCtr) {
   NodeId id1(rand_str);
   ASSERT_TRUE(id1.String() == rand_str);
   try {
-  NodeId id2(rand_str.substr(0, kKeySizeBytes - 1));
-  } catch (error::maidsafe_error_code &error) {
-  ASSERT_TRUE(error == error::maidsafe_error_code::bad_string_length );
+    NodeId id2(rand_str.substr(0, kKeySizeBytes - 1));
+  } catch(maidsafe_error_code &error) {
+    ASSERT_TRUE(error == maidsafe_error_code::bad_string_length);
   }
   std::error_code error;
   NodeId id3(rand_str + "a", error);
