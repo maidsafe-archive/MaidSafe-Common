@@ -66,17 +66,17 @@ class NodeId {
 
   bool Empty() const;
 
-  bool operator() (const NodeId& lhs, const NodeId& rhs) const;
-  bool operator == (const NodeId& rhs) const;
-  bool operator != (const NodeId& rhs) const;
-  bool operator < (const NodeId& rhs) const;
-  bool operator > (const NodeId& rhs) const;
-  bool operator <= (const NodeId& rhs) const;
-  bool operator >= (const NodeId& rhs) const;
-  NodeId& operator = (const NodeId& rhs);
+  bool operator()(const NodeId& lhs, const NodeId& rhs) const;
+  bool operator==(const NodeId& rhs) const;
+  bool operator!=(const NodeId& rhs) const;
+  bool operator<(const NodeId& rhs) const;
+  bool operator>(const NodeId& rhs) const;
+  bool operator<=(const NodeId& rhs) const;
+  bool operator>=(const NodeId& rhs) const;
+  NodeId& operator=(const NodeId& rhs);
 
   // XOR distance between two IDs.  XOR bit to bit.
-  const NodeId operator ^ (const NodeId& rhs) const;
+  const NodeId operator^(const NodeId& rhs) const;
 
  private:
   std::string EncodeToBinary() const;
