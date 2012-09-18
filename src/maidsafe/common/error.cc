@@ -30,6 +30,8 @@ std::string ErrorCategoryImpl::message(int error_value) const {
   switch (static_cast<error_code>(error_value)) {
     case error_code::kBadStringLength:
       return "String must be length 64";
+    case error_code::kInvalidNodeId:
+      return "Invalid NodeID";
     case error_code::kNoPrivateKey:
       return "Invalid or missing private key";
     case error_code::kNoPublicKey:
@@ -78,6 +80,17 @@ std::string ErrorCategoryImpl::message(int error_value) const {
 std::error_condition ErrorCategoryImpl::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<error_code>(error_value)) {
+    case error_code::kBadStringLength:
+    case error_code::kInvalidNodeId:
+    case error_code::kNoPrivateKey:
+    case error_code::kNoPublicKey:
+    case error_code::kDecryptFailed:
+    case error_code::kEncryptFailed:
+    case error_code::kStoreFailed:
+    case error_code::kGetFailed:
+    case error_code::kModifyFailed:
+    case error_code::kDeleteFailed:
+      return error_condition::kCommon;
     case error_code::kNoBootstrapNodesFound:
     case error_code::kNodeNotFound:
       return error_condition::kRouting;

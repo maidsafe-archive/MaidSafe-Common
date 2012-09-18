@@ -26,6 +26,7 @@ namespace maidsafe {
 
 enum class error_code {
   kBadStringLength = 1,  // 0 would be no error
+  kInvalidNodeId,
   kNoPrivateKey,
   kNoPublicKey,
   kDecryptFailed,

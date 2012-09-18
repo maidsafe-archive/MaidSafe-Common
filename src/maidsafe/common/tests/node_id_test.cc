@@ -98,12 +98,12 @@ TEST(NodeIdTest, BEH_DefaultCtr) {
   ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::kBinary));
   try {
     NodeId dave("not64long");
-  } catch(error_code &error) {
+  } catch(const error_code& error) {
     EXPECT_TRUE(error == error_code::kBadStringLength);
-  } catch(std::error_code  &error) {
+  } catch(const std::error_code& error) {
     std::cout << error.message();
   }
-  std::error_code error;
+  error_code error;
   NodeId dave("not64long", error);
   EXPECT_TRUE(error == error_code::kBadStringLength);
   ASSERT_NE("not64long", dave.String());
@@ -143,10 +143,10 @@ TEST(NodeIdTest, BEH_StringCtr) {
   ASSERT_TRUE(id1.String() == rand_str);
   try {
     NodeId id2(rand_str.substr(0, kKeySizeBytes - 1));
-  } catch(error_code &error) {
+  } catch(const error_code& error) {
     ASSERT_TRUE(error == error_code::kBadStringLength);
   }
-  std::error_code error;
+  error_code error;
   NodeId id3(rand_str + "a", error);
   ASSERT_TRUE(id3.String().empty());
 }
@@ -179,10 +179,14 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
       default :
         break;
     }
-    NodeId bad_id(bad_encoded, type);
-    ASSERT_TRUE(bad_id.String().empty());
-    ASSERT_FALSE(bad_id.IsValid());
-    ASSERT_TRUE(bad_id.ToStringEncoded(type).empty());
+    try {
+      NodeId bad_id(bad_encoded, type);
+    } catch(const error_code& error) {
+      ASSERT_TRUE(error == error_code::kInvalidNodeId);
+    }
+//    ASSERT_TRUE(bad_id.String().empty());
+//    ASSERT_FALSE(bad_id.IsValid());
+//    ASSERT_TRUE(bad_id.ToStringEncoded(type).empty());
     NodeId rand_id(encoded, type);
     ASSERT_EQ(rand_str, rand_id.String());
     ASSERT_EQ(encoded, rand_id.ToStringEncoded(type));
@@ -217,75 +221,6 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
       default :
         break;
     }
-  }
-}
-
-TEST(NodeIdTest, BEH_CtrPower) {
-#ifdef __MSVC__
-#  pragma warning(push)
-#  pragma warning(disable: 4245)
-#endif
-  NodeId node_id(-2);
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
-  ASSERT_FALSE(node_id.IsValid());
-  node_id = NodeId((kKeySizeBytes * 8) + 1);
-  ASSERT_FALSE(node_id.IsValid());
-  std::string bin_id(kKeySizeBytes * 8, '0');
-  for (int16_t i = 0; i < (kKeySizeBytes * 8); ++i) {
-    NodeId node_id(i);
-    bin_id[(kKeySizeBytes * 8) - 1 - i] = '1';
-    ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::kBinary))
-        << "Fail to construct 2^" << i << std::endl;
-    bin_id[(kKeySizeBytes * 8) - 1 - i] = '0';
-  }
-}
-
-TEST(NodeIdTest, BEH_CtrBetweenIds) {
-  NodeId id1(NodeId::kRandomId), id2(NodeId::kRandomId);
-#ifdef __MSVC__
-#  pragma warning(push)
-#  pragma warning(disable: 4245)
-#endif
-  NodeId bad_id(-2);
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
-  NodeId id(id1, bad_id);
-  ASSERT_FALSE(id.IsValid());
-  id = NodeId(bad_id, id2);
-  ASSERT_FALSE(id.IsValid());
-  id = NodeId(id1, id1);
-  ASSERT_TRUE(id.IsValid());
-  ASSERT_EQ(id1.String(), id.String());
-  for (int i = 0; i < 100; ++i) {
-    id1 = NodeId(NodeId::kRandomId);
-    id2 = NodeId(NodeId::kRandomId);
-    id = NodeId(id1, id2);
-    ASSERT_TRUE(id.IsValid());
-    ASSERT_TRUE(id >= std::min(id1, id2)) << "id  = " <<
-        id.ToStringEncoded(NodeId::kBinary) << std::endl << "id1 = "
-        << id1.ToStringEncoded(NodeId::kBinary) << std::endl << "id2 = "
-        << id2.ToStringEncoded(NodeId::kBinary) << std::endl << "min = "
-        << std::min(id1, id2).ToStringEncoded(NodeId::kBinary) << std::endl;
-    ASSERT_TRUE(id <= std::max(id1, id2)) << "id  = " <<
-        id.ToStringEncoded(NodeId::kBinary) << std::endl << "id1 = "
-        << id1.ToStringEncoded(NodeId::kBinary) << std::endl << "id2 = "
-        << id2.ToStringEncoded(NodeId::kBinary) << std::endl << "max = "
-        << std::max(id1, id2).ToStringEncoded(NodeId::kBinary) << std::endl;
-  }
-  NodeId min_range, max_range(NodeId::kMaxId);
-  for (uint16_t i = 0; i < (kKeySizeBytes * 8) - 1; ++i) {
-    min_range = NodeId(i);
-    max_range = NodeId(i + 1);
-    id = NodeId(min_range, max_range);
-    ASSERT_TRUE(id >= min_range) << "id = " <<
-        id.ToStringEncoded(NodeId::kBinary) << std::endl << "min_range = "
-        << min_range.ToStringEncoded(NodeId::kBinary) << std::endl;
-    ASSERT_TRUE(max_range >= id) << "id = " <<
-        id.ToStringEncoded(NodeId::kBinary) << std::endl << "max_range = "
-        << max_range.ToStringEncoded(NodeId::kBinary) << std::endl;
   }
 }
 

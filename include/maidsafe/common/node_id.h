@@ -39,18 +39,18 @@ class NodeId {
   // Creates an ID = (2 ^ kKeySizeBits) - 1 or a random ID in the  interval [0, 2 ^ kKeySizeBits).
   explicit NodeId(const IdType& type);
 
-  // Creates a NodeId from a raw (decoded) string.
+  // Creates a NodeId from a raw (decoded) string.  First version will throw if id is invalid.
   explicit NodeId(const std::string& id);
-  explicit NodeId(const std::string& id, std::error_code &error);
+  NodeId(const std::string& id, error_code& error);
 
-  // Creates a NodeId from an encoded string.
+  // Creates a NodeId from an encoded string.  Will throw if id is invalid.
   NodeId(const std::string& id, const EncodingType& encoding_type);
 
-  // Creates a NodeId equal to 2 ^ power.
-  explicit NodeId(const uint16_t& power);
+//  // Creates a NodeId equal to 2 ^ power.
+//  explicit NodeId(const uint16_t& power);
 
-  // Creates a random NodeId in range [lower ID, higher ID].  Prefer to pass lower ID as id1.
-  NodeId(const NodeId& id1, const NodeId& id2);
+//  // Creates a random NodeId in range [lower ID, higher ID].  Prefer to pass lower ID as id1.
+//  NodeId(const NodeId& id1, const NodeId& id2);
 
   // Checks if id1 is closer in XOR distance to target_id than id2.
   static bool CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id);
