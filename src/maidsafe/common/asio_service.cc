@@ -51,15 +51,20 @@ void AsioService::Start() {
   work_.reset(new boost::asio::io_service::work(service_));
   for (boost::thread &asio_thread : threads_) {
     asio_thread = std::move(boost::thread([&] {
-        for (;;) {
-          try {
-            service_.run();
-            if (!work_)
-              break;
-          }
-          catch(const boost::system::system_error &e) {
-            LOG(kError) << e.what();
-          }
+        try {
+          service_.run();
+        }
+        catch(const boost::system::system_error& e) {
+          LOG(kError) << e.what();
+          assert(false);
+        }
+        catch(const std::exception& e) {
+          LOG(kError) << e.what();
+          assert(false);
+        }
+        catch(...) {
+          LOG(kError) << "Unknown exception.";
+          assert(false);
         }
     }));
   }
