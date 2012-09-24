@@ -74,13 +74,14 @@ void AsioService::Stop() {
   work_.reset();
   // Interrupt and join all asio worker threads concurrently
   std::vector<boost::thread> joining_workers(threads_.size());
-  for (size_t i(0); i != threads_.size(); ++i) {
+  for (size_t i(0); i < threads_.size(); ++i) {
     joining_workers[i] = std::move(boost::thread([&, i] {
         while (threads_[i].joinable()) {
           try {
             threads_[i].interrupt();
             threads_[i].timed_join(bptime::milliseconds(1));
-          }
+            boost::this_thread::sleep(bptime::milliseconds(10));
+            }
           catch(const boost::thread_interrupted&) {
             LOG(kError) << "Exception joining boost thread with ID " << threads_[i].get_id();
             boost::this_thread::yield();

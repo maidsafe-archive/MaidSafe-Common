@@ -38,8 +38,7 @@ NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
     case kMaxId :
       break;  // already set
     case kRandomId :
-      std::generate(raw_id_.begin(), raw_id_.end(),
-                    std::bind(&RandomUint32));
+      std::generate(raw_id_.begin(), raw_id_.end(), std::bind(&RandomUint32));
       break;
     default :
       break;
@@ -49,88 +48,93 @@ NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
 NodeId::NodeId(const std::string& id) : raw_id_(id) {
   if (!IsValid()) {
     raw_id_.clear();
-    LOG(kError) << "Attempt to create ID from string != " << kKeySizeBytes;
+    throw error_code::kBadStringLength;
   }
 }
 
-NodeId::NodeId(const std::string& id, const EncodingType& encoding_type)
-    : raw_id_() {
+NodeId::NodeId(const std::string& id, error_code& error) : raw_id_(id) {
+  if (!IsValid()) {
+    raw_id_.clear();
+    error = error_code::kBadStringLength;
+  }
+}
+
+NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_id_() {
   try {
     switch (encoding_type) {
-      case kBinary : DecodeFromBinary(id);
+      case kBinary: DecodeFromBinary(id);
         break;
-      case kHex : raw_id_ = DecodeFromHex(id);
+      case kHex: raw_id_ = DecodeFromHex(id);
         break;
-      case kBase32 : raw_id_ = DecodeFromBase32(id);
+      case kBase32: raw_id_ = DecodeFromBase32(id);
         break;
-      case kBase64 : raw_id_ = DecodeFromBase64(id);
+      case kBase64: raw_id_ = DecodeFromBase64(id);
         break;
-      default : raw_id_ = id;
+      default: raw_id_ = id;
     }
   }
   catch(const std::exception& e) {
     LOG(kError) << "NodeId Ctor: " << e.what();
     raw_id_.clear();
-    return;
   }
-  if (!IsValid())
+  if (!IsValid()) {
     raw_id_.clear();
-}
-
-NodeId::NodeId(const uint16_t& power) : raw_id_(kZeroId) {
-  if (power >= kKeySizeBits) {
-    raw_id_.clear();
-    return;
-  }
-  uint16_t shift = power % 8;
-  if (shift != 0) {
-    raw_id_[kKeySizeBytes - BitToByteCount(power)] += 1 << shift;
-  } else {
-    raw_id_[kKeySizeBytes - BitToByteCount(power) - 1] = 1;
+    throw error_code::kInvalidNodeId;
   }
 }
 
-NodeId::NodeId(const NodeId& id1, const NodeId& id2) : raw_id_(kZeroId) {
-  if (!id1.IsValid() || !id2.IsValid()) {
-    raw_id_.clear();
-    return;
-  }
-  if (id1 == id2) {
-    raw_id_ = id1.raw_id_;
-    return;
-  }
-  std::string min_id(id1.raw_id_), max_id(id2.raw_id_);
-  if (id1 > id2) {
-    max_id = id1.raw_id_;
-    min_id = id2.raw_id_;
-  }
-  bool less_than_upper_limit(false);
-  bool greater_than_lower_limit(false);
-  unsigned char max_id_char(0), min_id_char(0), this_char(0);
-  for (size_t pos = 0; pos < kKeySizeBytes; ++pos) {
-    if (!less_than_upper_limit) {
-      max_id_char = max_id[pos];
-      min_id_char = greater_than_lower_limit ? 0 : min_id[pos];
-      if (max_id_char == 0) {
-        raw_id_[pos] = 0;
-      } else {
-        raw_id_[pos] = (RandomUint32() % (max_id_char - min_id_char + 1))
-                       + min_id_char;
-        this_char = raw_id_[pos];
-        less_than_upper_limit = (this_char < max_id_char);
-        greater_than_lower_limit = (this_char > min_id_char);
-      }
-    } else if (!greater_than_lower_limit) {
-      min_id_char = min_id[pos];
-      raw_id_[pos] = static_cast<char>(RandomUint32() % (256 - min_id_char))
-                     + min_id_char;
-      this_char = raw_id_[pos];
-      greater_than_lower_limit = (this_char > min_id_char);
-    } else {
-      raw_id_[pos] = static_cast<char>(RandomUint32());
-    }
-  }
-}
+//  NodeId::NodeId(const uint16_t& power) : raw_id_(kZeroId) {
+//    if (power >= kKeySizeBits) {
+//      raw_id_.clear();
+//      throw error_code::kInvalidNodeId;
+//    }
+//    uint16_t shift = power % 8;
+//    if (shift != 0) {
+//      raw_id_[kKeySizeBytes - BitToByteCount(power)] += 1 << shift;
+//    } else {
+//      raw_id_[kKeySizeBytes - BitToByteCount(power) - 1] = 1;
+//    }
+//  }
+
+//  NodeId::NodeId(const NodeId& id1, const NodeId& id2) : raw_id_(kZeroId) {
+//    if (!id1.IsValid() || !id2.IsValid()) {
+//      raw_id_.clear();
+//      throw error_code::kInvalidNodeId;
+//    }
+//    if (id1 == id2) {
+//      raw_id_ = id1.raw_id_;
+//      return;
+//    }
+//    std::string min_id(id1.raw_id_), max_id(id2.raw_id_);
+//    if (id1 > id2) {
+//      max_id = id1.raw_id_;
+//      min_id = id2.raw_id_;
+//    }
+//    bool less_than_upper_limit(false);
+//    bool greater_than_lower_limit(false);
+//    unsigned char max_id_char(0), min_id_char(0), this_char(0);
+//    for (size_t pos = 0; pos < kKeySizeBytes; ++pos) {
+//      if (!less_than_upper_limit) {
+//        max_id_char = max_id[pos];
+//        min_id_char = greater_than_lower_limit ? 0 : min_id[pos];
+//        if (max_id_char == 0) {
+//          raw_id_[pos] = 0;
+//        } else {
+//          raw_id_[pos] = (RandomUint32() % (max_id_char - min_id_char + 1)) + min_id_char;
+//          this_char = raw_id_[pos];
+//          less_than_upper_limit = (this_char < max_id_char);
+//          greater_than_lower_limit = (this_char > min_id_char);
+//        }
+//      } else if (!greater_than_lower_limit) {
+//        min_id_char = min_id[pos];
+//        raw_id_[pos] = static_cast<char>(RandomUint32() % (256 - min_id_char)) + min_id_char;
+//        this_char = raw_id_[pos];
+//        greater_than_lower_limit = (this_char > min_id_char);
+//      } else {
+//        raw_id_[pos] = static_cast<char>(RandomUint32());
+//      }
+//    }
+//  }
 
 std::string NodeId::EncodeToBinary() const {
   std::string binary;
@@ -172,8 +176,7 @@ const std::string NodeId::String() const {
   return raw_id_;
 }
 
-const std::string NodeId::ToStringEncoded(
-    const EncodingType& encoding_type) const {
+const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
   if (!IsValid())
     return "";
   switch (encoding_type) {
@@ -202,40 +205,39 @@ bool NodeId::operator()(const NodeId& lhs, const NodeId& rhs) const {
   return lhs.raw_id_ < rhs.raw_id_;
 }
 
-bool NodeId::operator == (const NodeId& rhs) const {
+bool NodeId::operator==(const NodeId& rhs) const {
   return raw_id_ == rhs.raw_id_;
 }
 
-bool NodeId::operator != (const NodeId& rhs) const {
+bool NodeId::operator!=(const NodeId& rhs) const {
   return raw_id_ != rhs.raw_id_;
 }
 
-bool NodeId::operator < (const NodeId& rhs) const {
+bool NodeId::operator<(const NodeId& rhs) const {
   return raw_id_ < rhs.raw_id_;
 }
 
-bool NodeId::operator > (const NodeId& rhs) const {
+bool NodeId::operator>(const NodeId& rhs) const {
   return raw_id_ > rhs.raw_id_;
 }
 
-bool NodeId::operator <= (const NodeId& rhs) const {
+bool NodeId::operator<=(const NodeId& rhs) const {
   return raw_id_ <= rhs.raw_id_;
 }
 
-bool NodeId::operator >= (const NodeId& rhs) const {
+bool NodeId::operator>=(const NodeId& rhs) const {
   return raw_id_ >= rhs.raw_id_;
 }
 
-NodeId& NodeId::operator= (const NodeId& rhs) {
-  if (this == &rhs)
-    return* this;  // handle self assignment
-  this->raw_id_ = rhs.raw_id_;
+NodeId& NodeId::operator=(const NodeId& rhs) {
+  if (this != &rhs)
+    this->raw_id_ = rhs.raw_id_;
   return* this;
 }
 
-const NodeId NodeId::operator ^ (const NodeId& rhs) const {
+const NodeId NodeId::operator^(const NodeId& rhs) const {
   NodeId result;
-  BOOST_ASSERT_MSG(rhs.IsValid(), "Invalid nodeid");
+  BOOST_ASSERT_MSG(rhs.IsValid(), "Invalid NodeID");
   auto this_it = raw_id_.begin();
   auto rhs_it = rhs.raw_id_.begin();
   auto result_it = result.raw_id_.begin();
@@ -246,7 +248,7 @@ const NodeId NodeId::operator ^ (const NodeId& rhs) const {
 
 std::string DebugId(const NodeId& node_id) {
   std::string hex(node_id.ToStringEncoded(NodeId::kHex));
-  return hex.substr(0, 7) + ".." +hex.substr(hex.size() - 7);
+  return hex.substr(0, 7) + ".." + hex.substr(hex.size() - 7);
 }
 
 }  // namespace maidsafe
