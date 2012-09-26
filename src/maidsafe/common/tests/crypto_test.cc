@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/lexical_cast.hpp"
 
 #include "maidsafe/common/crypto.h"
-#include "maidsafe/common/return_codes.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -67,9 +67,9 @@ TEST(CryptoTest, BEH_Obfuscation) {
 
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   std::string password;
-  EXPECT_EQ(kGeneralError, SecurePassword("", "salt", 100, &password));
-  EXPECT_EQ(kGeneralError, SecurePassword("password", "", 100, &password));
-  EXPECT_EQ(kGeneralError, SecurePassword("password", "salt", 0, &password));
+  EXPECT_EQ(error_code::kGeneralError, SecurePassword("", "salt", 100, &password));
+  EXPECT_EQ(error_code::kGeneralError, SecurePassword("password", "", 100, &password));
+  EXPECT_EQ(error_code::kGeneralError, SecurePassword("password", "salt", 0, &password));
   const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
   const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations1(5);
@@ -77,7 +77,8 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
                                    "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
   password.clear();
 
-  EXPECT_EQ(kSuccess, SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1, &password));
+  EXPECT_EQ(error_code::kOK,
+            SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1, &password));
   EXPECT_EQ(kKnownDerived1, password);
   const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974696573206d75737420636f6d6d"
       "756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656568"
@@ -88,7 +89,7 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   "dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0c1"
   "999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e"
   "05c3ffc14d7fd8511c840"));
-  EXPECT_EQ(kSuccess, SecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2, &password));
+  EXPECT_EQ(error_code::kOK, SecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2, &password));
   EXPECT_EQ(kKnownDerived2, password);
 }
 

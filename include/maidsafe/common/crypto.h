@@ -91,7 +91,7 @@ std::string XOR(const std::string &first, const std::string &second);
 // Creates a secure password using the Password-Based Key Derivation Function
 // (PBKDF) version 2 algorithm.  The number of iterations is derived from "pin".
 // "label" is additional data to provide distinct input data to PBKDF.
-int SecurePassword(const std::string &password,
+error_code SecurePassword(const std::string &password,
                    const std::string &salt,
                    const uint32_t &pin,
                    std::string *derived_password,

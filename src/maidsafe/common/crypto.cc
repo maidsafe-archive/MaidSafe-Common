@@ -52,7 +52,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/thread/mutex.hpp"
 
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/return_codes.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -88,14 +88,14 @@ std::string XOR(const std::string &first, const std::string &second) {
   return result;
 }
 
-int SecurePassword(const std::string &password,
+error_code SecurePassword(const std::string &password,
                            const std::string &salt,
                            const uint32_t &pin,
                            std::string *derived_password,
                            const std::string &label) {
   if (password.empty() || salt.empty() || pin == 0 || label.empty()) {
     LOG(kWarning) << "Invalid parameter.";
-    return kGeneralError;
+    return error_code::kGeneralError;
   }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
@@ -109,7 +109,7 @@ int SecurePassword(const std::string &password,
                   password.size(), context.data(), context.size(), iter);
   CryptoPP::StringSink string_sink(*derived_password);
   string_sink.Put(derived, derived.size());
-  return kSuccess;
+  return error_code::kOK;
 }
 
 std::string SymmEncrypt(const std::string &input,
@@ -137,8 +137,7 @@ std::string SymmEncrypt(const std::string &input,
         new CryptoPP::StreamTransformationFilter(encryptor,
             new CryptoPP::StringSink(result)));
     return result;
-  }
-  catch(const CryptoPP::Exception &e) {
+  } catch(const CryptoPP::Exception &e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     return "";
   }

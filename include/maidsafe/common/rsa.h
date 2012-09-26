@@ -43,6 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/function.hpp"
 #include "boost/filesystem/path.hpp"
+#include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
@@ -71,31 +72,31 @@ struct Keys {
   ValidationToken validation_token;  // certificate, additional signature etc.
 };
 
-int GenerateKeyPair(Keys* keypair);
+Keys GenerateKeyPair();
 
-int Encrypt(const PlainText& plain_text, const PublicKey& public_key, CipherText* result);
+std::error_code Encrypt(const PlainText& plain_text, const PublicKey& public_key, CipherText& result);
 
-int Decrypt(const CipherText& data, const PrivateKey& private_key, PlainText* result);
+error_code Decrypt(const CipherText& data, const PrivateKey& private_key, PlainText& result);
 
-int Sign(const PlainText& data, const PrivateKey& private_key, Signature* signature);
+error_code Sign(const PlainText& data, const PrivateKey& private_key, Signature& signature);
 
-int SignFile(const boost::filesystem::path& filename,
+error_code SignFile(const boost::filesystem::path& filename,
              const PrivateKey& private_key,
              Signature& signature);
 
-int CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
+error_code CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
 
-int CheckFileSignature(const boost::filesystem::path& filename,
+error_code CheckFileSignature(const boost::filesystem::path& filename,
                        const Signature& signature,
                        const PublicKey& public_key);
 
-void EncodePrivateKey(const PrivateKey& key, std::string* private_key);
+std::string EncodePrivateKey(const PrivateKey& key);
 
-void EncodePublicKey(const PublicKey& key, std::string* public_key);
+std::string EncodePublicKey(const PublicKey& key);
 
-void DecodePrivateKey(const std::string& private_key, PrivateKey* key);
+PrivateKey DecodePrivateKey(const std::string& private_key);
 
-void DecodePublicKey(const std::string& public_key, PublicKey* key);
+PublicKey DecodePublicKey(const std::string& public_key);
 
 // check decoded keys were the same as encoded and pub key not replaced
 bool CheckRoundtrip(const PublicKey& public_key, const PrivateKey& private_key);

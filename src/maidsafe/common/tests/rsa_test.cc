@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/return_codes.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
@@ -49,15 +49,14 @@ class RSATest : public testing::Test {
   RSATest() : keys_() {}
   ~RSATest() {}
  protected:
-  void SetUp() {
-    ASSERT_EQ(kSuccess, GenerateKeyPair(&keys_));
-  }
   Keys keys_;
+  void SetUp() {
+    ASSERT_NO_THROW(keys_ = GenerateKeyPair());
+  }
   void RunInParallel(std::function<void()>, int num_threads = 6);
 };
 
 void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
-  // TODO(divrine) FIXME
   std::vector<std::future<void>> vec;
   for (int i = 0; i < num_threads; ++i)
     vec.push_back(std::async(std::launch::async, f));
@@ -70,13 +69,10 @@ TEST_F(RSATest, BEH_RsaKeyPair) {
   auto f([&] {
     EXPECT_TRUE(ValidateKey(keys_.public_key));
     EXPECT_TRUE(ValidateKey(keys_.private_key));
-    std::string encoded_private_key, encoded_public_key;
-    PrivateKey private_key;
-    PublicKey public_key;
-    EncodePrivateKey(keys_.private_key, &encoded_private_key);
-    EncodePublicKey(keys_.public_key, &encoded_public_key);
-    DecodePrivateKey(encoded_private_key, &private_key);
-    DecodePublicKey(encoded_public_key, &public_key);
+    std::string encoded_private_key(EncodePrivateKey(keys_.private_key));
+    std::string encoded_public_key(EncodePublicKey(keys_.public_key));
+    PrivateKey private_key(DecodePrivateKey(encoded_private_key));
+    PublicKey public_key(DecodePublicKey(encoded_public_key));
     EXPECT_TRUE(CheckRoundtrip(public_key, keys_.private_key));
     EXPECT_TRUE(CheckRoundtrip(public_key, private_key));
   });
@@ -86,19 +82,20 @@ TEST_F(RSATest, BEH_RsaKeyPair) {
 TEST_F(RSATest, BEH_ValidateKeys) {
   auto f([&] {
     PublicKey public_key;
+    std::cout << "no error";
     EXPECT_FALSE(ValidateKey(public_key));
     EXPECT_FALSE(ValidateKey(public_key, 0));
-    DecodePublicKey("Just some string", &public_key);
+    public_key = DecodePublicKey("Just some string");
     EXPECT_FALSE(ValidateKey(public_key));
 
     PrivateKey private_key;
     EXPECT_FALSE(ValidateKey(private_key));
     EXPECT_FALSE(ValidateKey(private_key, 0));
-    DecodePublicKey("Just some string", &private_key);
+    private_key = DecodePrivateKey("Just some string");
     EXPECT_FALSE(ValidateKey(private_key));
 
     Keys keys;
-    EXPECT_EQ(kSuccess, GenerateKeyPair(&keys));
+    EXPECT_NO_THROW(keys = GenerateKeyPair());
     public_key = keys.public_key;
     private_key = keys.private_key;
     EXPECT_TRUE(ValidateKey(private_key));
@@ -111,7 +108,7 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   auto f([&] {
     const std::string kSmallData(RandomString(21));
     std::string encrypted_data, recovered_data;
-    EXPECT_EQ(kSuccess, Encrypt(kSmallData, keys_.public_key, &encrypted_data));
+    EXPECT_TRUE(Encrypt(kSmallData, keys_.public_key, encrypted_data));
     EXPECT_NE(kSmallData, encrypted_data);
     EXPECT_EQ(kSuccess, Decrypt(encrypted_data, keys_.private_key,
                                 &recovered_data));
