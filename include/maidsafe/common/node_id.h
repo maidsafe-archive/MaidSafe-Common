@@ -41,7 +41,6 @@ class NodeId {
 
   // Creates a NodeId from a raw (decoded) string.  First version will throw if id is invalid.
   explicit NodeId(const std::string& id);
-  NodeId(const std::string& id, error_code& error);
 
   // Creates a NodeId from an encoded string.  Will throw if id is invalid.
   NodeId(const std::string& id, const EncodingType& encoding_type);

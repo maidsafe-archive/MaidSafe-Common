@@ -103,10 +103,6 @@ TEST(NodeIdTest, BEH_DefaultCtr) {
   } catch(const std::error_code& error) {
     std::cout << error.message();
   }
-  error_code error;
-  NodeId dave("not64long", error);
-  EXPECT_TRUE(error == error_code::kBadStringLength);
-  ASSERT_NE("not64long", dave.String());
 }
 
 TEST(NodeIdTest, BEH_CopyCtr) {
@@ -146,9 +142,6 @@ TEST(NodeIdTest, BEH_StringCtr) {
   } catch(const error_code& error) {
     ASSERT_TRUE(error == error_code::kBadStringLength);
   }
-  error_code error;
-  NodeId id3(rand_str + "a", error);
-  ASSERT_TRUE(id3.String().empty());
 }
 
 TEST(NodeIdTest, BEH_EncodingCtr) {

@@ -52,13 +52,6 @@ NodeId::NodeId(const std::string& id) : raw_id_(id) {
   }
 }
 
-NodeId::NodeId(const std::string& id, error_code& error) : raw_id_(id) {
-  if (!IsValid()) {
-    raw_id_.clear();
-    error = error_code::kBadStringLength;
-  }
-}
-
 NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_id_() {
   try {
     switch (encoding_type) {
