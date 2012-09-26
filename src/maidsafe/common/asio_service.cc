@@ -81,7 +81,7 @@ void AsioService::Stop() {
             threads_[i].interrupt();
             threads_[i].timed_join(bptime::milliseconds(1));
             boost::this_thread::sleep(bptime::milliseconds(10));
-            }
+          }
           catch(const boost::thread_interrupted&) {
             LOG(kError) << "Exception joining boost thread with ID " << threads_[i].get_id();
             boost::this_thread::yield();
@@ -90,8 +90,16 @@ void AsioService::Stop() {
     }));
   }
 
-  for (boost::thread &joining_worker : joining_workers)
-    joining_worker.join();
+  for (boost::thread &joining_worker : joining_workers) {
+    while (joining_worker.joinable()) {
+      try {
+        joining_worker.join();
+      }
+      catch(const boost::thread_interrupted&) {
+        LOG(kError) << "Exception joining worker thread";
+      }
+    }
+  }
 }
 
 boost::asio::io_service& AsioService::service() {
