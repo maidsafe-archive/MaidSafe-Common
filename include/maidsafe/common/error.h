@@ -545,10 +545,10 @@ enum class ErrorConditions {
   invalid_user_supplied_data
 };
 
-std::error_code MakeErrorCode(CommonErrors code);
-std::error_code MakeErrorCode(AsymmErrors code);
-std::error_code MakeErrorCode(LifeStuffErrors code);
-std::error_condition MakeErrorCondition(ErrorConditions condition);
+std::error_code make_error_code(CommonErrors code);
+std::error_code make_error_code(AsymmErrors code);
+std::error_code make_error_code(LifeStuffErrors code);
+std::error_condition make_error_condition(ErrorConditions condition);
 
 const std::error_category& GetCommonCategory();
 const std::error_category& GetAsymmCategory();

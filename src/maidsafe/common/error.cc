@@ -128,19 +128,19 @@ class DefaultCategory : public std::error_category {
 }  // namespace detail
 
 
-std::error_code MakeErrorCode(CommonErrors code) {
+std::error_code make_error_code(CommonErrors code) {
   return std::error_code(static_cast<int>(code), GetCommonCategory());
 }
 
-std::error_code MakeErrorCode(AsymmErrors code) {
+std::error_code make_error_code(AsymmErrors code) {
   return std::error_code(static_cast<int>(code), GetAsymmCategory());
 }
 
-std::error_code MakeErrorCode(LifeStuffErrors code) {
+std::error_code make_error_code(LifeStuffErrors code) {
   return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
 }
 
-std::error_condition MakeErrorCondition(ErrorConditions condition) {
+std::error_condition make_error_condition(ErrorConditions condition) {
   return std::error_condition(static_cast<int>(condition), GetDefaultCategory());
 }
 
