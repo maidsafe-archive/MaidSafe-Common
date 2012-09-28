@@ -1,14 +1,29 @@
-/*******************************************************************************
- *  Copyright 2012 maidsafe.net limited                                        *
- *                                                                             *
- *  The following source code is property of maidsafe.net limited and is not   *
- *  meant for external use.  The use of this code is governed by the licence   *
- *  file licence.txt found in the root of this directory and also on           *
- *  www.maidsafe.net.                                                          *
- *                                                                             *
- *  You are not free to copy, amend or otherwise use this source code without  *
- *  the explicit written permission of the board of directors of maidsafe.net. *
- ******************************************************************************/
+/* Copyright (c) 2012 maidsafe.net limited
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+    * Neither the name of the maidsafe.net limited nor the names of its
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #ifndef MAIDSAFE_COMMON_ERROR_H_
 #define MAIDSAFE_COMMON_ERROR_H_
@@ -24,17 +39,39 @@
 
 namespace maidsafe {
 
-enum class error_code {
-  kOK = 0,
-  kBadStringLength,  // 0 would be no error
-  kInvalidNodeId,
-  kNullPointer,
-  kIncorrectKeySize,
-  kUndefined,
-  kPendingResult,
-  kPending,
+enum class CommonErrors {
+  success = 0,
+  pending_result,
+  unknown,
+  null_pointer,
+  invalid_node_id,
+  invalid_key_size,
+  invalid_string_size,
+  invalid_parameter,
+  hashing_error,
+  symmetric_encryption_error,
+  symmetric_decryption_error,
+  compression_error,
+  uncompression_error
+};
+
+enum class AsymmErrors {
+  keys_generation_error = 1000,
+  keys_serialisation_error,
+  keys_parse_error,
+  invalid_private_key,
+  data_empty,
+  file_empty,
+  invalid_signature,
+  signature_empty,
+  rsa_encryption_error,
+  rsa_decryption_error,
+  rsa_signing_error
+};
+
+enum class LifeStuffErrors {
   //Authentication
-  kAuthenticationError,
+  kAuthenticationError = 2000,
   kPasswordFailure,
   kUserDoesntExist,
   kUserExists,
@@ -499,40 +536,24 @@ enum class error_code {
   //CodesremaininginDISABLEDtests.Expectthesecodestoberedundantsoon.
   kReadOnlyFailure,
   kFailedSymmDecrypt,
-  //RSAerrorcodes
-  kKeyGenerationError,
-  kDataEmpty,
-  kInvalidPrivateKey,
-  kRSAEncryptError,
-  kRSADecryptError,
-  kRSASigningError,
-  kRSAEmptyFileError,
-  kRSAInvalidSignature,
-  kRSASignatureEmpty,
-  kRSASerialisationError,
-  kRSAParseError,
 };
 
-enum class error_condition {
-  kCommon,
-  kRudp,
-  kRouting,
-  kDrive,
-  kUnknownError
+enum class ErrorConditions {
+  filesystem_error = 10000,
+  memory_error,
+  network_error,
+  invalid_user_supplied_data
 };
 
-std::error_code make_error_code(error_code code);
-std::error_condition make_error_condition(error_condition condition);
+std::error_code MakeErrorCode(CommonErrors code);
+std::error_code MakeErrorCode(AsymmErrors code);
+std::error_code MakeErrorCode(LifeStuffErrors code);
+std::error_condition MakeErrorCondition(ErrorConditions condition);
 
-class ErrorCategoryImpl : public std::error_category {
- public:
-  virtual std::string message(int error_value) const;
-  virtual const char* name() const MAIDSAFE_NOEXCEPT;
-  virtual std::error_condition default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT;
-  virtual bool equivalent(const std::error_code& code, int condition) const MAIDSAFE_NOEXCEPT;
-};
-
-const std::error_category& error_category();
+const std::error_category& GetCommonCategory();
+const std::error_category& GetAsymmCategory();
+const std::error_category& GetLifeStuffCategory();
+const std::error_category& GetDefaultCategory();
 
 }  // namespace maidsafe
 
@@ -543,11 +564,19 @@ namespace std {
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Weffc++"
 #endif
-template <>
-struct is_error_code_enum<maidsafe::error_code> : public true_type {};  //NOLINT (dirvine)
 
 template <>
-struct is_error_condition_enum<maidsafe::error_condition> : public true_type {};  //NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};  //NOLINT (dirvine)
+
+template <>
+struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  //NOLINT (dirvine)
+
+template <>
+struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  //NOLINT (dirvine)
+
+template <>
+struct is_error_condition_enum<maidsafe::ErrorConditions> : public true_type {};  //NOLINT (dirvine)
+
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
 #endif

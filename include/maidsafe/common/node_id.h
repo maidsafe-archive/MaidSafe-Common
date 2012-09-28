@@ -1,14 +1,29 @@
-/*******************************************************************************
- *  Copyright 2012 maidsafe.net limited                                        *
- *                                                                             *
- *  The following source code is property of maidsafe.net limited and is not   *
- *  meant for external use.  The use of this code is governed by the licence   *
- *  file licence.txt found in the root of this directory and also on           *
- *  www.maidsafe.net.                                                          *
- *                                                                             *
- *  You are not free to copy, amend or otherwise use this source code without  *
- *  the explicit written permission of the board of directors of maidsafe.net. *
- ******************************************************************************/
+/* Copyright (c) 2012 maidsafe.net limited
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+    * Neither the name of the maidsafe.net limited nor the names of its
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #ifndef MAIDSAFE_COMMON_NODE_ID_H_
 #define MAIDSAFE_COMMON_NODE_ID_H_
@@ -22,9 +37,7 @@ namespace maidsafe {
 
 extern const uint16_t kKeySizeBytes;
 extern const uint16_t kKeySizeBits;
-extern const std::string kZeroId;
 
-size_t BitToByteCount(const size_t& bit_count);
 
 class NodeId {
  public:
@@ -60,12 +73,9 @@ class NodeId {
   // Encoded representation of the ID.
   const std::string ToStringEncoded(const EncodingType& encoding_type) const;
 
-  // Checks that raw_id_ has size kKeySizeBytes.
-  bool IsValid() const;
+  bool IsZero() const;
 
-  bool Empty() const;
-
-  bool operator()(const NodeId& lhs, const NodeId& rhs) const;
+//  bool operator()(const NodeId& lhs, const NodeId& rhs) const;
   bool operator==(const NodeId& rhs) const;
   bool operator!=(const NodeId& rhs) const;
   bool operator<(const NodeId& rhs) const;

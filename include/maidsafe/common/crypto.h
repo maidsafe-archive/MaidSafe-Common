@@ -76,80 +76,85 @@ typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
 
-const uint16_t AES256_KeySize = 32;  // size in bytes.
-const uint16_t AES256_IVSize = 16;  // size in bytes.
-const uint16_t kMaxCompressionLevel = 9;
+extern const uint16_t AES256_KeySize;
+extern const uint16_t AES256_IVSize;
+extern const uint16_t kMaxCompressionLevel;
 
-static const std::string kMaidSafeVersionLabel1 =
-    "MaidSafe Version 1 Key Derivation";
-static const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
+extern const std::string kMaidSafeVersionLabel1;
+extern const std::string kMaidSafeVersionLabel;
 
-// Performs a bitwise XOR on each char of first with the corresponding char of
-// second.  first and second must have identical size.
-std::string XOR(const std::string &first, const std::string &second);
+// Performs a bitwise XOR on each char of first with the corresponding char of second.  first and
+// second must have identical non-zero size or a std::exception will be thrown.
+std::string XOR(const std::string& first, const std::string& second);
 
-// Creates a secure password using the Password-Based Key Derivation Function
-// (PBKDF) version 2 algorithm.  The number of iterations is derived from "pin".
-// "label" is additional data to provide distinct input data to PBKDF.
-error_code SecurePassword(const std::string &password,
-                   const std::string &salt,
-                   const uint32_t &pin,
-                   std::string *derived_password,
-                   const std::string &label = kMaidSafeVersionLabel);
+// Creates a secure password using the Password-Based Key Derivation Function (PBKDF) version 2
+// algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
+// provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
+// parameters are passed.
+std::string SecurePassword(const std::string& password,
+                           const std::string& salt,
+                           const uint32_t& pin,
+                           const std::string& label = kMaidSafeVersionLabel);
 
 // Hash function operating on a string.
 template <class HashType>
-std::string Hash(const std::string &input) {
+std::string Hash(const std::string& input) {
   std::string result;
   HashType hash;
-  CryptoPP::StringSource(input, true,
-      new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  return result;
+  try {
+    CryptoPP::StringSource(input, true,
+        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+    return result;
+  }
+  catch(const CryptoPP::Exception& e) {
+    LOG(kError) << "Error hashing string: " << e.what();
+    detail::ThrowError(CommonErrors::hashing_error);
+  }
 }
 
 // Hash function operating on a file.
 template <class HashType>
-std::string HashFile(const boost::filesystem::path &file_path) {
+std::string HashFile(const boost::filesystem::path& file_path) {
   std::string result;
   HashType hash;
   try {
     CryptoPP::FileSource(file_path.c_str(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
-  catch(...) {
-    // LOG(kError) << e.what();
-    result.clear();
+  catch(const CryptoPP::Exception& e) {
+    LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
+    detail::ThrowError(CommonErrors::hashing_error);
   }
   return result;
 }
 
-// Performs symmetric encrytion using AES256. It returns an empty string if the
+// Performs symmetric encrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-std::string SymmEncrypt(const std::string &input,
-                        const std::string &key,
-                        const std::string &initialisation_vector);
+std::string SymmEncrypt(const std::string& input,
+                        const std::string& key,
+                        const std::string& initialisation_vector);
 
-// Performs symmetric decrytion using AES256. It returns an empty string if the
+// Performs symmetric decrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-std::string SymmDecrypt(const std::string &input,
-                        const std::string &key,
-                        const std::string &initialisation_vector);
+std::string SymmDecrypt(const std::string& input,
+                        const std::string& key,
+                        const std::string& initialisation_vector);
 
 // Compress a string using gzip.  Compression level must be between 0 and 9
-// inclusive or function returns an empty string.
-std::string Compress(const std::string &input,
-                     const uint16_t &compression_level);
+// inclusive or function throws a std::exception.
+std::string Compress(const std::string& input,
+                     const uint16_t& compression_level);
 
-// Uncompress a string using gzip.
-std::string Uncompress(const std::string &input);
+// Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
+std::string Uncompress(const std::string& input);
 
-void SecretRecoverData(const int32_t &threshold,
-                       const std::vector<std::string> &in_strings,
+void SecretRecoverData(const int32_t& threshold,
+                       const std::vector<std::string>& in_strings,
                        std::string *data);
 
-void SecretShareData(const int32_t &threshold,
-                     const int32_t &nShares,
-                     const std::string &data,
+void SecretShareData(const int32_t& threshold,
+                     const int32_t& number_of_shares,
+                     const std::string& data,
                      std::vector<std::string> *out_strings);
 
 }  // namespace crypto

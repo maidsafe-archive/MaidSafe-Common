@@ -1,55 +1,166 @@
-/*******************************************************************************
- *  Copyright 2012 maidsafe.net limited                                        *
- *                                                                             *
- *  The following source code is property of maidsafe.net limited and is not   *
- *  meant for external use.  The use of this code is governed by the licence   *
- *  file licence.txt found in the root of this directory and also on           *
- *  www.maidsafe.net.                                                          *
- *                                                                             *
- *  You are not free to copy, amend or otherwise use this source code without  *
- *  the explicit written permission of the board of directors of maidsafe.net. *
- ******************************************************************************/
+/* Copyright (c) 2012 maidsafe.net limited
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+    * Neither the name of the maidsafe.net limited nor the names of its
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
-std::error_code make_error_code(error_code code) {
-  return std::error_code(static_cast<int>(code), error_category());
-}
+namespace detail {
 
-std::error_condition make_error_condition(error_condition condition) {
-  return std::error_condition(static_cast<int>(condition), error_category());
-}
+class CommonCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT { return "Common"; }
 
-const char* ErrorCategoryImpl::name() const MAIDSAFE_NOEXCEPT {
-  return "maidsafe";
-}
-
-std::string ErrorCategoryImpl::message(int error_value) const {
-  switch (static_cast<error_code>(error_value)) {
-    case error_code::kBadStringLength:
-      return "String must be length 64";
-    case error_code::kInvalidNodeId:
-      return "Invalid NodeID";
-    default:
-      return "Unknown error";
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT {
+    switch (static_cast<CommonErrors>(error_value)) {
+      case CommonErrors::success:
+        return "Success";
+      case CommonErrors::pending_result:
+        return "Result still pending";
+      case CommonErrors::null_pointer:
+        return "nullptr passed";
+      case CommonErrors::invalid_node_id:
+        return "Invalid NodeID";
+      case CommonErrors::invalid_key_size:
+        return "Invalid key size";
+      case CommonErrors::invalid_string_size:
+        return "Invalid string size";
+      case CommonErrors::invalid_parameter:
+        return "One or more invalid parameters were passed";
+      case CommonErrors::hashing_error:
+        return "Error during hashing";
+      case CommonErrors::symmetric_encryption_error:
+        return "Error during symmetric encryption";
+      case CommonErrors::symmetric_decryption_error:
+        return "Error during symmetric decryption";
+      case CommonErrors::compression_error:
+        return "Error during compression";
+      case CommonErrors::uncompression_error:
+        return "Error during uncompression";
+      case CommonErrors::unknown:
+      default:
+        return "Unknown error in Common";
+    }
   }
-}
+};
 
-std::error_condition ErrorCategoryImpl::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<error_code>(error_value)) {
-    case error_code::kBadStringLength:
-    case error_code::kInvalidNodeId:
-      return error_condition::kCommon;
-    default:
-      return error_condition::kUnknownError;
+class AsymmCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT { return "Asymmetric Crypto"; }
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT {
+    switch (static_cast<AsymmErrors>(error_value)) {
+      case AsymmErrors::keys_generation_error:
+        return "Error generating key pair";
+      case AsymmErrors::keys_serialisation_error:
+        return "Error serialising key pair";
+      case AsymmErrors::keys_parse_error:
+        return "Error parsing key pair";
+      case AsymmErrors::invalid_private_key:
+        return "Invalid private key";
+      case AsymmErrors::data_empty:
+        return "Input data is empty";
+      case AsymmErrors::file_empty:
+        return "Input file is empty";
+      case AsymmErrors::invalid_signature:
+        return "Invalid signature";
+      case AsymmErrors::signature_empty:
+        return "Signature is empty";
+      case AsymmErrors::rsa_encryption_error:
+        return "Error during RSA encryption";
+      case AsymmErrors::rsa_decryption_error:
+        return "Error during RSA decryption";
+      case AsymmErrors::rsa_signing_error:
+        return "Error during RSA signing";
+      default:
+        return "Unknown error in Asymm";
+    }
   }
+};
+
+class LifeStuffCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT { return "LifeStuff"; }
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT {
+    switch (static_cast<LifeStuffErrors>(error_value)) {
+      case LifeStuffErrors::kAuthenticationError:
+      default:
+        return "Unknown error in LifeStuff";
+    }
+  }
+};
+
+class DefaultCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT { return "Default"; }
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT {
+    switch (static_cast<ErrorConditions>(error_value)) {
+      case ErrorConditions::filesystem_error:
+      default:
+        return "Unknown error";
+    }
+  }
+};
+
+}  // namespace detail
+
+
+std::error_code MakeErrorCode(CommonErrors code) {
+  return std::error_code(static_cast<int>(code), GetCommonCategory());
 }
 
-const std::error_category& error_category() {
-  static ErrorCategoryImpl instance;
+std::error_code MakeErrorCode(AsymmErrors code) {
+  return std::error_code(static_cast<int>(code), GetAsymmCategory());
+}
+
+std::error_code MakeErrorCode(LifeStuffErrors code) {
+  return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
+}
+
+std::error_condition MakeErrorCondition(ErrorConditions condition) {
+  return std::error_condition(static_cast<int>(condition), GetDefaultCategory());
+}
+
+const std::error_category& GetCommonCategory() {
+  static detail::CommonCategory instance;
+  return instance;
+}
+
+const std::error_category& GetAsymmCategory() {
+  static detail::AsymmCategory instance;
+  return instance;
+}
+
+const std::error_category& GetLifeStuffCategory() {
+  static detail::LifeStuffCategory instance;
+  return instance;
+}
+
+const std::error_category& GetDefaultCategory() {
+  static detail::DefaultCategory instance;
   return instance;
 }
 

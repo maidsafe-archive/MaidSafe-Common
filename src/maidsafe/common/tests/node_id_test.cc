@@ -21,6 +21,10 @@ namespace maidsafe {
 
 namespace test {
 
+size_t BitToByteCount(const size_t& bit_count) {
+  return static_cast<size_t>(0.999999 + static_cast<double>(bit_count) / 8);
+}
+
 NodeId IncreaseId(const NodeId& kad_id) {
   std::string raw(kad_id.String());
   std::string::reverse_iterator rit = raw.rbegin();
@@ -62,11 +66,10 @@ const std::string ToBinary(const std::string& raw_id)  {
   return result;
 }
 
-TEST(NodeIdTest, BEH_Empty) {
-  NodeId empty;
-  EXPECT_TRUE(empty.Empty());
-  EXPECT_FALSE(!empty.Empty());
-  EXPECT_TRUE(empty == NodeId(kZeroId));
+TEST(NodeIdTest, BEH_DefaultConstructor) {
+  NodeId zero_id;
+  EXPECT_TRUE(zero_id.IsZero());
+  EXPECT_EQ(zero_id, NodeId(std::string(kKeySizeBytes, 0)));
 }
 
 TEST(NodeIdTest, BEH_DistanceCheck) {
@@ -119,7 +122,7 @@ TEST(NodeIdTest, BEH_CopyCtr) {
 }
 
 TEST(NodeIdTest, BEH_KadIdTypeCtr) {
-  std::string min_id = kZeroId;
+  std::string min_id(kKeySizeBytes, 0);
   ASSERT_EQ(kKeySizeBytes, min_id.size());
   for (int i = 0; i < kKeySizeBytes; ++i)
     ASSERT_EQ(min_id[i], '\0');
