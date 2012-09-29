@@ -61,7 +61,6 @@ typedef std::function<bool(Identity,                          // NOLINT (Fraser)
                            PublicKey,
                            ValidationToken)> ValidatePublicKeyFunctor;
 typedef std::function<bool(PlainText, Signature, PublicKey)> ValidateFunctor;  // NOLINT (Fraser)
-
 struct Keys {
  public:
   enum { kKeySize = 2048 };
@@ -74,19 +73,18 @@ struct Keys {
 
 Keys GenerateKeyPair();
 
-std::error_code Encrypt(const PlainText& plain_text, const PublicKey& public_key, CipherText& result);
+std::string Encrypt(const PlainText& plain_text, const PublicKey& public_key);
 
-error_code Decrypt(const CipherText& data, const PrivateKey& private_key, PlainText& result);
+std::string Decrypt(const CipherText& data, const PrivateKey& private_key);
 
-error_code Sign(const PlainText& data, const PrivateKey& private_key, Signature& signature);
+std::string Sign(const PlainText& data, const PrivateKey& private_key);
 
-error_code SignFile(const boost::filesystem::path& filename,
-             const PrivateKey& private_key,
-             Signature& signature);
+std::string SignFile(const boost::filesystem::path& filename,
+             const PrivateKey& private_key);
 
-error_code CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
+bool CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
 
-error_code CheckFileSignature(const boost::filesystem::path& filename,
+bool CheckFileSignature(const boost::filesystem::path& filename,
                        const Signature& signature,
                        const PublicKey& public_key);
 
