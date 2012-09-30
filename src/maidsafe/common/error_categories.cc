@@ -39,7 +39,7 @@ const char* CommonCategory::name() const MAIDSAFE_NOEXCEPT {
 }
 
 std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<CommonErrors>(error_value)) {
+  switch (error_value) {
     case CommonErrors::success:
       return "Success";
     case CommonErrors::pending_result:
@@ -72,6 +72,16 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 
 std::error_condition CommonCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (error_value) {
+    case CommonErrors::null_pointer:
+    case CommonErrors::invalid_node_id:
+    case CommonErrors::invalid_key_size:
+    case CommonErrors::invalid_string_size:
+    case CommonErrors::invalid_parameter:
+      return std::errc::invalid_argument;
+    default:
+      return std::error_condition(error_value, *this);
+  }
 }
 
 
@@ -80,7 +90,7 @@ const char* AsymmCategory::name() const MAIDSAFE_NOEXCEPT {
 }
 
 std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<AsymmErrors>(error_value)) {
+  switch (error_value) {
     case AsymmErrors::keys_generation_error:
       return "Error generating key pair";
     case AsymmErrors::keys_serialisation_error:
@@ -89,6 +99,8 @@ std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error parsing key pair";
     case AsymmErrors::invalid_private_key:
       return "Invalid private key";
+    case AsymmErrors::invalid_public_key:
+      return "Invalid public key";
     case AsymmErrors::data_empty:
       return "Input data is empty";
     case AsymmErrors::file_empty:
@@ -110,6 +122,11 @@ std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 
 std::error_condition AsymmCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (error_value) {
+    case CommonErrors::success:
+    default:
+      return std::error_condition(error_value, *this);
+  }
 }
 
 
@@ -118,7 +135,7 @@ const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
 }
 
 std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<LifeStuffErrors>(error_value)) {
+  switch (error_value) {
     case LifeStuffErrors::kAuthenticationError:
     default:
       return "Unknown error in LifeStuff";
@@ -127,6 +144,11 @@ std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT 
 
 std::error_condition LifeStuffCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (error_value) {
+    case CommonErrors::success:
+    default:
+      return std::error_condition(error_value, *this);
+  }
 }
 
 

@@ -148,14 +148,11 @@ std::string Compress(const std::string& input,
 // Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
 std::string Uncompress(const std::string& input);
 
-void SecretRecoverData(const int32_t& threshold,
-                       const std::vector<std::string>& in_strings,
-                       std::string *data);
+std::vector<std::string> SecretShareData(const int32_t& threshold,
+                                         const int32_t& number_of_shares,
+                                         const std::string& data);
 
-void SecretShareData(const int32_t& threshold,
-                     const int32_t& number_of_shares,
-                     const std::string& data,
-                     std::vector<std::string> *out_strings);
+std::string SecretRecoverData(const int32_t& threshold, const std::vector<std::string>& in_strings);
 
 }  // namespace crypto
 
