@@ -29,7 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <bitset>
 
-#include "maidsafe/common/throw_error.h"
+#include "maidsafe/common/error_categories.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
@@ -59,7 +59,7 @@ NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
 NodeId::NodeId(const std::string& id) : raw_id_(id) {
   if (raw_id_.size() != kKeySizeBytes) {
     raw_id_.clear();
-    detail::ThrowError(CommonErrors::invalid_node_id);
+    ThrowError(CommonErrors::invalid_node_id);
   }
 }
 
@@ -83,7 +83,7 @@ NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_i
   }
   if (raw_id_.size() != kKeySizeBytes) {
     raw_id_.clear();
-    detail::ThrowError(CommonErrors::invalid_node_id);
+    ThrowError(CommonErrors::invalid_node_id);
   }
 }
 

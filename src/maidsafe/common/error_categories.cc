@@ -39,7 +39,7 @@ const char* CommonCategory::name() const MAIDSAFE_NOEXCEPT {
 }
 
 std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (error_value) {
+  switch (static_cast<CommonErrors>(error_value)) {
     case CommonErrors::success:
       return "Success";
     case CommonErrors::pending_result:
@@ -80,7 +80,7 @@ const char* AsymmCategory::name() const MAIDSAFE_NOEXCEPT {
 }
 
 std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (error_value) {
+  switch (static_cast<AsymmErrors>(error_value)) {
     case AsymmErrors::keys_generation_error:
       return "Error generating key pair";
     case AsymmErrors::keys_serialisation_error:
@@ -97,12 +97,12 @@ std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Invalid signature";
     case AsymmErrors::signature_empty:
       return "Signature is empty";
-    case AsymmErrors::rsa_encryption_error:
-      return "Error during RSA encryption";
-    case AsymmErrors::rsa_decryption_error:
-      return "Error during RSA decryption";
-    case AsymmErrors::rsa_signing_error:
-      return "Error during RSA signing";
+    case AsymmErrors::encryption_error:
+      return "Error during asymmetric encryption";
+    case AsymmErrors::decryption_error:
+      return "Error during asymmetric decryption";
+    case AsymmErrors::signing_error:
+      return "Error during asymmetric signing";
     default:
       return "Unknown error in Asymm";
   }
@@ -118,7 +118,7 @@ const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
 }
 
 std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (error_value) {
+  switch (static_cast<LifeStuffErrors>(error_value)) {
     case LifeStuffErrors::kAuthenticationError:
     default:
       return "Unknown error in LifeStuff";

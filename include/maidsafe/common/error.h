@@ -57,13 +57,14 @@ enum class AsymmErrors {
   keys_serialisation_error,
   keys_parse_error,
   invalid_private_key,
+  invalid_public_key,
   data_empty,
   file_empty,
   invalid_signature,
   signature_empty,
-  rsa_encryption_error,
-  rsa_decryption_error,
-  rsa_signing_error
+  encryption_error,
+  decryption_error,
+  signing_error
 };
 
 enum class LifeStuffErrors {
