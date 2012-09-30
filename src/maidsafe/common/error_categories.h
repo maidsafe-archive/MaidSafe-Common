@@ -25,20 +25,41 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "maidsafe/common/throw_error.h"
+#ifndef MAIDSAFE_COMMON_ERROR_CATEGORIES_H_
+#define MAIDSAFE_COMMON_ERROR_CATEGORIES_H_
 
-#include <boost/throw_exception.hpp>
+#include <system_error>
+
+#include "maidsafe/common/config.h"
 
 
 namespace maidsafe {
 
 namespace detail {
 
-void DoThrowError(const std::error_code& code) {
-  std::system_error c(code);
-  boost::throw_exception(c);
-}
+class CommonCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT;
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT;
+  virtual std::error_condition default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT;
+};
+
+class AsymmCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT;
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT;
+  virtual std::error_condition default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT;
+};
+
+class LifeStuffCategory : public std::error_category {
+ public:
+  virtual const char* name() const MAIDSAFE_NOEXCEPT;
+  virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT;
+  virtual std::error_condition default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT;
+};
 
 }  // namespace detail
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_COMMON_ERROR_CATEGORIES_H_

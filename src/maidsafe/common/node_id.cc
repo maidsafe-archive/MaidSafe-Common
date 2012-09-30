@@ -141,6 +141,7 @@ bool NodeId::IsZero() const {
   return raw_id_ == kZeroId;
 }
 
+// TODO(Fraser#5#): 2012-09-28 - Check if required - probably used before in multi-index.
 // bool NodeId::operator()(const NodeId& lhs, const NodeId& rhs) const {
 //   return lhs.raw_id_ < rhs.raw_id_;
 // }

@@ -28,14 +28,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_ERROR_H_
 #define MAIDSAFE_COMMON_ERROR_H_
 
-#ifdef MAIDSAFE_WIN32
-#  define MAIDSAFE_NOEXCEPT
-#else
-#  define MAIDSAFE_NOEXCEPT noexcept(true)
-#endif
-
-#include <system_error>
 #include <string>
+#include <system_error>
+
+#include "maidsafe/common/config.h"
+
 
 namespace maidsafe {
 
@@ -56,7 +53,7 @@ enum class CommonErrors {
 };
 
 enum class AsymmErrors {
-  keys_generation_error = 1000,
+  keys_generation_error = 1,
   keys_serialisation_error,
   keys_parse_error,
   invalid_private_key,
@@ -71,7 +68,7 @@ enum class AsymmErrors {
 
 enum class LifeStuffErrors {
   //Authentication
-  kAuthenticationError = 2000,
+  kAuthenticationError = 1,
   kPasswordFailure,
   kUserDoesntExist,
   kUserExists,
@@ -538,22 +535,23 @@ enum class LifeStuffErrors {
   kFailedSymmDecrypt,
 };
 
-enum class ErrorConditions {
-  filesystem_error = 10000,
-  memory_error,
-  network_error,
-  invalid_user_supplied_data
-};
-
 std::error_code make_error_code(CommonErrors code);
 std::error_code make_error_code(AsymmErrors code);
 std::error_code make_error_code(LifeStuffErrors code);
-std::error_condition make_error_condition(ErrorConditions condition);
+std::error_condition make_error_condition(CommonErrors code);
+std::error_condition make_error_condition(AsymmErrors code);
+std::error_condition make_error_condition(LifeStuffErrors code);
+
+void DoThrowError(const std::error_code& code);
+
+inline void ThrowError(const std::error_code& code) {
+  if (code)
+    DoThrowError(code);
+}
 
 const std::error_category& GetCommonCategory();
 const std::error_category& GetAsymmCategory();
 const std::error_category& GetLifeStuffCategory();
-const std::error_category& GetDefaultCategory();
 
 }  // namespace maidsafe
 
@@ -574,8 +572,6 @@ struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  //NOLIN
 template <>
 struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  //NOLINT (dirvine)
 
-template <>
-struct is_error_condition_enum<maidsafe::ErrorConditions> : public true_type {};  //NOLINT (dirvine)
 
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
