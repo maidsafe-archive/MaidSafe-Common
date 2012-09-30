@@ -99,13 +99,7 @@ TEST(NodeIdTest, BEH_DefaultCtr) {
   ASSERT_EQ(hex_id, node_id.ToStringEncoded(NodeId::kHex));
   std::string bin_id(kKeySizeBytes * 8, '0');
   ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::kBinary));
-  try {
-    NodeId dave("not64long");
-  } catch(const error_code& error) {
-    EXPECT_TRUE(error == error_code::kBadStringLength);
-  } catch(const std::error_code& error) {
-    std::cout << error.message();
-  }
+  EXPECT_ANY_THROW(NodeId dave("not64long"));
 }
 
 TEST(NodeIdTest, BEH_CopyCtr) {
@@ -140,11 +134,7 @@ TEST(NodeIdTest, BEH_StringCtr) {
   std::string rand_str(RandomString(kKeySizeBytes));
   NodeId id1(rand_str);
   ASSERT_TRUE(id1.String() == rand_str);
-  try {
-    NodeId id2(rand_str.substr(0, kKeySizeBytes - 1));
-  } catch(const error_code& error) {
-    ASSERT_TRUE(error == error_code::kBadStringLength);
-  }
+  EXPECT_ANY_THROW(NodeId id2(rand_str.substr(0, kKeySizeBytes - 1)));
 }
 
 TEST(NodeIdTest, BEH_EncodingCtr) {
@@ -175,11 +165,7 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
       default :
         break;
     }
-    try {
-      NodeId bad_id(bad_encoded, type);
-    } catch(const error_code& error) {
-      ASSERT_TRUE(error == error_code::kInvalidNodeId);
-    }
+    EXPECT_ANY_THROW(NodeId bad_id(bad_encoded, type));
 //    ASSERT_TRUE(bad_id.String().empty());
 //    ASSERT_FALSE(bad_id.IsValid());
 //    ASSERT_TRUE(bad_id.ToStringEncoded(type).empty());
