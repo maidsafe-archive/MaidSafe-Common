@@ -118,8 +118,10 @@ std::string SecurePassword(const std::string& password,
 std::string SymmEncrypt(const std::string& input,
                         const std::string& key,
                         const std::string& initialisation_vector) {
-  if (key.size() < AES256_KeySize || initialisation_vector.size() < AES256_IVSize) {
-    LOG(kError) << "Undersized key or IV.";
+  if (input.empty() ||
+      key.size() < AES256_KeySize ||
+      initialisation_vector.size() < AES256_IVSize) {
+    LOG(kError) << "Input empty or undersized key or IV.";
     ThrowError(CommonErrors::invalid_parameter);
   }
 

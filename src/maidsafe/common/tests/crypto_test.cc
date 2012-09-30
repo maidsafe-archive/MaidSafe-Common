@@ -37,6 +37,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
+
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
@@ -46,9 +47,9 @@ namespace crypto {
 namespace test {
 
 TEST(CryptoTest, BEH_Obfuscation) {
-  EXPECT_TRUE(XOR("A", "").empty());
-  EXPECT_TRUE(XOR("", "B").empty());
-  EXPECT_TRUE(XOR("A", "BB").empty());
+  EXPECT_THROW(XOR("A", ""), std::exception);
+  EXPECT_THROW(XOR("", "B"), std::exception);
+  EXPECT_THROW(XOR("A", "BB"), std::exception);
   const size_t kStringSize(1024*256);
   std::string str1 = RandomString(kStringSize);
   std::string str2 = RandomString(kStringSize);
@@ -66,30 +67,25 @@ TEST(CryptoTest, BEH_Obfuscation) {
 }
 
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
-  std::string password;
-  EXPECT_EQ(error_code::kGeneralError, SecurePassword("", "salt", 100, &password));
-  EXPECT_EQ(error_code::kGeneralError, SecurePassword("password", "", 100, &password));
-  EXPECT_EQ(error_code::kGeneralError, SecurePassword("password", "salt", 0, &password));
+  EXPECT_THROW(SecurePassword("", "salt", 100), std::exception);
+  EXPECT_THROW(SecurePassword("password", "", 100), std::exception);
+  EXPECT_THROW(SecurePassword("password", "salt", 0), std::exception);
   const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
   const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations1(5);
   const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac29693853dc66c21f036d36256a8b1e6"
                                    "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
-  password.clear();
 
-  EXPECT_EQ(error_code::kOK,
-            SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1, &password));
+  std::string password(SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
   EXPECT_EQ(kKnownDerived1, password);
   const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974696573206d75737420636f6d6d"
       "756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656568"
       "656568656573"));
   const std::string kKnownSalt2(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations2(500);
-  const std::string kKnownDerived2(DecodeFromHex("4391697b647773d2ac29693853"
-  "dc66c21f036d36256a8b1e617b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0c1"
-  "999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9c697256c7b131d3bcf310b523e"
-  "05c3ffc14d7fd8511c840"));
-  EXPECT_EQ(error_code::kOK, SecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2, &password));
+  const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9"
+      "c697256c7b131d3bcf310b523e05c3ffc14d7fd8511c840"));
+  password = SecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2);
   EXPECT_EQ(kKnownDerived2, password);
 }
 
@@ -220,11 +216,11 @@ TEST(CryptoTest, BEH_Hash) {
   }
 
   // Check using invalid filename
-  EXPECT_TRUE(HashFile<crypto::SHA1>(fs::path("NonExistent")).empty());
-  EXPECT_TRUE(HashFile<crypto::SHA256>(fs::path("NonExistent")).empty());
-  EXPECT_TRUE(HashFile<crypto::SHA384>(fs::path("NonExistent")).empty());
-  EXPECT_TRUE(HashFile<crypto::SHA512>(fs::path("NonExistent")).empty());
-  EXPECT_TRUE(HashFile<crypto::Tiger>(fs::path("NonExistent")).empty());
+  EXPECT_THROW(HashFile<crypto::SHA1>(fs::path("NonExistent")), std::exception);
+  EXPECT_THROW(HashFile<crypto::SHA256>(fs::path("NonExistent")), std::exception);
+  EXPECT_THROW(HashFile<crypto::SHA384>(fs::path("NonExistent")), std::exception);
+  EXPECT_THROW(HashFile<crypto::SHA512>(fs::path("NonExistent")), std::exception);
+  EXPECT_THROW(HashFile<crypto::Tiger>(fs::path("NonExistent")), std::exception);
 }
 
 std::string CorruptData(const std::string &input) {
@@ -259,14 +255,14 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
   EXPECT_NE(kUnencrypted, SymmDecrypt(kEncrypted, kBadKey, kBadIV));
 
   // Check using empty string
-  EXPECT_TRUE(SymmEncrypt("", kKey, kIV).empty());
-  EXPECT_TRUE(SymmDecrypt("", kKey, kIV).empty());
+  EXPECT_THROW(SymmEncrypt("", kKey, kIV), std::exception);
+  EXPECT_THROW(SymmDecrypt("", kKey, kIV), std::exception);
 
   // Check using wrong key and wrong IV
-  EXPECT_TRUE(SymmEncrypt(kUnencrypted, "", kIV).empty());
-  EXPECT_TRUE(SymmEncrypt(kUnencrypted, kKey, "").empty());
-  EXPECT_TRUE(SymmDecrypt(kEncrypted, "", kIV).empty());
-  EXPECT_TRUE(SymmDecrypt(kEncrypted, kKey, "").empty());
+  EXPECT_THROW(SymmEncrypt(kUnencrypted, "", kIV), std::exception);
+  EXPECT_THROW(SymmEncrypt(kUnencrypted, kKey, ""), std::exception);
+  EXPECT_THROW(SymmDecrypt(kEncrypted, "", kIV), std::exception);
+  EXPECT_THROW(SymmDecrypt(kEncrypted, kKey, ""), std::exception);
 }
 
 TEST(CryptoTest, BEH_Compress) {
@@ -293,10 +289,10 @@ TEST(CryptoTest, BEH_Compress) {
     EXPECT_EQ(kTestData, Uncompress(compressed_strings.at(level)));
 
   // Try to compress with invalid compression level
-  EXPECT_TRUE(Compress(kTestData, kMaxCompressionLevel + 1).empty());
+  EXPECT_THROW(Compress(kTestData, kMaxCompressionLevel + 1), std::exception);
 
   // Try to uncompress uncompressed data
-  EXPECT_TRUE(Uncompress(kTestData).empty());
+  EXPECT_THROW(Uncompress(kTestData), std::exception);
 }
 
 TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
@@ -328,20 +324,16 @@ TEST(CryptoTest, BEH_AESTigerDeterministic) {
 
 TEST(CryptoTest, BEH_SecretSharing) {
   std::string rand_string(RandomString(64));
-  std::string recovered;
   uint8_t num_shares(20);
   uint8_t threshold(10);
-  std::vector<std::string> data_parts;
-  SecretShareData(threshold, num_shares, rand_string, &data_parts);
-  SecretRecoverData(threshold, data_parts, &recovered);
+  std::vector<std::string> data_parts(SecretShareData(threshold, num_shares, rand_string));
+  std::string recovered(SecretRecoverData(threshold, data_parts));
   EXPECT_EQ(recovered, rand_string);
   uint8_t not_enough(9);
-  recovered.clear();
-  SecretRecoverData(not_enough, data_parts, &recovered);
+  recovered = SecretRecoverData(not_enough, data_parts);
   EXPECT_NE(recovered, rand_string);
   uint8_t too_many(100);
-  recovered.clear();
-  SecretRecoverData(too_many, data_parts, &recovered);
+  recovered = SecretRecoverData(too_many, data_parts);
   EXPECT_EQ(recovered, rand_string);
 }
 

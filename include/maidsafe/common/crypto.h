@@ -54,6 +54,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
 
 
@@ -104,12 +105,12 @@ std::string Hash(const std::string& input) {
   try {
     CryptoPP::StringSource(input, true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-    return result;
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
-    detail::ThrowError(CommonErrors::hashing_error);
+    ThrowError(CommonErrors::hashing_error);
   }
+  return result;
 }
 
 // Hash function operating on a file.
@@ -123,7 +124,7 @@ std::string HashFile(const boost::filesystem::path& file_path) {
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
-    detail::ThrowError(CommonErrors::hashing_error);
+    ThrowError(CommonErrors::hashing_error);
   }
   return result;
 }
