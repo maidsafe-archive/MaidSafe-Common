@@ -32,6 +32,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "boost/preprocessor/stringize.hpp"
 
+#ifdef MAIDSAFE_WIN32
+#  define MAIDSAFE_NOEXCEPT
+#else
+#  define MAIDSAFE_NOEXCEPT noexcept(true)
+#endif
+
 namespace maidsafe {
 
 #if !defined(COMPANY_NAME)
