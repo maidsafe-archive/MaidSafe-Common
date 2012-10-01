@@ -352,6 +352,14 @@ bool MatchingPrivateKeys(const PrivateKey& private_key1, const PrivateKey& priva
 }
 
 bool SerialiseKeys(const Keys& keys, std::string& serialised_keys) {
+  if (!ValidateKey(keys.public_key, 0)) {
+    LOG(kError) << "Invalid public key.";
+    return false;
+  }
+  if (!ValidateKey(keys.private_key, 0)) {
+    LOG(kError) << "Invalid private key.";
+    return false;
+  }
   KeysContainer container;
   container.set_identity(keys.identity);
   container.set_validation_token(keys.validation_token);
@@ -376,7 +384,7 @@ bool SerialiseKeys(const Keys& keys, std::string& serialised_keys) {
     return false;
   }
 
-  return true;
+  return !serialised_keys.empty();
 }
 
 bool ParseKeys(const std::string& serialised_keys, Keys& keys) {
