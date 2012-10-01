@@ -55,12 +55,17 @@ TEST(CryptoTest, BEH_Obfuscation) {
   EXPECT_EQ(obfuscated.string(), XOR(str2, str1));
   EXPECT_EQ(str1.string(), XOR(obfuscated, str2));
   EXPECT_EQ(str2.string(), XOR(obfuscated, str1));
+
   const BoundedString<kStringSize, kStringSize> kZeros(std::string(kStringSize, 0));
   EXPECT_EQ(kZeros.string(), XOR(str1, str1));
   EXPECT_EQ(str1.string(), XOR(kZeros, str1));
+
   const BoundedString<2, 2> kKnown1("\xa5\x5a");
   const BoundedString<2, 2> kKnown2("\x5a\xa5");
   EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2));
+
+  const BoundedString<0, 0> kEmpty("");
+  EXPECT_TRUE(XOR(kEmpty, kEmpty).empty());
 }
 
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {

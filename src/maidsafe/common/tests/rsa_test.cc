@@ -116,7 +116,7 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   RunInParallel(f);
 }
 
-TEST_F(RSATest, BEH_SignValidate) {
+TEST_F(RSATest, FUNC_SignValidate) {
   auto f([&] {
     EXPECT_NO_THROW(Keys keys(GenerateKeyPair()));
     Keys keys(GenerateKeyPair());
