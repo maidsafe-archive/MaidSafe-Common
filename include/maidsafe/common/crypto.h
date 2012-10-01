@@ -100,7 +100,7 @@ class BoundedString {
     swap(*this, other);
     return *this;
   }
-  std::string string() const { return string_; }
+  const std::string& string() const { return string_; }
  private:
   std::string string_;
 };
@@ -110,9 +110,16 @@ typedef BoundedString<AES256_KeySize> AES256Key;
 typedef BoundedString<AES256_IVSize> AES256InitialisationVector;
 
 
-// Performs a bitwise XOR on each char of first with the corresponding char of second.  first and
-// second must have identical non-zero size or a std::exception will be thrown.
-std::string XOR(const std::string& first, const std::string& second);
+// Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
+// 0, an empty string is returned.
+template<size_t size>
+std::string XOR(const BoundedString<size, size>& first, const BoundedString<size, size>& second) {
+  std::string result(size, 0);
+  for (size_t i(0); i != size; ++i)
+    result[i] = first.string()[i] ^ second.string()[i];
+
+  return result;
+}
 
 // Creates a secure password using the Password-Based Key Derivation Function (PBKDF) version 2
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
