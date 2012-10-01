@@ -82,7 +82,6 @@ TEST_F(RSATest, BEH_RsaKeyPair) {
 TEST_F(RSATest, BEH_ValidateKeys) {
   auto f([&] {
     PublicKey public_key;
-    std::cout << "no error";
     EXPECT_FALSE(ValidateKey(public_key));
     EXPECT_FALSE(ValidateKey(public_key, 0));
     EXPECT_ANY_THROW(DecodePublicKey("Just some string"));
@@ -99,7 +98,7 @@ TEST_F(RSATest, BEH_ValidateKeys) {
     EXPECT_TRUE(ValidateKey(private_key));
     EXPECT_TRUE(ValidateKey(public_key));
   });
-   RunInParallel(f);
+  RunInParallel(f);
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
@@ -134,17 +133,17 @@ TEST_F(RSATest, BEH_SignValidate) {
     EXPECT_TRUE(CheckSignature(kData, signature, keys.public_key));
 
     std::string empty_data;
-    EXPECT_ANY_THROW(Sign(empty_data, keys.private_key));
-    EXPECT_ANY_THROW(CheckSignature(empty_data, signature, keys.public_key));
+    EXPECT_THROW(Sign(empty_data, keys.private_key), std::exception);
+    EXPECT_THROW(CheckSignature(empty_data, signature, keys.public_key), std::exception);
 
-    EXPECT_ANY_THROW(Sign(kData, empty_priv_key));
-    EXPECT_ANY_THROW(CheckSignature(kData, signature, empty_pub_key));
+    EXPECT_THROW(Sign(kData, empty_priv_key), std::exception);
+    EXPECT_THROW(CheckSignature(kData, signature, empty_pub_key), std::exception);
 
     std::string empty_signature;
-    EXPECT_ANY_THROW(CheckSignature(kData, empty_signature, keys.public_key));
+    EXPECT_THROW(CheckSignature(kData, empty_signature, keys.public_key), std::exception);
 
     std::string bad_signature("bad");
-    EXPECT_ANY_THROW(CheckSignature(kData, bad_signature, keys.public_key));
+    EXPECT_FALSE(CheckSignature(kData, bad_signature, keys.public_key));
   });
   RunInParallel(f, 10);
 }
