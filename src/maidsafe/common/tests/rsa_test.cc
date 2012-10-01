@@ -144,7 +144,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
   RunInParallel(f, 10);
 }
 
-TEST_F(RSATest, BEH_SignFileValidate) {
+TEST_F(RSATest, FUNC_SignFileValidate) {
   auto f([&] {
     Keys keys;
     EXPECT_NO_THROW(keys = GenerateKeyPair());

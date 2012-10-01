@@ -195,13 +195,17 @@ std::string Sign(const std::string& data, const PrivateKey& private_key) {
   return signature;
 }
 
-std::string SignFile(const boost::filesystem::path& filename,
-                     const PrivateKey& private_key) {
+std::string SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key) {
   std::string signature;
   boost::system::error_code boost_error_code;
   if (boost::filesystem::file_size(filename, boost_error_code) == 0 || boost_error_code) {
     ThrowError(AsymmErrors::file_empty);
   }
+#ifndef NDEBUG
+  // See comment in similar Debug block of rsa::Sign function
+  if (!ValidateKey(private_key, 0))
+    ThrowError(AsymmErrors::signing_error);
+#endif
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
