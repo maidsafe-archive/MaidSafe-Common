@@ -28,9 +28,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_CRYPTO_H_
 #define MAIDSAFE_COMMON_CRYPTO_H_
 
-#include <cstdint>
-#include <string>
 #include <algorithm>
+#include <cstdint>
+#include <limits>
+#include <string>
 #include <vector>
 
 #ifdef __MSVC__
@@ -54,8 +55,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/rsa.h"
 
 
 namespace CryptoPP {
@@ -77,12 +78,37 @@ typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
 
-extern const uint16_t AES256_KeySize;
-extern const uint16_t AES256_IVSize;
+enum { AES256_KeySize = 32 };  // size in bytes.
+enum { AES256_IVSize = 16 };  // size in bytes.
 extern const uint16_t kMaxCompressionLevel;
-
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
+
+
+template<size_t min, size_t max = -1>
+class BoundedString {
+ public:
+  explicit BoundedString(const std::string& string) : string_(string) {
+    if (string_.size() < min || string_.size() > max)
+      ThrowError(CommonErrors::invalid_string_size);
+  }
+  friend void swap(BoundedString& first, BoundedString& second) {
+    std::swap(first.string_, second.string_);
+  }
+  BoundedString(const BoundedString& other) : string_(other.string_) {}
+  BoundedString& operator=(BoundedString other) {
+    swap(*this, other);
+    return *this;
+  }
+  std::string string() const { return string_; }
+ private:
+  std::string string_;
+};
+
+typedef BoundedString<1> NonEmptyString;
+typedef BoundedString<AES256_KeySize> AES256Key;
+typedef BoundedString<AES256_IVSize> AES256InitialisationVector;
+
 
 // Performs a bitwise XOR on each char of first with the corresponding char of second.  first and
 // second must have identical non-zero size or a std::exception will be thrown.
@@ -92,8 +118,8 @@ std::string XOR(const std::string& first, const std::string& second);
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
 // provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
 // parameters are passed.
-std::string SecurePassword(const std::string& password,
-                           const std::string& salt,
+std::string SecurePassword(const NonEmptyString& password,
+                           const NonEmptyString& salt,
                            const uint32_t& pin,
                            const std::string& label = kMaidSafeVersionLabel);
 
@@ -131,20 +157,19 @@ std::string HashFile(const boost::filesystem::path& file_path) {
 
 // Performs symmetric encrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-std::string SymmEncrypt(const std::string& input,
-                        const std::string& key,
-                        const std::string& initialisation_vector);
+std::string SymmEncrypt(const NonEmptyString& input,
+                        const AES256Key& key,
+                        const AES256InitialisationVector& initialisation_vector);
 
 // Performs symmetric decrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-std::string SymmDecrypt(const std::string& input,
-                        const std::string& key,
-                        const std::string& initialisation_vector);
+std::string SymmDecrypt(const NonEmptyString& input,
+                        const AES256Key& key,
+                        const AES256InitialisationVector& initialisation_vector);
 
 // Compress a string using gzip.  Compression level must be between 0 and 9
 // inclusive or function throws a std::exception.
-std::string Compress(const std::string& input,
-                     const uint16_t& compression_level);
+std::string Compress(const std::string& input, const uint16_t& compression_level);
 
 // Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
 std::string Uncompress(const std::string& input);

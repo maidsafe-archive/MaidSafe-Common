@@ -104,19 +104,15 @@ TEST_F(RSATest, BEH_ValidateKeys) {
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   auto f([&] {
-    const std::string kSmallData(RandomString(21));
-    const std::string kLargeData(RandomString(1024 * 1024));
-    const std::string kEmptyData("");
+    const crypto::NonEmptyString kSmallData(RandomString(21));
+    const crypto::NonEmptyString kLargeData(RandomString(1024 * 1024));
     const Keys empty_keys;
     const Keys other_keys(GenerateKeyPair());
-    EXPECT_EQ(kSmallData,
+    EXPECT_EQ(kSmallData.string(),
               Decrypt(Encrypt(kSmallData, keys_.public_key), keys_.private_key));
-    EXPECT_EQ(kLargeData,
+    EXPECT_EQ(kLargeData.string(),
               Decrypt(Encrypt(kLargeData, keys_.public_key), keys_.private_key));
-
-    EXPECT_ANY_THROW(Encrypt(kEmptyData, keys_.public_key));
-    EXPECT_ANY_THROW(Encrypt(kSmallData, empty_keys.public_key));
-
+    EXPECT_THROW(Encrypt(kSmallData, empty_keys.public_key), std::exception);
   });
   RunInParallel(f);
 }

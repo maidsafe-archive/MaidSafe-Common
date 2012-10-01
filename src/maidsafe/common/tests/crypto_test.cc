@@ -67,21 +67,21 @@ TEST(CryptoTest, BEH_Obfuscation) {
 }
 
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
-  EXPECT_THROW(SecurePassword("", "salt", 100), std::exception);
-  EXPECT_THROW(SecurePassword("password", "", 100), std::exception);
-  EXPECT_THROW(SecurePassword("password", "salt", 0), std::exception);
-  const std::string kKnownPassword1(DecodeFromHex("70617373776f7264"));
-  const std::string kKnownSalt1(DecodeFromHex("1234567878563412"));
+  EXPECT_THROW(NonEmptyString(""), std::exception);
+  EXPECT_THROW(SecurePassword(NonEmptyString("password"), NonEmptyString("salt"), 0),
+               std::exception);
+  const NonEmptyString kKnownPassword1(DecodeFromHex("70617373776f7264"));
+  const NonEmptyString kKnownSalt1(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations1(5);
   const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac29693853dc66c21f036d36256a8b1e6"
                                    "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
 
   std::string password(SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
   EXPECT_EQ(kKnownDerived1, password);
-  const std::string kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974696573206d75737420636f6d6d"
-      "756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656568"
-      "656568656573"));
-  const std::string kKnownSalt2(DecodeFromHex("1234567878563412"));
+  const NonEmptyString kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974696573206d75737420636f6"
+      "d6d756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656"
+      "568656568656573"));
+  const NonEmptyString kKnownSalt2(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations2(500);
   const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9"
       "c697256c7b131d3bcf310b523e05c3ffc14d7fd8511c840"));
@@ -232,37 +232,36 @@ std::string CorruptData(const std::string &input) {
 
 TEST(CryptoTest, BEH_SymmEncrypt) {
   // Set up data
-  const std::string kKey(
+  const AES256Key kKey(
       DecodeFromHex("0a89927670e292af98080a3c3e2bdee4289b768de74570f9f470282756390fe3"));
-  const std::string kIV(DecodeFromHex("92af98080a3c3e2bdee4289b768de7af"));
-  const std::string kUnencrypted(DecodeFromHex("8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984a6a"
-                                               "01b2r15e48a47bc46af231d2b146e54a87db43f51c2a5"));
-  const std::string kEncrypted(DecodeFromHex("441f907b71a14c2f482c4d1fef61f3d7ffc0f14953f4f57560180"
-                                             "3feed5d10a3387c273f9a92b2ceb4d9236167d707"));
-  const std::string kBadKey(CorruptData(kKey));
-  const std::string kBadIV(CorruptData(kIV));
-  const std::string kBadUnencrypted(CorruptData(kUnencrypted));
-  const std::string kBadEncrypted(CorruptData(kEncrypted));
+  const AES256InitialisationVector kIV(DecodeFromHex("92af98080a3c3e2bdee4289b768de7af"));
+  const NonEmptyString kUnencrypted(DecodeFromHex(
+      "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984"
+      "a6a01b2r15e48a47bc46af231d2b146e54a87db43f51c2a5"));
+  const NonEmptyString kEncrypted(DecodeFromHex(
+      "441f907b71a14c2f482c4d1fef61f3d7ffc0f14953f4f57"
+      "5601803feed5d10a3387c273f9a92b2ceb4d9236167d707"));
+  const AES256Key kBadKey(CorruptData(kKey.string()));
+  const AES256InitialisationVector kBadIV(CorruptData(kIV.string()));
+  const NonEmptyString kBadUnencrypted(CorruptData(kUnencrypted.string()));
+  const NonEmptyString kBadEncrypted(CorruptData(kEncrypted.string()));
+
+  EXPECT_THROW(AES256Key(std::string(AES256_KeySize - 1, 0)), std::exception);
+  EXPECT_THROW(AES256InitialisationVector(std::string(AES256_IVSize - 1, 0)), std::exception);
+  EXPECT_NO_THROW(AES256Key(std::string(AES256_KeySize, 0)));
+  EXPECT_NO_THROW(AES256InitialisationVector(std::string(AES256_IVSize, 0)));
+  EXPECT_NO_THROW(AES256Key(std::string(AES256_KeySize + 1, 0)));
+  EXPECT_NO_THROW(AES256InitialisationVector(std::string(AES256_IVSize + 1, 0)));
 
   // Encryption string to string
-  EXPECT_EQ(kEncrypted, SymmEncrypt(kUnencrypted, kKey, kIV));
-  EXPECT_NE(kEncrypted, SymmEncrypt(kBadUnencrypted, kKey, kIV));
-  EXPECT_NE(kEncrypted, SymmEncrypt(kUnencrypted, kBadKey, kBadIV));
+  EXPECT_EQ(kEncrypted.string(), SymmEncrypt(kUnencrypted, kKey, kIV));
+  EXPECT_NE(kEncrypted.string(), SymmEncrypt(kBadUnencrypted, kKey, kIV));
+  EXPECT_NE(kEncrypted.string(), SymmEncrypt(kUnencrypted, kBadKey, kBadIV));
 
   // Decryption string to string
-  EXPECT_EQ(kUnencrypted, SymmDecrypt(kEncrypted, kKey, kIV));
-  EXPECT_NE(kUnencrypted, SymmDecrypt(kBadEncrypted, kKey, kIV));
-  EXPECT_NE(kUnencrypted, SymmDecrypt(kEncrypted, kBadKey, kBadIV));
-
-  // Check using empty string
-  EXPECT_THROW(SymmEncrypt("", kKey, kIV), std::exception);
-  EXPECT_THROW(SymmDecrypt("", kKey, kIV), std::exception);
-
-  // Check using wrong key and wrong IV
-  EXPECT_THROW(SymmEncrypt(kUnencrypted, "", kIV), std::exception);
-  EXPECT_THROW(SymmEncrypt(kUnencrypted, kKey, ""), std::exception);
-  EXPECT_THROW(SymmDecrypt(kEncrypted, "", kIV), std::exception);
-  EXPECT_THROW(SymmDecrypt(kEncrypted, kKey, ""), std::exception);
+  EXPECT_EQ(kUnencrypted.string(), SymmDecrypt(kEncrypted, kKey, kIV));
+  EXPECT_NE(kUnencrypted.string(), SymmDecrypt(kBadEncrypted, kKey, kIV));
+  EXPECT_NE(kUnencrypted.string(), SymmDecrypt(kEncrypted, kBadKey, kBadIV));
 }
 
 TEST(CryptoTest, BEH_Compress) {

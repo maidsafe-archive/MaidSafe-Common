@@ -69,10 +69,8 @@ CryptoPP::RandomNumberGenerator& rng() {
 
 }  // unnamed namespace
 
-const uint16_t AES256_KeySize = 32;  // size in bytes.
-const uint16_t AES256_IVSize = 16;  // size in bytes.
-const uint16_t kMaxCompressionLevel = 9;
 
+const uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
@@ -91,11 +89,11 @@ std::string XOR(const std::string& first, const std::string& second) {
   return result;
 }
 
-std::string SecurePassword(const std::string& password,
-                           const std::string& salt,
+std::string SecurePassword(const NonEmptyString& password,
+                           const NonEmptyString& salt,
                            const uint32_t& pin,
                            const std::string& label) {
-  if (password.empty() || salt.empty() || pin == 0 || label.empty()) {
+  if (pin == 0 || label.empty()) {
     LOG(kError) << "Invalid parameter.";
     ThrowError(CommonErrors::invalid_parameter);
   }
@@ -103,38 +101,31 @@ std::string SecurePassword(const std::string& password,
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
   byte purpose = 0;  // unused in this pbkdf implementation
-  CryptoPP::SecByteBlock context(salt.size() + label.size());
-  std::copy_n(salt.data(), salt.size(), &context[0]);
-  std::copy_n(label.data(),  label.size(), &context[salt.size()]);
+  CryptoPP::SecByteBlock context(salt.string().size() + label.size());
+  std::copy_n(salt.string().data(), salt.string().size(), &context[0]);
+  std::copy_n(label.data(),  label.size(), &context[salt.string().size()]);
   pbkdf.DeriveKey(derived, derived.size(), purpose,
-                  reinterpret_cast<const byte*>(password.data()),
-                  password.size(), context.data(), context.size(), iter);
+                  reinterpret_cast<const byte*>(password.string().data()),
+                  password.string().size(), context.data(), context.size(), iter);
   std::string derived_password;
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
   return derived_password;
 }
 
-std::string SymmEncrypt(const std::string& input,
-                        const std::string& key,
-                        const std::string& initialisation_vector) {
-  if (input.empty() ||
-      key.size() < AES256_KeySize ||
-      initialisation_vector.size() < AES256_IVSize) {
-    LOG(kError) << "Input empty or undersized key or IV.";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-
+std::string SymmEncrypt(const NonEmptyString& input,
+                        const AES256Key& key,
+                        const AES256InitialisationVector& initialisation_vector) {
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.substr(0, AES256_KeySize), true,
+    CryptoPP::StringSource(key.string().substr(0, AES256_KeySize), true,
         new CryptoPP::ArraySink(byte_key, sizeof(byte_key)));
-    CryptoPP::StringSource(initialisation_vector.substr(0, AES256_IVSize), true,
+    CryptoPP::StringSource(initialisation_vector.string().substr(0, AES256_IVSize), true,
         new CryptoPP::ArraySink(byte_iv, sizeof(byte_iv)));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(byte_key, sizeof(byte_key), byte_iv);
-    CryptoPP::StringSource(input, true,
+    CryptoPP::StringSource(input.string(), true,
         new CryptoPP::StreamTransformationFilter(encryptor, new CryptoPP::StringSink(result)));
   } catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
@@ -143,25 +134,19 @@ std::string SymmEncrypt(const std::string& input,
   return result;
 }
 
-std::string SymmDecrypt(const std::string& input,
-                        const std::string& key,
-                        const std::string& initialisation_vector) {
-  if (key.size() < AES256_KeySize || initialisation_vector.size() < AES256_IVSize ||
-      input.empty()) {
-    LOG(kError) << "Undersized key or IV or input.";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-
+std::string SymmDecrypt(const NonEmptyString& input,
+                        const AES256Key& key,
+                        const AES256InitialisationVector& initialisation_vector) {
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.substr(0, AES256_KeySize), true,
+    CryptoPP::StringSource(key.string().substr(0, AES256_KeySize), true,
         new CryptoPP::ArraySink(byte_key, sizeof(byte_key)));
-    CryptoPP::StringSource(initialisation_vector.substr(0, AES256_IVSize), true,
+    CryptoPP::StringSource(initialisation_vector.string().substr(0, AES256_IVSize), true,
         new CryptoPP::ArraySink(byte_iv, sizeof(byte_iv)));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, sizeof(byte_key), byte_iv);
-    CryptoPP::StringSource(input, true,
+    CryptoPP::StringSource(input.string(), true,
         new CryptoPP::StreamTransformationFilter(decryptor, new CryptoPP::StringSink(result)));
   }
   catch(const CryptoPP::Exception& e) {

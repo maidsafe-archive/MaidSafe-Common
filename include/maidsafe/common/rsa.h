@@ -43,7 +43,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/function.hpp"
 #include "boost/filesystem/path.hpp"
+
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
+
 
 namespace maidsafe {
 
@@ -73,7 +76,7 @@ struct Keys {
 
 Keys GenerateKeyPair();
 
-std::string Encrypt(const PlainText& plain_text, const PublicKey& public_key);
+std::string Encrypt(const crypto::NonEmptyString& plain_text, const PublicKey& public_key);
 
 std::string Decrypt(const CipherText& data, const PrivateKey& private_key);
 

@@ -46,7 +46,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/safe_encrypt_pb.h"
@@ -101,11 +100,8 @@ Keys GenerateKeyPair() {
   return keypair;
 }
 
-std::string Encrypt(const PlainText& data, const PublicKey& public_key) {
+std::string Encrypt(const crypto::NonEmptyString& data, const PublicKey& public_key) {
   std::string result;
-  if (data.empty()) {
-    ThrowError(AsymmErrors::data_empty);
-  }
   if (!public_key.Validate(rng(), 0)) {
     ThrowError(AsymmErrors::invalid_public_key);
   }
@@ -113,12 +109,12 @@ std::string Encrypt(const PlainText& data, const PublicKey& public_key) {
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   SafeEncrypt safe_enc;
   try {
-    std::string symm_encryption_key(RandomString(crypto::AES256_KeySize));
-    std::string symm_encryption_iv(RandomString(crypto::AES256_IVSize));
+    crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
+    crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
     safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv));
-    BOOST_ASSERT(!safe_enc.data().empty());
+    assert(!safe_enc.data().empty());
     std::string encryption_key_encrypted;
-    CryptoPP::StringSource(symm_encryption_key + symm_encryption_iv,
+    CryptoPP::StringSource(symm_encryption_key.string() + symm_encryption_iv.string(),
                            true,
                            new CryptoPP::PK_EncryptorFilter(rng(),
                                                             encryptor,
@@ -149,10 +145,15 @@ std::string Decrypt(const CipherText& data, const PrivateKey& private_key) {
                              new CryptoPP::PK_DecryptorFilter(rng(),
                                                               decryptor,
                                                               new CryptoPP::StringSink(out_data)));
-      result = crypto::SymmDecrypt(safe_enc.data(),
-                                    out_data.substr(0, crypto::AES256_KeySize),
-                                    out_data.substr(crypto::AES256_KeySize,
-                                                    crypto::AES256_IVSize));
+      if (out_data.size() < crypto::AES256_KeySize + crypto::AES256_IVSize) {
+        LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
+        ThrowError(AsymmErrors::decryption_error);
+      }
+      result = crypto::SymmDecrypt(crypto::NonEmptyString(safe_enc.data()),
+                                   crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
+                                   crypto::AES256InitialisationVector(
+                                       out_data.substr(crypto::AES256_KeySize,
+                                                       crypto::AES256_IVSize)));
     } else {
       ThrowError(AsymmErrors::decryption_error);
     }
