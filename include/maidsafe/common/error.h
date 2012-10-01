@@ -533,7 +533,7 @@ enum class LifeStuffErrors {
   kAtLeastOneFailure,
   //CodesremaininginDISABLEDtests.Expectthesecodestoberedundantsoon.
   kReadOnlyFailure,
-  kFailedSymmDecrypt,
+  kFailedSymmDecrypt
 };
 
 std::error_code make_error_code(CommonErrors code);

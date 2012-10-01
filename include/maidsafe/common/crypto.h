@@ -83,13 +83,15 @@ enum { AES256_IVSize = 16 };  // size in bytes.
 extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
-
-
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-narrowing"
+#endif
 template<size_t min, size_t max = -1>
 class BoundedString {
  public:
   explicit BoundedString(const std::string& string) : string_(string) {
-    if (string_.size() < min || string_.size() > max)
+    if (string_.size() == 0 || string_.size() < min || string_.size() > max)
       ThrowError(CommonErrors::invalid_string_size);
   }
   friend void swap(BoundedString& first, BoundedString& second) {
@@ -104,7 +106,9 @@ class BoundedString {
  private:
   std::string string_;
 };
-
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 typedef BoundedString<1> NonEmptyString;
 typedef BoundedString<AES256_KeySize> AES256Key;
 typedef BoundedString<AES256_IVSize> AES256InitialisationVector;
