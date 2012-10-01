@@ -68,7 +68,7 @@ enum class AsymmErrors {
 };
 
 enum class LifeStuffErrors {
-  //Authentication
+  // Authentication
   kAuthenticationError = 1,
   kPasswordFailure,
   kUserDoesntExist,
@@ -77,7 +77,7 @@ enum class LifeStuffErrors {
   kPublicUsernameAlreadySet,
   kFailedToDeleteOldPacket,
   kBadPacket,
-  //BufferPacketHandler
+  // BufferPacketHandler
   kBPError,
   kBPSerialiseError,
   kBPInfoSerialiseError,
@@ -96,7 +96,7 @@ enum class LifeStuffErrors {
   kBPAwaitingCallback,
   kBPGetPresenceError,
   kBPAddPresenceError,
-  //Chunkstore
+  // Chunkstore
   kInvalidChunkType,
   kChunkstoreError,
   kChunkFileDoesntExist,
@@ -107,10 +107,10 @@ enum class LifeStuffErrors {
   kChunkstoreException,
   kHashCheckFailure,
   kChunkExistsInChunkstore,
-  //ClientController
+  // ClientController
   kClientControllerError,
   kClientControllerNotInitialised,
-  //DataAtlasHandler
+  // DataAtlasHandler
   kDataAtlasError,
   kDBDoesntExist,
   kDBOpenException,
@@ -126,7 +126,7 @@ enum class LifeStuffErrors {
   kRenameElementError,
   kCopyElementError,
   kDataAtlasException,
-  //StoreManagers
+  // StoreManagers
   kStoreManagerError,
   kStoreManagerInitError,
   kNotConnected,
@@ -189,11 +189,11 @@ enum class LifeStuffErrors {
   kChunkStorePending,
   kAmendAccountFailure,
   kModifyChunkFailure,
-  //KadOps
+  // KadOps
   kKadConfigException,
   kKadOpsInitFailure,
   kKadIdError,
-  //MessageHandler
+  // MessageHandler
   kConnectionNotExists,
   kFailedToConnect,
   kFailedToSend,
@@ -202,7 +202,7 @@ enum class LifeStuffErrors {
   kHandlerNotStarted,
   kConnectionAlreadyExists,
   kConnectionDown,
-  //Session&FileSystem
+  // Session & FileSystem
   kEmptyConversationId,
   kNonExistentConversation,
   kExistingConversation,
@@ -217,7 +217,7 @@ enum class LifeStuffErrors {
   kAddLiveContactFailure,
   kLiveContactNotFound,
   kLiveContactNoEp,
-  //SelfEncryptionHandler(-12000)
+  // SelfEncryptionHandler(-12000)
   kGeneralEncryptionError,
   kEncryptFileFailure,
   kEncryptStringFailure,
@@ -240,7 +240,7 @@ enum class LifeStuffErrors {
   kEncryptionDbMissing,
   kEncryptionDbException,
   kEncryptionDmNotInMap,
-  //StoreManagerTaskHandler
+  // StoreManagerTaskHandler
   kStoreManagerTaskHandlerError,
   kStoreManagerTaskIncorrectParameter,
   kStoreManagerTaskIncorrectOperation,
@@ -248,16 +248,16 @@ enum class LifeStuffErrors {
   kStoreManagerTaskNotFound,
   kStoreManagerTaskCancelledOrDone,
   kStoreManagerTaskConflict,
-  //Validator
+  // Validator
   kValidatorNoParameters,
   kValidatorNoPrivateKey,
   kInvalidPointer,
   kTimedOut,
-  //DataStore
+  // DataStore
   kEmptyKey,
   kZeroTTL,
   kFailedToModifyKeyValue,
-  //RoutingTable
+  // RoutingTable
   kOwnIdNotIncludable,
   kFailedToInsertNewContact,
   kFailedToFindContact,
@@ -265,7 +265,7 @@ enum class LifeStuffErrors {
   kFailedToUpdateRankInfo,
   kFailedToSetPreferredEndpoint,
   kFailedToIncrementFailedRpcCount,
-  //Node
+  // Node
   kNoOnlineBootstrapContacts,
   kInvalidBootstrapContacts,
   kNotListening,
@@ -280,10 +280,10 @@ enum class LifeStuffErrors {
   kDataSizeNotAllowed,
   kFailedtoGetEndpoint,
   kPartialJoinSessionEnded,
-  //DirectoryListing
+  // DirectoryListing
   kFailedToAddChild,
   kFailedToRemoveChild,
-  //DirectoryListingHandler
+  // DirectoryListingHandler
   kFailedToInitialise,
   kFailedToGetDirectoryData,
   kFailedToAddDirectoryListing,
@@ -304,7 +304,7 @@ enum class LifeStuffErrors {
   kFailedToRetrieveData,
   kInvalidDataMap,
   kFailedToGetLock,
-  //DriveInUserSpace
+  // DriveInUserSpace
   kChildAlreadyExists,
   kFailedToGetChild,
   kFailedChunkStoreInit,
@@ -336,10 +336,10 @@ enum class LifeStuffErrors {
   kMsHiddenAlreadyExists,
   kShareAlreadyExistsInHierarchy,
   kDirectoryRecursionException,
-  //meta_data_ops
+  // meta_data_ops
   kSerialisingError,
   kParsingError,
-  //Shares
+  // Shares
   kFailedToParseShareUsers,
   kFailedToSerialiseShareUsers,
   kShareUserAlreadyExists,
@@ -366,7 +366,7 @@ enum class LifeStuffErrors {
   kNoBootstrapEndpoints,
   kFailedToGetLocalAddress,
 
-  //Upperlimitofvaluesforthisenum.
+  // Upper limit of values for this enum.
   kReturnCodeLimit,
   kGeneralError,
   kUnknownFailure,
@@ -388,12 +388,12 @@ enum class LifeStuffErrors {
   kDifferentVersion,
   kChunkNotModified,
   kDataNotPublicKey,
-  //DownloadManager
+  // DownloadManager
   kManifestFailure,
   kDownloadFailure,
   kNoVersionChange,
   kLocalFailure,
-  //Transport
+  // Transport
   kListenError,
   kMessageSizeTooLarge,
   kReceiveFailure,
@@ -404,7 +404,7 @@ enum class LifeStuffErrors {
   kRemoteChunkStoreFailure,
   kPublicIdNotFoundFailure,
   kGetPublicIdError,
-  //LifeStuffImplandAPI
+  // LifeStuffImpl and API
   kWrongState,
   kWrongLoggedInState,
   kWrongAccessLevel,
@@ -441,7 +441,7 @@ enum class LifeStuffErrors {
   kVaultCreationStartFailure,
   kNoShareTarget,
   kCouldNotAcquirePmidKeys,
-  //AccountLocking
+  // Account Locking
   kLidParseToSignedDataFailure,
   kLidDecryptDataFailure,
   kLidParseToLockingPacketFailure,
@@ -454,18 +454,18 @@ enum class LifeStuffErrors {
   kAccountAlreadyLoggedIn,
   kLidNotFound,
   kLidIdentifierFound,
-  //Contacts
+  // Contacts
   kContactInsertionFailure,
   kContactErasureFailure,
   kContactNotPresentFailure,
   kContactReplacementFailure,
-  //MessageHander
+  // MessageHander
   kStartMessagesNoPublicIds,
   kPublicIdTimeout,
   kMessageHandlerException,
   kCannotConvertInboxItemToProtobuf,
   kContactInfoContentsFailure,
-  //PublicID
+  // PublicID
   kStartContactsNoPublicIds,
   kGetPublicKeyFailure,
   kContactNotFoundFailure,
@@ -487,7 +487,7 @@ enum class LifeStuffErrors {
   kPRWERPublicKeyFailure,
   kPRWERInformFailure,
   kPRWERStatusFailure,
-  //Session
+  // Session
   kTryAgainLater,
   kPublicIdInsertionFailure,
   kParseDataAtlasTmidEmpty,
@@ -495,7 +495,7 @@ enum class LifeStuffErrors {
   kParseDataAtlasKeyringDoesNotParse,
   kSerialiseDataAtlasKeyringFailure,
   kSerialiseDataAtlasToStringFailure,
-  //UserCredentials
+  // UserCredentials
   kChangePasswordFailure,
   kLoginUserNonExistence,
   kLoginAccountCorrupted,
@@ -515,9 +515,9 @@ enum class LifeStuffErrors {
   kSessionSerialisationFailure,
   kSaveSessionFailure,
   kUsingNextToLastSession,
-  //UserStorage
+  // UserStorage
   kOwnerTryingToLeave,
-  //Utils
+  // Utils
   kWordSizeInvalid,
   kWordPatternInvalid,
   kKeywordSizeInvalid,
@@ -531,7 +531,7 @@ enum class LifeStuffErrors {
   kPublicIdEndSpaceInvalid,
   kPublicIdDoubleSpaceInvalid,
   kAtLeastOneFailure,
-  //CodesremaininginDISABLEDtests.Expectthesecodestoberedundantsoon.
+  // Codes remaining in DISABLED tests.  Expect these codes to be redundant soon.
   kReadOnlyFailure,
   kFailedSymmDecrypt
 };
@@ -565,13 +565,13 @@ namespace std {
 #endif
 
 template <>
-struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};  //NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};  // NOLINT (dirvine)
 
 template <>
-struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  //NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  // NOLINT (dirvine)
 
 template <>
-struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  //NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  // NOLINT (dirvine)
 
 
 #ifdef __GNUC__

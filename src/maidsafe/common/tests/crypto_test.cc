@@ -52,20 +52,21 @@ TEST(CryptoTest, BEH_Obfuscation) {
   BoundedString<kStringSize, kStringSize> str2(RandomString(kStringSize));
   BoundedString<kStringSize, kStringSize> obfuscated(XOR(str1, str2));
   EXPECT_EQ(kStringSize, obfuscated.string().size());
-  EXPECT_EQ(obfuscated.string(), XOR(str2, str1));
-  EXPECT_EQ(str1.string(), XOR(obfuscated, str2));
-  EXPECT_EQ(str2.string(), XOR(obfuscated, str1));
+  EXPECT_EQ(obfuscated, XOR(str2, str1));
+  EXPECT_EQ(str1, XOR(obfuscated, str2));
+  EXPECT_EQ(str2, XOR(obfuscated, str1));
 
   const BoundedString<kStringSize, kStringSize> kZeros(std::string(kStringSize, 0));
-  EXPECT_EQ(kZeros.string(), XOR(str1, str1));
-  EXPECT_EQ(str1.string(), XOR(kZeros, str1));
+  EXPECT_EQ(kZeros, XOR(str1, str1));
+  EXPECT_EQ(str1, XOR(kZeros, str1));
 
   const BoundedString<2, 2> kKnown1("\xa5\x5a");
   const BoundedString<2, 2> kKnown2("\x5a\xa5");
-  EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2));
+  EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2).string());
 
-  // const BoundedString<0, 0> kEmpty("");
-  // EXPECT_TRUE(XOR(kEmpty, kEmpty).empty());
+  const BoundedString<0, 0> kEmpty("");
+  EXPECT_EQ(kEmpty, XOR(kEmpty, kEmpty));
+  EXPECT_TRUE(XOR(kEmpty, kEmpty).string().empty());
 }
 
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
@@ -75,10 +76,11 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   const NonEmptyString kKnownPassword1(DecodeFromHex("70617373776f7264"));
   const NonEmptyString kKnownSalt1(DecodeFromHex("1234567878563412"));
   const uint32_t kKnownIterations1(5);
-  const std::string kKnownDerived1(DecodeFromHex("4391697b647773d2ac29693853dc66c21f036d36256a8b1e6"
-                                   "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
+  const NonEmptyString kKnownDerived1(DecodeFromHex(
+      "4391697b647773d2ac29693853dc66c21f036d36256a8b1e6"
+      "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
 
-  std::string password(SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
+  NonEmptyString password(SecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
   EXPECT_EQ(kKnownDerived1, password);
   const NonEmptyString kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974696573206d75737420636f6"
       "d6d756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656"
@@ -88,7 +90,7 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   const std::string kKnownDerived2(DecodeFromHex("c1999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9"
       "c697256c7b131d3bcf310b523e05c3ffc14d7fd8511c840"));
   password = SecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2);
-  EXPECT_EQ(kKnownDerived2, password);
+  EXPECT_EQ(kKnownDerived2, password.string());
 }
 
 struct HashTestData {
@@ -178,42 +180,47 @@ TEST(CryptoTest, BEH_Hash) {
     std::string input(test_data.at(j).input);
     if (!test_data.at(j).SHA1_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA1_hex_result, EncodeToHex(Hash<crypto::SHA1>(input)));
-      EXPECT_EQ(test_data.at(j).SHA1_raw_result, Hash<crypto::SHA1>(input));
+      EXPECT_EQ(test_data.at(j).SHA1_raw_result, Hash<crypto::SHA1>(input).string());
       EXPECT_EQ(test_data.at(j).SHA1_hex_result,
                 EncodeToHex(HashFile<crypto::SHA1>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA1_raw_result, HashFile<crypto::SHA1>(input_files.at(j)));
+      EXPECT_EQ(test_data.at(j).SHA1_raw_result,
+                HashFile<crypto::SHA1>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA256_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA256_hex_result, EncodeToHex(Hash<crypto::SHA256>(input)));
-      EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<crypto::SHA256>(input));
+      EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<crypto::SHA256>(input).string());
       EXPECT_EQ(test_data.at(j).SHA256_hex_result,
                 EncodeToHex(HashFile<crypto::SHA256>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA256_raw_result, HashFile<crypto::SHA256>(input_files.at(j)));
+      EXPECT_EQ(test_data.at(j).SHA256_raw_result,
+                HashFile<crypto::SHA256>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA384_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA384_hex_result, EncodeToHex(Hash<crypto::SHA384>(input)));
-      EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<crypto::SHA384>(input));
+      EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<crypto::SHA384>(input).string());
       EXPECT_EQ(test_data.at(j).SHA384_hex_result,
                 EncodeToHex(HashFile<crypto::SHA384>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA384_raw_result, HashFile<crypto::SHA384>(input_files.at(j)));
+      EXPECT_EQ(test_data.at(j).SHA384_raw_result,
+                HashFile<crypto::SHA384>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA512_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA512_hex_result, EncodeToHex(Hash<crypto::SHA512>(input)));
-      EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<crypto::SHA512>(input));
+      EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<crypto::SHA512>(input).string());
       EXPECT_EQ(test_data.at(j).SHA512_hex_result,
                 EncodeToHex(HashFile<crypto::SHA512>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA512_raw_result, HashFile<crypto::SHA512>(input_files.at(j)));
+      EXPECT_EQ(test_data.at(j).SHA512_raw_result,
+                HashFile<crypto::SHA512>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).Tiger_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).Tiger_hex_result, EncodeToHex(Hash<crypto::Tiger>(input)));
-      EXPECT_EQ(test_data.at(j).Tiger_raw_result, Hash<crypto::Tiger>(input));
+      EXPECT_EQ(test_data.at(j).Tiger_raw_result, Hash<crypto::Tiger>(input).string());
       EXPECT_EQ(test_data.at(j).Tiger_hex_result,
                 EncodeToHex(HashFile<crypto::Tiger>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).Tiger_raw_result, HashFile<crypto::Tiger>(input_files.at(j)));
+      EXPECT_EQ(test_data.at(j).Tiger_raw_result,
+                HashFile<crypto::Tiger>(input_files.at(j)).string());
     }
   }
 

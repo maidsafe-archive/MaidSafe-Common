@@ -75,10 +75,10 @@ const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
 
-std::string SecurePassword(const NonEmptyString& password,
-                           const NonEmptyString& salt,
-                           const uint32_t& pin,
-                           const std::string& label) {
+NonEmptyString SecurePassword(const NonEmptyString& password,
+                              const NonEmptyString& salt,
+                              const uint32_t& pin,
+                              const std::string& label) {
   if (pin == 0 || label.empty()) {
     LOG(kError) << "Invalid parameter.";
     ThrowError(CommonErrors::invalid_parameter);
@@ -96,7 +96,7 @@ std::string SecurePassword(const NonEmptyString& password,
   std::string derived_password;
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
-  return derived_password;
+  return NonEmptyString(derived_password);
 }
 
 std::string SymmEncrypt(const NonEmptyString& input,

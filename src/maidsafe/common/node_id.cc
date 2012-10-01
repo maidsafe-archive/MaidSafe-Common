@@ -137,7 +137,7 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
 }
 
 bool NodeId::IsZero() const {
-  const static std::string kZeroId(kKeySizeBytes, 0);
+  static const std::string kZeroId(kKeySizeBytes, 0);
   return raw_id_ == kZeroId;
 }
 

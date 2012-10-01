@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_ERROR_CATEGORIES_H_
 #define MAIDSAFE_COMMON_ERROR_CATEGORIES_H_
 
+#include <string>
 #include <system_error>
 
 #include "maidsafe/common/config.h"

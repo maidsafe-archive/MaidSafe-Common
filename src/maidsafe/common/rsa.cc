@@ -219,7 +219,9 @@ std::string SignFile(const boost::filesystem::path& filename,
 }
 
 
-bool CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key) {
+bool CheckSignature(const PlainText& data,
+                    const Signature& signature,
+                    const PublicKey& public_key) {
   if (!public_key.Validate(rng(), 0)) {
     ThrowError(AsymmErrors::invalid_public_key);
   }

@@ -143,7 +143,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
   });
   RunInParallel(f, 10);
 }
-// 
+//
 // TEST_F(RSATest, BEH_SignFileValidate) {
 //   auto f([&] {
 //     Keys keys;
@@ -154,7 +154,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
 //     boost::filesystem::path test_file(*test_path / file_name);
 //     EXPECT_TRUE(WriteFile(test_file, kData));
 //     ASSERT_FALSE(test_path->empty());
-// 
+//
 //     std::string signature, empty_signature, bad_signature("bad");
 //     PrivateKey empty_private_key;
 //     EXPECT_EQ(kSuccess, SignFile(test_file, keys.private_key, signature));
@@ -164,7 +164,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
 //               SignFile(boost::filesystem::path(RandomAlphaNumericString(9)),
 //                        keys.private_key,
 //                        signature));
-// 
+//
 //     PublicKey empty_public_key;
 //     EXPECT_EQ(kSuccess, CheckFileSignature(test_file, signature, keys.public_key));
 //     EXPECT_EQ(kInvalidPublicKey,
@@ -176,7 +176,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
 //   });
 //   RunInParallel(f, 3);
 // }
-// 
+//
 // TEST_F(RSATest, BEH_Serialise) {
 //   auto f([] {
 //     Keys keys;
@@ -187,23 +187,23 @@ TEST_F(RSATest, FUNC_SignValidate) {
 //     Keys recovered_keys;
 //     EXPECT_FALSE(ParseKeys("Rubbish", recovered_keys));
 //     EXPECT_FALSE(ValidateKey(recovered_keys.private_key));
-// 
+//
 //     EXPECT_TRUE(ParseKeys(serialised, recovered_keys));
 //     EXPECT_TRUE(ValidateKey(recovered_keys.public_key));
 //     EXPECT_TRUE(ValidateKey(recovered_keys.private_key));
-// 
+//
 //     EXPECT_TRUE(CheckRoundtrip(recovered_keys.public_key, kOriginalKeys.private_key));
 //     EXPECT_TRUE(CheckRoundtrip(recovered_keys.public_key, recovered_keys.private_key));
 //   });
 //   RunInParallel(f, 3);
 // }
-// 
+//
 // TEST_F(RSATest, BEH_RsaKeysComparing) {
 //   auto f([&] {
 //     Keys k1, k2;
 //     EXPECT_TRUE(MatchingPublicKeys(k1.public_key, k2.public_key));
 //     EXPECT_TRUE(MatchingPrivateKeys(k1.private_key, k2.private_key));
-// 
+//
 //     EXPECT_EQ(kSuccess, GenerateKeyPair(&k1));
 //     k2.public_key = k1.public_key;
 //     k2.private_key = k1.private_key;
@@ -212,20 +212,20 @@ TEST_F(RSATest, FUNC_SignValidate) {
 //   });
 //   RunInParallel(f);
 // }
-// 
+//
 // TEST_F(RSATest, BEH_RsaKeysSerialisationAndParsing) {
 //   auto f([&] {
 //     Keys keys;
 //     std::string serialised_keys_1, serialised_keys_2;
 //     ASSERT_FALSE(SerialiseKeys(keys, serialised_keys_1));
-// 
+//
 //     GenerateKeyPair(&keys);
 //     keys.identity = RandomString(64);
 //     keys.validation_token = RandomString(128);
 //     ASSERT_TRUE(SerialiseKeys(keys, serialised_keys_1));
 //     ASSERT_TRUE(SerialiseKeys(keys, serialised_keys_2));
 //     ASSERT_EQ(serialised_keys_1, serialised_keys_2);
-// 
+//
 //     keys.identity += keys.identity;
 //     ASSERT_TRUE(SerialiseKeys(keys, serialised_keys_1));
 //     ASSERT_NE(serialised_keys_1, serialised_keys_2);

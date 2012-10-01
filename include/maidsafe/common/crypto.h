@@ -83,15 +83,16 @@ enum { AES256_IVSize = 16 };  // size in bytes.
 extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
+
 #ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++11-narrowing"
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wc++11-narrowing"
 #endif
 template<size_t min, size_t max = -1>
 class BoundedString {
  public:
   explicit BoundedString(const std::string& string) : string_(string) {
-    if (string_.size() == 0 || string_.size() < min || string_.size() > max)
+    if ((min && string_.size() < min) || string_.size() > max)
       ThrowError(CommonErrors::invalid_string_size);
   }
   friend void swap(BoundedString& first, BoundedString& second) {
@@ -107,36 +108,74 @@ class BoundedString {
   std::string string_;
 };
 #ifdef __clang__
-#pragma clang diagnostic pop
+#  pragma clang diagnostic pop
 #endif
+
+template<size_t min, size_t max>
+inline bool operator==(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
+  return lhs.string() == rhs.string();
+}
+
+template<size_t min, size_t max>
+inline bool operator!=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
+  return !operator==(lhs, rhs);
+}
+
+template<size_t min, size_t max>
+inline bool operator<(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
+  return lhs.string() < rhs.string();
+}
+
+template<size_t min, size_t max>
+inline bool operator>(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
+  return operator<(rhs, lhs);
+}
+
+template<size_t min, size_t max>
+inline bool operator<=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
+  return !operator>(lhs, rhs);
+}
+
+template<size_t min, size_t max>
+inline bool operator>=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
+  return !operator<(lhs, rhs);
+}
+
+
 typedef BoundedString<1> NonEmptyString;
 typedef BoundedString<AES256_KeySize> AES256Key;
 typedef BoundedString<AES256_IVSize> AES256InitialisationVector;
+typedef BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
+typedef BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
+typedef BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
+typedef BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
+typedef BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
 
 
 // Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
 // 0, an empty string is returned.
 template<size_t size>
-std::string XOR(const BoundedString<size, size>& first, const BoundedString<size, size>& second) {
+BoundedString<size, size> XOR(const BoundedString<size, size>& first,
+                              const BoundedString<size, size>& second) {
   std::string result(size, 0);
   for (size_t i(0); i != size; ++i)
     result[i] = first.string()[i] ^ second.string()[i];
 
-  return result;
+  return BoundedString<size, size>(result);
 }
 
 // Creates a secure password using the Password-Based Key Derivation Function (PBKDF) version 2
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
 // provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
 // parameters are passed.
-std::string SecurePassword(const NonEmptyString& password,
-                           const NonEmptyString& salt,
-                           const uint32_t& pin,
-                           const std::string& label = kMaidSafeVersionLabel);
+NonEmptyString SecurePassword(const NonEmptyString& password,
+                              const NonEmptyString& salt,
+                              const uint32_t& pin,
+                              const std::string& label = kMaidSafeVersionLabel);
 
 // Hash function operating on a string.
-template <class HashType>
-std::string Hash(const std::string& input) {
+template <typename HashType>
+BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std::string& input) {
   std::string result;
   HashType hash;
   try {
@@ -147,12 +186,13 @@ std::string Hash(const std::string& input) {
     LOG(kError) << "Error hashing string: " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
-  return result;
+  return BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
 
 // Hash function operating on a file.
-template <class HashType>
-std::string HashFile(const boost::filesystem::path& file_path) {
+template <typename HashType>
+BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
+    const boost::filesystem::path& file_path) {
   std::string result;
   HashType hash;
   try {
@@ -163,7 +203,7 @@ std::string HashFile(const boost::filesystem::path& file_path) {
     LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
-  return result;
+  return BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
 
 // Performs symmetric encrytion using AES256. It throws a std::exception if the
