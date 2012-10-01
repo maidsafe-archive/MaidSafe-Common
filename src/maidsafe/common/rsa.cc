@@ -173,6 +173,13 @@ std::string Sign(const std::string& data, const PrivateKey& private_key) {
   std::string signature;
   if (data.empty())
     ThrowError(AsymmErrors::data_empty);
+#ifndef NDEBUG
+  // Passing a default-constructed PrivateKey takes several minutes to throw in Debug using VS2012.
+  // We don't want this cost when running tests in Debug, but we don't want the cost of checking
+  // for an edge case in production code, hence this Debug block.
+  if (!ValidateKey(private_key, 0))
+    ThrowError(AsymmErrors::signing_error);
+#endif
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
     CryptoPP::StringSource(data,
