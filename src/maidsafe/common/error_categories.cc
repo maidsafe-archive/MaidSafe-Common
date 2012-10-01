@@ -123,7 +123,12 @@ std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 std::error_condition AsymmCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<AsymmErrors>(error_value)) {
-    case AsymmErrors::keys_generation_error:
+    case AsymmErrors::data_empty:
+    case AsymmErrors::file_empty:
+    case AsymmErrors::invalid_signature:
+    case AsymmErrors::signature_empty:
+    case AsymmErrors::signing_error:
+      return std::errc::invalid_argument;
     default:
       return std::error_condition(error_value, *this);
   }

@@ -75,20 +75,6 @@ const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
 
-std::string XOR(const std::string& first, const std::string& second) {
-  size_t common_size(first.size());
-  if ((common_size != second.size()) || (common_size == 0)) {
-    LOG(kError) << "Size mismatch or zero.";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
-
-  std::string result(common_size, 0);
-  for (size_t i(0); i != common_size; ++i)
-    result[i] = first[i] ^ second[i];
-
-  return result;
-}
-
 std::string SecurePassword(const NonEmptyString& password,
                            const NonEmptyString& salt,
                            const uint32_t& pin,
