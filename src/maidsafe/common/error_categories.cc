@@ -103,8 +103,8 @@ std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Invalid public key";
     case AsymmErrors::data_empty:
       return "Input data is empty";
-    case AsymmErrors::file_empty:
-      return "Input file is empty";
+    case AsymmErrors::invalid_file:
+      return "Input file is missing or empty";
     case AsymmErrors::invalid_signature:
       return "Invalid signature";
     case AsymmErrors::signature_empty:
@@ -124,7 +124,7 @@ std::error_condition AsymmCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<AsymmErrors>(error_value)) {
     case AsymmErrors::data_empty:
-    case AsymmErrors::file_empty:
+    case AsymmErrors::invalid_file:
     case AsymmErrors::invalid_signature:
     case AsymmErrors::signature_empty:
     case AsymmErrors::signing_error:

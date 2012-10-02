@@ -59,7 +59,7 @@ enum class AsymmErrors {
   invalid_private_key,
   invalid_public_key,
   data_empty,
-  file_empty,
+  invalid_file,
   invalid_signature,
   signature_empty,
   encryption_error,

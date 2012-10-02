@@ -74,7 +74,6 @@ void DecodeKey(const std::string& key, CryptoPP::BufferedTransformation& bt) {
   bt.MessageEnd();
 }
 
-
 bool ParseSafeEncrypt(const std::string& serialised_safe_encrypt, SafeEncrypt& safe_encrypt) {
   return safe_encrypt.ParseFromString(serialised_safe_encrypt);
 }
@@ -100,12 +99,11 @@ Keys GenerateKeyPair() {
   return keypair;
 }
 
-std::string Encrypt(const crypto::NonEmptyString& data, const PublicKey& public_key) {
-  std::string result;
-  if (!public_key.Validate(rng(), 0)) {
+CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
+  if (!public_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_public_key);
-  }
 
+  std::string result;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   SafeEncrypt safe_enc;
   try {
@@ -129,15 +127,15 @@ std::string Encrypt(const crypto::NonEmptyString& data, const PublicKey& public_
     LOG(kError) << "Failed asymmetric encrypting: " << e.what();
     ThrowError(AsymmErrors::encryption_error);
   }
-  return result;
+  return CipherText(result);
 }
 
-std::string Decrypt(const CipherText& data, const PrivateKey& private_key) {
+PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   std::string result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
     SafeEncrypt safe_enc;
-    if (ParseSafeEncrypt(data, safe_enc)) {
+    if (ParseSafeEncrypt(data.string(), safe_enc)) {
       std::string out_data;
       CryptoPP::StringSource(safe_enc.key(),
                              true,
@@ -162,26 +160,21 @@ std::string Decrypt(const CipherText& data, const PrivateKey& private_key) {
     ThrowError(AsymmErrors::decryption_error);
   }
 
-  if (result.empty()) {
-    ThrowError(AsymmErrors::decryption_error);
-  }
-  return result;
+  return PlainText(result);
 }
 
-std::string Sign(const std::string& data, const PrivateKey& private_key) {
-  std::string signature;
-  if (data.empty())
-    ThrowError(AsymmErrors::data_empty);
+Signature Sign(const PlainText& data, const PrivateKey& private_key) {
 #ifndef NDEBUG
   // Passing a default-constructed PrivateKey takes several minutes to throw in Debug using VS2012.
   // We don't want this cost when running tests in Debug, but we don't want the cost of checking
   // for an edge case in production code, hence this Debug block.
-  if (!ValidateKey(private_key, 0))
+  if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::signing_error);
 #endif
+  std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
-    CryptoPP::StringSource(data,
+    CryptoPP::StringSource(data.string(),
                            true,
                            new CryptoPP::SignerFilter(rng(),
                                                       signer,
@@ -191,21 +184,17 @@ std::string Sign(const std::string& data, const PrivateKey& private_key) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
     ThrowError(AsymmErrors::signing_error);
   }
-  return signature;
+  return Signature(signature);
 }
 
-std::string SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key) {
-  std::string signature;
-  boost::system::error_code boost_error_code;
-  if (boost::filesystem::file_size(filename, boost_error_code) == 0 || boost_error_code) {
-    ThrowError(AsymmErrors::file_empty);
-  }
+Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key) {
 #ifndef NDEBUG
   // See comment in similar Debug block of rsa::Sign function
-  if (!ValidateKey(private_key, 0))
+  if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::signing_error);
 #endif
 
+  std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
     CryptoPP::FileSource(filename.c_str(),
@@ -216,58 +205,57 @@ std::string SignFile(const boost::filesystem::path& filename, const PrivateKey& 
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
+    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
+      ThrowError(AsymmErrors::invalid_file);
     ThrowError(AsymmErrors::signing_error);
   }
-  return signature;
+  return Signature(signature);
 }
-
 
 bool CheckSignature(const PlainText& data,
                     const Signature& signature,
                     const PublicKey& public_key) {
-  if (!public_key.Validate(rng(), 0)) {
+  if (!public_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_public_key);
-  }
-  if (data.empty()) {
-    ThrowError(AsymmErrors::data_empty);
-  }
-  if (signature.empty()) {
-    ThrowError(AsymmErrors::signature_empty);
-  }
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
-    return verifier.VerifyMessage(reinterpret_cast<const byte*>(data.c_str()),
-                                  data.size(),
-                                  reinterpret_cast<const byte*>(signature.c_str()),
-                                  signature.size());
+    return verifier.VerifyMessage(reinterpret_cast<const byte*>(data.string().c_str()),
+                                  data.string().size(),
+                                  reinterpret_cast<const byte*>(signature.string().c_str()),
+                                  signature.string().size());
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signature checking: " << e.what();
     ThrowError(AsymmErrors::signing_error);
+    return false;
   }
-  return false;
 }
 
 bool CheckFileSignature(const boost::filesystem::path& filename,
                         const Signature& signature,
                         const PublicKey& public_key) {
+  if (!public_key.Validate(rng(), 0))
+    ThrowError(AsymmErrors::invalid_public_key);
+
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
     CryptoPP::VerifierFilter* verifier_filter = new CryptoPP::VerifierFilter(verifier);
-    verifier_filter->Put(reinterpret_cast<const byte*>(signature.c_str()),
+    verifier_filter->Put(reinterpret_cast<const byte*>(signature.string().c_str()),
                          verifier.SignatureLength());
     CryptoPP::FileSource file_source(filename.c_str(), true, verifier_filter);
     return verifier_filter->GetLastResult();
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signature checking: " << e.what();
+    if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
+      ThrowError(AsymmErrors::invalid_file);
     ThrowError(AsymmErrors::invalid_signature);
+    return false;
   }
-  return false;
 }
 
-std::string EncodePrivateKey(const PrivateKey& key)  {
+EncodedPrivateKey EncodeKey(const PrivateKey& key) {
   std::string private_key;
   try {
     CryptoPP::ByteQueue queue;
@@ -279,10 +267,10 @@ std::string EncodePrivateKey(const PrivateKey& key)  {
     private_key.clear();
     ThrowError(AsymmErrors::invalid_private_key);
   }
-  return private_key;
+  return EncodedPrivateKey(private_key);
 }
 
-std::string EncodePublicKey(const PublicKey& key) {
+EncodedPublicKey EncodeKey(const PublicKey& key) {
   std::string public_key;
   try {
     CryptoPP::ByteQueue queue;
@@ -294,14 +282,14 @@ std::string EncodePublicKey(const PublicKey& key) {
     public_key.clear();
     ThrowError(AsymmErrors::invalid_public_key);
   }
-  return public_key;
+  return EncodedPublicKey(public_key);
 }
 
-PrivateKey DecodePrivateKey(const std::string& private_key) {
+PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
   PrivateKey key;
   try {
     CryptoPP::ByteQueue queue;
-    DecodeKey(private_key, queue);
+    DecodeKey(private_key.string(), queue);
     key.BERDecodePrivateKey(queue,
                             false /*paramsPresent*/,
                             static_cast<size_t>(queue.MaxRetrievable()));
@@ -313,11 +301,11 @@ PrivateKey DecodePrivateKey(const std::string& private_key) {
   return key;
 }
 
-PublicKey DecodePublicKey(const std::string& public_key) {
+PublicKey DecodeKey(const EncodedPublicKey& public_key) {
   PublicKey key;
   try {
     CryptoPP::ByteQueue queue;
-    DecodeKey(public_key, queue);
+    DecodeKey(public_key.string(), queue);
     key.BERDecodePublicKey(queue,
                            false /*paramsPresent*/,
                            static_cast<size_t>(queue.MaxRetrievable()));
@@ -329,92 +317,16 @@ PublicKey DecodePublicKey(const std::string& public_key) {
   return key;
 }
 
-bool CheckRoundtrip(const PublicKey& public_key, const PrivateKey& private_key) {
-  return (public_key.GetModulus() != private_key.GetModulus() ||
-          public_key.GetPublicExponent() != private_key.GetPrivateExponent());
+// TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this
+bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
+  return EncodeKey(public_key1) == EncodeKey(public_key2);
 }
 
-bool ValidateKey(const PrivateKey& private_key, unsigned int level) {
-  return private_key.Validate(rng(), level);
+// TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this
+bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2) {
+  return EncodeKey(private_key1) == EncodeKey(private_key2);
 }
 
-bool ValidateKey(const PublicKey& public_key, unsigned int level) {
-  return public_key.Validate(rng(), level);
-}
-
-bool Validate(const PlainText& data, const Signature& signature, const PublicKey& public_key) {
-  return CheckSignature(data, signature, public_key);
-}
-
-bool MatchingPublicKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
-  return EncodePublicKey(public_key1) == EncodePublicKey(public_key2);
-}
-
-bool MatchingPrivateKeys(const PrivateKey& private_key1, const PrivateKey& private_key2) {
-  return EncodePrivateKey(private_key1) == EncodePrivateKey(private_key2);
-}
-
-bool SerialiseKeys(const Keys& keys, std::string& serialised_keys) {
-  if (!ValidateKey(keys.public_key, 0)) {
-    LOG(kError) << "Invalid public key.";
-    return false;
-  }
-  if (!ValidateKey(keys.private_key, 0)) {
-    LOG(kError) << "Invalid private key.";
-    return false;
-  }
-  KeysContainer container;
-  container.set_identity(keys.identity);
-  container.set_validation_token(keys.validation_token);
-  std::string public_key(EncodePublicKey(keys.public_key));
-  std::string private_key(EncodePrivateKey(keys.private_key));
-  if (public_key.empty()) {
-    LOG(kError) << "Failed to encode public key.";
-    return false;
-  }
-  if (private_key.empty()) {
-    LOG(kError) << "Failed to encode private key.";
-    return false;
-  }
-
-  container.set_encoded_public_key(public_key);
-  container.set_encoded_private_key(private_key);
-  try {
-    serialised_keys = container.SerializeAsString();
-  }
-  catch(...) {
-    LOG(kError) << "Failed to serialise PB.";
-    return false;
-  }
-
-  return !serialised_keys.empty();
-}
-
-bool ParseKeys(const std::string& serialised_keys, Keys& keys) {
-  KeysContainer container;
-  try {
-    if (!container.ParseFromString(serialised_keys)) {
-      LOG(kError) << "Failed to parse into PB.";
-      return false;
-    }
-  }
-  catch(...) {
-    LOG(kError) << "Failed to parse into PB.";
-    return false;
-  }
-
-  keys.identity = container.identity();
-  keys.validation_token = container.validation_token();
-
-  keys.public_key = DecodePublicKey(container.encoded_public_key());
-  keys.private_key = DecodePrivateKey(container.encoded_private_key());
-  if (!ValidateKey(keys.public_key) || !ValidateKey(keys.private_key)) {
-    LOG(kError) << "Failed to decode public or private key.";
-    return false;
-  }
-
-  return true;
-}
 
 }  // namespace rsa
 

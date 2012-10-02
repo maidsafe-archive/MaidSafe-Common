@@ -41,11 +41,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
-#include "boost/function.hpp"
 #include "boost/filesystem/path.hpp"
 
+#include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/node_id.h"
 
 
 namespace maidsafe {
@@ -54,20 +55,18 @@ namespace rsa {
 
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
 typedef CryptoPP::RSA::PublicKey PublicKey;
-typedef std::string ValidationToken, Identity, PlainText, Signature, CipherText;
-typedef std::function<void(PublicKey,
-                           ValidationToken)> GetPublicKeyAndValidationCallback;
-typedef std::function<void(Identity,
-                           GetPublicKeyAndValidationCallback)>
-    GetPublicKeyAndValidationFunctor;
-typedef std::function<bool(Identity,                          // NOLINT (Fraser)
-                           PublicKey,
-                           ValidationToken)> ValidatePublicKeyFunctor;
-typedef std::function<bool(PlainText, Signature, PublicKey)> ValidateFunctor;  // NOLINT (Fraser)
+typedef std::string ValidationToken;
+typedef detail::BoundedString<1> NonEmptyString;
+typedef NonEmptyString PlainText, CipherText, Signature;
+// TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
+typedef detail::BoundedString<2> EncodedPublicKey;
+typedef detail::BoundedString<3> EncodedPrivateKey;
+typedef NodeId Identity;
+
 struct Keys {
- public:
   enum { kKeySize = 2048 };
   Keys() : identity(), private_key(), public_key(), validation_token() {}
+  // TODO(Fraser#5#): 2012-10-02 - Change this struct to contain just a key pair.
   Identity identity;
   PrivateKey private_key;
   PublicKey public_key;
@@ -76,45 +75,31 @@ struct Keys {
 
 Keys GenerateKeyPair();
 
-std::string Encrypt(const crypto::NonEmptyString& plain_text, const PublicKey& public_key);
+CipherText Encrypt(const PlainText& data, const PublicKey& public_key);
 
-std::string Decrypt(const CipherText& data, const PrivateKey& private_key);
+PlainText Decrypt(const CipherText& data, const PrivateKey& private_key);
 
-std::string Sign(const PlainText& data, const PrivateKey& private_key);
+Signature Sign(const PlainText& data, const PrivateKey& private_key);
 
-std::string SignFile(const boost::filesystem::path& filename,
-             const PrivateKey& private_key);
+Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key);
 
 bool CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
 
 bool CheckFileSignature(const boost::filesystem::path& filename,
-                       const Signature& signature,
-                       const PublicKey& public_key);
+                        const Signature& signature,
+                        const PublicKey& public_key);
 
-std::string EncodePrivateKey(const PrivateKey& key);
+EncodedPrivateKey EncodeKey(const PrivateKey& key);
 
-std::string EncodePublicKey(const PublicKey& key);
+EncodedPublicKey EncodeKey(const PublicKey& key);
 
-PrivateKey DecodePrivateKey(const std::string& private_key);
+PrivateKey DecodeKey(const EncodedPrivateKey& private_key);
 
-PublicKey DecodePublicKey(const std::string& public_key);
+PublicKey DecodeKey(const EncodedPublicKey& public_key);
 
-// check decoded keys were the same as encoded and pub key not replaced
-bool CheckRoundtrip(const PublicKey& public_key, const PrivateKey& private_key);
+bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2);
 
-bool ValidateKey(const PrivateKey& private_key, unsigned int level = 2U);
-
-bool ValidateKey(const PublicKey& public_key, unsigned int level = 2U);
-
-bool Validate(const PlainText& plain_text, const Signature& signature, const PublicKey& public_key);
-
-bool MatchingPublicKeys(const PublicKey& public_key1, const PublicKey& public_key2);
-
-bool MatchingPrivateKeys(const PrivateKey& private_key1, const PrivateKey& private_key2);
-
-bool SerialiseKeys(const Keys& keys, std::string& serialised_keys);
-
-bool ParseKeys(const std::string& serialised_keys, Keys& keys);
+bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2);
 
 }  // namespace rsa
 
