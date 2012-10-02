@@ -75,14 +75,10 @@ const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
 
-NonEmptyString SecurePassword(const NonEmptyString& password,
-                              const NonEmptyString& salt,
-                              const uint32_t& pin,
-                              const std::string& label) {
-  if (pin == 0 || label.empty()) {
-    LOG(kError) << "Invalid parameter.";
-    ThrowError(CommonErrors::invalid_parameter);
-  }
+SecurePassword CreateSecurePassword(const UserPassword& password,
+                                    const Salt& salt,
+                                    const uint32_t& pin,
+                                    const std::string& label) {
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
@@ -96,12 +92,12 @@ NonEmptyString SecurePassword(const NonEmptyString& password,
   std::string derived_password;
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
-  return NonEmptyString(derived_password);
+  return SecurePassword(derived_password);
 }
 
-std::string SymmEncrypt(const NonEmptyString& input,
-                        const AES256Key& key,
-                        const AES256InitialisationVector& initialisation_vector) {
+CipherText SymmEncrypt(const PlainText& input,
+                       const AES256Key& key,
+                       const AES256InitialisationVector& initialisation_vector) {
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -117,12 +113,12 @@ std::string SymmEncrypt(const NonEmptyString& input,
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     ThrowError(CommonErrors::symmetric_encryption_error);
   }
-  return result;
+  return CipherText(result);
 }
 
-std::string SymmDecrypt(const NonEmptyString& input,
-                        const AES256Key& key,
-                        const AES256InitialisationVector& initialisation_vector) {
+PlainText SymmDecrypt(const CipherText& input,
+                      const AES256Key& key,
+                      const AES256InitialisationVector& initialisation_vector) {
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -139,10 +135,10 @@ std::string SymmDecrypt(const NonEmptyString& input,
     LOG(kError) << "Failed symmetric decryption: " << e.what();
     ThrowError(CommonErrors::symmetric_decryption_error);
   }
-  return result;
+  return PlainText(result);
 }
 
-std::string Compress(const std::string& input, const uint16_t& compression_level) {
+CompressedText Compress(const UncompressedText& input, const uint16_t& compression_level) {
   if (compression_level > kMaxCompressionLevel) {
     LOG(kError) << "Requested compression level of " << compression_level << " is above the max of "
                 << kMaxCompressionLevel;
@@ -151,27 +147,27 @@ std::string Compress(const std::string& input, const uint16_t& compression_level
 
   std::string result;
   try {
-    CryptoPP::StringSource(input, true, new CryptoPP::Gzip(
+    CryptoPP::StringSource(input.string(), true, new CryptoPP::Gzip(
         new CryptoPP::StringSink(result), compression_level));
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed compressing: " << e.what();
     ThrowError(CommonErrors::compression_error);
   }
-  return result;
+  return CompressedText(result);
 }
 
-std::string Uncompress(const std::string& input) {
+UncompressedText Uncompress(const CompressedText& input) {
   std::string result;
   try {
-    CryptoPP::StringSource(input, true, new CryptoPP::Gunzip(
+    CryptoPP::StringSource(input.string(), true, new CryptoPP::Gunzip(
         new CryptoPP::StringSink(result)));
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
     ThrowError(CommonErrors::uncompression_error);
   }
-  return result;
+  return UncompressedText(result);
 }
 
 std::vector<std::string> SecretShareData(const int32_t& threshold,

@@ -145,21 +145,21 @@ std::string IntToString(const int &value);
 // Encodes a string to hex.
 std::string EncodeToHex(const std::string &non_hex_input);
 template<size_t min, size_t max>
-std::string EncodeToHex(const crypto::BoundedString<min, max> &non_hex_input) {
+std::string EncodeToHex(const detail::BoundedString<min, max> &non_hex_input) {
   return EncodeToHex(non_hex_input.string());
 }
 
 // Encodes a string to Base64.
 std::string EncodeToBase64(const std::string &non_base64_input);
 template<size_t min, size_t max>
-std::string EncodeToBase64(const crypto::BoundedString<min, max> &non_base64_input) {
+std::string EncodeToBase64(const detail::BoundedString<min, max> &non_base64_input) {
   return EncodeToBase64(non_base64_input.string());
 }
 
 // Encodes a string to Base32.
 std::string EncodeToBase32(const std::string &non_base32_input);
 template<size_t min, size_t max>
-std::string EncodeToBase32(const crypto::BoundedString<min, max> &non_base32_input) {
+std::string EncodeToBase32(const detail::BoundedString<min, max> &non_base32_input) {
   return EncodeToBase32(non_base32_input.string());
 }
 
@@ -175,21 +175,21 @@ std::string DecodeFromBase32(const std::string &base32_input);
 // Returns an appreviated hex representation of a hash or other small data.
 std::string HexSubstr(const std::string &non_hex);
 template<size_t min, size_t max>
-std::string HexSubstr(const crypto::BoundedString<min, max> &non_hex) {
+std::string HexSubstr(const detail::BoundedString<min, max> &non_hex) {
   return HexSubstr(non_hex.string());
 }
 
 // Returns an appreviated Base32 representation of a hash or other small data.
 std::string Base32Substr(const std::string &non_base32);
 template<size_t min, size_t max>
-std::string Base32Substr(const crypto::BoundedString<min, max> &non_base32) {
+std::string Base32Substr(const detail::BoundedString<min, max> &non_base32) {
   return Base32Substr(non_base32.string());
 }
 
 // Returns an appreviated Base64 representation of a hash or other small data.
 std::string Base64Substr(const std::string &non_base64);
 template<size_t min, size_t max>
-std::string Base64Substr(const crypto::BoundedString<min, max> &non_base64) {
+std::string Base64Substr(const detail::BoundedString<min, max> &non_base64) {
   return Base64Substr(non_base64.string());
 }
 

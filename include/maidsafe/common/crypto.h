@@ -55,6 +55,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
@@ -77,105 +78,48 @@ typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 
-
 enum { AES256_KeySize = 32 };  // size in bytes.
 enum { AES256_IVSize = 16 };  // size in bytes.
 extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
 
-#ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wc++11-narrowing"
-#endif
-template<size_t min, size_t max = -1>
-class BoundedString {
- public:
-  explicit BoundedString(const std::string& string) : string_(string) {
-    if ((min && string_.size() < min) || string_.size() > max)
-      ThrowError(CommonErrors::invalid_string_size);
-  }
-  friend void swap(BoundedString& first, BoundedString& second) {
-    std::swap(first.string_, second.string_);
-  }
-  BoundedString(const BoundedString& other) : string_(other.string_) {}
-  BoundedString& operator=(BoundedString other) {
-    swap(*this, other);
-    return *this;
-  }
-  const std::string& string() const { return string_; }
- private:
-  std::string string_;
-};
-#ifdef __clang__
-#  pragma clang diagnostic pop
-#endif
-
-template<size_t min, size_t max>
-inline bool operator==(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return lhs.string() == rhs.string();
-}
-
-template<size_t min, size_t max>
-inline bool operator!=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return !operator==(lhs, rhs);
-}
-
-template<size_t min, size_t max>
-inline bool operator<(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return lhs.string() < rhs.string();
-}
-
-template<size_t min, size_t max>
-inline bool operator>(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return operator<(rhs, lhs);
-}
-
-template<size_t min, size_t max>
-inline bool operator<=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return !operator>(lhs, rhs);
-}
-
-template<size_t min, size_t max>
-inline bool operator>=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return !operator<(lhs, rhs);
-}
-
-
-typedef BoundedString<1> NonEmptyString;
-typedef BoundedString<AES256_KeySize> AES256Key;
-typedef BoundedString<AES256_IVSize> AES256InitialisationVector;
-typedef BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
-typedef BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
-typedef BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
-typedef BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
-typedef BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
+typedef detail::BoundedString<1> NonEmptyString;
+typedef detail::BoundedString<AES256_KeySize> AES256Key;
+typedef detail::BoundedString<AES256_IVSize> AES256InitialisationVector;
+typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
+typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
+typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
+typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
+typedef detail::BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
+typedef NonEmptyString SecurePassword, UserPassword, Salt, PlainText, CipherText,
+        CompressedText, UncompressedText;
 
 
 // Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
 // 0, an empty string is returned.
 template<size_t size>
-BoundedString<size, size> XOR(const BoundedString<size, size>& first,
-                              const BoundedString<size, size>& second) {
+detail::BoundedString<size, size> XOR(const detail::BoundedString<size, size>& first,
+                                      const detail::BoundedString<size, size>& second) {
   std::string result(size, 0);
   for (size_t i(0); i != size; ++i)
     result[i] = first.string()[i] ^ second.string()[i];
 
-  return BoundedString<size, size>(result);
+  return detail::BoundedString<size, size>(result);
 }
 
 // Creates a secure password using the Password-Based Key Derivation Function (PBKDF) version 2
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
 // provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
 // parameters are passed.
-NonEmptyString SecurePassword(const NonEmptyString& password,
-                              const NonEmptyString& salt,
-                              const uint32_t& pin,
-                              const std::string& label = kMaidSafeVersionLabel);
+SecurePassword CreateSecurePassword(const UserPassword& password,
+                                    const Salt& salt,
+                                    const uint32_t& pin,
+                                    const std::string& label = kMaidSafeVersionLabel);
 
 // Hash function operating on a string.
 template <typename HashType>
-BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std::string& input) {
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std::string& input) {
   std::string result;
   HashType hash;
   try {
@@ -186,12 +130,19 @@ BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std::string
     LOG(kError) << "Error hashing string: " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
-  return BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
+  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
+}
+
+// Hash function operating on a BoundedString.
+template <typename HashType, size_t min, size_t max>
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
+    const detail::BoundedString<min, max>& input) {
+  return Hash<HashType>(input.string());
 }
 
 // Hash function operating on a file.
 template <typename HashType>
-BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
     const boost::filesystem::path& file_path) {
   std::string result;
   HashType hash;
@@ -203,27 +154,27 @@ BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
     LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
-  return BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
+  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
 
 // Performs symmetric encrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-std::string SymmEncrypt(const NonEmptyString& input,
-                        const AES256Key& key,
-                        const AES256InitialisationVector& initialisation_vector);
+CipherText SymmEncrypt(const PlainText& input,
+                       const AES256Key& key,
+                       const AES256InitialisationVector& initialisation_vector);
 
 // Performs symmetric decrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-std::string SymmDecrypt(const NonEmptyString& input,
-                        const AES256Key& key,
-                        const AES256InitialisationVector& initialisation_vector);
+PlainText SymmDecrypt(const CipherText& input,
+                      const AES256Key& key,
+                      const AES256InitialisationVector& initialisation_vector);
 
 // Compress a string using gzip.  Compression level must be between 0 and 9
 // inclusive or function throws a std::exception.
-std::string Compress(const std::string& input, const uint16_t& compression_level);
+CompressedText Compress(const UncompressedText& input, const uint16_t& compression_level);
 
 // Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
-std::string Uncompress(const std::string& input);
+UncompressedText Uncompress(const CompressedText& input);
 
 std::vector<std::string> SecretShareData(const int32_t& threshold,
                                          const int32_t& number_of_shares,

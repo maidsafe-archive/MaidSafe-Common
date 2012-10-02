@@ -111,8 +111,7 @@ std::string Encrypt(const crypto::NonEmptyString& data, const PublicKey& public_
   try {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-    safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv));
-    assert(!safe_enc.data().empty());
+    safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv).string());
     std::string encryption_key_encrypted;
     CryptoPP::StringSource(symm_encryption_key.string() + symm_encryption_iv.string(),
                            true,
@@ -153,7 +152,7 @@ std::string Decrypt(const CipherText& data, const PrivateKey& private_key) {
                                    crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
                                    crypto::AES256InitialisationVector(
                                        out_data.substr(crypto::AES256_KeySize,
-                                                       crypto::AES256_IVSize)));
+                                                       crypto::AES256_IVSize))).string();
     } else {
       ThrowError(AsymmErrors::decryption_error);
     }
