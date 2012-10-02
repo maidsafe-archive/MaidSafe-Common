@@ -68,7 +68,7 @@ class NodeId {
   static bool CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id);
 
   // Decoded representation of the ID.
-  const std::string String() const;
+  const std::string string() const;
 
   // Encoded representation of the ID.
   const std::string ToStringEncoded(const EncodingType& encoding_type) const;

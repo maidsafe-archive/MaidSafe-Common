@@ -59,8 +59,8 @@ typedef std::string ValidationToken;
 typedef detail::BoundedString<1> NonEmptyString;
 typedef NonEmptyString PlainText, CipherText, Signature;
 // TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
-typedef detail::BoundedString<2> EncodedPublicKey;
-typedef detail::BoundedString<3> EncodedPrivateKey;
+typedef detail::BoundedString<1> EncodedPublicKey;
+typedef detail::BoundedString<2> EncodedPrivateKey;
 typedef NodeId Identity;
 
 struct Keys {

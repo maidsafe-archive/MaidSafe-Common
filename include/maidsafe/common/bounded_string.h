@@ -46,7 +46,7 @@ template<size_t min, size_t max = -1>
 class BoundedString {
  public:
   explicit BoundedString(const std::string& string) : string_(string) {
-    if ((min && string_.size() < min) || string_.size() > max)
+    if (((min && (string_.size() < min))) || string_.size() > max)
       ThrowError(CommonErrors::invalid_string_size);
   }
   friend void swap(BoundedString& first, BoundedString& second) {

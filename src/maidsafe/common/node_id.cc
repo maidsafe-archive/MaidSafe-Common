@@ -117,7 +117,7 @@ bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& 
   return false;
 }
 
-const std::string NodeId::String() const {
+const std::string NodeId::string() const {
   return raw_id_;
 }
 
