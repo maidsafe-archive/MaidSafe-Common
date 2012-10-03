@@ -36,15 +36,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-const uint16_t kKeySizeBytes(64);
-const uint16_t kKeySizeBits = 8 * kKeySizeBytes;
-
-
-NodeId::NodeId() : raw_id_(kKeySizeBytes, 0) {}
+NodeId::NodeId() : raw_id_(kSize, 0) {}
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) {}
 
-NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
+NodeId::NodeId(const IdType& type) : raw_id_(kSize, -1) {
   switch (type) {
     case kMaxId :
       break;  // already set
@@ -57,11 +53,13 @@ NodeId::NodeId(const IdType& type) : raw_id_(kKeySizeBytes, -1) {
 }
 
 NodeId::NodeId(const std::string& id) : raw_id_(id) {
-  if (raw_id_.size() != kKeySizeBytes) {
+  if (raw_id_.size() != kSize) {
     raw_id_.clear();
     ThrowError(CommonErrors::invalid_node_id);
   }
 }
+
+NodeId::NodeId(const crypto::SHA512Hash& id) : raw_id_(id.string()) {}
 
 NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_id_() {
   try {
@@ -81,7 +79,7 @@ NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_i
     LOG(kError) << "NodeId Ctor: " << e.what();
     raw_id_.clear();
   }
-  if (raw_id_.size() != kKeySizeBytes) {
+  if (raw_id_.size() != kSize) {
     raw_id_.clear();
     ThrowError(CommonErrors::invalid_node_id);
   }
@@ -89,8 +87,8 @@ NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_i
 
 std::string NodeId::EncodeToBinary() const {
   std::string binary;
-  binary.reserve(kKeySizeBytes);
-  for (size_t i = 0; i < kKeySizeBytes; ++i) {
+  binary.reserve(kSize);
+  for (size_t i = 0; i < kSize; ++i) {
     std::bitset<8> temp(static_cast<int>(raw_id_[i]));
     binary += temp.to_string();
   }
@@ -98,17 +96,17 @@ std::string NodeId::EncodeToBinary() const {
 }
 
 void NodeId::DecodeFromBinary(const std::string& binary_id) {
-  std::bitset<kKeySizeBits> binary_bitset(binary_id);
-  if (raw_id_.size() != kKeySizeBytes)
-    raw_id_.assign(kKeySizeBytes, 0);
-  for (size_t i = 0; i < kKeySizeBytes; ++i) {
+  std::bitset<8 * kSize> binary_bitset(binary_id);
+  if (raw_id_.size() != kSize)
+    raw_id_.assign(kSize, 0);
+  for (size_t i = 0; i < kSize; ++i) {
     std::bitset<8> temp(binary_id.substr(i * 8, 8));
     raw_id_[i] = static_cast<char>(temp.to_ulong());
   }
 }
 
 bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id) {
-  for (uint16_t i = 0; i < kKeySizeBytes; ++i) {
+  for (uint16_t i = 0; i < kSize; ++i) {
     unsigned char result1 = id1.raw_id_[i] ^ target_id.raw_id_[i];
     unsigned char result2 = id2.raw_id_[i] ^ target_id.raw_id_[i];
     if (result1 != result2)
@@ -137,7 +135,7 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
 }
 
 bool NodeId::IsZero() const {
-  static const std::string kZeroId(kKeySizeBytes, 0);
+  static const std::string kZeroId(kSize, 0);
   return raw_id_ == kZeroId;
 }
 
@@ -178,7 +176,7 @@ NodeId& NodeId::operator=(const NodeId& rhs) {
 
 const NodeId NodeId::operator^(const NodeId& rhs) const {
   NodeId result;
-  for (uint16_t i(0); i != kKeySizeBytes; ++i)
+  for (uint16_t i(0); i != kSize; ++i)
     result.raw_id_[i] = raw_id_[i] ^ rhs.raw_id_[i];
   return result;
 }

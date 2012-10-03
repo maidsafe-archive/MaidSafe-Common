@@ -31,29 +31,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 
+
 namespace maidsafe {
-
-extern const uint16_t kKeySizeBytes;
-extern const uint16_t kKeySizeBits;
-
 
 class NodeId {
  public:
   enum IdType { kMaxId, kRandomId };
   enum EncodingType { kBinary, kHex, kBase32, kBase64 };
+  enum { kSize = 64 };
 
   // Creates an ID equal to 0.
   NodeId();
 
   NodeId(const NodeId& other);
 
-  // Creates an ID = (2 ^ kKeySizeBits) - 1 or a random ID in the  interval [0, 2 ^ kKeySizeBits).
+  // Creates an ID = (2 ^ kKeySizeBits) - 1 or a random ID in the interval [0, 2 ^ kKeySizeBits).
   explicit NodeId(const IdType& type);
 
-  // Creates a NodeId from a raw (decoded) string.  First version will throw if id is invalid.
+  // Creates a NodeId from a raw (decoded) string.  Will throw if id is invalid.
   explicit NodeId(const std::string& id);
+
+  // Creates a NodeId from a SHA512 hash.
+  explicit NodeId(const crypto::SHA512Hash& id);
 
   // Creates a NodeId from an encoded string.  Will throw if id is invalid.
   NodeId(const std::string& id, const EncodingType& encoding_type);
