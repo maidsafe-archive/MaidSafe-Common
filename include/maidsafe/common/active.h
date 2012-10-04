@@ -45,12 +45,15 @@ class Active {
   Active();
   ~Active();
   void Send(Functor functor);
+  void SetAccepting(const bool accepting);
+  bool Accepting();
 
  private:
   Active(const Active&);
   Active& operator=(const Active&);
   void Run();
   bool done_;
+  bool accepting_;
   std::queue<Functor> functors_;
   std::mutex mutex_;
   std::condition_variable condition_;
