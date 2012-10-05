@@ -47,6 +47,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/node_id.h"
+#include "maidsafe/common/types.h"
 
 
 namespace maidsafe {
@@ -56,7 +57,6 @@ namespace rsa {
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
 typedef CryptoPP::RSA::PublicKey PublicKey;
 typedef std::string ValidationToken;
-typedef detail::BoundedString<1> NonEmptyString;
 typedef NonEmptyString PlainText, CipherText, Signature;
 // TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
 typedef detail::BoundedString<2> EncodedPublicKey;

@@ -1,4 +1,4 @@
-/* Copyright (c) 2009 maidsafe.net limited
+/* Copyright (c) 2012 maidsafe.net limited
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -28,25 +28,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TYPES_H_
 #define MAIDSAFE_COMMON_TYPES_H_
 
-#include "boost/filesystem/path.hpp"
-
 #include "maidsafe/common/bounded_string.h"
 
 
 namespace maidsafe {
 
-    typedef detail::BoundedString<1> NonEmptyString;
-    typedef detail::BoundedString<4> UserName;
-    typedef detail::BoundedString<4> UserPassword;
+typedef detail::BoundedString<1> NonEmptyString;
+typedef detail::BoundedString<4> UserName;
+typedef detail::BoundedString<4> UserPassword;
 
 }  // namespace maidsafe
-
-
-
-
-
-
-
-
 
 #endif  // MAIDSAFE_COMMON_TYPES_H_

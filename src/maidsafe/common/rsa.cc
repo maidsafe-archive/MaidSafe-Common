@@ -146,7 +146,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
         LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
         ThrowError(AsymmErrors::decryption_error);
       }
-      result = crypto::SymmDecrypt(crypto::NonEmptyString(safe_enc.data()),
+      result = crypto::SymmDecrypt(crypto::CipherText(safe_enc.data()),
                                    crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
                                    crypto::AES256InitialisationVector(
                                        out_data.substr(crypto::AES256_KeySize,

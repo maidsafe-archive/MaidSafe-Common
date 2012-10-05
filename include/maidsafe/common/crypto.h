@@ -58,6 +58,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/types.h"
 
 
 namespace CryptoPP {
@@ -84,7 +85,6 @@ extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
 
-typedef detail::BoundedString<1> NonEmptyString;
 typedef detail::BoundedString<AES256_KeySize> AES256Key;
 typedef detail::BoundedString<AES256_IVSize> AES256InitialisationVector;
 typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
