@@ -77,14 +77,12 @@ TEST_F(RSATest, BEH_RsaKeyPair) {
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   auto f([&] {
-    const NonEmptyString kSmallData(RandomString(21));
-    const NonEmptyString kLargeData(RandomString(1024 * 1024));
+    const PlainText kSmallData(RandomString(21));
+    const PlainText kLargeData(RandomString(1024 * 1024));
     const Keys empty_keys;
     const Keys other_keys(GenerateKeyPair());
-    EXPECT_EQ(kSmallData,
-              Decrypt(Encrypt(kSmallData, keys_.public_key), keys_.private_key));
-    EXPECT_EQ(kLargeData,
-              Decrypt(Encrypt(kLargeData, keys_.public_key), keys_.private_key));
+    EXPECT_EQ(kSmallData, Decrypt(Encrypt(kSmallData, keys_.public_key), keys_.private_key));
+    EXPECT_EQ(kLargeData, Decrypt(Encrypt(kLargeData, keys_.public_key), keys_.private_key));
     EXPECT_THROW(Encrypt(kSmallData, empty_keys.public_key), std::exception);
   });
   RunInParallel(f);
@@ -96,7 +94,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
     Keys keys(GenerateKeyPair());
     PrivateKey empty_priv_key;
     PublicKey empty_pub_key;
-    const NonEmptyString kData(RandomString(RandomUint32() % (1024 * 1024)));
+    const PlainText kData(RandomString(RandomUint32() % (1024 * 1024)));
 
     EXPECT_NO_THROW(Signature signature(Sign(kData, keys.private_key)));
     Signature signature(Sign(kData, keys.private_key));
