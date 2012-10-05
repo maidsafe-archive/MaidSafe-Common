@@ -43,13 +43,18 @@ AsioService::~AsioService() {
 }
 
 void AsioService::Start() {
+#ifndef NDEBUG
+  for (auto& asio_thread : threads_)
+    assert(boost::this_thread::get_id() != asio_thread.get_id());
+#endif
+
   if (work_) {
     LOG(kError) << "AsioService is already running with " << threads_.size() << " threads.";
     return;
   }
   service_.reset();
   work_.reset(new boost::asio::io_service::work(service_));
-  for (boost::thread &asio_thread : threads_) {
+  for (auto& asio_thread : threads_) {
     asio_thread = std::move(boost::thread([&] {
         try {
           service_.run();
@@ -71,6 +76,11 @@ void AsioService::Start() {
 }
 
 void AsioService::Stop() {
+#ifndef NDEBUG
+  for (auto& asio_thread : threads_)
+    assert(boost::this_thread::get_id() != asio_thread.get_id());
+#endif
+
   work_.reset();
   // Interrupt and join all asio worker threads concurrently
   std::vector<boost::thread> joining_workers(threads_.size());
