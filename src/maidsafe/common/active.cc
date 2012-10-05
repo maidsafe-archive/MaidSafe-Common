@@ -30,7 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-Active::Active() : done_(false),
+Active::Active() : running_(true),
                    accepting_(true),
                    functors_(),
                    mutex_(),
@@ -38,17 +38,9 @@ Active::Active() : done_(false),
                    thread_([=] { Run(); }) {}
 
 Active::~Active() {
-  Send([&] { done_ = true; });  // NOLINT (Fraser)
-  if (thread_.joinable())
-    thread_.join();
-}
-
-void Active::SetAccepting(const bool accepting) {
-  accepting_ = accepting;
-}
-
-bool Active::Accepting() {
-  return accepting_;
+  Send([&] { running_ = false; });  // NOLINT (Fraser)
+  accepting_ = false;
+  thread_.join();
 }
 
 void Active::Send(Functor functor) {
@@ -60,7 +52,7 @@ void Active::Send(Functor functor) {
 }
 
 void Active::Run() {
-  while (!done_) {
+  while (running_) {
     Functor functor;
     {
       std::unique_lock<std::mutex> lock(mutex_);
