@@ -50,7 +50,8 @@ enum class CommonErrors {
   symmetric_encryption_error,
   symmetric_decryption_error,
   compression_error,
-  uncompression_error
+  uncompression_error,
+  cant_invoke_from_this_thread
 };
 
 enum class AsymmErrors {

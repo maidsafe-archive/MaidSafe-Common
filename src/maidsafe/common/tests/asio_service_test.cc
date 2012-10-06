@@ -55,14 +55,8 @@ TEST(AsioServiceTest, BEH_All) {
     cond_var.notify_one();
   });
 
-  {  // Allocate no threads
-    AsioService asio_service(0);
-    asio_service.Start();
-    asio_service.service().post(task);
-    std::unique_lock<std::mutex> lock(mutex);
-    EXPECT_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
-    EXPECT_FALSE(done);
-  }
+  // Allocate no threads
+  EXPECT_THROW(AsioService asio_service(0), std::exception);
 
   {  // Start after posting tasks
     AsioService asio_service(2);
@@ -115,6 +109,25 @@ TEST(AsioServiceTest, BEH_All) {
     EXPECT_EQ(0, sleeps_interrupted);
     EXPECT_GE(bptime::microsec_clock::local_time() - start_time, kTaskDuration);
   }
+
+#ifndef NDEBUG
+  // Check Start and Stop called from one of the service's own threads throws
+  auto death_start = [] {
+    AsioService asio_service(1);
+    asio_service.Start();
+    asio_service.service().post([&] { asio_service.Start(); });  // NOLINT (Fraser)
+    Sleep(boost::posix_time::milliseconds(200));
+  };
+  ASSERT_DEATH(death_start(), "");
+
+  auto death_stop = [] {
+    AsioService asio_service(1);
+    asio_service.Start();
+    asio_service.service().post([&] { asio_service.Stop(); });  // NOLINT (Fraser)
+    Sleep(boost::posix_time::milliseconds(200));
+  };
+  ASSERT_DEATH(death_stop(), "");
+#endif
 }
 
 }  // namespace test

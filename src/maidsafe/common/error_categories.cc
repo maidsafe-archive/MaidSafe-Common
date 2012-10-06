@@ -66,6 +66,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error during compression";
     case CommonErrors::uncompression_error:
       return "Error during uncompression";
+    case CommonErrors::cant_invoke_from_this_thread:
+      return "This function cannot be invoked from this thread";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";
@@ -81,6 +83,8 @@ std::error_condition CommonCategory::default_error_condition(
     case CommonErrors::invalid_string_size:
     case CommonErrors::invalid_parameter:
       return std::errc::invalid_argument;
+    case CommonErrors::cant_invoke_from_this_thread:
+      return std::errc::operation_not_permitted;
     default:
       return std::error_condition(error_value, *this);
   }

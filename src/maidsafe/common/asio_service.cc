@@ -26,6 +26,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "maidsafe/common/asio_service.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
 
@@ -36,17 +37,20 @@ namespace maidsafe {
 AsioService::AsioService(const uint32_t &thread_count)
     : service_(),
       work_(),
-      threads_(thread_count) {}
+      threads_(thread_count) {
+  if (thread_count == 0)
+    ThrowError(CommonErrors::invalid_parameter);
+}
 
 AsioService::~AsioService() {
   Stop();
 }
 
 void AsioService::Start() {
-#ifndef NDEBUG
-  for (auto& asio_thread : threads_)
-    assert(boost::this_thread::get_id() != asio_thread.get_id());
-#endif
+  for (auto& asio_thread : threads_) {
+    if (boost::this_thread::get_id() == asio_thread.get_id())
+      ThrowError(CommonErrors::cant_invoke_from_this_thread);
+  }
 
   if (work_) {
     LOG(kError) << "AsioService is already running with " << threads_.size() << " threads.";
@@ -76,10 +80,10 @@ void AsioService::Start() {
 }
 
 void AsioService::Stop() {
-#ifndef NDEBUG
-  for (auto& asio_thread : threads_)
-    assert(boost::this_thread::get_id() != asio_thread.get_id());
-#endif
+  for (auto& asio_thread : threads_) {
+    if (boost::this_thread::get_id() == asio_thread.get_id())
+      ThrowError(CommonErrors::cant_invoke_from_this_thread);
+  }
 
   work_.reset();
   // Interrupt and join all asio worker threads concurrently
