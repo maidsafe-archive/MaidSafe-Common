@@ -54,7 +54,7 @@ class BoundedString {
     valid_ = true;
   }
 
-  friend void swap(BoundedString& first, BoundedString& second) {
+  friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
     std::swap(first.string_, second.string_);
     std::swap(first.valid_, second.valid_);
   }
@@ -64,7 +64,7 @@ class BoundedString {
   BoundedString(BoundedString&& other)
       : string_(std::move(other.string_)), valid_(std::move(other.valid_)) MAIDSAFE_NOEXCEPT {}
 
-  BoundedString& operator=(BoundedString other) {
+  BoundedString& operator=(BoundedString other) MAIDSAFE_NOEXCEPT {
     swap(*this, other);
     return *this;
   }
