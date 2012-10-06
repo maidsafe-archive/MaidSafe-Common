@@ -31,6 +31,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <string>
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/error.h"
 
 
@@ -46,19 +47,62 @@ template<size_t min, size_t max = -1>
 class BoundedString {
  public:
   explicit BoundedString(const std::string& string) : string_(string) {
-    if ((min && (string_.size() < min)) || string_.size() > max)
+    if (OutwithBounds())
       ThrowError(CommonErrors::invalid_string_size);
   }
+
   friend void swap(BoundedString& first, BoundedString& second) {
     std::swap(first.string_, second.string_);
   }
+
   BoundedString(const BoundedString& other) : string_(other.string_) {}
+
+  BoundedString(BoundedString&& other) : string_(std::move(other.string_)) MAIDSAFE_NOEXCEPT {}
+
   BoundedString& operator=(BoundedString other) {
     swap(*this, other);
     return *this;
   }
+
+//  BoundedString& operator=(BoundedString&& other) {
+//    string_ = std::move(other.string_);
+//    return *this;
+//  }
+
+  template<size_t other_min, size_t other_max>
+  explicit BoundedString(const BoundedString<other_min, other_max>& other)
+      : string_(other.string()) {
+    if (OutwithBounds())
+      ThrowError(CommonErrors::invalid_conversion);
+  }
+
+  template<size_t other_min, size_t other_max>
+  explicit BoundedString(BoundedString<other_min, other_max>&& other)
+      : string_(std::move(other.string())) {
+    if (OutwithBounds())
+      ThrowError(CommonErrors::invalid_conversion);
+  }
+
+  template<size_t other_min, size_t other_max>
+  BoundedString& operator=(BoundedString<other_min, other_max> other) {
+    swap(*this, other);
+    if (OutwithBounds())
+      ThrowError(CommonErrors::invalid_conversion);
+    return *this;
+  }
+
+//  template<size_t other_min, size_t other_max>
+//  BoundedString& operator=(BoundedString<other_min, other_max>&& other) {
+//    string_ = std::move(other.string_);
+//    if (OutwithBounds())
+//      ThrowError(CommonErrors::invalid_conversion);
+//    return *this;
+//  }
+
   const std::string& string() const { return string_; }
+
  private:
+  bool OutwithBounds() { return ((min && (string_.size() < min)) || string_.size() > max); }
   std::string string_;
 };
 #ifdef __clang__

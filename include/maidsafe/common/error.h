@@ -45,6 +45,7 @@ enum class CommonErrors {
   invalid_key_size,
   invalid_string_size,
   invalid_parameter,
+  invalid_conversion,
   hashing_error,
   symmetric_encryption_error,
   symmetric_decryption_error,
