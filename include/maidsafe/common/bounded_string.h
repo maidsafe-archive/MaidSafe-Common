@@ -82,6 +82,8 @@ class BoundedString {
       if (OutwithBounds())
         ThrowError(CommonErrors::invalid_conversion);
       valid_ = true;
+    } else {
+      valid_ = !OutwithBounds();
     }
   }
 
@@ -89,11 +91,15 @@ class BoundedString {
   BoundedString& operator=(BoundedString<other_min, other_max> other) {
     std::swap(string_, other.string_);
     std::swap(valid_, other.valid_);
-    if (valid_ && OutwithBounds()) {
-      // swap back to provide strong exception guarantee
-      std::swap(string_, other.string_);
-      std::swap(valid_, other.valid_);
-        ThrowError(CommonErrors::invalid_conversion);
+    if (valid_) {
+      if (OutwithBounds()) {
+        // swap back to provide strong exception guarantee
+        std::swap(string_, other.string_);
+        std::swap(valid_, other.valid_);
+          ThrowError(CommonErrors::invalid_conversion);
+      }
+    } else {
+      valid_ = !OutwithBounds();
     }
     return *this;
   }

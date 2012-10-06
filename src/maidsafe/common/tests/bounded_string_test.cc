@@ -175,7 +175,7 @@ TEST(BoundedStringTest, BEH_OtherBoundedStringConstructor) {
   // Copy from uninitialised
   OneOne k;
   ZeroMax l(k);
-  EXPECT_FALSE(l.IsInitialised());
+  EXPECT_TRUE(l.IsInitialised());
   OneTwo m(k);
   EXPECT_FALSE(m.IsInitialised());
   TwoTwo n(k);
@@ -219,7 +219,7 @@ TEST(BoundedStringTest, BEH_OtherBoundedStringAssignment) {
   OneOne k;
   ZeroMax l("");
   l = k;
-  EXPECT_FALSE(l.IsInitialised());
+  EXPECT_TRUE(l.IsInitialised());
   OneTwo m("1");
   m = k;
   EXPECT_FALSE(m.IsInitialised());
