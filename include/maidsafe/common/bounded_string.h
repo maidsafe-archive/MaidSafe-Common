@@ -46,7 +46,10 @@ namespace detail {
 template<size_t min, size_t max = -1>
 class BoundedString {
  public:
-  BoundedString() : string_(), valid_(false) { valid_ = !OutwithBounds(); }
+  BoundedString()
+      : string_(),
+        // Use OutwithBounds() to invoke static_asserts
+        valid_(!OutwithBounds()) {}
 
   explicit BoundedString(const std::string& string) : string_(string), valid_(false) {
     if (OutwithBounds())
@@ -83,8 +86,6 @@ class BoundedString {
       if (OutwithBounds())
         ThrowError(CommonErrors::invalid_conversion);
       valid_ = true;
-    } else {
-      valid_ = !OutwithBounds();
     }
   }
 
@@ -99,8 +100,6 @@ class BoundedString {
         std::swap(valid_, other.valid_);
           ThrowError(CommonErrors::invalid_conversion);
       }
-    } else {
-      valid_ = !OutwithBounds();
     }
     return *this;
   }
@@ -116,7 +115,12 @@ class BoundedString {
   template<size_t other_min, size_t other_max> friend class BoundedString;
 
  private:
-  bool OutwithBounds() { return ((min && (string_.size() < min)) || string_.size() > max); }
+  bool OutwithBounds() {
+    static_assert(min, "Lower bound of BoundedString must be non-zero");
+    static_assert(min <= max,
+                  "Lower bound of BoundedString must be less than or equal to upper bound");
+    return ((string_.size() < min) || string_.size() > max);
+  }
   std::string string_;
   bool valid_;
 };

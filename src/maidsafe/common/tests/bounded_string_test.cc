@@ -24,8 +24,6 @@ namespace detail {
 
 namespace test {
 
-typedef BoundedString<0, 1> ZeroOne;
-typedef BoundedString<0> ZeroMax;
 typedef BoundedString<1, 1> OneOne;
 typedef BoundedString<1, 2> OneTwo;
 typedef BoundedString<1> OneMax;
@@ -33,14 +31,10 @@ typedef BoundedString<2, 2> TwoTwo;
 typedef BoundedString<2> TwoMax;
 
 TEST(BoundedStringTest, BEH_DefaultConstructor) {
-  ZeroOne a;
-  EXPECT_TRUE(a.IsInitialised());
-  ZeroMax b;
-  EXPECT_TRUE(b.IsInitialised());
-  OneOne c;
-  EXPECT_FALSE(c.IsInitialised());
-  OneMax d;
-  EXPECT_FALSE(d.IsInitialised());
+  OneOne a;
+  EXPECT_FALSE(a.IsInitialised());
+  OneMax b;
+  EXPECT_FALSE(b.IsInitialised());
 }
 
 TEST(BoundedStringTest, BEH_Getters) {
@@ -55,39 +49,21 @@ TEST(BoundedStringTest, BEH_Getters) {
 }
 
 TEST(BoundedStringTest, BEH_StringConstructor) {
-  // Empty (valid)
-  ZeroOne a("");
-  EXPECT_TRUE(a.IsInitialised());
+  // Empty (invalid)
+  EXPECT_THROW(OneOne a(""), std::exception);
   // Valid
   std::string random(RandomString(1));
-  ZeroOne b(random);
+  OneOne b(random);
   EXPECT_EQ(random, b.string());
   // Too big
-  EXPECT_THROW(ZeroOne c(RandomString(2)), std::exception);
+  EXPECT_THROW(OneOne c(RandomString(2)), std::exception);
 
-  // Empty (valid)
-  ZeroMax d("");
-  EXPECT_TRUE(d.IsInitialised());
+  // Empty (invalid)
+  EXPECT_THROW(OneMax d(""), std::exception);
   // Valid
   random = RandomString((RandomUint32() % 1024) + 1);
-  ZeroMax e(random);
+  OneMax e(random);
   EXPECT_EQ(random, e.string());
-
-  // Empty (invalid)
-  EXPECT_THROW(OneOne f(""), std::exception);
-  // Valid
-  random = RandomString(1);
-  OneOne g(random);
-  EXPECT_EQ(random, g.string());
-  // Too big
-  EXPECT_THROW(OneOne h(RandomString(2)), std::exception);
-
-  // Empty (invalid)
-  EXPECT_THROW(OneMax i(""), std::exception);
-  // Valid
-  random = RandomString((RandomUint32() % 1024) + 1);
-  OneMax j(random);
-  EXPECT_EQ(random, j.string());
 }
 
 TEST(BoundedStringTest, BEH_Swap) {
@@ -165,21 +141,17 @@ TEST(BoundedStringTest, BEH_OtherBoundedStringConstructor) {
   // Valid copy
   std::string random(RandomString(2));
   OneTwo g(random);
-  ZeroMax h(g);
+  OneMax h(g);
   EXPECT_EQ(random, h.string());
-  OneMax i(g);
+  TwoTwo i(g);
   EXPECT_EQ(random, i.string());
-  TwoTwo j(g);
-  EXPECT_EQ(random, j.string());
 
   // Copy from uninitialised
-  OneOne k;
-  ZeroMax l(k);
-  EXPECT_TRUE(l.IsInitialised());
-  OneTwo m(k);
-  EXPECT_FALSE(m.IsInitialised());
-  TwoTwo n(k);
-  EXPECT_FALSE(n.IsInitialised());
+  OneOne j;
+  OneTwo k(j);
+  EXPECT_FALSE(k.IsInitialised());
+  TwoTwo l(j);
+  EXPECT_FALSE(l.IsInitialised());
 }
 
 TEST(BoundedStringTest, BEH_OtherBoundedStringAssignment) {
@@ -205,27 +177,21 @@ TEST(BoundedStringTest, BEH_OtherBoundedStringAssignment) {
   // Valid assignment
   std::string random(RandomString(2));
   OneTwo g(random);
-  ZeroMax h("");
+  OneMax h("1");
   h = g;
   EXPECT_EQ(random, h.string());
-  OneMax i("1");
+  TwoTwo i("02");
   i = g;
   EXPECT_EQ(random, i.string());
-  TwoTwo j("02");
-  j = g;
-  EXPECT_EQ(random, j.string());
 
   // Assign from uninitialised
-  OneOne k;
-  ZeroMax l("");
-  l = k;
-  EXPECT_TRUE(l.IsInitialised());
-  OneTwo m("1");
-  m = k;
-  EXPECT_FALSE(m.IsInitialised());
-  TwoTwo n("02");
-  n = k;
-  EXPECT_FALSE(n.IsInitialised());
+  OneOne j;
+  OneTwo k("1");
+  k = j;
+  EXPECT_FALSE(k.IsInitialised());
+  TwoTwo l("02");
+  l = j;
+  EXPECT_FALSE(l.IsInitialised());
 }
 
 }  // namespace test

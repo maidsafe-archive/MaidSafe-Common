@@ -63,10 +63,6 @@ TEST(CryptoTest, BEH_Obfuscation) {
   const detail::BoundedString<2, 2> kKnown1("\xa5\x5a");
   const detail::BoundedString<2, 2> kKnown2("\x5a\xa5");
   EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2).string());
-
-  const detail::BoundedString<0, 0> kEmpty("");
-  EXPECT_EQ(kEmpty, XOR(kEmpty, kEmpty));
-  EXPECT_TRUE(XOR(kEmpty, kEmpty).string().empty());
 }
 
 TEST(CryptoTest, BEH_SecurePasswordGeneration) {
