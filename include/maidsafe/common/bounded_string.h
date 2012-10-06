@@ -61,8 +61,9 @@ class BoundedString {
 
   BoundedString(const BoundedString& other) : string_(other.string_), valid_(other.valid_) {}
 
-  BoundedString(BoundedString&& other)
-      : string_(std::move(other.string_)), valid_(std::move(other.valid_)) MAIDSAFE_NOEXCEPT {}
+  BoundedString(BoundedString&& other) MAIDSAFE_NOEXCEPT
+      : string_(std::move(other.string_)),
+        valid_(std::move(other.valid_)) {}
 
   BoundedString& operator=(BoundedString other) MAIDSAFE_NOEXCEPT {
     swap(*this, other);
