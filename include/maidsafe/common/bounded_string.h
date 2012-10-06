@@ -46,18 +46,23 @@ namespace detail {
 template<size_t min, size_t max = -1>
 class BoundedString {
  public:
-  explicit BoundedString(const std::string& string) : string_(string) {
+  BoundedString() : string_(), valid_(false) { valid_ = !OutwithBounds(); }
+
+  explicit BoundedString(const std::string& string) : string_(string), valid_(false) {
     if (OutwithBounds())
       ThrowError(CommonErrors::invalid_string_size);
+    valid_ = true;
   }
 
   friend void swap(BoundedString& first, BoundedString& second) {
     std::swap(first.string_, second.string_);
+    std::swap(first.valid_, second.valid_);
   }
 
-  BoundedString(const BoundedString& other) : string_(other.string_) {}
+  BoundedString(const BoundedString& other) : string_(other.string_), valid_(other.valid_) {}
 
-  BoundedString(BoundedString&& other) : string_(std::move(other.string_)) MAIDSAFE_NOEXCEPT {}
+  BoundedString(BoundedString&& other)
+      : string_(std::move(other.string_)), valid_(std::move(other.valid_)) MAIDSAFE_NOEXCEPT {}
 
   BoundedString& operator=(BoundedString other) {
     swap(*this, other);
@@ -71,39 +76,42 @@ class BoundedString {
 
   template<size_t other_min, size_t other_max>
   explicit BoundedString(const BoundedString<other_min, other_max>& other)
-      : string_(other.string()) {
-    if (OutwithBounds())
-      ThrowError(CommonErrors::invalid_conversion);
-  }
-
-  template<size_t other_min, size_t other_max>
-  explicit BoundedString(BoundedString<other_min, other_max>&& other)
-      : string_(std::move(other.string())) {
-    if (OutwithBounds())
-      ThrowError(CommonErrors::invalid_conversion);
+      : string_(), valid_(false) {
+    if (other.IsInitialised()) {
+      string_ = other.string();
+      if (OutwithBounds())
+        ThrowError(CommonErrors::invalid_conversion);
+      valid_ = true;
+    }
   }
 
   template<size_t other_min, size_t other_max>
   BoundedString& operator=(BoundedString<other_min, other_max> other) {
-    swap(*this, other);
-    if (OutwithBounds())
-      ThrowError(CommonErrors::invalid_conversion);
+    std::swap(string_, other.string_);
+    std::swap(valid_, other.valid_);
+    if (valid_ && OutwithBounds()) {
+      // swap back to provide strong exception guarantee
+      std::swap(string_, other.string_);
+      std::swap(valid_, other.valid_);
+        ThrowError(CommonErrors::invalid_conversion);
+    }
     return *this;
   }
 
-//  template<size_t other_min, size_t other_max>
-//  BoundedString& operator=(BoundedString<other_min, other_max>&& other) {
-//    string_ = std::move(other.string_);
-//    if (OutwithBounds())
-//      ThrowError(CommonErrors::invalid_conversion);
-//    return *this;
-//  }
+  const std::string& string() const {
+    if (!valid_)
+      ThrowError(CommonErrors::invalid_string_size);
+    return string_;
+  }
 
-  const std::string& string() const { return string_; }
+  bool IsInitialised() const { return valid_; }
+
+  template<size_t other_min, size_t other_max> friend class BoundedString;
 
  private:
   bool OutwithBounds() { return ((min && (string_.size() < min)) || string_.size() > max); }
   std::string string_;
+  bool valid_;
 };
 #ifdef __clang__
 #  pragma clang diagnostic pop

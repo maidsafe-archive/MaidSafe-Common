@@ -15,7 +15,6 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/error.h"
-#include "maidsafe/common/utils.h"
 
 
 namespace maidsafe {
@@ -25,10 +24,31 @@ namespace detail {
 namespace test {
 
 TEST(BoundedStringTest, BEH_All) {
-  BoundedString<1, 3> one("1");
-  BoundedString<1, 2> two(one);
-  typedef BoundedString<2, 2> Three;
-  EXPECT_THROW(Three three(one), std::exception);
+  typedef BoundedString<0, 1> ZeroOne;
+  typedef BoundedString<0> ZeroMax;
+  typedef BoundedString<1, 1> OneOne;
+  typedef BoundedString<1, 2> OneTwo;
+  typedef BoundedString<1> OneMax;
+  typedef BoundedString<2, 2> TwoTwo;
+  typedef BoundedString<2> TwoMax;
+
+  ZeroOne a;
+  EXPECT_TRUE(a.IsInitialised());
+
+  OneOne b;
+  EXPECT_FALSE(b.IsInitialised());
+
+  ZeroOne c("");
+  EXPECT_TRUE(a.IsInitialised());
+
+  EXPECT_THROW(OneOne d(""), std::exception);
+
+
+
+  b = BoundedString<1, 2>("1");
+  EXPECT_THROW(TwoTwo z(b), std::exception);
+
+
 }
 
 }  // namespace test
