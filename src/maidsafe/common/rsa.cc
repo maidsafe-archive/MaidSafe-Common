@@ -104,6 +104,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
     ThrowError(AsymmErrors::invalid_public_key);
 
   std::string result;
+  result.clear();
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   SafeEncrypt safe_enc;
   try {
@@ -119,7 +120,6 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
                                                                 encryption_key_encrypted)));
     safe_enc.set_key(encryption_key_encrypted);
     if (!safe_enc.SerializeToString(&result)) {
-      result.clear();
       ThrowError(AsymmErrors::keys_serialisation_error);
     }
   }
@@ -131,7 +131,14 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 }
 
 PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
-  std::string result;
+#ifndef NDEBUG
+  // Passing a default-constructed PrivateKey takes several minutes to throw in Debug using VS2012.
+  // We don't want this cost when running tests in Debug, but we don't want the cost of checking
+  // for an edge case in production code, hence this Debug block.
+  if (!private_key.Validate(rng(), 0))
+    ThrowError(AsymmErrors::invalid_private_key);
+#endif
+  PlainText result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
     SafeEncrypt safe_enc;
@@ -150,7 +157,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
                                    crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
                                    crypto::AES256InitialisationVector(
                                        out_data.substr(crypto::AES256_KeySize,
-                                                       crypto::AES256_IVSize))).string();
+                                                       crypto::AES256_IVSize)));
     } else {
       ThrowError(AsymmErrors::decryption_error);
     }
@@ -160,7 +167,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
     ThrowError(AsymmErrors::decryption_error);
   }
 
-  return PlainText(result);
+  return result;
 }
 
 Signature Sign(const PlainText& data, const PrivateKey& private_key) {
@@ -169,7 +176,7 @@ Signature Sign(const PlainText& data, const PrivateKey& private_key) {
   // We don't want this cost when running tests in Debug, but we don't want the cost of checking
   // for an edge case in production code, hence this Debug block.
   if (!private_key.Validate(rng(), 0))
-    ThrowError(AsymmErrors::signing_error);
+    ThrowError(AsymmErrors::invalid_private_key);
 #endif
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);

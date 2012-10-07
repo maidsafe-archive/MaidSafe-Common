@@ -101,12 +101,12 @@ CipherText SymmEncrypt(const PlainText& input,
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.string().substr(0, AES256_KeySize), true,
-        new CryptoPP::ArraySink(byte_key, sizeof(byte_key)));
-    CryptoPP::StringSource(initialisation_vector.string().substr(0, AES256_IVSize), true,
-        new CryptoPP::ArraySink(byte_iv, sizeof(byte_iv)));
+    CryptoPP::StringSource(key.string(), true,
+        new CryptoPP::ArraySink(byte_key, AES256_KeySize));
+    CryptoPP::StringSource(initialisation_vector.string(), true,
+        new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(byte_key, sizeof(byte_key), byte_iv);
+    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(byte_key, AES256_KeySize, byte_iv);
     CryptoPP::StringSource(input.string(), true,
         new CryptoPP::StreamTransformationFilter(encryptor, new CryptoPP::StringSink(result)));
   } catch(const CryptoPP::Exception& e) {
@@ -122,12 +122,12 @@ PlainText SymmDecrypt(const CipherText& input,
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.string().substr(0, AES256_KeySize), true,
-        new CryptoPP::ArraySink(byte_key, sizeof(byte_key)));
-    CryptoPP::StringSource(initialisation_vector.string().substr(0, AES256_IVSize), true,
-        new CryptoPP::ArraySink(byte_iv, sizeof(byte_iv)));
+    CryptoPP::StringSource(key.string(), true,
+        new CryptoPP::ArraySink(byte_key, AES256_KeySize));
+    CryptoPP::StringSource(initialisation_vector.string().c_str(), true,
+        new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, sizeof(byte_key), byte_iv);
+    CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, AES256_KeySize, byte_iv);
     CryptoPP::StringSource(input.string(), true,
         new CryptoPP::StreamTransformationFilter(decryptor, new CryptoPP::StringSink(result)));
   }
