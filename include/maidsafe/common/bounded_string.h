@@ -134,7 +134,7 @@ class BoundedString {
     return *this;
   }
 
-  const std::string string() const {
+  const std::string& string() const {
     if (!valid_)
       ThrowError(CommonErrors::uninitialised);
     return string_;
