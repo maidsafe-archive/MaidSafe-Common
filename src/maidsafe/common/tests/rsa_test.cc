@@ -68,13 +68,13 @@ void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
 
 TEST_F(RSATest, BEH_RsaEncodeKeys) {
     Keys keys = GenerateKeyPair();
-  // auto f([&] {
+  auto f([&] {
     EncodedPrivateKey encoded_private_key(EncodeKey(keys.private_key));
     EncodedPublicKey encoded_public_key(EncodeKey(keys.public_key));
     PrivateKey private_key(DecodeKey(encoded_private_key));
     PublicKey public_key(DecodeKey(encoded_public_key));
-  // });
-  // RunInParallel(f, 100);
+  });
+  RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
