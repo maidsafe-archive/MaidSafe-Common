@@ -56,6 +56,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "One or more invalid parameters were passed";
     case CommonErrors::invalid_conversion:
       return "Invalid conversion between BoundedString types";
+    case CommonErrors::uninitialised:
+      return "Class is uninitialised.";
     case CommonErrors::hashing_error:
       return "Error during hashing";
     case CommonErrors::symmetric_encryption_error:

@@ -51,7 +51,7 @@ class Active {
   Active(const Active&);
   Active& operator=(const Active&);
   void Run();
-  // FIXME this should be atomic but clang is virilently complaining !!
+  // FIXME this should be atomic<bool> but clang is violently complaining !!
   std::atomic<int> running_, accepting_;
   std::queue<Functor> functors_;
   std::mutex mutex_;

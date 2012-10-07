@@ -69,8 +69,7 @@ class BoundedString {
         valid_(std::move(other.valid_)) {}
 
   BoundedString& operator=(BoundedString other) MAIDSAFE_NOEXCEPT {
-    if (this == &other)
-      return *this;  // Self assignment
+    // No need for check for self-assignment since we're using the copy-and-swap idiom
     swap(*this, other);
     return *this;
   }
@@ -79,6 +78,21 @@ class BoundedString {
 //    string_ = std::move(other.string_);
 //    return *this;
 //  }
+
+  BoundedString& operator+=(const BoundedString& other) {
+    if (!valid_ || !other.valid_)
+      ThrowError(CommonErrors::uninitialised);
+    string_ += other.string_;
+    if (OutwithBounds()) {
+      // revert to provide strong exception guarantee
+      if (this == &other)
+        string_ = string_.substr(0, string_.size() / 2);
+      else
+        string_ = string_.substr(0, string_.size() - other.string_.size());
+      ThrowError(CommonErrors::invalid_string_size);
+    }
+    return *this;
+  }
 
   template<size_t other_min, size_t other_max>
   explicit BoundedString(const BoundedString<other_min, other_max>& other)
@@ -93,8 +107,7 @@ class BoundedString {
 
   template<size_t other_min, size_t other_max>
   BoundedString& operator=(BoundedString<other_min, other_max> other) {
-    if (this == &other)
-      return *this;  // Self assignment
+    // No need for check for self-assignment since these as different types
     std::swap(string_, other.string_);
     std::swap(valid_, other.valid_);
     if (valid_) {
@@ -109,20 +122,21 @@ class BoundedString {
   }
 
   template<size_t other_min, size_t other_max>
-  BoundedString operator+(BoundedString<other_min, other_max> other) {
-    BoundedString result = *this;
-    result.string_ += other.string_;
+  BoundedString& operator+=(const BoundedString<other_min, other_max>& other) {
+    if (!valid_ || !other.valid_)
+      ThrowError(CommonErrors::uninitialised);
+    string_ += other.string_;
     if (OutwithBounds()) {
       // revert to provide strong exception guarantee
-      result.string_ -= other.string_;
-      ThrowError(CommonErrors::invalid_conversion);
+      string_ = string_.substr(0, string_.size() - other.string_.size());
+      ThrowError(CommonErrors::invalid_string_size);
     }
-    return result;
+    return *this;
   }
 
   const std::string& string() const {
     if (!valid_)
-      ThrowError(CommonErrors::invalid_string_size);
+      ThrowError(CommonErrors::uninitialised);
     return string_;
   }
 
@@ -172,6 +186,13 @@ inline bool operator<=(const BoundedString<min, max>& lhs, const BoundedString<m
 template<size_t min, size_t max>
 inline bool operator>=(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
   return !operator<(lhs, rhs);
+}
+
+template<size_t lhs_min, size_t lhs_max, size_t rhs_min, size_t rhs_max>
+inline BoundedString<lhs_min, lhs_max> operator+(BoundedString<lhs_min, lhs_max> lhs,
+                                                 const BoundedString<rhs_min, rhs_max>& rhs) {
+  lhs += rhs;
+  return lhs;
 }
 
 }  // namespace detail

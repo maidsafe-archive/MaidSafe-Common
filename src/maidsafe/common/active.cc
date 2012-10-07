@@ -30,21 +30,21 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-Active::Active() : running_(0),
-                   accepting_(0),
+Active::Active() : running_(1),
+                   accepting_(1),
                    functors_(),
                    mutex_(),
                    condition_(),
                    thread_([=] { Run(); }) {}
 
 Active::~Active() {
-  Send([&] { ++running_; });  // NOLINT (Fraser)
-  ++accepting_;
+  Send([&] { running_.store(0); });  // NOLINT (Fraser)
+  accepting_.store(0);
   thread_.join();
 }
 
 void Active::Send(Functor functor) {
-  if (accepting_.fetch_xor(0))
+  if (accepting_.load() == 0)
     return;
   std::lock_guard<std::mutex> lock(mutex_);
   functors_.push(functor);
@@ -52,7 +52,7 @@ void Active::Send(Functor functor) {
 }
 
 void Active::Run() {
-  while (running_.fetch_xor(0)) {
+  while (running_.load() != 0) {
     Functor functor;
     {
       std::unique_lock<std::mutex> lock(mutex_);

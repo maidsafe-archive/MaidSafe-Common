@@ -26,6 +26,7 @@ namespace test {
 
 typedef BoundedString<1, 1> OneOne;
 typedef BoundedString<1, 2> OneTwo;
+typedef BoundedString<1, 3> OneThree;
 typedef BoundedString<1> OneMax;
 typedef BoundedString<2, 2> TwoTwo;
 typedef BoundedString<2> TwoMax;
@@ -194,18 +195,81 @@ TEST(BoundedStringTest, BEH_OtherBoundedStringAssignment) {
   EXPECT_FALSE(l.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_Operator_Concatonate) {
-  OneOne one(RandomString(1));
-  std::string one_before_throw = one.string();
-  std::string another_single_character(RandomString(1));
-  std::string another_single_Character_before_throw = another_single_character;
-  EXPECT_THROW(one + another_single_character, std::exception);
-  EXPECT_EQ(another_single_Character_before_throw, another_single_character);
-  Expect_EQ(one_before_throw, one.string());
-  OneTwo two(RandomString(1));
-  std::string another_single_character(RandomString(1));
-  EXPECT_NO_THROW(two + another_single_character);
-  EXPECT_TRUE(two.string().size() == 2);
+TEST(BoundedStringTest, BEH_ConcatenationOperators) {
+  OneOne a(RandomString(1));
+  std::string a_before_throw = a.string();
+  OneTwo b(RandomString(1));
+  std::string b_before_throw = b.string();
+
+  EXPECT_THROW(a + b, std::exception);
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
+
+  EXPECT_THROW(a += b, std::exception);
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
+
+  EXPECT_THROW(a + a, std::exception);
+  EXPECT_EQ(a_before_throw, a.string());
+
+  EXPECT_THROW(a += a, std::exception);
+  EXPECT_EQ(a_before_throw, a.string());
+
+  OneTwo c(b + a);
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(b_before_throw + a_before_throw, c.string());
+
+  b += a;
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(c.string(), b.string());
+
+  b = OneTwo(b_before_throw);
+
+  OneTwo d(b + b);
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(b_before_throw + b_before_throw, d.string());
+
+  b += b;
+  EXPECT_EQ(d.string(), b.string());
+
+  b = OneTwo(b_before_throw);
+  OneThree e(RandomString(1));
+  std::string e_before_throw = e.string();
+
+  OneThree f(e + b + b);
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(e_before_throw + b_before_throw + b_before_throw, f.string());
+
+  e += (b + b);
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(f.string(), e.string());
+
+  e = OneThree(e_before_throw);
+
+  EXPECT_THROW(e + b + b + a, std::exception);
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(e_before_throw, e.string());
+
+  OneOne g;
+  EXPECT_THROW(e + g, std::exception);
+  EXPECT_EQ(e_before_throw, e.string());
+  EXPECT_FALSE(g.IsInitialised());
+
+  EXPECT_THROW(g + e, std::exception);
+  EXPECT_EQ(e_before_throw, e.string());
+  EXPECT_FALSE(g.IsInitialised());
+
+  EXPECT_THROW(e += g, std::exception);
+  EXPECT_EQ(e_before_throw, e.string());
+  EXPECT_FALSE(g.IsInitialised());
+
+  EXPECT_THROW(g += e, std::exception);
+  EXPECT_EQ(e_before_throw, e.string());
+  EXPECT_FALSE(g.IsInitialised());
+}
+
 }  // namespace test
 
 }  // namespace detail
