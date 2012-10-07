@@ -194,6 +194,18 @@ TEST(BoundedStringTest, BEH_OtherBoundedStringAssignment) {
   EXPECT_FALSE(l.IsInitialised());
 }
 
+TEST(BoundedStringTest, BEH_Operator_Concatonate) {
+  OneOne one(RandomString(1));
+  std::string one_before_throw = one.string();
+  std::string another_single_character(RandomString(1));
+  std::string another_single_Character_before_throw = another_single_character;
+  EXPECT_THROW(one + another_single_character, std::exception);
+  EXPECT_EQ(another_single_Character_before_throw, another_single_character);
+  Expect_EQ(one_before_throw, one.string());
+  OneTwo two(RandomString(1));
+  std::string another_single_character(RandomString(1));
+  EXPECT_NO_THROW(two + another_single_character);
+  EXPECT_TRUE(two.string().size() == 2);
 }  // namespace test
 
 }  // namespace detail

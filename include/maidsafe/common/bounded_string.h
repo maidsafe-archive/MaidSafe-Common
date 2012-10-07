@@ -69,6 +69,8 @@ class BoundedString {
         valid_(std::move(other.valid_)) {}
 
   BoundedString& operator=(BoundedString other) MAIDSAFE_NOEXCEPT {
+    if (this == &other)
+      return *this;  // Self assignment
     swap(*this, other);
     return *this;
   }
@@ -91,6 +93,8 @@ class BoundedString {
 
   template<size_t other_min, size_t other_max>
   BoundedString& operator=(BoundedString<other_min, other_max> other) {
+    if (this == &other)
+      return *this;  // Self assignment
     std::swap(string_, other.string_);
     std::swap(valid_, other.valid_);
     if (valid_) {
@@ -102,6 +106,18 @@ class BoundedString {
       }
     }
     return *this;
+  }
+
+  template<size_t other_min, size_t other_max>
+  BoundedString operator+(BoundedString<other_min, other_max> other) {
+    BoundedString result = *this;
+    result.string_ += other.string_;
+    if (OutwithBounds()) {
+      // revert to provide strong exception guarantee
+      result.string_ -= other.string_;
+      ThrowError(CommonErrors::invalid_conversion);
+    }
+    return result;
   }
 
   const std::string& string() const {
