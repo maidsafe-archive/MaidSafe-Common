@@ -104,7 +104,6 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
     ThrowError(AsymmErrors::invalid_public_key);
 
   std::string result;
-  result.clear();
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
   SafeEncrypt safe_enc;
   try {
@@ -262,34 +261,34 @@ bool CheckFileSignature(const boost::filesystem::path& filename,
   }
 }
 
-EncodedPrivateKey EncodeKey(const PrivateKey& key) {
-  std::string private_key;
+EncodedPrivateKey EncodeKey(const PrivateKey& private_key) {
+  std::string encoded_key;
   try {
     CryptoPP::ByteQueue queue;
-    key.DEREncodePrivateKey(queue);
-    EncodeKey(queue, private_key);
+    private_key.DEREncodePrivateKey(queue);
+    EncodeKey(queue, encoded_key);
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed encoding private key: " << e.what();
-    private_key.clear();
+    encoded_key.clear();
     ThrowError(AsymmErrors::invalid_private_key);
   }
-  return EncodedPrivateKey(private_key);
+  return EncodedPrivateKey(encoded_key);
 }
 
-EncodedPublicKey EncodeKey(const PublicKey& key) {
-  std::string public_key;
+EncodedPublicKey EncodeKey(const PublicKey& public_key) {
+  std::string encoded_key;
   try {
     CryptoPP::ByteQueue queue;
-    key.DEREncodePublicKey(queue);
-    EncodeKey(queue, public_key);
+    public_key.DEREncodePublicKey(queue);
+    EncodeKey(queue, encoded_key);
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed encoding public key: " << e.what();
-    public_key.clear();
+    encoded_key.clear();
     ThrowError(AsymmErrors::invalid_public_key);
   }
-  return EncodedPublicKey(public_key);
+  return EncodedPublicKey(encoded_key);
 }
 
 PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
@@ -322,6 +321,10 @@ PublicKey DecodeKey(const EncodedPublicKey& public_key) {
     ThrowError(AsymmErrors::invalid_public_key);
   }
   return key;
+}
+
+bool ValidateKey(const PublicKey& public_key) {
+  return public_key.Validate(rng(), 2);
 }
 
 // TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this

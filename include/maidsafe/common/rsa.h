@@ -88,13 +88,17 @@ bool CheckFileSignature(const boost::filesystem::path& filename,
                         const Signature& signature,
                         const PublicKey& public_key);
 
-EncodedPrivateKey EncodeKey(const PrivateKey& key);
+EncodedPrivateKey EncodeKey(const PrivateKey& private_key);
 
-EncodedPublicKey EncodeKey(const PublicKey& key);
+EncodedPublicKey EncodeKey(const PublicKey& public_key);
 
 PrivateKey DecodeKey(const EncodedPrivateKey& private_key);
 
 PublicKey DecodeKey(const EncodedPublicKey& public_key);
+
+// TODO(Fraser#5#): 2012-10-07 - This is used in ProcessStore of signature_packet_rules.cc.  Remove
+//                  This function once we have a proper BoundedString typedef for EncodedPublicKey.
+bool ValidateKey(const PublicKey& public_key);
 
 bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2);
 

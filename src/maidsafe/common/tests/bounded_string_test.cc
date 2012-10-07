@@ -43,7 +43,7 @@ TEST(BoundedStringTest, BEH_Getters) {
   EXPECT_FALSE(a.IsInitialised());
   EXPECT_THROW(a.string(), std::exception);
 
-  for (int i(0) ; i < 1000; ++i) {
+  for (int i(0); i < 1000; ++i) {
     std::string random(RandomString((RandomUint32() % 1024) + 1));
     OneMax b(random);
     EXPECT_TRUE(b.IsInitialised());
