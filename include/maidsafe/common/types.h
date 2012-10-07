@@ -35,9 +35,8 @@ namespace maidsafe {
 
 typedef detail::BoundedString<1> NonEmptyString;
 typedef detail::BoundedString<64, 64> Identity;
-typedef detail::BoundedString<4> UserName;
-typedef detail::BoundedString<4> UserPassword;
-
+typedef NonEmptyString UserName, UserPassword, Salt, PlainText, CipherText,
+                       CompressedText, UncompressedText, Signature;
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_TYPES_H_
