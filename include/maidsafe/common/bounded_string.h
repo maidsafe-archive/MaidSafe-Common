@@ -107,7 +107,7 @@ class BoundedString {
 
   template<size_t other_min, size_t other_max>
   BoundedString& operator=(BoundedString<other_min, other_max> other) {
-    // No need for check for self-assignment since these as different types
+    // No need for check for self-assignment since these are different types
     std::swap(string_, other.string_);
     std::swap(valid_, other.valid_);
     if (valid_) {

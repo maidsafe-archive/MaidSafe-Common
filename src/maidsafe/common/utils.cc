@@ -370,6 +370,10 @@ std::string Base64Substr(const std::string &non_base64) {
     return base64;
 }
 
+std::string DebugId(const Identity& id) {
+  return id.IsInitialised() ? "Uninitialised Identity" : HexSubstr(id.string());
+}
+
 boost::posix_time::time_duration GetDurationSinceEpoch() {
   return boost::posix_time::microsec_clock::universal_time() - kMaidSafeEpoch;
 }

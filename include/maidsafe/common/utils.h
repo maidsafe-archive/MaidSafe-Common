@@ -48,6 +48,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/types.h"
+
 
 namespace fs = boost::filesystem;
 
@@ -192,6 +194,9 @@ template<size_t min, size_t max>
 std::string Base64Substr(const detail::BoundedString<min, max> &non_base64) {
   return Base64Substr(non_base64.string());
 }
+
+// Returns an abbreviated hex representation of id.
+std::string DebugId(const Identity& id);
 
 // Returns the duration since kMaidsafeEpoch (1st January 2000).
 boost::posix_time::time_duration GetDurationSinceEpoch();

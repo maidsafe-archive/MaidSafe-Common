@@ -28,7 +28,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_ACTIVE_H_
 #define MAIDSAFE_COMMON_ACTIVE_H_
 
-#include <atomic>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
@@ -52,9 +51,9 @@ class Active {
   Active& operator=(const Active&);
   void Run();
   // FIXME this should be atomic<bool> but clang is violently complaining !!
-  std::atomic<int> running_, accepting_;
+  bool running_, accepting_;
   std::queue<Functor> functors_;
-  std::mutex mutex_;
+  std::mutex flags_mutex_, mutex_;
   std::condition_variable condition_;
   boost::thread thread_;
 };
