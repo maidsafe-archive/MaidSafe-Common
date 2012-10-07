@@ -30,5 +30,5 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 int main(int argc, char **argv) {
   maidsafe::log::FilterMap filter;
   filter["*"] = maidsafe::log::kFatal;
-  return ExecuteMain(argc, argv, filter);
+  return ExecuteMain(argc, argv, filter, true, maidsafe::log::ColourMode::kFullLine);
 }

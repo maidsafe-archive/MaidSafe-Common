@@ -124,7 +124,7 @@ PlainText SymmDecrypt(const CipherText& input,
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
     CryptoPP::StringSource(key.string(), true,
         new CryptoPP::ArraySink(byte_key, AES256_KeySize));
-    CryptoPP::StringSource(initialisation_vector.string().c_str(), true,
+    CryptoPP::StringSource(initialisation_vector.string(), true,
         new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, AES256_KeySize, byte_iv);

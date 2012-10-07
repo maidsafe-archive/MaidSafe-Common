@@ -67,7 +67,7 @@ void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
 }
 
 TEST_F(RSATest, BEH_RsaEncodeKeys) {
-    Keys keys = GenerateKeyPair();
+  Keys keys = GenerateKeyPair();
   auto f([&] {
     EncodedPrivateKey encoded_private_key(EncodeKey(keys.private_key));
     EncodedPublicKey encoded_public_key(EncodeKey(keys.public_key));
@@ -78,18 +78,18 @@ TEST_F(RSATest, BEH_RsaEncodeKeys) {
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
-   auto f([&] {
+  auto f([&] {
     const PlainText kSmallData(RandomString(21));
     const PlainText kLargeData(RandomString(1024 * 1024));
     const Keys empty_keys;
-    PlainText enc_small_data(Encrypt(kSmallData, keys_.public_key));
-    for(int i(0); i < 10 ; ++i) {
-    EXPECT_EQ(kSmallData.string(), Decrypt(enc_small_data, keys_.private_key).string());
-    // PlainText enc_large_data(Encrypt(kLargeData, keys_.public_key));
-    // EXPECT_EQ(kLargeData, Decrypt(enc_large_data, keys_.private_key));
+    for (int i(0); i < 10; ++i) {
+      PlainText enc_small_data(Encrypt(kSmallData, keys_.public_key));
+      EXPECT_EQ(kSmallData.string(), Decrypt(enc_small_data, keys_.private_key).string());
+      PlainText enc_large_data(Encrypt(kLargeData, keys_.public_key));
+      EXPECT_EQ(kLargeData, Decrypt(enc_large_data, keys_.private_key));
     }
-   });
-   RunInParallel(f);
+  });
+  RunInParallel(f);
 }
 
 TEST_F(RSATest, FUNC_SignValidate) {
