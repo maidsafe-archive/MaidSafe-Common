@@ -130,13 +130,8 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 }
 
 PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
-#ifndef NDEBUG
-  // Passing a default-constructed PrivateKey takes several minutes to throw in Debug using VS2012.
-  // We don't want this cost when running tests in Debug, but we don't want the cost of checking
-  // for an edge case in production code, hence this Debug block.
   if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_private_key);
-#endif
   PlainText result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
@@ -170,13 +165,8 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
 }
 
 Signature Sign(const PlainText& data, const PrivateKey& private_key) {
-#ifndef NDEBUG
-  // Passing a default-constructed PrivateKey takes several minutes to throw in Debug using VS2012.
-  // We don't want this cost when running tests in Debug, but we don't want the cost of checking
-  // for an edge case in production code, hence this Debug block.
   if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_private_key);
-#endif
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {

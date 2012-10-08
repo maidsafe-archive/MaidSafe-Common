@@ -74,6 +74,25 @@ const uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
+std::string XOR(const std::string &first, const std::string &second) {
+  size_t common_size(first.size());
+  if ((common_size != second.size()) || (common_size == 0)) {
+    LOG(kWarning) << "Size mismatch or zero.";
+    return "";
+  }
+
+  boost::scoped_array<char> first_char(new char[common_size]);
+  std::copy(first.begin(), first.end(), first_char.get());
+  boost::scoped_array<char> second_char(new char[common_size]);
+  std::copy(second.begin(), second.end(), second_char.get());
+
+  boost::scoped_array<char> buffer(new char[common_size]);
+  for (size_t i = 0; i < common_size; ++i)
+    buffer[i] = first_char[i] ^ second_char[i];
+
+  std::string result(buffer.get(), common_size);
+  return result;
+}
 
 SecurePassword CreateSecurePassword(const UserPassword& password,
                                     const Salt& salt,
