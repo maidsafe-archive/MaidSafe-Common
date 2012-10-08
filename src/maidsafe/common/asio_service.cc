@@ -60,6 +60,7 @@ void AsioService::Start() {
   work_.reset(new boost::asio::io_service::work(service_));
   for (auto& asio_thread : threads_) {
     asio_thread = std::move(boost::thread([&] {
+#ifdef NDEBUG
         try {
           service_.run();
         }
@@ -75,6 +76,9 @@ void AsioService::Start() {
           LOG(kError) << "Unknown exception.";
           assert(false);
         }
+#else
+        service_.run();
+#endif
     }));
   }
 }
