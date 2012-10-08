@@ -64,12 +64,9 @@ typedef NonEmptyString PlainText, CipherText, Signature;
 
 struct Keys {
   enum { kKeySize = 2048 };
-  Keys() : identity(), private_key(), public_key(), validation_token() {}
-  // TODO(Fraser#5#): 2012-10-02 - Change this struct to contain just a key pair.
-  Identity identity;
+  Keys() : private_key(), public_key() {}
   PrivateKey private_key;
   PublicKey public_key;
-  ValidationToken validation_token;  // certificate, additional signature etc.
 };
 
 Keys GenerateKeyPair();

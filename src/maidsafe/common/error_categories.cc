@@ -143,6 +143,30 @@ std::error_condition AsymmCategory::default_error_condition(
 }
 
 
+const char* MaidsafeIdentityRingCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "Maidsafe Identity Ring";
+}
+
+std::string MaidsafeIdentityRingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<MaidsafeIdentityRingErrors>(error_value)) {
+    case MaidsafeIdentityRingErrors::ring_serialisation_error:
+      return "Error serialising to protocol buffer representation";
+    case MaidsafeIdentityRingErrors::ring_parsing_error:
+      return "Error parsing from protocol buffer representation";
+    default:
+      return "Unknown error in MaidsafeIdentityRing";
+  }
+}
+
+std::error_condition MaidsafeIdentityRingCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<MaidsafeIdentityRingErrors>(error_value)) {
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
+
 const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
   return "LifeStuff";
 }
