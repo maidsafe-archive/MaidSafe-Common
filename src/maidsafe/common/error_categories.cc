@@ -160,10 +160,10 @@ std::string MaidsafeIdentityRingCategory::message(int error_value) const MAIDSAF
 
 std::error_condition MaidsafeIdentityRingCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<MaidsafeIdentityRingErrors>(error_value)) {
-    default:
+//  switch (static_cast<MaidsafeIdentityRingErrors>(error_value)) {
+//    default:
       return std::error_condition(error_value, *this);
-  }
+//  }
 }
 
 

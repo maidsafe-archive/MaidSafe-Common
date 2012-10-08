@@ -132,6 +132,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_private_key);
+
   PlainText result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
@@ -167,6 +168,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
 Signature Sign(const PlainText& data, const PrivateKey& private_key) {
   if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_private_key);
+
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
@@ -184,11 +186,8 @@ Signature Sign(const PlainText& data, const PrivateKey& private_key) {
 }
 
 Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key) {
-#ifndef NDEBUG
-  // See comment in similar Debug block of rsa::Sign function
   if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::signing_error);
-#endif
 
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
