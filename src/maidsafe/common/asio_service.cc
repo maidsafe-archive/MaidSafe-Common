@@ -37,7 +37,8 @@ namespace maidsafe {
 AsioService::AsioService(const uint32_t &thread_count)
     : service_(),
       work_(),
-      threads_(thread_count) {
+      threads_(thread_count),
+      mutex_() {
   if (thread_count == 0)
     ThrowError(CommonErrors::invalid_parameter);
 }
@@ -47,6 +48,7 @@ AsioService::~AsioService() {
 }
 
 void AsioService::Start() {
+  std::lock_guard<std::mutex> lock(mutex_);
   for (auto& asio_thread : threads_) {
     if (boost::this_thread::get_id() == asio_thread.get_id())
       ThrowError(CommonErrors::cant_invoke_from_this_thread);
@@ -84,6 +86,11 @@ void AsioService::Start() {
 }
 
 void AsioService::Stop() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!work_) {
+    LOG(kError) << "AsioService has already stopped.";
+    return;
+  }
   for (auto& asio_thread : threads_) {
     if (boost::this_thread::get_id() == asio_thread.get_id())
       ThrowError(CommonErrors::cant_invoke_from_this_thread);
