@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_ASIO_SERVICE_H_
 
 #include <cstdint>
+#include <future>
 #include <memory>
 #include <string>
 #include <vector>
@@ -52,6 +53,7 @@ class AsioService {
   boost::asio::io_service service_;
   std::shared_ptr<boost::asio::io_service::work> work_;
   std::vector<boost::thread> threads_;
+  std::mutex mutex_;
 };
 
 }  // namespace maidsafe

@@ -36,7 +36,8 @@ namespace maidsafe {
 AsioService::AsioService(const uint32_t &thread_count)
     : service_(),
       work_(),
-      threads_(thread_count) {}
+      threads_(thread_count),
+      mutex_() {}
 
 AsioService::~AsioService() {
   Stop();
@@ -76,6 +77,11 @@ void AsioService::Start() {
 }
 
 void AsioService::Stop() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  if (threads_.empty()) {
+    //std::cout << " thread pool is empty" << std::endl;
+    return;
+  }
 #ifndef NDEBUG
   for (auto& asio_thread : threads_)
     assert(boost::this_thread::get_id() != asio_thread.get_id());
@@ -110,6 +116,9 @@ void AsioService::Stop() {
       }
     }
   }
+  joining_workers.clear();
+  threads_.clear();
+  lock.unlock();
 }
 
 boost::asio::io_service& AsioService::service() {
