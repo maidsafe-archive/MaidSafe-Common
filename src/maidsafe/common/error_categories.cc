@@ -143,24 +143,24 @@ std::error_condition AsymmCategory::default_error_condition(
 }
 
 
-const char* MaidsafeIdentityRingCategory::name() const MAIDSAFE_NOEXCEPT {
+const char* FobCategory::name() const MAIDSAFE_NOEXCEPT {
   return "Maidsafe Identity Ring";
 }
 
-std::string MaidsafeIdentityRingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<MaidsafeIdentityRingErrors>(error_value)) {
-    case MaidsafeIdentityRingErrors::ring_serialisation_error:
+std::string FobCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<FobErrors>(error_value)) {
+    case FobErrors::fob_serialisation_error:
       return "Error serialising to protocol buffer representation";
-    case MaidsafeIdentityRingErrors::ring_parsing_error:
+    case FobErrors::fob_parsing_error:
       return "Error parsing from protocol buffer representation";
     default:
-      return "Unknown error in MaidsafeIdentityRing";
+      return "Unknown error in Fob";
   }
 }
 
-std::error_condition MaidsafeIdentityRingCategory::default_error_condition(
+std::error_condition FobCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<MaidsafeIdentityRingErrors>(error_value)) {
+//  switch (static_cast<FobErrors>(error_value)) {
 //    default:
       return std::error_condition(error_value, *this);
 //  }

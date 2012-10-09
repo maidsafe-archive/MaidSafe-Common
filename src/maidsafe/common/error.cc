@@ -42,8 +42,8 @@ std::error_code make_error_code(AsymmErrors code) {
   return std::error_code(static_cast<int>(code), GetAsymmCategory());
 }
 
-std::error_code make_error_code(MaidsafeIdentityRingErrors code) {
-  return std::error_code(static_cast<int>(code), GetMaidsafeIdentityRingCategory());
+std::error_code make_error_code(FobErrors code) {
+  return std::error_code(static_cast<int>(code), GetFobCategory());
 }
 
 std::error_code make_error_code(LifeStuffErrors code) {
@@ -58,8 +58,8 @@ std::error_condition make_error_condition(AsymmErrors code) {
   return std::error_condition(static_cast<int>(code), GetAsymmCategory());
 }
 
-std::error_condition make_error_condition(MaidsafeIdentityRingErrors code) {
-  return std::error_condition(static_cast<int>(code), GetMaidsafeIdentityRingCategory());
+std::error_condition make_error_condition(FobErrors code) {
+  return std::error_condition(static_cast<int>(code), GetFobCategory());
 }
 
 std::error_condition make_error_condition(LifeStuffErrors code) {
@@ -82,8 +82,8 @@ const std::error_category& GetAsymmCategory() {
   return instance;
 }
 
-const std::error_category& GetMaidsafeIdentityRingCategory() {
-  static detail::MaidsafeIdentityRingCategory instance;
+const std::error_category& GetFobCategory() {
+  static detail::FobCategory instance;
   return instance;
 }
 
