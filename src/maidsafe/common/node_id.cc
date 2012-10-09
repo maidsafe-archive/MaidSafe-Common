@@ -135,8 +135,11 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
 }
 
 bool NodeId::IsZero() const {
-  static const std::string kZeroId(kSize, 0);
-  return raw_id_ == kZeroId;
+  for (auto i : raw_id_) {
+    if (i != 0)
+      return false;
+  }
+  return true;
 }
 
 // TODO(Fraser#5#): 2012-09-28 - Check if required - probably used before in multi-index.
