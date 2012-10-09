@@ -96,7 +96,7 @@ TEST(AsioServiceTest, BEH_All) {
     asio_service.Stop();
     EXPECT_EQ(task_count, sleeps_interrupted);
     EXPECT_EQ(0, sleeps_not_interrupted);
-    EXPECT_LT(bptime::microsec_clock::local_time() - start_time, kTaskDuration);
+    EXPECT_LT(bptime::microsec_clock::local_time() - start_time, kTaskDuration * 2);
 
     // Stop while executing non-interruptible long-running tasks
     task_count = 4;

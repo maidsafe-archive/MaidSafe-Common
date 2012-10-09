@@ -44,6 +44,7 @@ AsioService::~AsioService() {
 }
 
 void AsioService::Start() {
+  std::lock_guard<std::mutex> lock(mutex_);
 #ifndef NDEBUG
   for (auto& asio_thread : threads_)
     assert(boost::this_thread::get_id() != asio_thread.get_id());
@@ -81,9 +82,9 @@ void AsioService::Start() {
 }
 
 void AsioService::Stop() {
-  std::unique_lock<std::mutex> lock(mutex_);
-  if (threads_.empty()) {
-    //std::cout << " thread pool is empty" << std::endl;
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!work_) {
+    LOG(kError) << "AsioService has already stopped.";
     return;
   }
 #ifndef NDEBUG
@@ -120,9 +121,6 @@ void AsioService::Stop() {
       }
     }
   }
-  joining_workers.clear();
-  threads_.clear();
-  lock.unlock();
 }
 
 boost::asio::io_service& AsioService::service() {
