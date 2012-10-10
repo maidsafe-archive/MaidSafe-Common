@@ -475,7 +475,7 @@ TEST(UtilsTest, BEH_ReadWriteFile) {
   EXPECT_FALSE(ReadFile(file_path, NULL));
   EXPECT_FALSE(ReadFile(file_path, &file_content));
   EXPECT_TRUE(file_content.empty());
-
+  EXPECT_THROW(ReadFile(file_path), std::exception);
   EXPECT_FALSE(WriteFile("", file_content));
   EXPECT_TRUE(WriteFile(file_path, file_content));
   EXPECT_TRUE(fs::exists(file_path));
@@ -486,6 +486,7 @@ TEST(UtilsTest, BEH_ReadWriteFile) {
 
   file_content = RandomString(3000 + RandomUint32() % 1000);
   EXPECT_TRUE(WriteFile(file_path, file_content));
+  EXPECT_NO_THROW(ReadFile(file_path));
   EXPECT_EQ(crypto::Hash<crypto::SHA512>(file_content),
             crypto::HashFile<crypto::SHA512>(file_path));
 

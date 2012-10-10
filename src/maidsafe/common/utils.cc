@@ -431,6 +431,26 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
   return true;
 }
 
+NonEmptyString ReadFile(const fs::path &file_path) {
+    uintmax_t file_size(fs::file_size(file_path));
+    uint16_t i(0), seed(10 + RandomUint32() % 10);
+    while ((i < 5) && (file_size == 0U)) {
+      Sleep(boost::posix_time::milliseconds(seed));
+      file_size = fs::file_size(file_path);
+      ++i;
+      LOG(kWarning) << "Re-read attempt " << i << " after sleeping for " << seed
+                    << " ms, file size is " << file_size;
+      seed *= 2;
+    }
+
+    fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
+
+    std::vector<char> file_content(file_size);
+    file_in.read(&file_content[0], file_size);
+    file_in.close();
+    return NonEmptyString(std::string(&file_content[0], file_size));
+}
+
 bool WriteFile(const fs::path &file_path, const std::string &content) {
   try {
     if (!file_path.has_filename()) {

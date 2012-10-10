@@ -206,6 +206,7 @@ uint32_t GetTimeStamp();
 
 // Reads the given file and returns the contents as a string.
 bool ReadFile(const fs::path &file_path, std::string *content);
+NonEmptyString ReadFile(const fs::path &file_path);
 
 // Writes the given content string to a file, overwriting if applicable.
 bool WriteFile(const fs::path &file_path, const std::string &content);
