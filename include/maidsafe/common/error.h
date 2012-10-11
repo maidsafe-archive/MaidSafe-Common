@@ -46,6 +46,7 @@ enum class CommonErrors {
   invalid_string_size,
   invalid_parameter,
   invalid_conversion,
+  file_too_large,
   uninitialised,
   hashing_error,
   symmetric_encryption_error,
