@@ -35,24 +35,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4702)
 #endif
 
-#include "boost/scoped_array.hpp"
 #include "cryptopp/gzip.h"
 #include "cryptopp/hex.h"
-#include "cryptopp/aes.h"
 #include "cryptopp/modes.h"
-#include "cryptopp/osrng.h"
 #include "cryptopp/pssr.h"
-#include  "cryptopp/ida.h"
 #include "cryptopp/pwdbased.h"
 #include "cryptopp/cryptlib.h"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
 #endif
-#include "boost/thread/mutex.hpp"
 
-#include "maidsafe/common/error.h"
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
 
@@ -74,7 +67,7 @@ const uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
-std::string XOR(const std::string &first, const std::string &second) {
+std::string XOR(const std::string& first, const std::string& second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
     LOG(kWarning) << "Size mismatch or zero.";
@@ -92,6 +85,8 @@ SecurePassword CreateSecurePassword(const UserPassword& password,
                                     const Salt& salt,
                                     const uint32_t& pin,
                                     const std::string& label) {
+  if (!password.IsInitialised() || !salt.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
@@ -111,6 +106,8 @@ SecurePassword CreateSecurePassword(const UserPassword& password,
 CipherText SymmEncrypt(const PlainText& input,
                        const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector) {
+  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -132,6 +129,8 @@ CipherText SymmEncrypt(const PlainText& input,
 PlainText SymmDecrypt(const CipherText& input,
                       const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector) {
+  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -157,6 +156,8 @@ CompressedText Compress(const UncompressedText& input, const uint16_t& compressi
                 << kMaxCompressionLevel;
     ThrowError(CommonErrors::invalid_parameter);
   }
+  if (!input.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
 
   std::string result;
   try {
@@ -171,6 +172,8 @@ CompressedText Compress(const UncompressedText& input, const uint16_t& compressi
 }
 
 UncompressedText Uncompress(const CompressedText& input) {
+  if (!input.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   std::string result;
   try {
     CryptoPP::StringSource(input.string(), true, new CryptoPP::Gunzip(
