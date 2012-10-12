@@ -30,39 +30,31 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-Active::Active() : running_(1),
-                   accepting_(1),
+Active::Active() : running_(true),
                    functors_(),
                    flags_mutex_(),
                    mutex_(),
                    condition_(),
-                   thread_([=] { Run(); }) {}
+                   thread_([this] { Run(); }) {}
 
 Active::~Active() {
-  Send([&] {
+  Send([this] {
     std::lock_guard<std::mutex> flags_lock(flags_mutex_);
     running_ = false;
   });
-  {
-    std::lock_guard<std::mutex> flags_lock(flags_mutex_);
-    accepting_ = false;
-  }
   thread_.join();
 }
 
 void Active::Send(Functor functor) {
   {
-    std::lock_guard<std::mutex> flags_lock(flags_mutex_);
-    if (!accepting_)
-      return;
+    std::lock_guard<std::mutex> lock(mutex_);
+    functors_.push(std::move(functor));
   }
-  std::lock_guard<std::mutex> lock(mutex_);
-  functors_.push(functor);
   condition_.notify_one();
 }
 
 void Active::Run() {
-  auto running = [&]()->bool {
+  auto running = [this]()->bool {
     std::lock_guard<std::mutex> flags_lock(flags_mutex_);
     return running_;
   };
@@ -73,7 +65,7 @@ void Active::Run() {
       std::unique_lock<std::mutex> lock(mutex_);
       while (functors_.empty())
         condition_.wait(lock);
-      functor = functors_.front();
+      functor = std::move(functors_.front());
       functors_.pop();
     }
     functor();
