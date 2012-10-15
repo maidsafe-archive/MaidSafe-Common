@@ -108,7 +108,8 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
     safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv).string());
     std::string encryption_key_encrypted;
-    CryptoPP::StringSource(symm_encryption_key.string() + symm_encryption_iv.string(),
+    std::string const local_key_and_iv=symm_encryption_key.string() + symm_encryption_iv.string();
+    CryptoPP::StringSource(local_key_and_iv,
                            true,
                            new CryptoPP::PK_EncryptorFilter(rng(),
                                                             encryptor,
