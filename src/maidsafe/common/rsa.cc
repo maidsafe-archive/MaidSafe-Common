@@ -29,15 +29,12 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 
-#include "maidsafe/common/error.h"
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4702)
 #endif
-#include "boost/scoped_array.hpp"
 #include "cryptopp/modes.h"
-#include "cryptopp/rsa.h"
 #include "cryptopp/osrng.h"
 #include "cryptopp/pssr.h"
 #include "cryptopp/cryptlib.h"
@@ -118,9 +115,8 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
                                                             new CryptoPP::StringSink(
                                                                 encryption_key_encrypted)));
     safe_enc.set_key(encryption_key_encrypted);
-    if (!safe_enc.SerializeToString(&result)) {
+    if (!safe_enc.SerializeToString(&result))
       ThrowError(AsymmErrors::keys_serialisation_error);
-    }
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric encrypting: " << e.what();
@@ -166,6 +162,8 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
 }
 
 Signature Sign(const PlainText& data, const PrivateKey& private_key) {
+  if (!data.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   if (!private_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_private_key);
 
@@ -210,6 +208,8 @@ Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& pr
 bool CheckSignature(const PlainText& data,
                     const Signature& signature,
                     const PublicKey& public_key) {
+  if (!data.IsInitialised() || !signature.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   if (!public_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_public_key);
 
@@ -230,6 +230,8 @@ bool CheckSignature(const PlainText& data,
 bool CheckFileSignature(const boost::filesystem::path& filename,
                         const Signature& signature,
                         const PublicKey& public_key) {
+  if (!signature.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
   if (!public_key.Validate(rng(), 0))
     ThrowError(AsymmErrors::invalid_public_key);
 

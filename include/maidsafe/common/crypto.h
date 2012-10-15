@@ -108,7 +108,7 @@ detail::BoundedString<size, size> XOR(const detail::BoundedString<size, size>& f
   return detail::BoundedString<size, size>(result);
 }
 
-std::string XOR(const std::string &first, const std::string &second);
+std::string XOR(const std::string& first, const std::string& second);
 
 // Creates a secure password using the Password-Based Key Derivation Function (PBKDF) version 2
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
