@@ -451,6 +451,7 @@ TEST(UtilsTest, BEH_TimeFunctions) {
   EXPECT_EQ(s, ms / 1000) << "s vs. ms failed.";
   EXPECT_EQ(s, ns / 1000000000) << "s vs. ns failed.";
   EXPECT_EQ(ms, ns / 1000000) << "ms vs. ns failed.";
+  EXPECT_GE(GetTimeStamp() + 1 , MillisecondTimeStamp() / 1000);
 }
 
 TEST(UtilsTest, BEH_RandomNumberGen) {

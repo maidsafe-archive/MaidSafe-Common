@@ -204,7 +204,9 @@ boost::posix_time::time_duration GetDurationSinceEpoch();
 // Returns the number of seconds since kMaidsafeEpoch (1st January 2000).
 uint32_t GetTimeStamp();
 
-// Reads the given file and returns the contents as a string.
+int64_t MillisecondTimeStamp();
+
+  // Reads the given file and returns the contents as a string.
 bool ReadFile(const fs::path &file_path, std::string *content);
 NonEmptyString ReadFile(const fs::path &file_path);
 
