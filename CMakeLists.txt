@@ -82,6 +82,11 @@ target_link_libraries(maidsafe_common
                         ${BoostThreadLibs}
                         ${BoostRegexLibs}
                         ${SYS_LIB})
+
+if(JustThread_FOUND)
+  target_link_libraries(maidsafe_common optimized ${JustThread_LIBRARY} debug ${JustThread_LIBRARY_DEBUG})
+endif()
+
 target_link_libraries(TESTcommon maidsafe_common)
 #target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 rename_outdated_built_exes()
