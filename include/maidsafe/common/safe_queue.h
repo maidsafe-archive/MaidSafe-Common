@@ -40,18 +40,6 @@ class SafeQueue {
  public:
   SafeQueue() : queue_(), mutex_(), condition_() {}
 
-  SafeQueue(const SafeQueue&& other) {
-    other.queue_(std::move(queue_));
-    other.mutex_(std::move(mutex_));
-    other.condition_(std::move(condition_));
-  }
-
-  SafeQueue& operator=(const SafeQueue&& other) {
-    other.queue_ = (std::move(queue_));
-    other.mutex_ = (std::move(mutex_));
-    other.condition_ = (std::move(condition_));
-  }
-
   bool Empty() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return queue_.empty();
@@ -63,8 +51,10 @@ class SafeQueue {
   }
 
   void Push(T element) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    queue_.push(element);
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      queue_.push(std::move(element));
+    }
     condition_.notify_one();
   }
 
@@ -72,7 +62,7 @@ class SafeQueue {
     std::lock_guard<std::mutex> lock(mutex_);
     if (queue_.empty())
       return false;
-    element = queue_.front();
+    element = std::move(queue_.front());
     queue_.pop();
     return true;
   }
@@ -81,7 +71,7 @@ class SafeQueue {
     std::unique_lock<std::mutex> lock(mutex_);
     while (queue_.empty())
       condition_.wait(lock);
-    element = queue_.front();
+    element = std::move(queue_.front());
     queue_.pop();
   }
 

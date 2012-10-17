@@ -28,13 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/utils.h"
 
 #include <ctype.h>
-#include <thread>
-#include <array>
-#include <cstdint>
 #include <algorithm>
+#include <array>
+#include <future>
 #include <limits>
 #include <set>
-#include <string>
+#include <thread>
+#include <vector>
 
 #if defined(macintosh) || defined(__APPLE__) || \
 defined(__APPLE_CC__) || (defined(linux) || \
@@ -52,13 +52,12 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #  pragma warning(push, 1)
 #  pragma warning(disable: 4127)
 #endif
+
 #include "boost/config.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/lexical_cast.hpp"
-#include "boost/scoped_array.hpp"
 #include "boost/thread/mutex.hpp"
-#include "boost/thread/thread.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
@@ -615,6 +614,14 @@ TestPath CreateTestPath(std::string test_prefix) {
 
   LOG(kInfo) << "Created test directory " << *test_path;
   return test_path_ptr;
+}
+
+void RunInParallel(int thread_count, std::function<void()> functor) {
+  std::vector<std::future<void>> futures;
+  for (int i = 0; i < thread_count; ++i)
+    futures.push_back(std::async(std::launch::async, functor));
+  for (auto& future : futures)
+    future.get();
 }
 
 uint16_t GetRandomPort() {

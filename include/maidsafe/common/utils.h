@@ -29,6 +29,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MAIDSAFE_COMMON_UTILS_H_
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -252,6 +253,9 @@ typedef std::shared_ptr<fs::path> TestPath;
 // The test_prefix should preferably be "MaidSafe_Test<optional test name>" or
 // "Sigmoid_Test<optional test name>".
 TestPath CreateTestPath(std::string test_prefix = "");
+
+// Executes "functor" asynchronously "thread_count" times.
+void RunInParallel(int thread_count, std::function<void()> functor);
 
 // Returns a random port in the range [1025, 65535].
 uint16_t GetRandomPort();
