@@ -56,7 +56,6 @@ namespace rsa {
 
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
 typedef CryptoPP::RSA::PublicKey PublicKey;
-typedef std::string ValidationToken;
 // TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
 typedef detail::BoundedString<2> EncodedPublicKey;
 typedef detail::BoundedString<3> EncodedPrivateKey;

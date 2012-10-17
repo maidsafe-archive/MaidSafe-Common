@@ -28,15 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/rsa.h"
 
-#include <future>
-#include <thread>
-
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+
 
 namespace maidsafe {
 
@@ -54,31 +52,20 @@ class RSATest : public testing::Test {
     ASSERT_NO_THROW(keys_ = GenerateKeyPair());
     keys_ = GenerateKeyPair();
   }
-  void RunInParallel(std::function<void()>, int num_threads = 6);
 };
-
-void RSATest::RunInParallel(std::function<void()> f, int num_threads) {
-  std::vector<std::future<void>> vec;
-  for (int i = 0; i < num_threads; ++i)
-    vec.push_back(std::async(std::launch::async, f));
-// wait for all threads to finish
-  for (auto &i : vec)
-    i.get();
-}
 
 TEST_F(RSATest, BEH_RsaEncodeKeys) {
   Keys keys = GenerateKeyPair();
-  auto f([&] {
+  maidsafe::test::RunInParallel(100, [&] {
     EncodedPrivateKey encoded_private_key(EncodeKey(keys.private_key));
     EncodedPublicKey encoded_public_key(EncodeKey(keys.public_key));
     PrivateKey private_key(DecodeKey(encoded_private_key));
     PublicKey public_key(DecodeKey(encoded_public_key));
   });
-  RunInParallel(f, 100);
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
-  auto f([&] {
+  maidsafe::test::RunInParallel(6, [&] {
     const PlainText kSmallData(RandomString(21));
     const PlainText kLargeData(RandomString(1024 * 1024));
     const Keys empty_keys;
@@ -89,11 +76,10 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
       EXPECT_EQ(kLargeData, Decrypt(enc_large_data, keys_.private_key));
     }
   });
-  RunInParallel(f);
 }
 
 TEST_F(RSATest, FUNC_SignValidate) {
-  auto f([&] {
+  maidsafe::test::RunInParallel(10, [&] {
     EXPECT_NO_THROW(Keys keys(GenerateKeyPair()));
     Keys keys(GenerateKeyPair());
     PrivateKey empty_priv_key;
@@ -110,11 +96,10 @@ TEST_F(RSATest, FUNC_SignValidate) {
     Signature bad_signature("bad");
     EXPECT_FALSE(CheckSignature(kData, bad_signature, keys.public_key));
   });
-  RunInParallel(f, 10);
 }
 
 TEST_F(RSATest, FUNC_SignFileValidate) {
-  auto f([&] {
+  maidsafe::test::RunInParallel(3, [&] {
     Keys keys;
     EXPECT_NO_THROW(keys = GenerateKeyPair());
     const std::string kData(RandomString(20 * 1024 * 1024));
@@ -138,11 +123,10 @@ TEST_F(RSATest, FUNC_SignFileValidate) {
                  std::exception);
     EXPECT_FALSE(CheckFileSignature(test_file.string(), bad_signature, keys.public_key));
   });
-  RunInParallel(f, 3);
 }
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
-  auto f([&] {
+  maidsafe::test::RunInParallel(6, [&] {
     Keys k1, k2;
     EXPECT_TRUE(MatchingKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingKeys(k1.private_key, k2.private_key));
@@ -153,7 +137,6 @@ TEST_F(RSATest, BEH_RsaKeysComparing) {
     EXPECT_TRUE(MatchingKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingKeys(k1.private_key, k2.private_key));
   });
-  RunInParallel(f);
 }
 
 }  //  namespace test
