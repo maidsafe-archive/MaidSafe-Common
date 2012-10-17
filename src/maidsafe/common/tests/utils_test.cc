@@ -360,6 +360,15 @@ TEST(UtilsTest, BEH_RandomStringSingleThread) {
 }
 
 TEST(UtilsTest, BEH_HexEncodeDecode) {
+  maidsafe::test::RunInParallel(100, [&] {
+    for (int i = 0; i < 10; ++i) {
+      std::string original = RandomString(100);
+      std::string encoded = EncodeToHex(original);
+      EXPECT_EQ(200U, encoded.size());
+      std::string decoded = DecodeFromHex(encoded);
+      EXPECT_EQ(original, decoded);
+    }
+  });
   const std::string kKnownEncoded("0123456789abcdef");
   const std::string kKnownDecoded("\x1\x23\x45\x67\x89\xab\xcd\xef");
   EXPECT_EQ(kKnownEncoded, EncodeToHex(kKnownDecoded));
@@ -367,16 +376,18 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
   EXPECT_TRUE(EncodeToHex("").empty());
   EXPECT_TRUE(DecodeFromHex("").empty());
   EXPECT_TRUE(DecodeFromHex("{").empty());
-  for (int i = 0; i < 1000; ++i) {
-    std::string original = RandomString(100);
-    std::string encoded = EncodeToHex(original);
-    EXPECT_EQ(200U, encoded.size());
-    std::string decoded = DecodeFromHex(encoded);
-    EXPECT_EQ(original, decoded);
-  }
 }
 
 TEST(UtilsTest, BEH_Base64EncodeDecode) {
+  maidsafe::test::RunInParallel(100, [&] {
+    for (int i = 0; i < 10; ++i) {
+      std::string original = RandomString(100);
+      std::string encoded = EncodeToBase64(original);
+      EXPECT_EQ(136U, encoded.size()) << "Encoding failed.";
+      std::string decoded = DecodeFromBase64(encoded);
+      EXPECT_EQ(original, decoded) << "encoded -> decoded failed.";
+    }
+  });
   const std::string kKnownEncoded("BCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr"
                                   "stuvwxyz0123456789+/A");
   const std::string kKnownDecoded("\x04\x20\xc4\x14\x61\xc8\x24\xa2\xcc\x34\xe3"
@@ -388,16 +399,18 @@ TEST(UtilsTest, BEH_Base64EncodeDecode) {
   EXPECT_TRUE(EncodeToBase64("").empty());
   EXPECT_TRUE(DecodeFromBase64("").empty());
   EXPECT_TRUE(DecodeFromBase64("{").empty());
-  for (int i = 0; i < 1000; ++i) {
-    std::string original = RandomString(100);
-    std::string encoded = EncodeToBase64(original);
-    EXPECT_EQ(136U, encoded.size()) << "Encoding failed.";
-    std::string decoded = DecodeFromBase64(encoded);
-    EXPECT_EQ(original, decoded) << "encoded -> decoded failed.";
-  }
 }
 
 TEST(UtilsTest, BEH_Base32EncodeDecode) {
+  maidsafe::test::RunInParallel(100, [&] {
+    for (int i = 0; i < 10; ++i) {
+      std::string original = RandomString(100);
+      std::string encoded = EncodeToBase32(original);
+      EXPECT_EQ(160U, encoded.size()) << "Encoding failed.";
+      std::string decoded = DecodeFromBase32(encoded);
+      EXPECT_EQ(original, decoded) << "encoded -> decoded failed.";
+    }
+  });
   const std::string kKnownEncoded("bcdefghijkmnpqrstuvwxyz23456789a");
   const std::string kKnownDecoded("\x08\x86\x42\x98\xe8\x4a\x96\xc6\xb9\xf0\x8c"
                                   "\xa7\x4a\xda\xf8\xce\xb7\xce\xfb\xe0");
@@ -406,13 +419,6 @@ TEST(UtilsTest, BEH_Base32EncodeDecode) {
   EXPECT_TRUE(EncodeToBase32("").empty());
   EXPECT_TRUE(DecodeFromBase32("").empty());
   EXPECT_TRUE(DecodeFromBase32("{").empty());
-  for (int i = 0; i < 1000; ++i) {
-    std::string original = RandomString(100);
-    std::string encoded = EncodeToBase32(original);
-    EXPECT_EQ(160U, encoded.size()) << "Encoding failed.";
-    std::string decoded = DecodeFromBase32(encoded);
-    EXPECT_EQ(original, decoded) << "encoded -> decoded failed.";
-  }
 }
 
 TEST(UtilsTest, BEH_HexSubstr) {
@@ -454,17 +460,19 @@ TEST(UtilsTest, BEH_TimeFunctions) {
 }
 
 TEST(UtilsTest, BEH_RandomNumberGen) {
-  std::set<int32_t>random_ints;
-  std::set<uint32_t>random_uints;
-  const size_t kCount(10000);
-  // look for less than 0.05% duplicates
-  const size_t kMaxDuplicates(kCount / 2000);
-  for (size_t i = 0; i < kCount; ++i) {
-    random_ints.insert(RandomInt32());
-    random_uints.insert(RandomUint32());
-  }
-  EXPECT_GE(kMaxDuplicates, kCount - random_ints.size());
-  EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
+  maidsafe::test::RunInParallel(10, [&] {
+    std::set<int32_t>random_ints;
+    std::set<uint32_t>random_uints;
+    const size_t kCount(10000);
+    // look for less than 0.05% duplicates
+    const size_t kMaxDuplicates(kCount / 2000);
+    for (size_t i = 0; i < kCount; ++i) {
+      random_ints.insert(RandomInt32());
+      random_uints.insert(RandomUint32());
+    }
+    EXPECT_GE(kMaxDuplicates, kCount - random_ints.size());
+    EXPECT_GE(kMaxDuplicates, kCount - random_uints.size());
+  });
 }
 
 TEST(UtilsTest, BEH_ReadWriteFile) {
