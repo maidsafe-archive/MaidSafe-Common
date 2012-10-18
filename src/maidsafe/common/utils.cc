@@ -382,6 +382,11 @@ uint32_t GetTimeStamp() {
   return since_epoch.total_seconds();
 }
 
+int64_t MillisecondTimeStamp() {
+  boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
+  return since_epoch.total_milliseconds();
+}
+
 bool ReadFile(const fs::path &file_path, std::string *content) {
   if (!content) {
     LOG(kError) << "Failed to read file " << file_path
