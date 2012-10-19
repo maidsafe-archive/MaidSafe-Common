@@ -58,8 +58,9 @@ class BoundedString {
   }
 
   friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
-    std::swap(first.string_, second.string_);
-    std::swap(first.valid_, second.valid_);
+    using std::swap;
+    swap(first.string_, second.string_);
+    swap(first.valid_, second.valid_);
   }
 
   BoundedString(const BoundedString& other) : string_(other.string_), valid_(other.valid_) {}
@@ -97,27 +98,21 @@ class BoundedString {
   template<size_t other_min, size_t other_max>
   explicit BoundedString(const BoundedString<other_min, other_max>& other)
       : string_(), valid_(false) {
+    static_assert((min <= other_min) && (max >= other_max),
+                  "Bounds of copied BoundedString must be within bounds of this BoundedString");
     if (other.IsInitialised()) {
       string_ = other.string();
-      if (OutwithBounds())
-        ThrowError(CommonErrors::invalid_conversion);
       valid_ = true;
     }
   }
 
   template<size_t other_min, size_t other_max>
   BoundedString& operator=(BoundedString<other_min, other_max> other) {
+    static_assert((min <= other_min) && (max >= other_max),
+                  "Bounds of copied BoundedString must be within bounds of this BoundedString");
     // No need for check for self-assignment since these are different types
     std::swap(string_, other.string_);
     std::swap(valid_, other.valid_);
-    if (valid_) {
-      if (OutwithBounds()) {
-        // swap back to provide strong exception guarantee
-        std::swap(string_, other.string_);
-        std::swap(valid_, other.valid_);
-          ThrowError(CommonErrors::invalid_conversion);
-      }
-    }
     return *this;
   }
 
@@ -160,7 +155,15 @@ class BoundedString {
 
 template<size_t min, size_t max>
 inline bool operator==(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return lhs.string() == rhs.string();
+  if (lhs.IsInitialised()) {
+    if (rhs.IsInitialised()) {
+      return lhs.string() == rhs.string();
+    } else {
+      return false;
+    }
+  } else {
+    return !rhs.IsInitialised();
+  }
 }
 
 template<size_t min, size_t max>
@@ -170,7 +173,15 @@ inline bool operator!=(const BoundedString<min, max>& lhs, const BoundedString<m
 
 template<size_t min, size_t max>
 inline bool operator<(const BoundedString<min, max>& lhs, const BoundedString<min, max>& rhs) {
-  return lhs.string() < rhs.string();
+  if (lhs.IsInitialised()) {
+    if (rhs.IsInitialised()) {
+      return lhs.string() < rhs.string();
+    } else {
+      return false;
+    }
+  } else {
+    return rhs.IsInitialised();
+  }
 }
 
 template<size_t min, size_t max>

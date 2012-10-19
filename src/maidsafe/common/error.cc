@@ -27,7 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/error.h"
 
-#include <boost/throw_exception.hpp>
+#include "boost/throw_exception.hpp"
 
 #include "maidsafe/common/error_categories.h"
 
