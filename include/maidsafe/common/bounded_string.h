@@ -125,12 +125,10 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString<other_min, other_max>& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);
-    string_ += other.string_;
-    if (OutwithBounds()) {
-      // revert to provide strong exception guarantee
-      string_ = string_.substr(0, string_.size() - other.string_.size());
+    if(SizeOutOfBounds(string_.size()+other.string_.size()))
       ThrowError(CommonErrors::invalid_string_size);
-    }
+    std::string temp(string_+other.string_);
+    string_.swap(temp);
     return *this;
   }
 
@@ -145,11 +143,15 @@ class BoundedString {
   template<size_t other_min, size_t other_max> friend class BoundedString;
 
  private:
-  bool OutwithBounds() {
+  bool SizeOutOfBounds(std::string::size_type size) const {
     static_assert(min, "Lower bound of BoundedString must be non-zero");
     static_assert(min <= max,
                   "Lower bound of BoundedString must be less than or equal to upper bound");
-    return ((string_.size() < min) || string_.size() > max);
+    return (size < min) || (size > max);
+  }
+ 
+  bool OutwithBounds() const {
+    return SizeOutOfBounds(string_.size());
   }
   std::string string_;
   bool valid_;
