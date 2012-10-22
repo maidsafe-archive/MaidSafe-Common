@@ -51,7 +51,7 @@ class BoundedString {
         // Use OutwithBounds() to invoke static_asserts
         valid_(!OutwithBounds()) {}
 
- explicit BoundedString(std::string string) : string_(std::move(string)), valid_(true) {
+  explicit BoundedString(std::string string) : string_(std::move(string)), valid_(true) {
     if (OutwithBounds())
       ThrowError(CommonErrors::invalid_string_size);
   }
@@ -82,7 +82,7 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);
-    if(SizeOutOfBounds(string_.size()+other.string_.size()))
+    if (SizeOutOfBounds(string_.size()+other.string_.size()))
       ThrowError(CommonErrors::invalid_string_size);
     std::string temp(string_+other.string_);
     string_.swap(temp);
@@ -110,7 +110,7 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString<other_min, other_max>& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);
-    if(SizeOutOfBounds(string_.size()+other.string_.size()))
+    if (SizeOutOfBounds(string_.size()+other.string_.size()))
       ThrowError(CommonErrors::invalid_string_size);
     std::string temp(string_+other.string_);
     string_.swap(temp);
@@ -134,7 +134,7 @@ class BoundedString {
                   "Lower bound of BoundedString must be less than or equal to upper bound");
     return (size < min) || (size > max);
   }
- 
+
   bool OutwithBounds() const {
     return SizeOutOfBounds(string_.size());
   }
