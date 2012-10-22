@@ -90,14 +90,10 @@ class BoundedString {
   }
 
   template<size_t other_min, size_t other_max>
-  explicit BoundedString(const BoundedString<other_min, other_max>& other)
-      : string_(), valid_(false) {
+  explicit BoundedString(BoundedString<other_min, other_max> other)
+    : string_(std::move(other.string_)), valid_(std::move(other.valid_)) {
     static_assert((min <= other_min) && (max >= other_max),
                   "Bounds of copied BoundedString must be within bounds of this BoundedString");
-    if (other.IsInitialised()) {
-      string_ = other.string();
-      valid_ = true;
-    }
   }
 
   template<size_t other_min, size_t other_max>
