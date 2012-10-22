@@ -96,9 +96,9 @@ PublicKey DecodeKey(const EncodedPublicKey& public_key);
 //                  This function once we have a proper BoundedString typedef for EncodedPublicKey.
 bool ValidateKey(const PublicKey& public_key);
 
-bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2);
-
 bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2);
+
+bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2);
 
 }  // namespace rsa
 

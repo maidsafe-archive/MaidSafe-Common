@@ -62,6 +62,10 @@ TEST_F(RSATest, BEH_RsaEncodeKeys) {
     PrivateKey private_key(DecodeKey(encoded_private_key));
     PublicKey public_key(DecodeKey(encoded_public_key));
   });
+  EXPECT_THROW(EncodeKey(PrivateKey()), std::exception);
+  EXPECT_THROW(EncodeKey(PublicKey()), std::exception);
+  EXPECT_THROW(DecodeKey(EncodedPrivateKey()), std::exception);
+  EXPECT_THROW(DecodeKey(EncodedPublicKey()), std::exception);
 }
 
 TEST_F(RSATest, BEH_AsymEncryptDecrypt) {

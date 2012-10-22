@@ -254,6 +254,9 @@ bool CheckFileSignature(const boost::filesystem::path& filename,
 }
 
 EncodedPrivateKey EncodeKey(const PrivateKey& private_key) {
+  if (!private_key.Validate(rng(), 0))
+    ThrowError(AsymmErrors::invalid_private_key);
+
   std::string encoded_key;
   try {
     CryptoPP::ByteQueue queue;
@@ -269,6 +272,9 @@ EncodedPrivateKey EncodeKey(const PrivateKey& private_key) {
 }
 
 EncodedPublicKey EncodeKey(const PublicKey& public_key) {
+  if (!public_key.Validate(rng(), 0))
+    ThrowError(AsymmErrors::invalid_private_key);
+
   std::string encoded_key;
   try {
     CryptoPP::ByteQueue queue;
@@ -284,6 +290,9 @@ EncodedPublicKey EncodeKey(const PublicKey& public_key) {
 }
 
 PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
+  if (!private_key.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
+
   PrivateKey key;
   try {
     CryptoPP::ByteQueue queue;
@@ -300,6 +309,9 @@ PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
 }
 
 PublicKey DecodeKey(const EncodedPublicKey& public_key) {
+  if (!public_key.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
+
   PublicKey key;
   try {
     CryptoPP::ByteQueue queue;
@@ -320,15 +332,62 @@ bool ValidateKey(const PublicKey& public_key) {
 }
 
 // TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this
-bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
-  return EncodeKey(public_key1) == EncodeKey(public_key2);
+bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2) {
+  bool valid1(private_key1.Validate(rng(), 0));
+  bool valid2(private_key2.Validate(rng(), 0));
+  try {
+    if ((valid1 && valid2) || (!valid1 && !valid2)) {
+      std::string encoded_key1, encoded_key2;
+      CryptoPP::ByteQueue queue1, queue2;
+      private_key1.DEREncodePrivateKey(queue1);
+      private_key2.DEREncodePrivateKey(queue2);
+      EncodeKey(queue1, encoded_key1);
+      EncodeKey(queue2, encoded_key2);
+      if (valid1)
+        return encoded_key1 == encoded_key2;
+      std::string encoded_default_key;
+      PrivateKey default_private_key;
+      CryptoPP::ByteQueue default_queue;
+      default_private_key.DEREncodePrivateKey(default_queue);
+      EncodeKey(default_queue, encoded_default_key);
+      return (encoded_default_key == encoded_key1) && (encoded_default_key == encoded_key2);
+    }
+  }
+  catch(const CryptoPP::Exception& e) {
+    LOG(kError) << "Failed encoding private key: " << e.what();
+    ThrowError(AsymmErrors::invalid_private_key);
+  }
+  return false;
 }
 
 // TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this
-bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2) {
-  return EncodeKey(private_key1) == EncodeKey(private_key2);
+bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
+  bool valid1(public_key1.Validate(rng(), 0));
+  bool valid2(public_key2.Validate(rng(), 0));
+  try {
+    if ((valid1 && valid2) || (!valid1 && !valid2)) {
+      std::string encoded_key1, encoded_key2;
+      CryptoPP::ByteQueue queue1, queue2;
+      public_key1.DEREncodePublicKey(queue1);
+      public_key2.DEREncodePublicKey(queue2);
+      EncodeKey(queue1, encoded_key1);
+      EncodeKey(queue2, encoded_key2);
+      if (valid1)
+        return encoded_key1 == encoded_key2;
+      std::string encoded_default_key;
+      PublicKey default_public_key;
+      CryptoPP::ByteQueue default_queue;
+      default_public_key.DEREncodePublicKey(default_queue);
+      EncodeKey(default_queue, encoded_default_key);
+      return (encoded_default_key == encoded_key1) && (encoded_default_key == encoded_key2);
+    }
+  }
+  catch(const CryptoPP::Exception& e) {
+    LOG(kError) << "Failed encoding public key: " << e.what();
+    ThrowError(AsymmErrors::invalid_public_key);
+  }
+  return false;
 }
-
 
 }  // namespace rsa
 
