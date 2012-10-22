@@ -82,15 +82,10 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);
-    string_ += other.string_;
-    if (OutwithBounds()) {
-      // revert to provide strong exception guarantee
-      if (this == &other)
-        string_ = string_.substr(0, string_.size() / 2);
-      else
-        string_ = string_.substr(0, string_.size() - other.string_.size());
+    if(SizeOutOfBounds(string_.size()+other.string_.size()))
       ThrowError(CommonErrors::invalid_string_size);
-    }
+    std::string temp(string_+other.string_);
+    string_.swap(temp);
     return *this;
   }
 
