@@ -29,6 +29,8 @@ typedef BoundedString<1, 2> OneTwo;
 typedef BoundedString<1, 3> OneThree;
 typedef BoundedString<1> OneMax;
 typedef BoundedString<2, 2> TwoTwo;
+typedef BoundedString<2, 3> TwoThree;
+typedef BoundedString<2, 4> TwoFour;
 typedef BoundedString<2> TwoMax;
 
 TEST(BoundedStringTest, BEH_DefaultConstructor) {
@@ -131,70 +133,41 @@ TEST(BoundedStringTest, BEH_Assignment) {
 }
 
 TEST(BoundedStringTest, BEH_OtherBoundedStringConstructor) {
-  // Copy from too small
-  OneTwo a(RandomString(1));
-  EXPECT_THROW(TwoTwo b(a), std::exception);
-  EXPECT_THROW(TwoMax c(a), std::exception);
-
-  // Copy from too big
-  OneMax d(RandomString(3));
-  EXPECT_THROW(OneTwo e(d), std::exception);
-  EXPECT_THROW(TwoTwo f(d), std::exception);
-
   // Valid copy
   std::string random(RandomString(2));
-  OneTwo g(random);
-  OneMax h(g);
-  EXPECT_EQ(random, h.string());
-  TwoTwo i(g);
-  EXPECT_EQ(random, i.string());
+  TwoThree a(random);
+  OneMax b(a);
+  EXPECT_EQ(random, b.string());
+  TwoFour c(a);
+  EXPECT_EQ(random, c.string());
 
   // Copy from uninitialised
-  OneOne j;
-  OneTwo k(j);
-  EXPECT_FALSE(k.IsInitialised());
-  TwoTwo l(j);
-  EXPECT_FALSE(l.IsInitialised());
+  TwoThree d;
+  OneThree e(d);
+  EXPECT_FALSE(e.IsInitialised());
+  TwoFour f(d);
+  EXPECT_FALSE(f.IsInitialised());
 }
 
 TEST(BoundedStringTest, BEH_OtherBoundedStringAssignment) {
-  // Assign from too small
-  OneTwo a(RandomString(1));
-  std::string before_throw(RandomString(2));
-  TwoTwo b(before_throw);
-  EXPECT_THROW(b = a, std::exception);
-  EXPECT_EQ(before_throw, b.string());
-  TwoMax c;
-  EXPECT_THROW(c = a, std::exception);
-  EXPECT_FALSE(c.IsInitialised());
-
-  // Assign from too big
-  OneMax d(RandomString(3));
-  OneTwo e;
-  EXPECT_THROW(e = d, std::exception);
-  EXPECT_FALSE(e.IsInitialised());
-  TwoTwo f(before_throw);
-  EXPECT_THROW(f = d, std::exception);
-  EXPECT_EQ(before_throw, f.string());
-
   // Valid assignment
   std::string random(RandomString(2));
-  OneTwo g(random);
-  OneMax h("1");
-  h = g;
-  EXPECT_EQ(random, h.string());
-  TwoTwo i("02");
-  i = g;
-  EXPECT_EQ(random, i.string());
+  TwoThree a(random);
+  OneMax b("1");
+  b = a;
+  EXPECT_EQ(random, b.string());
+  TwoFour c("02");
+  c = a;
+  EXPECT_EQ(random, c.string());
 
   // Assign from uninitialised
-  OneOne j;
-  OneTwo k("1");
-  k = j;
-  EXPECT_FALSE(k.IsInitialised());
-  TwoTwo l("02");
-  l = j;
-  EXPECT_FALSE(l.IsInitialised());
+  TwoThree d;
+  OneThree e("1");
+  e = d;
+  EXPECT_FALSE(e.IsInitialised());
+  TwoFour f("02");
+  f = d;
+  EXPECT_FALSE(f.IsInitialised());
 }
 
 TEST(BoundedStringTest, BEH_ConcatenationOperators) {

@@ -217,12 +217,12 @@ std::string SecretRecoverData(const int32_t& threshold,
   CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (auto i = 0 ; i < num_to_check ; ++i) {
-    string_sources[i].reset(new CryptoPP::StringSource(in_strings.at(i), false));
+  for (auto i = 0; i < num_to_check; ++i) {
+    string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(recovery,
-                                  std::string(reinterpret_cast<char *>(channel.begin()), 4)));
+                                  std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
   while (string_sources[0]->Pump(256)) {
     for (auto i = 1; i < num_to_check; ++i)
