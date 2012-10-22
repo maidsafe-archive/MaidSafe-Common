@@ -51,10 +51,9 @@ class BoundedString {
         // Use OutwithBounds() to invoke static_asserts
         valid_(!OutwithBounds()) {}
 
-  explicit BoundedString(const std::string& string) : string_(string), valid_(false) {
+ explicit BoundedString(std::string string) : string_(std::move(string)), valid_(true) {
     if (OutwithBounds())
       ThrowError(CommonErrors::invalid_string_size);
-    valid_ = true;
   }
 
   friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
