@@ -81,6 +81,7 @@ target_link_libraries(maidsafe_common
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
                         ${BoostRegexLibs}
+                        ${BoostProgramOptionsLibs}
                         ${SYS_LIB})
 
 if(JustThread_FOUND)

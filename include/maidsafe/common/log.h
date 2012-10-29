@@ -29,15 +29,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_LOG_H_
 #define MAIDSAFE_COMMON_LOG_H_
 
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <cstdarg>
+#include <ctime>
+#include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
+#include "boost/program_options/options_description.hpp"
+#include "boost/program_options/variables_map.hpp"
 
 #include "maidsafe/common/active.h"
 
@@ -49,7 +54,7 @@ namespace log {
 typedef std::map<std::string, int> FilterMap;
 
 enum class Colour { kDefaultColour, kRed, kGreen, kYellow, kCyan };
-enum class ColourMode { kFullLine, kPartialLine, kNone };
+enum class ColourMode { kNone, kPartialLine, kFullLine };
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
@@ -88,8 +93,6 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFat
 #endif
 #define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
 
-typedef const std::string& LogEntry;
-
 class LogMessage {
  public:
   LogMessage(const std::string &file, int line, const std::string &function, int level);
@@ -115,26 +118,38 @@ class GtestLogMessage {
 
 class Logging {
  public:
-  typedef std::function<void()> functor;
-  static Logging& instance() {
-    static Logging logging;
-    return logging;
-  }
-  void Send(functor function);
-  void SetFilter(FilterMap filter) { filter_ = filter; }
-  void AddFilter(std::string project, int level) { filter_[project] = level; }
+  static Logging& Instance();
+  void Initialise(int argc, char **argv);
+  void Send(std::function<void()> message_functor);
+  void WriteToCombinedLogfile(const std::string& message);
+  void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
-  void SetAsync(bool async) { async_ = async; }
   bool Async() const { return async_; }
-  void SetColour(ColourMode colour_mode) { colour_mode_ = colour_mode; }
+  bool LogToConsole() const { return log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
 
  private:
+  struct LogFile {
+    LogFile() : stream(), mutex(new std::mutex) {}
+    LogFile(LogFile&& other) : stream(std::move(other.stream)), mutex(std::move(other.mutex)) {}
+    std::ofstream stream;
+    std::unique_ptr<std::mutex> mutex;
+  };
   Logging();
-  maidsafe::Active background_;
+  bool IsHelpOption(const boost::program_options::options_description& log_config) const;
+  void HandleFilterOptions();
+  boost::filesystem::path GetLogfileName(const std::string& project) const;
+  void SetStreams();
+
+  boost::program_options::variables_map log_variables_;
   FilterMap filter_;
-  bool async_;
+  bool async_, log_to_console_;
+  std::time_t start_time_;
+  boost::filesystem::path logs_folder_;
   ColourMode colour_mode_;
+  LogFile combined_logfile_stream_;
+  std::map<std::string, LogFile> project_logfile_streams_;
+  Active background_;
 };
 
 }  // namespace log

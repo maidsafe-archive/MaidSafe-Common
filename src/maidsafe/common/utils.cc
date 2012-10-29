@@ -75,6 +75,8 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "maidsafe/common/log.h"
 
 
+namespace fs = boost::filesystem;
+
 namespace maidsafe {
 
 namespace {
@@ -492,7 +494,6 @@ bool Sleep(const boost::posix_time::time_duration &duration) {
   return true;
 }
 
-
 fs::path GetHomeDir() {
 #if defined(MAIDSAFE_WIN32)
   std::string env_home2(getenv("HOMEPATH"));
@@ -546,10 +547,6 @@ fs::path GetSystemAppSupportDir() {
 #endif
 }
 
-unsigned int Concurrency() {
-  return std::max(std::thread::hardware_concurrency(), 2U);
-}
-
 fs::path GetAppInstallDir() {
 #if defined(MAIDSAFE_WIN32)
   char* program_files;
@@ -569,76 +566,8 @@ fs::path GetAppInstallDir() {
 #endif
 }
 
-
-namespace test {
-
-TestPath CreateTestPath(std::string test_prefix) {
-  if (test_prefix.empty())
-    test_prefix = "MaidSafe_Test";
-
-  if (test_prefix.substr(0, 13) != "MaidSafe_Test" &&
-      test_prefix.substr(0, 12) != "Sigmoid_Test") {
-    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional"
-                 << " test name>\" or \"Sigmoid_Test<optional test name>\".";
-  }
-
-  test_prefix += "_%%%%-%%%%-%%%%";
-
-  boost::system::error_code error_code;
-  fs::path *test_path(new fs::path(fs::unique_path(
-      fs::temp_directory_path(error_code) / test_prefix)));
-  std::string debug(test_path->string());
-  TestPath test_path_ptr(test_path, [debug](fs::path *delete_path) {
-        if (!delete_path->empty()) {
-          boost::system::error_code ec;
-          if (fs::remove_all(*delete_path, ec) == 0) {
-            LOG(kWarning) << "Failed to remove " << *delete_path;
-          }
-          if (ec.value() != 0) {
-            LOG(kWarning) << "Error removing " << *delete_path << "  "
-                          << ec.message();
-          }
-        }
-        delete delete_path;
-      });
-  if (error_code) {
-    LOG(kWarning) << "Can't get a temp directory: " << error_code.message();
-    return TestPath(new fs::path);
-  }
-
-  if (!fs::create_directories(*test_path, error_code) || error_code) {
-    LOG(kWarning) << "Failed to create test directory " << *test_path
-                 << "  (error message: " << error_code.message() << ")";
-    return TestPath(new fs::path);
-  }
-
-  LOG(kInfo) << "Created test directory " << *test_path;
-  return test_path_ptr;
+unsigned int Concurrency() {
+  return std::max(std::thread::hardware_concurrency(), 2U);
 }
-
-void RunInParallel(int thread_count, std::function<void()> functor) {
-  std::vector<std::future<void>> futures;
-  for (int i = 0; i < thread_count; ++i)
-    futures.push_back(std::async(std::launch::async, functor));
-  for (auto& future : futures)
-    future.get();
-}
-
-uint16_t GetRandomPort() {
-  static std::set<uint16_t> already_used_ports;
-  bool unique(false);
-  uint16_t port(0);
-  do {
-    port = (RandomUint32() % 64511) + 1025;
-    unique = (already_used_ports.insert(port)).second;
-  } while (!unique);
-  if (already_used_ports.size() == 10000) {
-    LOG(kInfo) << "Clearing already-used ports list.";
-    already_used_ports.clear();
-  }
-  return port;
-}
-
-}  // namespace test
 
 }  // namespace maidsafe

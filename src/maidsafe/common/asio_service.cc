@@ -88,7 +88,7 @@ void AsioService::Start() {
 void AsioService::Stop() {
   std::lock_guard<std::mutex> lock(mutex_);
   if (!work_) {
-    LOG(kError) << "AsioService has already stopped.";
+    LOG(kVerbose) << "AsioService has already stopped.";
     return;
   }
   for (auto& asio_thread : threads_) {

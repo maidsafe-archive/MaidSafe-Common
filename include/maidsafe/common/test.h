@@ -28,8 +28,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TEST_H_
 #define MAIDSAFE_COMMON_TEST_H_
 
-
+#include <functional>
+#include <memory>
 #include <string>
+
+#include "boost/filesystem/path.hpp"
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -44,10 +47,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 
-int ExecuteMain(int argc,
-                char **argv,
-                maidsafe::log::FilterMap filter = maidsafe::log::FilterMap(),
-                bool async = true,
-                maidsafe::log::ColourMode colour_mode = maidsafe::log::ColourMode::kPartialLine);
+
+namespace maidsafe {
+
+namespace test {
+
+typedef std::shared_ptr<boost::filesystem::path> TestPath;
+
+// Tries to create a unique directory in the temp directory and returns a shared
+// pointer to the path of the new directory.  If the creation fails, or a temp
+// directory cannot be found, the method returns a pointer to an empty path.  If
+// a directory is successfully created, an attempt to delete it is made when the
+// shared_ptr is destroyed by using CleanupTest (below) as a custom deleter.
+// The test_prefix should preferably be "MaidSafe_Test<optional test name>" or
+// "Sigmoid_Test<optional test name>".
+TestPath CreateTestPath(std::string test_prefix = "");
+
+// Executes "functor" asynchronously "thread_count" times.
+void RunInParallel(int thread_count, std::function<void()> functor);
+
+// Returns a random port in the range [1025, 65535].
+uint16_t GetRandomPort();
+
+int ExecuteMain(int argc, char **argv);
+
+}  // namespace test
+
+}  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_TEST_H_
