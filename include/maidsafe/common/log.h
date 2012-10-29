@@ -130,10 +130,9 @@ class Logging {
 
  private:
   struct LogFile {
-    LogFile() : stream(), mutex(new std::mutex) {}
-    LogFile(LogFile&& other) : stream(std::move(other.stream)), mutex(std::move(other.mutex)) {}
+    LogFile() : stream(), mutex() {}
     std::ofstream stream;
-    std::unique_ptr<std::mutex> mutex;
+    std::mutex mutex;
   };
   Logging();
   bool IsHelpOption(const boost::program_options::options_description& log_config) const;
@@ -148,7 +147,7 @@ class Logging {
   boost::filesystem::path logs_folder_;
   ColourMode colour_mode_;
   LogFile combined_logfile_stream_;
-  std::map<std::string, LogFile> project_logfile_streams_;
+  std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
   Active background_;
 };
 

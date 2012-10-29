@@ -68,17 +68,17 @@ void UseUnreferenced() {
 
 std::once_flag logging_initialised;
 std::mutex g_console_mutex;
-const std::array<std::string, 10> kProjects = { "common",
-                                                "drive",
-                                                "encrypt",
-                                                "lifestuff",
-                                                "lifestuff-gui",
-                                                "passport",
-                                                "pd",
-                                                "private",
-                                                "routing",
-                                                "rudp"
-                                              };
+const std::array<std::string, 10> kProjects = { { "common",
+                                                  "drive",
+                                                  "encrypt",
+                                                  "lifestuff",
+                                                  "lifestuff-gui",
+                                                  "passport",
+                                                  "pd",
+                                                  "private",
+                                                  "routing",
+                                                  "rudp"
+                                              } };
 
 #ifdef MAIDSAFE_WIN32
 
@@ -461,8 +461,8 @@ void Logging::SetStreams() {
     return;
 
   for (auto& entry : filter_) {
-    LogFile log_file;
-    log_file.stream.open(GetLogfileName(entry.first).c_str(), std::ios_base::trunc);
+    std::unique_ptr<LogFile> log_file(new LogFile);
+    log_file->stream.open(GetLogfileName(entry.first).c_str(), std::ios_base::trunc);
     project_logfile_streams_.insert(std::make_pair(entry.first, std::move(log_file)));
   }
 
@@ -475,7 +475,7 @@ void Logging::Send(std::function<void()> message_functor) {
 }
 
 void Logging::WriteToCombinedLogfile(const std::string& message) {
-  std::lock_guard<std::mutex> lock(*combined_logfile_stream_.mutex);
+  std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
   if (combined_logfile_stream_.stream.good())
     combined_logfile_stream_.stream.write(message.c_str(), message.size());
 }
@@ -483,9 +483,9 @@ void Logging::WriteToCombinedLogfile(const std::string& message) {
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
   auto itr(project_logfile_streams_.find(project));
   if (itr != project_logfile_streams_.end()) {
-    std::lock_guard<std::mutex> lock(*(*itr).second.mutex);
-    if ((*itr).second.stream.good())
-      (*itr).second.stream.write(message.c_str(), message.size());
+    std::lock_guard<std::mutex> lock((*itr).second->mutex);
+    if ((*itr).second->stream.good())
+      (*itr).second->stream.write(message.c_str(), message.size());
   }
 }
 
