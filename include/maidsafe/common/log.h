@@ -124,8 +124,8 @@ class Logging {
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
-  bool Async() const { return async_; }
-  bool LogToConsole() const { return log_to_console_; }
+  bool Async() const { return !no_async_; }
+  bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
 
  private:
@@ -143,7 +143,7 @@ class Logging {
 
   boost::program_options::variables_map log_variables_;
   FilterMap filter_;
-  bool async_, log_to_console_;
+  bool no_async_, no_log_to_console_;
   std::time_t start_time_;
   boost::filesystem::path logs_folder_;
   ColourMode colour_mode_;

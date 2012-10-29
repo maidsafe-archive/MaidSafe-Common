@@ -45,6 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "boost/algorithm/string/replace.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/program_options/parsers.hpp"
+#include "boost/program_options/value_semantic.hpp"
 
 #include "maidsafe/common/utils.h"
 
@@ -57,6 +58,13 @@ namespace maidsafe {
 namespace log {
 
 namespace {
+
+// This function is needed to avoid use of po::bool_switch causing MSVC warning C4505:
+// 'boost::program_options::typed_value<bool>::name' : unreferenced local function has been removed.
+void UseUnreferenced() {
+  auto dummy = po::typed_value<bool>(nullptr);
+  (void)dummy;
+}
 
 std::once_flag logging_initialised;
 std::mutex g_console_mutex;
@@ -235,23 +243,22 @@ void SendToConsole(ColourMode colour_mode,
 }
 
 po::options_description SetProgramOptions(std::string& config_file,
-                                          bool& log_to_console,
+                                          bool& no_log_to_console,
                                           std::string& logs_folder,
-                                          bool& async,
+                                          bool& no_async,
                                           int& colour_mode) {
   fs::path inipath(fs::temp_directory_path() / "maidsafe_log.ini");
   fs::path logpath(fs::temp_directory_path() / "maidsafe_logs");
   po::options_description log_config("Logging Configuration");
   log_config.add_options()
-      ("async", po::value<bool>(&async)->default_value(true), "Enable asynchronous logging.")
+      ("no_async", po::bool_switch(&no_async), "Disable asynchronous logging.")
       ("colour_mode", po::value<int>(&colour_mode)->default_value(1),
           "0 for no colour, 1 for partial, 2 for full.")
       ("config", po::value<std::string>(&config_file)->default_value(inipath.string().c_str()),
           "Path to the logging configuration file.")
       ("logs_folder", po::value<std::string>(&logs_folder)->default_value(logpath.string().c_str()),
           "Path to folder where log files will be written. If empty, no files will be written.")
-      ("console", po::value<bool>(&log_to_console)->default_value(true),
-          "Enable logging to console.")
+      ("no_console", po::bool_switch(&no_log_to_console), "Disable logging to console.")
       ("help,h", "Show help message.");
   for (auto project : kProjects) {
     std::string description("Set log level for ");
@@ -384,8 +391,8 @@ GtestLogMessage::~GtestLogMessage() {
 Logging::Logging()
     : log_variables_(),
       filter_(),
-      async_(true),
-      log_to_console_(true),
+      no_async_(false),
+      no_log_to_console_(false),
       start_time_(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())),
       logs_folder_(),
       colour_mode_(ColourMode::kPartialLine),
@@ -403,8 +410,8 @@ void Logging::Initialise(int argc, char **argv) {
     try {
       std::string config_file, logs_folder;
       int colour_mode(-1);
-      po::options_description log_config(SetProgramOptions(config_file, log_to_console_,
-                                                           logs_folder, async_, colour_mode));
+      po::options_description log_config(SetProgramOptions(config_file, no_log_to_console_,
+                                                           logs_folder, no_async_, colour_mode));
       log_variables_ = ParseProgramOptions(log_config, config_file, argc, argv);
       if (IsHelpOption(log_config))
         return;
