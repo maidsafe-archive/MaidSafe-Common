@@ -47,6 +47,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/active.h"
 
 
+#ifndef NDEBUG
+#  define USE_LOGGING
+#endif
+
 namespace maidsafe {
 
 namespace log {
@@ -83,13 +87,13 @@ struct Envoid {
 
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
 
-#ifdef NDEBUG
-#  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
-#else
+#ifdef USE_LOGGING
 #  define LOG(level) maidsafe::log::LogMessage(__FILE__, \
                                                __LINE__, \
                                                BOOST_CURRENT_FUNCTION, \
                                                maidsafe::log::level).messageStream()
+#else
+#  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
 #define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
 
@@ -144,7 +148,7 @@ class Logging {
   FilterMap filter_;
   bool no_async_, no_log_to_console_;
   std::time_t start_time_;
-  boost::filesystem::path logs_folder_;
+  boost::filesystem::path log_folder_;
   ColourMode colour_mode_;
   LogFile combined_logfile_stream_;
   std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;

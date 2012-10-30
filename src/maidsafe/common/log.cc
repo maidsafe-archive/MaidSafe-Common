@@ -244,30 +244,32 @@ void SendToConsole(ColourMode colour_mode,
 
 po::options_description SetProgramOptions(std::string& config_file,
                                           bool& no_log_to_console,
-                                          std::string& logs_folder,
+                                          std::string& log_folder,
                                           bool& no_async,
                                           int& colour_mode) {
   fs::path inipath(fs::temp_directory_path() / "maidsafe_log.ini");
   fs::path logpath(fs::temp_directory_path() / "maidsafe_logs");
   po::options_description log_config("Logging Configuration");
   log_config.add_options()
-      ("no_async", po::bool_switch(&no_async), "Disable asynchronous logging.")
-      ("colour_mode", po::value<int>(&colour_mode)->default_value(1),
+      ("log_no_async", po::bool_switch(&no_async), "Disable asynchronous logging.")
+      ("log_colour_mode", po::value<int>(&colour_mode)->default_value(1),
           "0 for no colour, 1 for partial, 2 for full.")
-      ("config", po::value<std::string>(&config_file)->default_value(inipath.string().c_str()),
+      ("log_config", po::value<std::string>(&config_file)->default_value(inipath.string().c_str()),
           "Path to the logging configuration file.")
-      ("logs_folder", po::value<std::string>(&logs_folder)->default_value(logpath.string().c_str()),
+      ("log_folder", po::value<std::string>(&log_folder)->default_value(logpath.string().c_str()),
           "Path to folder where log files will be written. If empty, no files will be written.")
-      ("no_console", po::bool_switch(&no_log_to_console), "Disable logging to console.")
+      ("log_no_console", po::bool_switch(&no_log_to_console), "Disable logging to console.")
       ("help,h", "Show help message.");
   for (auto project : kProjects) {
     std::string description("Set log level for ");
     description += std::string(project) + " project.";
-    log_config.add(boost::make_shared<po::option_description>(project.c_str(),
+    std::string name("log_");
+    name += project;
+    log_config.add(boost::make_shared<po::option_description>(name.c_str(),
                                                               po::value<std::string>(),
                                                               description.c_str()));
   }
-  log_config.add_options()("*", po::value<std::string>(),
+  log_config.add_options()("log_*", po::value<std::string>(),
       "Set log level for all projects. Overrides any individual project levels.");
   return log_config;
 }
@@ -295,9 +297,9 @@ po::variables_map ParseProgramOptions(const po::options_description& log_config,
 }
 
 void DoCasts(int col_mode,
-             const std::string& logs_folder,
+             const std::string& log_folder,
              ColourMode& colour_mode,
-             fs::path& logs_folder_path) {
+             fs::path& log_folder_path) {
   if (col_mode != -1) {
     if (col_mode < 0 || col_mode > 2) {
       std::cout << "colour_mode must be 0, 1, or 2\n";
@@ -305,7 +307,7 @@ void DoCasts(int col_mode,
     }
     colour_mode = static_cast<ColourMode>(col_mode);
   }
-  logs_folder_path = logs_folder;
+  log_folder_path = log_folder;
 }
 
 int GetLogLevel(std::string level) {
@@ -325,15 +327,15 @@ int GetLogLevel(std::string level) {
   return std::numeric_limits<int>::min();
 }
 
-bool SetupLogsFolder(const fs::path& logs_folder) {
+bool SetupLogFolder(const fs::path& log_folder) {
   boost::system::error_code ec;
-  if (fs::exists(logs_folder, ec)) {
-    if (!fs::is_directory(logs_folder, ec)) {
-      std::cout << "Requested logging folder " << logs_folder << " is not a directory.\n";
+  if (fs::exists(log_folder, ec)) {
+    if (!fs::is_directory(log_folder, ec)) {
+      std::cout << "Requested logging folder " << log_folder << " is not a directory.\n";
       return false;
     }
   } else {
-    if (!fs::create_directories(logs_folder, ec) || ec) {
+    if (!fs::create_directories(log_folder, ec) || ec) {
       std::cout << "Failed to create logging folder: " << ec.message() << '\n';
       return false;
     }
@@ -394,7 +396,7 @@ Logging::Logging()
       no_async_(false),
       no_log_to_console_(false),
       start_time_(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())),
-      logs_folder_(),
+      log_folder_(),
       colour_mode_(ColourMode::kPartialLine),
       combined_logfile_stream_(),
       project_logfile_streams_(),
@@ -408,14 +410,14 @@ Logging& Logging::Instance() {
 void Logging::Initialise(int argc, char **argv) {
   std::call_once(logging_initialised, [this, argc, argv]() {
     try {
-      std::string config_file, logs_folder;
+      std::string config_file, log_folder;
       int colour_mode(-1);
       po::options_description log_config(SetProgramOptions(config_file, no_log_to_console_,
-                                                           logs_folder, no_async_, colour_mode));
+                                                           log_folder, no_async_, colour_mode));
       log_variables_ = ParseProgramOptions(log_config, config_file, argc, argv);
       if (IsHelpOption(log_config))
         return;
-      DoCasts(colour_mode, logs_folder, colour_mode_, logs_folder_);
+      DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
       HandleFilterOptions();
       SetStreams();
     }
@@ -426,12 +428,17 @@ void Logging::Initialise(int argc, char **argv) {
 }
 
 bool Logging::IsHelpOption(const po::options_description& log_config) const {
+#ifdef USE_LOGGING
   if (log_variables_.count("help")) {
-    std::cout << log_config << "\nLogging levels are as follows:\n"
+    std::cout << log_config << "Logging levels are as follows:\n"
               << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Fatal(F)\n\n\n";
     return true;
   }
   return false;
+#else
+  static_cast<void>(log_config);
+  return false;
+#endif
 }
 
 void Logging::HandleFilterOptions() {
@@ -451,13 +458,13 @@ void Logging::HandleFilterOptions() {
 fs::path Logging::GetLogfileName(const std::string& project) const {
   char mbstr[100];
   std::strftime(mbstr, 100, "%Y-%m-%d_%H-%M-%S_", std::localtime(&start_time_));  // NOLINT (Fraser)
-  fs::path name(logs_folder_ / mbstr);
+  fs::path name(log_folder_ / mbstr);
   name += project + ".log";
   return name;
 }
 
 void Logging::SetStreams() {
-  if (logs_folder_.empty() || !SetupLogsFolder(logs_folder_))
+  if (log_folder_.empty() || !SetupLogFolder(log_folder_))
     return;
 
   for (auto& entry : filter_) {
