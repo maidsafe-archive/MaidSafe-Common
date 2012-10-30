@@ -442,14 +442,15 @@ bool Logging::IsHelpOption(const po::options_description& log_config) const {
 }
 
 void Logging::HandleFilterOptions() {
-  auto itr(log_variables_.find("*"));
+  auto itr(log_variables_.find("log_*"));
   if (itr != log_variables_.end()) {
     filter_.clear();
     for (auto& project : kProjects)
       filter_[project] = GetLogLevel((*itr).second.as<std::string>());
   }
   for (auto& project : kProjects) {
-    itr = log_variables_.find(project);
+    std::string option("log_" + project);
+    itr = log_variables_.find(option);
     if (itr != log_variables_.end())
       filter_[project] = GetLogLevel((*itr).second.as<std::string>());
   }
