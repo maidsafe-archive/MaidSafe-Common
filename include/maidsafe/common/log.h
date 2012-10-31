@@ -29,18 +29,27 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_LOG_H_
 #define MAIDSAFE_COMMON_LOG_H_
 
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <cstdarg>
+#include <ctime>
+#include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
+#include "boost/program_options/options_description.hpp"
+#include "boost/program_options/variables_map.hpp"
 
 #include "maidsafe/common/active.h"
 
+
+#ifndef NDEBUG
+#  define USE_LOGGING
+#endif
 
 namespace maidsafe {
 
@@ -49,7 +58,7 @@ namespace log {
 typedef std::map<std::string, int> FilterMap;
 
 enum class Colour { kDefaultColour, kRed, kGreen, kYellow, kCyan };
-enum class ColourMode { kFullLine, kPartialLine, kNone };
+enum class ColourMode { kNone, kPartialLine, kFullLine };
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
@@ -78,17 +87,15 @@ struct Envoid {
 
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
 
-#ifdef NDEBUG
-#  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
-#else
+#ifdef USE_LOGGING
 #  define LOG(level) maidsafe::log::LogMessage(__FILE__, \
                                                __LINE__, \
                                                BOOST_CURRENT_FUNCTION, \
                                                maidsafe::log::level).messageStream()
+#else
+#  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
 #define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
-
-typedef const std::string& LogEntry;
 
 class LogMessage {
  public:
@@ -115,26 +122,37 @@ class GtestLogMessage {
 
 class Logging {
  public:
-  typedef std::function<void()> functor;
-  static Logging& instance() {
-    static Logging logging;
-    return logging;
-  }
-  void Send(functor function);
-  void SetFilter(FilterMap filter) { filter_ = filter; }
-  void AddFilter(std::string project, int level) { filter_[project] = level; }
+  static Logging& Instance();
+  void Initialise(int argc, char **argv);
+  void Send(std::function<void()> message_functor);
+  void WriteToCombinedLogfile(const std::string& message);
+  void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
-  void SetAsync(bool async) { async_ = async; }
-  bool Async() const { return async_; }
-  void SetColour(ColourMode colour_mode) { colour_mode_ = colour_mode; }
+  bool Async() const { return !no_async_; }
+  bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
 
  private:
+  struct LogFile {
+    LogFile() : stream(), mutex() {}
+    std::ofstream stream;
+    std::mutex mutex;
+  };
   Logging();
-  maidsafe::Active background_;
+  bool IsHelpOption(const boost::program_options::options_description& log_config) const;
+  void HandleFilterOptions();
+  boost::filesystem::path GetLogfileName(const std::string& project) const;
+  void SetStreams();
+
+  boost::program_options::variables_map log_variables_;
   FilterMap filter_;
-  bool async_;
+  bool no_async_, no_log_to_console_;
+  std::time_t start_time_;
+  boost::filesystem::path log_folder_;
   ColourMode colour_mode_;
+  LogFile combined_logfile_stream_;
+  std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
+  Active background_;
 };
 
 }  // namespace log

@@ -52,8 +52,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/types.h"
 
 
-namespace fs = boost::filesystem;
-
 namespace maidsafe {
 
 // 01 Jan 2000
@@ -208,11 +206,11 @@ uint32_t GetTimeStamp();
 int64_t MillisecondTimeStamp();
 
   // Reads the given file and returns the contents as a string.
-bool ReadFile(const fs::path &file_path, std::string *content);
-NonEmptyString ReadFile(const fs::path &file_path);
+bool ReadFile(const boost::filesystem::path &file_path, std::string *content);
+NonEmptyString ReadFile(const boost::filesystem::path &file_path);
 
 // Writes the given content string to a file, overwriting if applicable.
-bool WriteFile(const fs::path &file_path, const std::string &content);
+bool WriteFile(const boost::filesystem::path &file_path, const std::string &content);
 
 // Causes running thread to sleep for specified duration.  Returns true if sleep completes full
 // duration, returns false if the sleep is interrupted.
@@ -220,47 +218,25 @@ bool Sleep(const boost::posix_time::time_duration &duration);
 
 // NOTE: DOES NOT CREATE PATH
 // Retrieve homedir from environment
-fs::path GetHomeDir();
+boost::filesystem::path GetHomeDir();
 
 // NOTE: DOES NOT CREATE PATH
 // Application support directory in userspace,
 // uses kCompanyName and kApplicationName
-fs::path GetUserAppDir();
+boost::filesystem::path GetUserAppDir();
 
 // NOTE: DOES NOT CREATE PATH
 // Application support directory for all users,
 // uses kCompanyName and kApplicationName
-fs::path GetSystemAppSupportDir();
+boost::filesystem::path GetSystemAppSupportDir();
 
 // NOTE: DOES NOT CREATE PATH
 // Application install directory
 // uses kCompanyName and kApplicationName
-fs::path GetAppInstallDir();
+boost::filesystem::path GetAppInstallDir();
 
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
-
-
-namespace test {
-
-typedef std::shared_ptr<fs::path> TestPath;
-
-// Tries to create a unique directory in the temp directory and returns a shared
-// pointer to the path of the new directory.  If the creation fails, or a temp
-// directory cannot be found, the method returns a pointer to an empty path.  If
-// a directory is successfully created, an attempt to delete it is made when the
-// shared_ptr is destroyed by using CleanupTest (below) as a custom deleter.
-// The test_prefix should preferably be "MaidSafe_Test<optional test name>" or
-// "Sigmoid_Test<optional test name>".
-TestPath CreateTestPath(std::string test_prefix = "");
-
-// Executes "functor" asynchronously "thread_count" times.
-void RunInParallel(int thread_count, std::function<void()> functor);
-
-// Returns a random port in the range [1025, 65535].
-uint16_t GetRandomPort();
-
-}  // namespace test
 
 }  // namespace maidsafe
 

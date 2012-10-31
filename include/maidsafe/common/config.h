@@ -52,8 +52,7 @@ const std::string kApplicationName("lifestuff");
 const std::string kApplicationName(BOOST_PP_STRINGIZE(APPLICATION_NAME));
 #endif
 
-#if !defined(NDEBUG) && \
-    !defined(APPLICATION_VERSION_MAJOR) || \
+#if !defined(APPLICATION_VERSION_MAJOR) || \
     !defined(APPLICATION_VERSION_MINOR) || \
     !defined(APPLICATION_VERSION_PATCH)
 #  error APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR and APPLICATION_VERSION_PATCH \
