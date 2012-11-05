@@ -425,9 +425,9 @@ TEST(UtilsTest, BEH_HexSubstr) {
   EXPECT_TRUE(HexSubstr("").empty());
   EXPECT_EQ("41", HexSubstr("A"));
   EXPECT_EQ("58595a", HexSubstr("XYZ"));
-  EXPECT_EQ("6162636465666768", HexSubstr("abcdefgh"));
-  EXPECT_EQ("6162636..6676869", HexSubstr("abcdefghi"));
-  EXPECT_EQ(16U, HexSubstr(RandomString(8 + RandomUint32() % 20)).size());
+  EXPECT_EQ("616263646566", HexSubstr("abcdef"));
+  EXPECT_EQ("616263..656667", HexSubstr("abcdefg"));
+  EXPECT_EQ(14U, HexSubstr(RandomString(8 + RandomUint32() % 20)).size());
 }
 
 TEST(UtilsTest, BEH_Base32Substr) {

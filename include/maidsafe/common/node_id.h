@@ -90,6 +90,8 @@ class NodeId {
   // XOR distance between two IDs.  XOR bit to bit.
   const NodeId operator^(const NodeId& rhs) const;
 
+  friend std::string DebugId(const NodeId& node_id);
+
  private:
   std::string EncodeToBinary() const;
   void DecodeFromBinary(const std::string& binary_id);

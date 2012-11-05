@@ -84,10 +84,7 @@ namespace {
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       boost::posix_time::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
-boost::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex,
-             g_hex_encoder_mutex, g_hex_decoder_mutex,
-             g_base32_encoder_mutex, g_base32_decoder_mutex,
-             g_base64_encoder_mutex, g_base64_decoder_mutex;
+std::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex;
 
 struct BinaryUnit;
 struct DecimalUnit;
@@ -143,6 +140,8 @@ std::string BytesToSiUnits(const uint64_t &num) {
            qualifier[6];
   }
 }
+
+const char kHexAlphabet[] = "0123456789abcdef";
 
 }  // unnamed namespace
 
@@ -244,7 +243,7 @@ std::string BytesToBinarySiUnits(const uint64_t &num) {
 int32_t RandomInt32() {
   boost::uniform_int<> uniform_distribution(0,
       boost::integer_traits<int32_t>::const_max);
-  boost::mutex::scoped_lock lock(g_random_number_generator_mutex);
+  std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
       g_random_number_generator, uniform_distribution);
   return uni();
@@ -258,7 +257,7 @@ std::string RandomString(const size_t &length) {
   boost::uniform_int<> uniform_distribution(0, 255);
   std::string random_string(length, 0);
   {
-    boost::mutex::scoped_lock lock(g_random_number_generator_mutex);
+    std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
     boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
         g_random_number_generator, uniform_distribution);
     std::generate(random_string.begin(), random_string.end(), uni);
@@ -272,7 +271,7 @@ std::string RandomAlphaNumericString(const size_t &length) {
   boost::uniform_int<> uniform_distribution(0, 61);
   std::string random_string(length, 0);
   {
-    boost::mutex::scoped_lock lock(g_random_number_generator_mutex);
+    std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
     boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
         g_random_number_generator, uniform_distribution);
     for (auto it = random_string.begin(); it != random_string.end(); ++it)
@@ -286,73 +285,69 @@ std::string IntToString(const int &value) {
 }
 
 std::string EncodeToHex(const std::string &non_hex_input) {
-  std::string hex_output;
-  {
-    boost::mutex::scoped_lock lock(g_hex_encoder_mutex);
-    CryptoPP::StringSource(non_hex_input, true,
-        new CryptoPP::HexEncoder(new CryptoPP::StringSink(hex_output), false));
+  auto size(non_hex_input.size());
+  std::string hex_output(size * 2, 0);
+  for (size_t i(0), j(0); i != size; ++i) {
+    hex_output[j++] = kHexAlphabet[static_cast<unsigned char>(non_hex_input[i]) / 16];
+    hex_output[j++] = kHexAlphabet[static_cast<unsigned char>(non_hex_input[i]) % 16];
   }
   return hex_output;
 }
 
 std::string EncodeToBase64(const std::string &non_base64_input) {
   std::string base64_output;
-  {
-    boost::mutex::scoped_lock lock(g_base64_encoder_mutex);
-    CryptoPP::StringSource(non_base64_input, true, new CryptoPP::Base64Encoder(
-        new CryptoPP::StringSink(base64_output), false, 255));
-  }
+  CryptoPP::StringSource(non_base64_input, true, new CryptoPP::Base64Encoder(
+      new CryptoPP::StringSink(base64_output), false, 255));
   return base64_output;
 }
 
 std::string EncodeToBase32(const std::string &non_base32_input) {
   std::string base32_output;
-  {
-    boost::mutex::scoped_lock lock(g_base32_encoder_mutex);
-    CryptoPP::StringSource(non_base32_input, true, new CryptoPP::Base32Encoder(
-        new CryptoPP::StringSink(base32_output), false));
-  }
+  CryptoPP::StringSource(non_base32_input, true, new CryptoPP::Base32Encoder(
+      new CryptoPP::StringSink(base32_output), false));
   return base32_output;
 }
 
 std::string DecodeFromHex(const std::string &hex_input) {
   std::string non_hex_output;
-  {
-    boost::mutex::scoped_lock lock(g_hex_decoder_mutex);
-    CryptoPP::StringSource(hex_input, true,
-        new CryptoPP::HexDecoder(new CryptoPP::StringSink(non_hex_output)));
-  }
+  CryptoPP::StringSource(hex_input, true,
+      new CryptoPP::HexDecoder(new CryptoPP::StringSink(non_hex_output)));
   return non_hex_output;
 }
 
 std::string DecodeFromBase64(const std::string &base64_input) {
   std::string non_base64_output;
-  {
-    boost::mutex::scoped_lock lock(g_base64_decoder_mutex);
-    CryptoPP::StringSource(base64_input, true,
-        new CryptoPP::Base64Decoder(
-            new CryptoPP::StringSink(non_base64_output)));
-  }
+  CryptoPP::StringSource(base64_input, true,
+      new CryptoPP::Base64Decoder(new CryptoPP::StringSink(non_base64_output)));
   return non_base64_output;
 }
 
 std::string DecodeFromBase32(const std::string &base32_input) {
   std::string non_base32_output;
-  {
-    boost::mutex::scoped_lock lock(g_base64_decoder_mutex);
-    CryptoPP::StringSource(base32_input, true,
-        new CryptoPP::Base32Decoder(
-            new CryptoPP::StringSink(non_base32_output)));
-  }
+  CryptoPP::StringSource(base32_input, true,
+      new CryptoPP::Base32Decoder(new CryptoPP::StringSink(non_base32_output)));
   return non_base32_output;
 }
 
 std::string HexSubstr(const std::string &non_hex) {
-  std::string hex(EncodeToHex(non_hex));
-  if (hex.size() > 16)
-    return (hex.substr(0, 7) + ".." + hex.substr(hex.size() - 7));
-  else
-    return hex;
+  size_t non_hex_size(non_hex.size());
+  if (non_hex_size < 7)
+    return EncodeToHex(non_hex);
+
+  std::string hex(14, 0);
+  size_t non_hex_index(0), hex_index(0);
+  for (; non_hex_index != 3; ++non_hex_index) {
+    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) / 16];
+    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) % 16];
+  }
+  hex[hex_index++] = '.';
+  hex[hex_index++] = '.';
+  non_hex_index = non_hex_size - 3;
+  for (; non_hex_index != non_hex_size; ++non_hex_index) {
+    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) / 16];
+    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) % 16];
+  }
+  return hex;
 }
 
 std::string Base32Substr(const std::string &non_base32) {

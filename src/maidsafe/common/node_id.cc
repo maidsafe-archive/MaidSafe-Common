@@ -185,8 +185,7 @@ const NodeId NodeId::operator^(const NodeId& rhs) const {
 }
 
 std::string DebugId(const NodeId& node_id) {
-  std::string hex(node_id.ToStringEncoded(NodeId::kHex));
-  return hex.substr(0, 7) + ".." + hex.substr(hex.size() - 7);
+  return HexSubstr(node_id.raw_id_);
 }
 
 }  // namespace maidsafe
