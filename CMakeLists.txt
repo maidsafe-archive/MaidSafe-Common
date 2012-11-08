@@ -67,7 +67,7 @@ source_group("Boost Tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST_TESTS_
 # Define MaidSafe libraries and executables                                                       #
 ###################################################################################################
 ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
-if(TESTING)
+if(MAIDSAFE_TESTING)
   ms_add_executable(TESTcommon "Tests/Common" ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
   # ms_add_executable(TESTboost "Tests/Common" ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
 endif()
@@ -90,7 +90,7 @@ if(JustThread_FOUND)
 endif()
 
 target_link_libraries(maidsafe_common ${SYS_LIB})
-if(TESTING)
+if(MAIDSAFE_TESTING)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 endif()
@@ -107,7 +107,7 @@ ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
-if(TESTING)
+if(MAIDSAFE_TESTING)
   set(STYLE_TESTS ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
   list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc")
   list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
