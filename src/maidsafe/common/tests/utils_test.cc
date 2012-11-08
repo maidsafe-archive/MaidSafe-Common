@@ -519,20 +519,22 @@ TEST(UtilsTest, BEH_Sleep) {
 
 TEST(UtilsTest, BEH_GetHomeDir) {
   EXPECT_FALSE(GetHomeDir().empty());
-  LOG(kInfo) << " I think your home directory is "
-             << GetHomeDir().string();
+  LOG(kInfo) << "Your home directory is " << GetHomeDir();
 }
 
 TEST(UtilsTest, BEH_GetUserAppDir) {
   EXPECT_FALSE(GetUserAppDir().empty());
-  LOG(kInfo) << " I think your user app directory is "
-             << GetUserAppDir().string();
+  LOG(kInfo) << "Your user app directory is " << GetUserAppDir();
 }
 
 TEST(UtilsTest, BEH_GetSystemAppSupportDir) {
   EXPECT_FALSE(GetSystemAppSupportDir().empty());
-  LOG(kInfo) << " I think your System app directory is "
-             << GetSystemAppSupportDir().string();
+  LOG(kInfo) << "Your system app support directory is " << GetSystemAppSupportDir();
+}
+
+TEST(UtilsTest, BEH_GetAppInstallDir) {
+  EXPECT_FALSE(GetAppInstallDir().empty());
+  LOG(kInfo) << "Your app install directory is " << GetAppInstallDir();
 }
 
 TEST(UtilsTest, BEH_AppDir) {

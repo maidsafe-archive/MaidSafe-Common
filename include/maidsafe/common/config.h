@@ -40,29 +40,41 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
-#if !defined(COMPANY_NAME)
-const std::string kCompanyName("maidsafe");
-#else
+#ifdef COMPANY_NAME
 const std::string kCompanyName(BOOST_PP_STRINGIZE(COMPANY_NAME));
+#else
+#  error COMPANY_NAME must be defined.
 #endif
 
-#if !defined(APPLICATION_NAME)
-const std::string kApplicationName("lifestuff");
-#else
+#ifdef APPLICATION_NAME
 const std::string kApplicationName(BOOST_PP_STRINGIZE(APPLICATION_NAME));
+#else
+#  error APPLICATION_NAME must be defined.
 #endif
 
-#if !defined(APPLICATION_VERSION_MAJOR) || \
-    !defined(APPLICATION_VERSION_MINOR) || \
-    !defined(APPLICATION_VERSION_PATCH)
-#  error APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR and APPLICATION_VERSION_PATCH \
-         must be defined
-#else
+#if defined APPLICATION_VERSION_MAJOR && \
+    defined APPLICATION_VERSION_MINOR && \
+    defined APPLICATION_VERSION_PATCH
 const std::string kApplicationVersion(BOOST_PP_STRINGIZE(APPLICATION_VERSION_MAJOR) +
                                       std::string(".") +
                                       BOOST_PP_STRINGIZE(APPLICATION_VERSION_MINOR) +
                                       std::string(".") +
                                       BOOST_PP_STRINGIZE(APPLICATION_VERSION_PATCH));
+#else
+#  error APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR and APPLICATION_VERSION_PATCH \
+         must be defined.
+#endif
+
+#ifdef TARGET_PLATFORM
+const std::string kTargetPlatform(BOOST_PP_STRINGIZE(TARGET_PLATFORM));
+#else
+#  error TARGET_PLATFORM must be defined.
+#endif
+
+#ifdef TARGET_ARCHITECTURE
+const std::string kTargetArchitecture(BOOST_PP_STRINGIZE(TARGET_ARCHITECTURE));
+#else
+#  error TARGET_ARCHITECTURE must be defined.
 #endif
 
 }  // namespace maidsafe
