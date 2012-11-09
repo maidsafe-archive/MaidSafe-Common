@@ -178,8 +178,8 @@ std::string VersionToString(int version,
   size_t padding_count(6 - full_version.size());
   full_version.insert(0, padding_count, '0');
   std::string major_ver(full_version.substr(0, 2));
-  std::string minor_ver(full_version.substr(2, 2));
-  std::string patch_ver(full_version.substr(4, 2));
+  std::string minor_ver(full_version.substr(2, 1));
+  std::string patch_ver(full_version.substr(3, 3));
 
   if (major_ver.at(0) == '0')
     major_ver.assign(major_ver.substr(1, 1));
@@ -204,13 +204,13 @@ int VersionToInt(const std::string& version) {
     major_version = boost::lexical_cast<int16_t>(*(itr++));
 
     minor_version = boost::lexical_cast<int16_t>(*itr);
-    if ((*itr++).size() != 2U) {
+    if ((*itr++).size() != 1U) {
       LOG(kWarning) << "Invalid minor version " << version;
       return kInvalidVersion;
     }
 
     patch_level = boost::lexical_cast<int16_t>(*itr);
-    if ((*itr++).size() != 2U) {
+    if ((*itr++).size() != 3U) {
       LOG(kWarning) << "Invalid patch level " << version;
       return kInvalidVersion;
     }
@@ -225,7 +225,7 @@ int VersionToInt(const std::string& version) {
     return kInvalidVersion;
   }
 
-  return (major_version * 10000) + (minor_version * 100) + patch_level;
+  return (major_version * 10000) + (minor_version * 1000) + patch_level;
 }
 
 int32_t CpuSize() {
