@@ -4,12 +4,12 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-   *  Redistributions of source code must retain the above copyright notice,
+    * Redistributions of source code must retain the above copyright notice,
     this list of conditions and the following disclaimer.
-   *  Redistributions in binary form must reproduce the above copyright notice,
+    * Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation
     and/or other materials provided with the distribution.
-   *  Neither the name of the maidsafe.net limited nor the names of its
+    * Neither the name of the maidsafe.net limited nor the names of its
     contributors may be used to endorse or promote products derived from this
     software without specific prior written permission.
 
@@ -25,22 +25,27 @@ TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef MAIDSAFE_COMMON_TYPES_H_
-#define MAIDSAFE_COMMON_TYPES_H_
-
-#include "maidsafe/common/bounded_string.h"
-#include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/key_value_buffer.h"
 
 
 namespace maidsafe {
 
-typedef detail::BoundedString<1> NonEmptyString;
-typedef detail::BoundedString<64, 64> Identity;
-typedef NonEmptyString UserName, UserPassword;
+KeyValueBuffer::KeyValueBuffer(MemoryUsage /*max_memory_usage*/, DiskUsage /*max_disk_usage*/) {}
 
-typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
-typedef TaggedValue<uint64_t, struct DiskUsageTag> DiskUsage;
+KeyValueBuffer::KeyValueBuffer(MemoryUsage /*max_memory_usage*/,
+                               DiskUsage /*max_disk_usage*/,
+                               const boost::filesystem::path& /*disk_root*/) {}
+
+KeyValueBuffer::~KeyValueBuffer() {}
+
+void KeyValueBuffer::Store(const Identity& /*key*/, const NonEmptyString& /*value*/) {}
+
+NonEmptyString KeyValueBuffer::Get(const Identity& /*key*/) { return NonEmptyString("r"); }
+
+void KeyValueBuffer::Delete(const Identity& /*key*/) {}
+
+void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage /*max_memory_usage*/) {}
+
+void KeyValueBuffer::SetMaxDiskUsage(DiskUsage /*max_disk_usage*/) {}
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_TYPES_H_
