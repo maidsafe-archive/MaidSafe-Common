@@ -52,6 +52,17 @@ TEST(KeyValueBufferTest, BEH_ZeroDisk) {
   KeyValueBuffer key_value_buffer(memory_usage, disk_usage);
 }
 
+TEST(KeyValueBufferTest, BEH_SuccessfulStore) {
+  uint64_t disk_usage(256);
+  MemoryUsage max_memory_usage(1);
+  DiskUsage max_disk_usage(disk_usage);
+  EXPECT_EQ(1, max_memory_usage);
+  EXPECT_EQ(disk_usage, max_disk_usage);
+  KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
+  NonEmptyString content(std::string(static_cast<uint32_t>(disk_usage), 'a'));
+  Identity hash(crypto::Hash<crypto::SHA512>(content.string()));
+  EXPECT_NO_THROW(key_value_buffer.Store(hash, content));
+}
 
 }  // namespace test
 
