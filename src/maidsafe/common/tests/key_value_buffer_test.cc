@@ -59,9 +59,34 @@ TEST(KeyValueBufferTest, BEH_SuccessfulStore) {
   EXPECT_EQ(1, max_memory_usage);
   EXPECT_EQ(disk_usage, max_disk_usage);
   KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
-  NonEmptyString content(std::string(static_cast<uint32_t>(disk_usage), 'a'));
-  Identity hash(crypto::Hash<crypto::SHA512>(content.string()));
-  EXPECT_NO_THROW(key_value_buffer.Store(hash, content));
+  NonEmptyString value(std::string(static_cast<uint32_t>(disk_usage), 'a'));
+  Identity key(crypto::Hash<crypto::SHA512>(value.string()));
+  EXPECT_NO_THROW(key_value_buffer.Store(key, value));
+}
+
+TEST(KeyValueBufferTest, BEH_UnsuccessfulStore) {
+  {
+    uint64_t disk_usage(256);
+    MemoryUsage max_memory_usage(1);
+    DiskUsage max_disk_usage(disk_usage);
+    EXPECT_EQ(1, max_memory_usage);
+    EXPECT_EQ(disk_usage, max_disk_usage);
+    KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
+    NonEmptyString value(std::string(static_cast<uint32_t>(disk_usage) + 1, 'a'));
+    Identity key(crypto::Hash<crypto::SHA512>(value.string()));
+    EXPECT_THROW(key_value_buffer.Store(key, value), boost::filesystem::filesystem_error);
+  }
+  {
+    uint64_t usage(256);
+    MemoryUsage max_memory_usage(usage);
+    DiskUsage max_disk_usage(usage);
+    EXPECT_EQ(usage, max_memory_usage);
+    EXPECT_EQ(usage, max_disk_usage);
+    KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
+    NonEmptyString value(std::string(static_cast<uint32_t>(usage) + 1, 'a'));
+    Identity key(crypto::Hash<crypto::SHA512>(value.string()));
+    EXPECT_THROW(key_value_buffer.Store(key, value), boost::filesystem::filesystem_error);
+  }
 }
 
 }  // namespace test
