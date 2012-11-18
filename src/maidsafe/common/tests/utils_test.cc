@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <set>
 #include <vector>
+#include <chrono>
 
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
@@ -157,6 +158,20 @@ TEST(UtilsTest, BEH_Names) {
   ASSERT_EQ(kCompanyName, "maidsafe");
   ASSERT_EQ(kApplicationName, "lifestuff");
 }
+
+TEST(UtilsTest, BEH_ByteRatios) {
+  EXPECT_EQ(Bytes(1000), KiloBytes(1));
+  EXPECT_EQ(KiloBytes(1000), MegaBytes(1));
+  EXPECT_EQ(MegaBytes(1000), GigaBytes(1));
+  EXPECT_EQ(Bytes(1) * 1000, KiloBytes(1));
+  EXPECT_EQ(Bytes(2000), KiloBytes(4) / 2);
+  EXPECT_NE(Bytes(2), KiloBytes(4) / 2000);  // this is a narrowing call rhs == 0
+  EXPECT_EQ(Bytes(1) + Bytes(1), Bytes(2));
+  EXPECT_EQ(Bytes(2) - Bytes(1), Bytes(1));
+  EXPECT_EQ(Bytes(1).count(), 1);
+  EXPECT_EQ(KiloBytes(1).count(), 1);
+}
+
 
 TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
   EXPECT_EQ("0 B", BytesToDecimalSiUnits(0U));

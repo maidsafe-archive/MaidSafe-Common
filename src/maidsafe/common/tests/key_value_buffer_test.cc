@@ -12,6 +12,7 @@
 
 #include "maidsafe/common/key_value_buffer.h"
 
+#include "maidsafe/common/node_id.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
@@ -28,10 +29,29 @@ namespace test {
 TEST(KeyValueBufferTest, BEH_Constructor) {
   MemoryUsage max_memory_usage;
   DiskUsage max_disk_usage;
-  ASSERT_EQ(0, max_memory_usage);
-  ASSERT_EQ(0, max_disk_usage);
+  EXPECT_EQ(0, max_memory_usage);
+  EXPECT_EQ(0, max_disk_usage);
   KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
 }
+
+TEST(KeyValueBufferTest, BEH_ZeroMemory) {
+  MemoryUsage mem_usage(0);
+  DiskUsage disk_usage(100);
+  EXPECT_EQ(0, mem_usage);
+  EXPECT_EQ(100, disk_usage);
+  KeyValueBuffer key_value_buffer(mem_usage, disk_usage);
+  Identity(NodeId(NodeId::kRandomId).string());
+
+}
+
+TEST(KeyValueBufferTest, BEH_ZeroDisk) {
+  MemoryUsage memory_usage(100);
+  DiskUsage disk_usage(0);
+  EXPECT_EQ(100, memory_usage);
+  EXPECT_EQ(0, disk_usage);
+  KeyValueBuffer key_value_buffer(memory_usage, disk_usage);
+}
+
 
 }  // namespace test
 

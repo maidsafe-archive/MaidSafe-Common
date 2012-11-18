@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <functional>
 #include <memory>
 #include <string>
+#include <ratio>
+#include <chrono>  // to get duration class
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -58,6 +60,15 @@ namespace maidsafe {
 extern const boost::posix_time::ptime kMaidSafeEpoch;
 
 extern const int kInvalidVersion;
+// SI units !! (note MS windows will report on the 'old' system, for drive space)
+// this is (cheeckily using chrono::duration)
+typedef std::chrono::duration<uint64_t           > Bytes;
+typedef std::chrono::duration<uint64_t, std::kilo> KiloBytes;
+typedef std::chrono::duration<uint64_t, std::mega> MegaBytes;
+typedef std::chrono::duration<uint64_t, std::giga> GigaBytes;
+typedef std::chrono::duration<uint64_t, std::tera> TeraBytes;
+typedef std::chrono::duration<uint64_t, std::peta> PetaBytes;
+typedef std::chrono::duration<uint64_t, std::exa>  ExaBytes;
 
 // Makes a UDP socket connection to peer_endpoint.  Note, no data is sent, so no information about
 // the validity or availability of the peer is deduced.  If the retrieved local endpoint is
