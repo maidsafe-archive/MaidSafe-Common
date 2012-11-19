@@ -60,9 +60,12 @@ void InitialiseDiskRoot(const fs::path& disk_root) {
 
 }  // unnamed namespace
 
-KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_usage)
+KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage,
+                               DiskUsage max_disk_usage,
+                               PopFunctor pop_functor)
     : memory_store_(max_memory_usage),
       disk_store_(max_disk_usage),
+      kPopFunctor_(pop_functor),
       kDiskBuffer_(fs::unique_path(fs::temp_directory_path() / "KVB-%%%%-%%%%-%%%%-%%%%")),
       kShouldRemoveRoot_(true),
       running_(true),
@@ -74,9 +77,11 @@ KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_
 
 KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage,
                                DiskUsage max_disk_usage,
+                               PopFunctor pop_functor,
                                const boost::filesystem::path& disk_buffer)
     : memory_store_(max_memory_usage),
       disk_store_(max_disk_usage),
+      kPopFunctor_(pop_functor),
       kDiskBuffer_(disk_buffer),
       kShouldRemoveRoot_(false),
       running_(true),
@@ -263,6 +268,10 @@ void KeyValueBuffer::CheckWorkerIsStillRunning() {
 void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
   {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
+    if (max_memory_usage >= disk_store_.max) {
+      LOG(kError) << "Max memory usage must be < max disk usage.";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
     memory_store_.max = max_memory_usage;
   }
   memory_store_.cond_var.notify_all();
@@ -271,6 +280,10 @@ void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
 void KeyValueBuffer::SetMaxDiskUsage(DiskUsage max_disk_usage) {
   {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
+    if (memory_store_.max >= max_disk_usage) {
+      LOG(kError) << "Max memory usage must be < max disk usage.";
+      ThrowError(CommonErrors::invalid_parameter);
+    }
     disk_store_.max = max_disk_usage;
   }
   disk_store_.cond_var.notify_all();

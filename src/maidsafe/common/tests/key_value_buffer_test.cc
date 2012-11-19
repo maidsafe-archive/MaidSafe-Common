@@ -12,9 +12,11 @@
 
 #include "maidsafe/common/key_value_buffer.h"
 
-#include "maidsafe/common/node_id.h"
+#include <memory>
+
+#include "boost/filesystem/path.hpp"
+
 #include "maidsafe/common/error.h"
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
@@ -23,66 +25,44 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(KeyValueBufferTest, BEH_Constructor) {
-  MemoryUsage max_memory_usage;
-  DiskUsage max_disk_usage;
-  EXPECT_EQ(0, max_memory_usage);
-  EXPECT_EQ(0, max_disk_usage);
-  KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
+class KeyValueBufferTest : public testing::Test {
+ protected:
+  KeyValueBufferTest()
+      : max_memory_usage_(1000),
+        max_disk_usage_(2000),
+        key_value_buffer_(new KeyValueBuffer(max_memory_usage_, max_disk_usage_)) {}
+  MemoryUsage max_memory_usage_;
+  DiskUsage max_disk_usage_;
+  std::unique_ptr<KeyValueBuffer> key_value_buffer_;
+};
+
+TEST_F(KeyValueBufferTest, BEH_Constructor) {
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(0), DiskUsage(0)), std::exception);
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(1), DiskUsage(1)), std::exception);
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(1), DiskUsage(0)), std::exception);
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(2), DiskUsage(1)), std::exception);
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(200001), DiskUsage(200000)), std::exception);
+  EXPECT_NO_THROW(KeyValueBuffer(MemoryUsage(199999), DiskUsage(200000)));
+  // Create a path to a file, and check that this can't be used as the disk buffer path.
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  ASSERT_FALSE(test_path->empty());
+  boost::filesystem::path file_path(*test_path / "File");
+  ASSERT_TRUE(WriteFile(file_path, " "));
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(199999), DiskUsage(200000), file_path), std::exception);
+  EXPECT_THROW(KeyValueBuffer(MemoryUsage(199999), DiskUsage(200000), file_path / "base"),
+               std::exception);
 }
 
-TEST(KeyValueBufferTest, BEH_ZeroMemory) {
-  MemoryUsage mem_usage(0);
-  DiskUsage disk_usage(100);
-  EXPECT_EQ(0, mem_usage);
-  EXPECT_EQ(100, disk_usage);
-  KeyValueBuffer key_value_buffer(mem_usage, disk_usage);
-  Identity(NodeId(NodeId::kRandomId).string());
+TEST_F(KeyValueBufferTest, BEH_SuccessfulStore) {
+  NonEmptyString value(std::string(max_disk_usage_, 'a'));
+  Identity key(crypto::Hash<crypto::SHA512>(value));
+  EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
 }
 
-TEST(KeyValueBufferTest, BEH_ZeroDisk) {
-  MemoryUsage memory_usage(100);
-  DiskUsage disk_usage(0);
-  EXPECT_EQ(100, memory_usage);
-  EXPECT_EQ(0, disk_usage);
-  KeyValueBuffer key_value_buffer(memory_usage, disk_usage);
-}
-
-TEST(KeyValueBufferTest, BEH_SuccessfulStore) {
-  uint64_t disk_usage(256);
-  MemoryUsage max_memory_usage(1);
-  DiskUsage max_disk_usage(disk_usage);
-  EXPECT_EQ(1, max_memory_usage);
-  EXPECT_EQ(disk_usage, max_disk_usage);
-  KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
-  NonEmptyString value(std::string(static_cast<uint32_t>(disk_usage), 'a'));
-  Identity key(crypto::Hash<crypto::SHA512>(value.string()));
-  EXPECT_NO_THROW(key_value_buffer.Store(key, value));
-}
-
-TEST(KeyValueBufferTest, BEH_UnsuccessfulStore) {
-  {
-    uint64_t disk_usage(256);
-    MemoryUsage max_memory_usage(1);
-    DiskUsage max_disk_usage(disk_usage);
-    EXPECT_EQ(1, max_memory_usage);
-    EXPECT_EQ(disk_usage, max_disk_usage);
-    KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
-    NonEmptyString value(std::string(static_cast<uint32_t>(disk_usage) + 1, 'a'));
-    Identity key(crypto::Hash<crypto::SHA512>(value.string()));
-    EXPECT_THROW(key_value_buffer.Store(key, value), boost::filesystem::filesystem_error);
-  }
-  {
-    uint64_t usage(256);
-    MemoryUsage max_memory_usage(usage);
-    DiskUsage max_disk_usage(usage);
-    EXPECT_EQ(usage, max_memory_usage);
-    EXPECT_EQ(usage, max_disk_usage);
-    KeyValueBuffer key_value_buffer(max_memory_usage, max_disk_usage);
-    NonEmptyString value(std::string(static_cast<uint32_t>(usage) + 1, 'a'));
-    Identity key(crypto::Hash<crypto::SHA512>(value.string()));
-    EXPECT_THROW(key_value_buffer.Store(key, value), boost::filesystem::filesystem_error);
-  }
+TEST_F(KeyValueBufferTest, BEH_UnsuccessfulStore) {
+  NonEmptyString value(std::string(max_disk_usage_ + 1, 'a'));
+  Identity key(crypto::Hash<crypto::SHA512>(value));
+  EXPECT_THROW(key_value_buffer_->Store(key, value), std::exception);
 }
 
 }  // namespace test

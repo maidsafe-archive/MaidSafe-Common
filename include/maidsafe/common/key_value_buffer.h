@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <condition_variable>
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <map>
 #include <mutex>
@@ -46,15 +47,34 @@ namespace maidsafe {
 
 class KeyValueBuffer {
  public:
-  KeyValueBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_usage);
+  typedef std::function<std::pair<Identity, NonEmptyString>()> PopFunctor;
+  // Throws if max_memory_usage >= max_disk_usage.  Throws if a writable folder can't be created in
+  // temp_directory_path().  Starts a background worker thread which copies values from memory to
+  // disk.  If pop_functor is valid, the disk cache will pop excess items when it is full,
+  // otherwise Store will block until there is space made via Delete calls.
+  KeyValueBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_usage, PopFunctor pop_functor);
+  // Throws if max_memory_usage >= max_disk_usage.  Throws if a writable folder can't be created in
+  // "disk_buffer".  Starts a background worker thread which copies values from memory to disk.  If
+  // pop_functor is valid, the disk cache will pop excess items when it is full, otherwise Store
+  // will block until there is space made via Delete calls.
   KeyValueBuffer(MemoryUsage max_memory_usage,
                  DiskUsage max_disk_usage,
+                 PopFunctor pop_functor,
                  const boost::filesystem::path& disk_buffer);
   ~KeyValueBuffer();
+  // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
+  // the size of value is greater than the current specified maximum disk usage, or if the value
+  // can't be written to disk (e.g. value is not initialised).
   void Store(const Identity& key, const NonEmptyString& value);
+  // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
+  // the value can't be read from disk.
   NonEmptyString Get(const Identity& key);
+  // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
+  // the value was written to disk and can't be removed.
   void Delete(const Identity& key);
+  // Throws if max_memory_usage >= max_disk_usage_.
   void SetMaxMemoryUsage(MemoryUsage max_memory_usage);
+  // Throws if max_memory_usage_ >= max_disk_usage.
   void SetMaxDiskUsage(DiskUsage max_disk_usage);
 
  private:
@@ -86,6 +106,7 @@ class KeyValueBuffer {
 
   Storage<MemoryUsage> memory_store_;
   Storage<DiskUsage> disk_store_;
+  const PopFunctor kPopFunctor_;
   const boost::filesystem::path kDiskBuffer_;
   const bool kShouldRemoveRoot_;
   bool running_;
