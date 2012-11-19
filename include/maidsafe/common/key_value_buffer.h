@@ -47,7 +47,7 @@ namespace maidsafe {
 
 class KeyValueBuffer {
  public:
-  typedef std::function<std::pair<Identity, NonEmptyString>()> PopFunctor;
+  typedef std::function<void(const Identity&, const NonEmptyString&)> PopFunctor;
   // Throws if max_memory_usage >= max_disk_usage.  Throws if a writable folder can't be created in
   // temp_directory_path().  Starts a background worker thread which copies values from memory to
   // disk.  If pop_functor is valid, the disk cache will pop excess items when it is full,
@@ -98,8 +98,11 @@ class KeyValueBuffer {
   void Init();
   bool StoreInMemory(const Identity& key, const NonEmptyString& value);
   void StoreOnDisk(const Identity& key, const NonEmptyString& value);
+  void WaitForSpaceOnDisk(const uint64_t& space_required,
+                          std::unique_lock<std::mutex>& disk_store_lock);
   void DeleteFromMemory(const Identity& key, bool& also_on_disk);
   void DeleteFromDisk(const Identity& key);
+  void RemoveFile(const Identity& key, NonEmptyString* value);
   void CopyQueueToDisk();
   void CheckWorkerIsStillRunning();
   boost::filesystem::path GetFilename(const Identity& key) const;
