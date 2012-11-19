@@ -28,7 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_KEY_VALUE_BUFFER_H_
 #define MAIDSAFE_COMMON_KEY_VALUE_BUFFER_H_
 
+#include <condition_variable>
 #include <cstdint>
+#include <future>
+#include <map>
+#include <mutex>
+#include <utility>
+#include <deque>
 
 #include "boost/filesystem/path.hpp"
 
@@ -43,13 +49,49 @@ class KeyValueBuffer {
   KeyValueBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_usage);
   KeyValueBuffer(MemoryUsage max_memory_usage,
                  DiskUsage max_disk_usage,
-                 const boost::filesystem::path& disk_root);
+                 const boost::filesystem::path& disk_buffer);
   ~KeyValueBuffer();
   void Store(const Identity& key, const NonEmptyString& value);
   NonEmptyString Get(const Identity& key);
   void Delete(const Identity& key);
   void SetMaxMemoryUsage(MemoryUsage max_memory_usage);
   void SetMaxDiskUsage(DiskUsage max_disk_usage);
+
+ private:
+  KeyValueBuffer(const KeyValueBuffer&);
+  KeyValueBuffer& operator=(const KeyValueBuffer&);
+  template<typename T>
+  struct Storage {
+    explicit Storage(T max_in) : max(max_in), current(0), mutex() {}  // NOLINT (Fraser)
+    T max, current;
+    std::mutex mutex;
+    std::condition_variable cond_var;
+  };
+  struct KeyValueInfo {
+    KeyValueInfo(const Identity& key_in, const NonEmptyString& value_in)
+        : key(key_in), value(value_in), on_disk(false) {}
+    Identity key;
+    NonEmptyString value;
+    bool on_disk;
+  };
+
+  void Init();
+  bool StoreInMemory(const Identity& key, const NonEmptyString& value);
+  void StoreOnDisk(const Identity& key, const NonEmptyString& value);
+  void DeleteFromMemory(const Identity& key, bool& also_on_disk);
+  void DeleteFromDisk(const Identity& key);
+  void CopyQueueToDisk();
+  void CheckWorkerIsStillRunning();
+  boost::filesystem::path GetFilename(const Identity& key) const;
+
+  Storage<MemoryUsage> memory_store_;
+  Storage<DiskUsage> disk_store_;
+  const boost::filesystem::path kDiskBuffer_;
+  const bool kShouldRemoveRoot_;
+  bool running_;
+  std::deque<KeyValueInfo> values_;
+  std::condition_variable worker_cond_var_;
+  std::future<void> worker_;
 };
 
 }  // namespace maidsafe

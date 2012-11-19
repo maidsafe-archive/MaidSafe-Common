@@ -21,10 +21,7 @@
 
 namespace maidsafe {
 
-namespace detail {
-
 namespace test {
-
 
 TEST(KeyValueBufferTest, BEH_Constructor) {
   MemoryUsage max_memory_usage;
@@ -41,7 +38,6 @@ TEST(KeyValueBufferTest, BEH_ZeroMemory) {
   EXPECT_EQ(100, disk_usage);
   KeyValueBuffer key_value_buffer(mem_usage, disk_usage);
   Identity(NodeId(NodeId::kRandomId).string());
-
 }
 
 TEST(KeyValueBufferTest, BEH_ZeroDisk) {
@@ -90,7 +86,5 @@ TEST(KeyValueBufferTest, BEH_UnsuccessfulStore) {
 }
 
 }  // namespace test
-
-}  // namespace detail
 
 }  // namespace maidsafe

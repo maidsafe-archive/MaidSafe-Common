@@ -70,8 +70,12 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error during compression";
     case CommonErrors::uncompression_error:
       return "Error during uncompression";
-    case CommonErrors::cant_invoke_from_this_thread:
+    case CommonErrors::cannot_invoke_from_this_thread:
       return "This function cannot be invoked from this thread";
+    case CommonErrors::cannot_exceed_max_disk_usage:
+      return "Cannot exceed specified maximum disk usage";
+    case CommonErrors::filesystem_io_error:
+      return "Filesystem IO error";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";
@@ -89,8 +93,12 @@ std::error_condition CommonCategory::default_error_condition(
       return std::errc::invalid_argument;
     case CommonErrors::file_too_large:
       return std::errc::file_too_large;
-    case CommonErrors::cant_invoke_from_this_thread:
+    case CommonErrors::cannot_invoke_from_this_thread:
       return std::errc::operation_not_permitted;
+    case CommonErrors::cannot_exceed_max_disk_usage:
+      return std::errc::no_buffer_space;
+    case CommonErrors::filesystem_io_error:
+      return std::errc::io_error;
     default:
       return std::error_condition(error_value, *this);
   }

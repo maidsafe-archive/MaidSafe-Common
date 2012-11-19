@@ -51,7 +51,7 @@ void AsioService::Start() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto& asio_thread : threads_) {
     if (boost::this_thread::get_id() == asio_thread.get_id())
-      ThrowError(CommonErrors::cant_invoke_from_this_thread);
+      ThrowError(CommonErrors::cannot_invoke_from_this_thread);
   }
 
   if (work_) {
@@ -93,7 +93,7 @@ void AsioService::Stop() {
   }
   for (auto& asio_thread : threads_) {
     if (boost::this_thread::get_id() == asio_thread.get_id())
-      ThrowError(CommonErrors::cant_invoke_from_this_thread);
+      ThrowError(CommonErrors::cannot_invoke_from_this_thread);
   }
 
   work_.reset();

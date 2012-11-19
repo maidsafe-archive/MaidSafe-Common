@@ -458,8 +458,7 @@ NonEmptyString ReadFile(const fs::path &file_path) {
 bool WriteFile(const fs::path &file_path, const std::string &content) {
   try {
     if (!file_path.has_filename()) {
-      LOG(kError) << "Failed to write: file_path " << file_path
-                  << " has no filename";
+      LOG(kError) << "Failed to write: file_path " << file_path << " has no filename";
       return false;
     }
     fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |

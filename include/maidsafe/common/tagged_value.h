@@ -28,6 +28,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TAGGED_VALUE_H_
 #define MAIDSAFE_COMMON_TAGGED_VALUE_H_
 
+
+namespace maidsafe {
+
 template<typename T, typename Tag>
 struct TaggedValue {
   typedef T value_type;
@@ -68,5 +71,7 @@ template<typename T, typename Tag>
 inline bool operator>=(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data >= rhs.data;
 }
+
+}  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_TAGGED_VALUE_H_

@@ -46,6 +46,9 @@ Active::~Active() {
 }
 
 void Active::Send(Functor functor) {
+  std::lock_guard<std::mutex> flags_lock(flags_mutex_);
+  if (!running_)
+    return;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     functors_.push(std::move(functor));
