@@ -92,7 +92,7 @@ KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage,
 }
 
 void KeyValueBuffer::Init() {
-  if (memory_store_.max >= disk_store_.max) {
+  if (memory_store_.max > disk_store_.max) {
     LOG(kError) << "Max memory usage must be < max disk usage.";
     ThrowError(CommonErrors::invalid_parameter);
   }
@@ -132,13 +132,20 @@ bool KeyValueBuffer::StoreInMemory(const Identity& key, const NonEmptyString& va
       return false;
 
     while (memory_store_.current > memory_store_.max - value.string().size()) {
-      memory_store_.cond_var.wait(memory_store_lock, [this] { return values_.front().on_disk; });  // NOLINT (Fraser)
-      memory_store_.current.data -= values_.front().value.string().size();
-      values_.pop_front();
-      // If we want to keep the chronological order of the values on disk, we need to change the
-      // wait predicate above to look for the first value_ entry with on_disk == true and
-      // value.is_initialised() == false.  We wouldn't pop the value here but instead in
-      // StoreOnDisk, and in there we'd also just set value to a default-constructed NonEmptyString.
+      auto itr(values_.end());
+      memory_store_.cond_var.wait(memory_store_lock, [this, &itr] {
+          itr = std::find_if(values_.begin(),
+                             values_.end(),
+                             [](const KeyValueInfo& key_value) {
+                                 return key_value.on_disk && key_value.value.IsInitialised();
+                             });
+          return itr != values_.end();
+      });
+      memory_store_.current.data -= (*itr).value.string().size();
+      if (kPopFunctor_)
+        (*itr).value = NonEmptyString();
+      else
+        values_.pop_front();
     }
 
     memory_store_.current.data += value.string().size();
@@ -157,9 +164,7 @@ void KeyValueBuffer::StoreOnDisk(const Identity& key, const NonEmptyString& valu
       ThrowError(CommonErrors::cannot_exceed_max_disk_usage);
     }
 
-    disk_store_.cond_var.wait(disk_store_lock, [this, &value] {
-        return (disk_store_.current <= disk_store_.max - value.string().size()) || !running_;
-    });
+    WaitForSpaceOnDisk(value.string().size(), disk_store_lock);
     if (!running_)
       return;
 
@@ -168,6 +173,32 @@ void KeyValueBuffer::StoreOnDisk(const Identity& key, const NonEmptyString& valu
       ThrowError(CommonErrors::filesystem_io_error);
     }
     disk_store_.current.data += value.string().size();
+  }
+}
+
+void KeyValueBuffer::WaitForSpaceOnDisk(const uint64_t& space_required,
+                                        std::unique_lock<std::mutex>& disk_store_lock) {
+  if (kPopFunctor_) {
+    while (disk_store_.current > disk_store_.max - space_required) {
+      std::unique_lock<std::mutex> memory_store_lock(memory_store_.mutex);
+      auto itr(values_.end());
+      memory_store_.cond_var.wait(memory_store_lock, [this, &itr] {
+          itr = std::find_if(values_.begin(),
+                             values_.end(),
+                             [](const KeyValueInfo& key_value) { return key_value.on_disk; });  // NOLINT (Fraser)
+          return itr != values_.end();
+      });
+      Identity key((*itr).key);
+      NonEmptyString value;
+      RemoveFile(key, &value);
+      values_.pop_front();
+      kPopFunctor_(key, value);
+    }
+  } else {
+    // Rely on client of this class to call Delete until enough space becomes available
+    disk_store_.cond_var.wait(disk_store_lock, [this, space_required] {
+        return (disk_store_.current <= disk_store_.max - space_required) || !running_;
+    });
   }
 }
 
@@ -213,21 +244,26 @@ void KeyValueBuffer::DeleteFromDisk(const Identity& key) {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
     if (!running_)
       return;
-
-    fs::path path(GetFilename(key));
-    boost::system::error_code error_code;
-    uint64_t size(fs::file_size(path, error_code));
-    if (error_code) {
-      LOG(kError) << "Error getting file size of " << path;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-    if (!fs::remove(path, error_code) || error_code) {
-      LOG(kError) << "Error removing " << path;
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-    disk_store_.current.data -= size;
+    RemoveFile(key, nullptr);
   }
   disk_store_.cond_var.notify_all();
+}
+
+void KeyValueBuffer::RemoveFile(const Identity& key, NonEmptyString* value) {
+  fs::path path(GetFilename(key));
+  boost::system::error_code error_code;
+  uint64_t size(fs::file_size(path, error_code));
+  if (error_code) {
+    LOG(kError) << "Error getting file size of " << path;
+    ThrowError(CommonErrors::filesystem_io_error);
+  }
+  if (value)
+    *value = ReadFile(path);
+  if (!fs::remove(path, error_code) || error_code) {
+    LOG(kError) << "Error removing " << path;
+    ThrowError(CommonErrors::filesystem_io_error);
+  }
+  disk_store_.current.data -= size;
 }
 
 void KeyValueBuffer::CopyQueueToDisk() {
@@ -268,7 +304,7 @@ void KeyValueBuffer::CheckWorkerIsStillRunning() {
 void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
   {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
-    if (max_memory_usage >= disk_store_.max) {
+    if (max_memory_usage > disk_store_.max) {
       LOG(kError) << "Max memory usage must be < max disk usage.";
       ThrowError(CommonErrors::invalid_parameter);
     }
@@ -280,7 +316,7 @@ void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
 void KeyValueBuffer::SetMaxDiskUsage(DiskUsage max_disk_usage) {
   {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
-    if (memory_store_.max >= max_disk_usage) {
+    if (memory_store_.max > max_disk_usage) {
       LOG(kError) << "Max memory usage must be < max disk usage.";
       ThrowError(CommonErrors::invalid_parameter);
     }
