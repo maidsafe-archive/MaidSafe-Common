@@ -72,9 +72,9 @@ class KeyValueBuffer {
   // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
   // the value was written to disk and can't be removed.
   void Delete(const Identity& key);
-  // Throws if max_memory_usage >= max_disk_usage_.
+  // Throws if max_memory_usage > max_disk_usage_.
   void SetMaxMemoryUsage(MemoryUsage max_memory_usage);
-  // Throws if max_memory_usage_ >= max_disk_usage.
+  // Throws if max_memory_usage_ > max_disk_usage.
   void SetMaxDiskUsage(DiskUsage max_disk_usage);
 
  private:

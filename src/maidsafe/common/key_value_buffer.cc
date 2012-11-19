@@ -92,7 +92,7 @@ KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage,
 }
 
 void KeyValueBuffer::Init() {
-  if (memory_store_.max >= disk_store_.max) {
+  if (memory_store_.max > disk_store_.max) {
     LOG(kError) << "Max memory usage must be < max disk usage.";
     ThrowError(CommonErrors::invalid_parameter);
   }
@@ -268,8 +268,8 @@ void KeyValueBuffer::CheckWorkerIsStillRunning() {
 void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
   {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
-    if (max_memory_usage >= disk_store_.max) {
-      LOG(kError) << "Max memory usage must be < max disk usage.";
+    if (max_memory_usage > disk_store_.max) {
+      LOG(kError) << "Max memory usage must be <= max disk usage.";
       ThrowError(CommonErrors::invalid_parameter);
     }
     memory_store_.max = max_memory_usage;
@@ -280,8 +280,8 @@ void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
 void KeyValueBuffer::SetMaxDiskUsage(DiskUsage max_disk_usage) {
   {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
-    if (memory_store_.max >= max_disk_usage) {
-      LOG(kError) << "Max memory usage must be < max disk usage.";
+    if (memory_store_.max > max_disk_usage) {
+      LOG(kError) << "Max memory usage must be <= max disk usage.";
       ThrowError(CommonErrors::invalid_parameter);
     }
     disk_store_.max = max_disk_usage;
