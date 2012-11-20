@@ -234,6 +234,8 @@ void KeyValueBuffer::DeleteFromMemory(const Identity& key, bool& also_on_disk) {
       also_on_disk = (*itr).on_disk;
       memory_store_.current.data -= (*itr).value.string().size();
       values_.erase(itr);
+    } else {
+      DeleteFromDisk(key);
     }
   }
   memory_store_.cond_var.notify_all();
