@@ -108,7 +108,11 @@ KeyValueBuffer::~KeyValueBuffer() {
   disk_store_.cond_var.notify_all();
   worker_cond_var_.notify_one();
   if (worker_.valid())
-    worker_.get();
+    try {
+      worker_.get();
+    } catch(...) {
+      // absorb
+    }
   memory_store_.cond_var.notify_all();
 
   if (kShouldRemoveRoot_) {

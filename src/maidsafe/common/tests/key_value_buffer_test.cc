@@ -35,6 +35,24 @@ class KeyValueBufferTest : public testing::Test {
         max_disk_usage_(2000),
         pop_functor_(),
         key_value_buffer_(new KeyValueBuffer(max_memory_usage_, max_disk_usage_, pop_functor_)) {}
+
+  bool DeleteDirectory(const fs::path& directory) {
+    boost::system::error_code error_code;
+    fs::directory_iterator end;
+    try {
+    fs::directory_iterator it(directory);
+    for (; it != end; ++it)
+      fs::remove_all((*it).path(), error_code);
+      if (error_code)
+        return false;
+    }
+    catch(const std::exception &e) {
+      LOG(kError) << e.what();
+      return false;
+    }
+    return true;
+  }
+
   MemoryUsage max_memory_usage_;
   DiskUsage max_disk_usage_;
   KeyValueBuffer::PopFunctor pop_functor_;
@@ -105,12 +123,13 @@ TEST_F(KeyValueBufferTest, BEH_SuccessfulStore) {
   EXPECT_NO_THROW(key_value_buffer_->Store(key2, value2));
   NonEmptyString recovered;
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key1));
+  EXPECT_EQ(recovered, value1);
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key2));
+  EXPECT_EQ(recovered, value2);
 }
 
 TEST_F(KeyValueBufferTest, BEH_UnsuccessfulStore) {
-  NonEmptyString value(std::string(
-                    static_cast<uint32_t>(max_disk_usage_ + max_memory_usage_ + 1), 'a'));
+  NonEmptyString value(std::string(static_cast<uint32_t>(max_disk_usage_ + 1), 'a'));
   Identity key(crypto::Hash<crypto::SHA512>(value));
   EXPECT_THROW(key_value_buffer_->Store(key, value), std::exception);
 }
@@ -155,6 +174,8 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   EXPECT_NO_THROW(key_value_buffer.Delete(second_key));
   async.wait();
   EXPECT_NO_THROW(recovered = key_value_buffer.Get(key));
+  EXPECT_EQ(recovered, value);
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
 }
 
 TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
@@ -200,6 +221,8 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   // Trigger pop...
   EXPECT_NO_THROW(key_value_buffer.Store(key, value));
   EXPECT_NO_THROW(recovered = key_value_buffer.Get(key));
+  EXPECT_EQ(recovered, value);
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
 }
 
 class KeyValueBufferTestDiskUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {
