@@ -89,27 +89,38 @@ TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
   EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
 }
 
-TEST_F(KeyValueBufferTest, DISABLED_BEH_RemoveDiskBuffer) {
+TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
   boost::system::error_code error_code;
   TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
   fs::path kv_buffer_path(*test_path / "kv_buffer");
-  EXPECT_TRUE(fs::create_directories(kv_buffer_path, error_code)) << kv_buffer_path << ": "
-                                                                  << error_code.message();
-  EXPECT_EQ(0, error_code.value()) << kv_buffer_path << ": "
-                                   << error_code.message();
-  EXPECT_TRUE(fs::exists(kv_buffer_path, error_code)) << kv_buffer_path << ": "
-                                                      << error_code.message();
-  ASSERT_EQ(0, error_code.value());
-  KeyValueBuffer key_value_buffer(MemoryUsage(1), DiskUsage(1), pop_functor_, kv_buffer_path);
-  NonEmptyString value(std::string(1, 'a'));
-  Identity key(crypto::Hash<crypto::SHA512>(value));
-  EXPECT_NO_THROW(key_value_buffer.Store(key, value));
-  EXPECT_NO_THROW(key_value_buffer.Delete(key));
+  const uintmax_t kMemorySize(1), kDiskSize(2);
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(kMemorySize), DiskUsage(kDiskSize),
+                                             pop_functor_, kv_buffer_path));
+  Identity key(RandomAlphaNumericString(crypto::SHA512::DIGESTSIZE));
+  NonEmptyString small_value(std::string(kMemorySize, 'a'));
+  EXPECT_NO_THROW(key_value_buffer_->Store(key, small_value));
+  EXPECT_NO_THROW(key_value_buffer_->Delete(key));
   ASSERT_EQ(1, fs::remove_all(kv_buffer_path, error_code));
-  ASSERT_EQ(error_code.value(), 0);
   ASSERT_FALSE(fs::exists(kv_buffer_path, error_code));
-  ASSERT_NE(error_code.value(), 0);
-  EXPECT_THROW(key_value_buffer.Store(key, value), std::exception);
+  // Fits into memory buffer successfully.  Background thread in future should throw, causing other
+  // API functions to throw on next execution.
+  EXPECT_NO_THROW(key_value_buffer_->Store(key, small_value));
+  EXPECT_THROW(key_value_buffer_->Store(key, small_value), std::exception);
+  EXPECT_THROW(key_value_buffer_->Get(key), std::exception);
+  EXPECT_THROW(key_value_buffer_->Delete(key), std::exception);
+
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(kMemorySize), DiskUsage(kDiskSize),
+                                             pop_functor_, kv_buffer_path));
+  NonEmptyString large_value(std::string(kDiskSize, 'a'));
+  EXPECT_NO_THROW(key_value_buffer_->Store(key, large_value));
+  EXPECT_NO_THROW(key_value_buffer_->Delete(key));
+  ASSERT_EQ(1, fs::remove_all(kv_buffer_path, error_code));
+  ASSERT_FALSE(fs::exists(kv_buffer_path, error_code));
+  // Skips memory buffer and goes straight to disk, causing exception.  Background thread in future
+  // should finish, causing other API functions to throw on next execution.
+  EXPECT_THROW(key_value_buffer_->Store(key, large_value), std::exception);
+  EXPECT_THROW(key_value_buffer_->Get(key), std::exception);
+  EXPECT_THROW(key_value_buffer_->Delete(key), std::exception);
 }
 
 TEST_F(KeyValueBufferTest, BEH_SuccessfulStore) {
@@ -206,21 +217,19 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
                                             EXPECT_EQ(first_key, key);
                                             EXPECT_EQ(first_value, value);
                                          });
-  KeyValueBuffer key_value_buffer(MemoryUsage(OneKB),
-                                  DiskUsage(4 * OneKB),
-                                  pop_functor,
-                                  kv_buffer_path);
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(OneKB), DiskUsage(4 * OneKB),
+                                             pop_functor, kv_buffer_path));
 
   for (auto key_value : key_value_pairs) {
-    EXPECT_NO_THROW(key_value_buffer.Store(key_value.first, key_value.second));
-    EXPECT_NO_THROW(recovered = key_value_buffer.Get(key_value.first));
+    EXPECT_NO_THROW(key_value_buffer_->Store(key_value.first, key_value.second));
+    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
     EXPECT_EQ(key_value.second, recovered);
   }
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
   // Trigger pop...
-  EXPECT_NO_THROW(key_value_buffer.Store(key, value));
-  EXPECT_NO_THROW(recovered = key_value_buffer.Get(key));
+  EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
+  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
 }

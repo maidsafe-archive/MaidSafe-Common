@@ -87,12 +87,13 @@ class KeyValueBuffer {
     std::mutex mutex;
     std::condition_variable cond_var;
   };
+  enum class OnDisk { kNotStarted, kStarted, kCompleted };
   struct KeyValueInfo {
     KeyValueInfo(const Identity& key_in, const NonEmptyString& value_in)
-        : key(key_in), value(value_in), on_disk(false) {}
+        : key(key_in), value(value_in), on_disk(OnDisk::kNotStarted) {}
     Identity key;
     NonEmptyString value;
-    bool on_disk;
+    OnDisk on_disk;
   };
 
   void Init();
@@ -100,8 +101,8 @@ class KeyValueBuffer {
   void StoreOnDisk(const Identity& key, const NonEmptyString& value);
   void WaitForSpaceOnDisk(const uint64_t& space_required,
                           std::unique_lock<std::mutex>& disk_store_lock);
-  void DeleteFromMemory(const Identity& key, bool& also_on_disk);
-  void DeleteFromDisk(const Identity& key);
+  void DeleteFromMemory(const Identity& key, OnDisk& also_on_disk);
+  void DeleteFromDisk(const Identity& key, bool wait_for_storing_to_complete);
   void RemoveFile(const Identity& key, NonEmptyString* value);
   void CopyQueueToDisk();
   void CheckWorkerIsStillRunning();

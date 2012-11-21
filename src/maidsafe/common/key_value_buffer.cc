@@ -106,13 +106,15 @@ KeyValueBuffer::~KeyValueBuffer() {
     running_ = false;
   }
   disk_store_.cond_var.notify_all();
-  worker_cond_var_.notify_one();
-  if (worker_.valid())
+  worker_cond_var_.notify_all();
+  if (worker_.valid()) {
     try {
       worker_.get();
-    } catch(...) {
-      // absorb
     }
+    catch(const std::exception& e) {
+      LOG(kError) << e.what();
+    }
+  }
   memory_store_.cond_var.notify_all();
 
   if (kShouldRemoveRoot_) {
@@ -135,16 +137,25 @@ bool KeyValueBuffer::StoreInMemory(const Identity& key, const NonEmptyString& va
     if (value.string().size() > memory_store_.max)
       return false;
 
+    bool running(false);
     while (memory_store_.current > memory_store_.max - value.string().size()) {
       auto itr(values_.end());
-      memory_store_.cond_var.wait(memory_store_lock, [this, &itr] {
+      memory_store_.cond_var.wait(memory_store_lock, [this, &itr, &running] {
+          {
+            std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
+            running = running_;
+          }
           itr = std::find_if(values_.begin(),
                              values_.end(),
                              [](const KeyValueInfo& key_value) {
-                                 return key_value.on_disk && key_value.value.IsInitialised();
+                                 return key_value.on_disk != OnDisk::kNotStarted &&
+                                        key_value.value.IsInitialised();
                              });
-          return itr != values_.end();
+          return itr != values_.end() || !running;
       });
+      if (!running)
+        worker_.get();
+
       memory_store_.current.data -= (*itr).value.string().size();
       if (kPopFunctor_)
         (*itr).value = NonEmptyString();
@@ -155,7 +166,7 @@ bool KeyValueBuffer::StoreInMemory(const Identity& key, const NonEmptyString& va
     memory_store_.current.data += value.string().size();
     values_.push_back(KeyValueInfo(key, value));
   }
-  worker_cond_var_.notify_one();
+  worker_cond_var_.notify_all();
   return true;
 }
 
@@ -165,6 +176,8 @@ void KeyValueBuffer::StoreOnDisk(const Identity& key, const NonEmptyString& valu
     if (value.string().size() > disk_store_.max) {
       LOG(kError) << "Cannot store " << HexSubstr(key) << " since its " << value.string().size()
                   << " bytes exceeds max of " << disk_store_.max << " bytes.";
+      running_ = false;
+      worker_cond_var_.notify_all();
       ThrowError(CommonErrors::cannot_exceed_max_disk_usage);
     }
 
@@ -174,9 +187,24 @@ void KeyValueBuffer::StoreOnDisk(const Identity& key, const NonEmptyString& valu
 
     if (!WriteFile(GetFilename(key), value.string())) {
       LOG(kError) << "Failed to move " << HexSubstr(key) << " to disk.";
+      running_ = false;
+      worker_cond_var_.notify_all();
       ThrowError(CommonErrors::filesystem_io_error);
     }
+                                                              LOG(kSuccess) << "Stored " << GetFilename(key);
     disk_store_.current.data += value.string().size();
+  }
+  {
+    std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
+    auto itr(std::find_if(values_.begin(),
+                          values_.end(),
+                          [](const KeyValueInfo& key_value) {
+                              return key_value.on_disk == OnDisk::kStarted;
+                          }));
+    if (itr != values_.end()) {
+      assert((*itr).key == key);
+      (*itr).on_disk = OnDisk::kCompleted;
+    }
   }
 }
 
@@ -189,7 +217,9 @@ void KeyValueBuffer::WaitForSpaceOnDisk(const uint64_t& space_required,
       memory_store_.cond_var.wait(memory_store_lock, [this, &itr] {
           itr = std::find_if(values_.begin(),
                              values_.end(),
-                             [](const KeyValueInfo& key_value) { return key_value.on_disk; });  // NOLINT (Fraser)
+                             [](const KeyValueInfo& key_value) {
+                                 return key_value.on_disk == OnDisk::kCompleted;
+                             });
           return itr != values_.end();
       });
       Identity key((*itr).key);
@@ -222,13 +252,13 @@ NonEmptyString KeyValueBuffer::Get(const Identity& key) {
 
 void KeyValueBuffer::Delete(const Identity& key) {
   CheckWorkerIsStillRunning();
-  bool also_on_disk(false);
+  OnDisk also_on_disk(OnDisk::kNotStarted);
   DeleteFromMemory(key, also_on_disk);
-  if (also_on_disk)
-    DeleteFromDisk(key);
+  if (also_on_disk != OnDisk::kNotStarted)
+    DeleteFromDisk(key, also_on_disk == OnDisk::kStarted);
 }
 
-void KeyValueBuffer::DeleteFromMemory(const Identity& key, bool& also_on_disk) {
+void KeyValueBuffer::DeleteFromMemory(const Identity& key, OnDisk& also_on_disk) {
   {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
     auto itr(std::find_if(values_.begin(),
@@ -237,15 +267,30 @@ void KeyValueBuffer::DeleteFromMemory(const Identity& key, bool& also_on_disk) {
     if (itr != values_.end()) {
       also_on_disk = (*itr).on_disk;
       memory_store_.current.data -= (*itr).value.string().size();
-      values_.erase(itr);
+      // value gets erased in DeleteFromDisk if the storing process has already started
+      if (also_on_disk != OnDisk::kStarted)
+        values_.erase(itr);
     } else {
-      DeleteFromDisk(key);
+      DeleteFromDisk(key, false);
     }
   }
   memory_store_.cond_var.notify_all();
 }
 
-void KeyValueBuffer::DeleteFromDisk(const Identity& key) {
+void KeyValueBuffer::DeleteFromDisk(const Identity& key, bool wait_for_storing_to_complete) {
+  if (wait_for_storing_to_complete) {
+    std::unique_lock<std::mutex> memory_store_lock(memory_store_.mutex);
+    auto itr(std::find_if(values_.begin(),
+                          values_.end(),
+                          [&key](const KeyValueInfo& key_value) {
+                              return key_value.on_disk != OnDisk::kNotStarted &&
+                                     key_value.key == key;
+                          }));
+    assert(itr != values_.end());
+    worker_cond_var_.wait(memory_store_lock,
+                          [this, &itr] { return (*itr).on_disk == OnDisk::kCompleted; });  // NOLINT (Fraser)
+    values_.erase(itr);
+  }
   {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
     if (!running_)
@@ -260,13 +305,13 @@ void KeyValueBuffer::RemoveFile(const Identity& key, NonEmptyString* value) {
   boost::system::error_code error_code;
   uint64_t size(fs::file_size(path, error_code));
   if (error_code) {
-    LOG(kError) << "Error getting file size of " << path;
+    LOG(kError) << "Error getting file size of " << path << ": " << error_code.message();
     ThrowError(CommonErrors::filesystem_io_error);
   }
   if (value)
     *value = ReadFile(path);
   if (!fs::remove(path, error_code) || error_code) {
-    LOG(kError) << "Error removing " << path;
+    LOG(kError) << "Error removing " << path << ": " << error_code.message();
     ThrowError(CommonErrors::filesystem_io_error);
   }
   disk_store_.current.data -= size;
@@ -288,23 +333,33 @@ void KeyValueBuffer::CopyQueueToDisk() {
           }
           itr = std::find_if(values_.begin(),
                              values_.end(),
-                             [](const KeyValueInfo& key_value) { return !key_value.on_disk; });  // NOLINT (Fraser)
+                             [](const KeyValueInfo& key_value) {
+                                 return key_value.on_disk == OnDisk::kNotStarted;
+                             });
           return itr != values_.end() || !running;
       });
       if (!running)
         return;
       key = (*itr).key;
       value = (*itr).value;
-      (*itr).on_disk = true;
+      (*itr).on_disk = OnDisk::kStarted;
     }
     memory_store_.cond_var.notify_one();
     StoreOnDisk(key, value);
+    worker_cond_var_.notify_one();
   }
 }
 
 void KeyValueBuffer::CheckWorkerIsStillRunning() {
   if (worker_.has_exception())
     worker_.get();
+  {
+    std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
+    if (!running_) {
+      LOG(kError) << "Worker is no longer running.";
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+  }
 }
 
 void KeyValueBuffer::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
