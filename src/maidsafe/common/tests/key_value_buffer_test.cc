@@ -166,25 +166,26 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
     key = Identity(crypto::Hash<crypto::SHA512>(value));
     key_value_pairs.push_back(std::make_pair(key, value));
   }
-  KeyValueBuffer key_value_buffer(MemoryUsage(OneKB),
-                                  DiskUsage(4 * OneKB),
-                                  pop_functor_,
-                                  kv_buffer_path);
+
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(OneKB), DiskUsage(4 * OneKB),
+                                             pop_functor_, kv_buffer_path));
 
   for (auto key_value : key_value_pairs) {
-    EXPECT_NO_THROW(key_value_buffer.Store(key_value.first, key_value.second));
-    EXPECT_NO_THROW(recovered = key_value_buffer.Get(key_value.first));
+    EXPECT_NO_THROW(key_value_buffer_->Store(key_value.first, key_value.second));
+    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
     EXPECT_EQ(key_value.second, recovered);
   }
   Identity first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
-  auto async = std::async(std::launch::async, [&key_value_buffer, key, value]() { key_value_buffer.Store(key, value); });
-  EXPECT_THROW(recovered = key_value_buffer.Get(key), std::exception);
-  EXPECT_NO_THROW(key_value_buffer.Delete(first_key));
-  EXPECT_NO_THROW(key_value_buffer.Delete(second_key));
+  auto async = std::async(std::launch::async, [this, key, value]() {
+                                                  key_value_buffer_->Store(key, value);
+                                              });
+  EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
+  EXPECT_NO_THROW(key_value_buffer_->Delete(first_key));
+  EXPECT_NO_THROW(key_value_buffer_->Delete(second_key));
   async.wait();
-  EXPECT_NO_THROW(recovered = key_value_buffer.Get(key));
+  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
 }
