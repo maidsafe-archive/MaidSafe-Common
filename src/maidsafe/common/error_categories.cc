@@ -76,6 +76,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Cannot exceed specified maximum disk usage";
     case CommonErrors::filesystem_io_error:
       return "Filesystem IO error";
+    case CommonErrors::no_such_element:
+      return "Element does not exist";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";

@@ -105,6 +105,7 @@ TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
   // Fits into memory buffer successfully.  Background thread in future should throw, causing other
   // API functions to throw on next execution.
   EXPECT_NO_THROW(key_value_buffer_->Store(key, small_value));
+  // Sleep(boost::posix_time::milliseconds(100));
   EXPECT_THROW(key_value_buffer_->Store(key, small_value), std::exception);
   EXPECT_THROW(key_value_buffer_->Get(key), std::exception);
   EXPECT_THROW(key_value_buffer_->Delete(key), std::exception);
@@ -132,10 +133,9 @@ TEST_F(KeyValueBufferTest, BEH_SuccessfulStore) {
   Identity key2(crypto::Hash<crypto::SHA512>(value2));
   EXPECT_NO_THROW(key_value_buffer_->Store(key1, value1));
   EXPECT_NO_THROW(key_value_buffer_->Store(key2, value2));
-  NonEmptyString recovered;
-  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key1));
+  NonEmptyString recovered = key_value_buffer_->Get(key1);
   EXPECT_EQ(recovered, value1);
-  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key2));
+  recovered = key_value_buffer_->Get(key2);
   EXPECT_EQ(recovered, value2);
 }
 
@@ -178,7 +178,7 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   Identity first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
-  auto async = std::async(std::launch::async, [this, key, value]() {
+  auto async = std::async(std::launch::async, [this, key, value] {
                                                   key_value_buffer_->Store(key, value);
                                               });
   EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
@@ -250,7 +250,7 @@ class KeyValueBufferTestDiskUsage : public testing::TestWithParam<MaxMemoryDiskU
 
 TEST_P(KeyValueBufferTestDiskUsage, BEH_SuccessfulStore) {
   uint64_t disk_usage(max_disk_usage_);
-  while(disk_usage != 0) {
+  while (disk_usage != 0) {
     NonEmptyString value(std::string(RandomAlphaNumericString(
                       static_cast<uint32_t>(max_memory_usage_))));
     Identity key(crypto::Hash<crypto::SHA512>(value));
@@ -286,7 +286,7 @@ class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemor
 TEST_P(KeyValueBufferTestDiskMemoryUsage, BEH_SuccessfulStore) {
   uint64_t disk_usage(max_disk_usage_), memory_usage(max_memory_usage_),
            total_usage(disk_usage + memory_usage);
-  while(total_usage != 0) {
+  while (total_usage != 0) {
     NonEmptyString value(std::string(RandomAlphaNumericString(
                       static_cast<uint32_t>(max_memory_usage_))));
     Identity key(crypto::Hash<crypto::SHA512>(value));
@@ -307,7 +307,7 @@ TEST_P(KeyValueBufferTestDiskMemoryUsage, BEH_Delete) {
   uint64_t disk_usage(max_disk_usage_), memory_usage(max_memory_usage_),
            total_usage(disk_usage + memory_usage);
   std::map<Identity, NonEmptyString> key_value_pairs;
-  while(total_usage != 0) {
+  while (total_usage != 0) {
     NonEmptyString value(std::string(RandomAlphaNumericString(
                       static_cast<uint32_t>(max_memory_usage_))));
     Identity key(crypto::Hash<crypto::SHA512>(value));

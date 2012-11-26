@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_KEY_VALUE_BUFFER_H_
 #define MAIDSAFE_COMMON_KEY_VALUE_BUFFER_H_
 
+#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <functional>
@@ -80,42 +81,67 @@ class KeyValueBuffer {
  private:
   KeyValueBuffer(const KeyValueBuffer&);
   KeyValueBuffer& operator=(const KeyValueBuffer&);
-  template<typename T>
+
+  template<typename UsageType, typename IndexType>
   struct Storage {
-    explicit Storage(T max_in) : max(max_in), current(0), mutex() {}  // NOLINT (Fraser)
-    T max, current;
+    typedef IndexType index_type;
+    explicit Storage(UsageType max_in) : max(max_in), current(0), index(), mutex(), cond_var() {}  // NOLINT (Fraser)
+    UsageType max, current;
+    IndexType index;
     std::mutex mutex;
     std::condition_variable cond_var;
   };
-  enum class OnDisk { kNotStarted, kStarted, kCompleted };
-  struct KeyValueInfo {
-    KeyValueInfo(const Identity& key_in, const NonEmptyString& value_in)
-        : key(key_in), value(value_in), on_disk(OnDisk::kNotStarted) {}
+
+  struct MemoryElement {
+    MemoryElement(const Identity& key_in, const NonEmptyString& value_in)
+        : key(key_in), value(value_in), also_on_disk(false) {}
     Identity key;
     NonEmptyString value;
-    OnDisk on_disk;
+    bool also_on_disk;
   };
+  typedef std::deque<MemoryElement> MemoryIndex;
+
+  enum class StoringState { kStarted, kCancelling, kCompleted };
+  struct DiskElement {
+    explicit DiskElement(const Identity& key_in) : key(key_in), state(StoringState::kStarted) {}
+    Identity key;
+    StoringState state;
+  };
+  typedef std::deque<DiskElement> DiskIndex;
 
   void Init();
   bool StoreInMemory(const Identity& key, const NonEmptyString& value);
+  void WaitForSpaceInMemory(const uint64_t& required_space,
+                            std::unique_lock<std::mutex>& memory_store_lock);
   void StoreOnDisk(const Identity& key, const NonEmptyString& value);
-  void WaitForSpaceOnDisk(const uint64_t& space_required,
+  void WaitForSpaceOnDisk(const uint64_t& required_space,
                           std::unique_lock<std::mutex>& disk_store_lock);
-  void DeleteFromMemory(const Identity& key, OnDisk& also_on_disk);
-  void DeleteFromDisk(const Identity& key, bool wait_for_storing_to_complete);
+  void DeleteFromMemory(const Identity& key, bool& also_on_disk);
+  void DeleteFromDisk(const Identity& key);
+  void WaitForStoringThenRemove(DiskIndex::iterator itr,
+                                std::unique_lock<std::mutex>& disk_store_lock,
+                                NonEmptyString* value);
   void RemoveFile(const Identity& key, NonEmptyString* value);
   void CopyQueueToDisk();
   void CheckWorkerIsStillRunning();
+  void StopRunning();
   boost::filesystem::path GetFilename(const Identity& key) const;
+  template<typename T>
+  bool HasSpace(const T& store, const uint64_t& required_space);
+  template<typename T>
+  typename T::index_type::iterator Find(T& store, const Identity& key);
+  MemoryIndex::iterator FindOldestInMemoryOnly();
+  MemoryIndex::iterator FindMemoryRemovalCandidate(const uint64_t& required_space,
+                                                   std::unique_lock<std::mutex>& memory_store_lock);
+  DiskIndex::iterator FindStartedToStoreOnDisk(const Identity& key);
+  DiskIndex::iterator FindOldestOnDisk();
 
-  Storage<MemoryUsage> memory_store_;
-  Storage<DiskUsage> disk_store_;
+  Storage<MemoryUsage, MemoryIndex> memory_store_;
+  Storage<DiskUsage, DiskIndex> disk_store_;
   const PopFunctor kPopFunctor_;
   const boost::filesystem::path kDiskBuffer_;
   const bool kShouldRemoveRoot_;
-  bool running_;
-  std::deque<KeyValueInfo> values_;
-  std::condition_variable worker_cond_var_;
+  std::atomic<bool> running_;
   std::future<void> worker_;
 };
 

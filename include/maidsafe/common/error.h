@@ -55,7 +55,8 @@ enum class CommonErrors {
   uncompression_error,
   cannot_invoke_from_this_thread,
   cannot_exceed_max_disk_usage,
-  filesystem_io_error
+  filesystem_io_error,
+  no_such_element
 };
 
 enum class AsymmErrors {
