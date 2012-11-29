@@ -96,6 +96,8 @@ if(MAIDSAFE_TESTING)
 endif()
 rename_outdated_built_exes()
 
+set(AllExesForCurrentProject ${AllExesForCurrentProject} cryptest)
+
 
 ###################################################################################################
 # Set compiler and linker flags                                                                   #
