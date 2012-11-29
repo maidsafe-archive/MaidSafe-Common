@@ -59,12 +59,14 @@ namespace log {
 
 namespace {
 
+#ifdef __MSVC__
 // This function is needed to avoid use of po::bool_switch causing MSVC warning C4505:
 // 'boost::program_options::typed_value<bool>::name' : unreferenced local function has been removed.
 void UseUnreferenced() {
   auto dummy = po::typed_value<bool>(nullptr);
-  (void)dummy;
+  static_cast<void>(dummy);
 }
+#endif
 
 std::once_flag logging_initialised;
 std::mutex g_console_mutex;
