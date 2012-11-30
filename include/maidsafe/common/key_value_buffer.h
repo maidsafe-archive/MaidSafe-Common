@@ -46,6 +46,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
+namespace test { class KeyValueBufferTest; }
+
 class KeyValueBuffer {
  public:
   typedef std::function<void(const Identity&, const NonEmptyString&)> PopFunctor;
@@ -77,6 +79,8 @@ class KeyValueBuffer {
   void SetMaxMemoryUsage(MemoryUsage max_memory_usage);
   // Throws if max_memory_usage_ > max_disk_usage.
   void SetMaxDiskUsage(DiskUsage max_disk_usage);
+
+  friend class test::KeyValueBufferTest;
 
  private:
   KeyValueBuffer(const KeyValueBuffer&);

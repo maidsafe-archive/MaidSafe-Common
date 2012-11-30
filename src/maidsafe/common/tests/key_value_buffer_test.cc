@@ -53,6 +53,10 @@ class KeyValueBufferTest : public testing::Test {
     return true;
   }
 
+  boost::filesystem::path GetkDiskBuffer(const KeyValueBuffer &kvb) {
+    return kvb.kDiskBuffer_;
+  }
+
   MemoryUsage max_memory_usage_;
   DiskUsage max_disk_usage_;
   KeyValueBuffer::PopFunctor pop_functor_;
@@ -76,6 +80,20 @@ TEST_F(KeyValueBufferTest, BEH_Constructor) {
                std::exception);
   EXPECT_THROW(KeyValueBuffer(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
                file_path / "base"), std::exception);
+
+  file_path = boost::filesystem::path(*test_path / "File1");
+  EXPECT_NO_THROW(KeyValueBuffer(MemoryUsage(1), DiskUsage(1), pop_functor_, file_path));
+  ASSERT_FALSE(test_path->empty());
+
+  boost::filesystem::path key_path;
+  {
+    KeyValueBuffer kvb(MemoryUsage(1), DiskUsage(1), pop_functor_);
+    key_path = GetkDiskBuffer(kvb);
+    ASSERT_FALSE(key_path.empty());
+    key_path = key_path / "FILE";
+    ASSERT_TRUE(WriteFile(key_path, " "));
+  }
+  ASSERT_FALSE(WriteFile(key_path, " "));
 }
 
 TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
