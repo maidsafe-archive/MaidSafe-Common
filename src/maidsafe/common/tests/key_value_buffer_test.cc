@@ -27,15 +27,16 @@ namespace maidsafe {
 namespace test {
 
 typedef std::pair<uint64_t, uint64_t> MaxMemoryDiskUsage;
+const uint64_t OneKB(1024);
 
 class KeyValueBufferTest : public testing::Test {
  public:
   void PopFunction(const Identity& key_popped, const NonEmptyString& value_popped,
-                  const std::vector<std::pair<Identity, NonEmptyString>> &key_value_pairs,
-                  size_t *cur_popped_index, boost::mutex *pop_mutex,
-                  boost::condition_variable *pop_cond_var) {
-    Identity to_be_popped_key(key_value_pairs[*cur_popped_index].first);
-    NonEmptyString to_be_popped_value(key_value_pairs[*cur_popped_index].second);
+                   std::vector<std::pair<Identity, NonEmptyString>> *key_value_pairs,
+                   size_t *cur_popped_index, boost::mutex *pop_mutex,
+                   boost::condition_variable *pop_cond_var) {
+    Identity to_be_popped_key((*key_value_pairs)[*cur_popped_index].first);
+    NonEmptyString to_be_popped_value((*key_value_pairs)[*cur_popped_index].second);
     EXPECT_EQ(to_be_popped_key, key_popped);
     EXPECT_EQ(to_be_popped_value, value_popped);
 
@@ -48,6 +49,7 @@ class KeyValueBufferTest : public testing::Test {
   KeyValueBufferTest()
       : max_memory_usage_(1000),
         max_disk_usage_(2000),
+        kv_buffer_path_(),
         pop_functor_(),
         key_value_buffer_(new KeyValueBuffer(max_memory_usage_, max_disk_usage_, pop_functor_)) {}
 
@@ -68,12 +70,45 @@ class KeyValueBufferTest : public testing::Test {
     return true;
   }
 
+  std::vector<std::pair<Identity, NonEmptyString>> PopulateKVB(
+      size_t num_entries, size_t num_memory_entries, size_t num_disk_entries,
+      TestPath test_path, const KeyValueBuffer::PopFunctor &pop_functor) {
+    boost::system::error_code error_code;
+    kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
+    std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
+    NonEmptyString value, recovered;
+    Identity key;
+
+    EXPECT_TRUE(fs::create_directories(kv_buffer_path_, error_code)) << kv_buffer_path_ << ": "
+                                                                    << error_code.message();
+    EXPECT_EQ(0, error_code.value()) << kv_buffer_path_ << ": " << error_code.message();
+    EXPECT_TRUE(fs::exists(kv_buffer_path_, error_code)) << kv_buffer_path_ << ": "
+                                                        << error_code.message();
+    EXPECT_EQ(0, error_code.value());
+
+    for (size_t i = 0; i < num_entries; ++i) {
+      value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
+      key = Identity(crypto::Hash<crypto::SHA512>(value));
+      key_value_pairs.push_back(std::make_pair(key, value));
+    }
+    key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(num_memory_entries * OneKB),
+                                               DiskUsage(num_disk_entries * OneKB),
+                                               pop_functor, kv_buffer_path_));
+    for (auto key_value : key_value_pairs) {
+      EXPECT_NO_THROW(key_value_buffer_->Store(key_value.first, key_value.second));
+      EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
+      EXPECT_EQ(key_value.second, recovered);
+    }
+    return key_value_pairs;
+  }
+
   boost::filesystem::path GetkDiskBuffer(const KeyValueBuffer &kvb) {
     return kvb.kDiskBuffer_;
   }
 
   MemoryUsage max_memory_usage_;
   DiskUsage max_disk_usage_;
+  fs::path kv_buffer_path_;
   KeyValueBuffer::PopFunctor pop_functor_;
   std::unique_ptr<KeyValueBuffer> key_value_buffer_;
 };
@@ -187,35 +222,13 @@ TEST_F(KeyValueBufferTest, BEH_UnsuccessfulStore) {
 }
 
 TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
-  const uint64_t OneKB(1024);
-  boost::system::error_code error_code;
+  const size_t num_entries(4), num_memory_entries(1), num_disk_entries(4);
   TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
-  fs::path kv_buffer_path(*test_path / "kv_buffer");
-  std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
+  std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs(
+      PopulateKVB(num_entries, num_memory_entries, num_disk_entries, test_path, pop_functor_));
   NonEmptyString value, recovered;
   Identity key;
 
-  EXPECT_TRUE(fs::create_directories(kv_buffer_path, error_code)) << kv_buffer_path << ": "
-                                                                  << error_code.message();
-  EXPECT_EQ(0, error_code.value()) << kv_buffer_path << ": " << error_code.message();
-  EXPECT_TRUE(fs::exists(kv_buffer_path, error_code)) << kv_buffer_path << ": "
-                                                      << error_code.message();
-  ASSERT_EQ(0, error_code.value());
-
-  for (int i = 0; i != 4; ++i) {
-    value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
-    key = Identity(crypto::Hash<crypto::SHA512>(value));
-    key_value_pairs.push_back(std::make_pair(key, value));
-  }
-
-  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(OneKB), DiskUsage(4 * OneKB),
-                                             pop_functor_, kv_buffer_path));
-
-  for (auto key_value : key_value_pairs) {
-    EXPECT_NO_THROW(key_value_buffer_->Store(key_value.first, key_value.second));
-    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
-    EXPECT_EQ(key_value.second, recovered);
-  }
   Identity first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
@@ -228,45 +241,26 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   async.wait();
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
-  EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
+
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
 }
 
 TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
-  const uint64_t OneKB(1024);
-  boost::system::error_code error_code;
-  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
-  fs::path kv_buffer_path(*test_path / "kv_buffer");
-  std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
-  NonEmptyString value, recovered;
-  Identity key;
-
-  EXPECT_TRUE(fs::create_directories(kv_buffer_path, error_code)) << kv_buffer_path << ": "
-                                                                  << error_code.message();
-  EXPECT_EQ(0, error_code.value()) << kv_buffer_path << ": " << error_code.message();
-  EXPECT_TRUE(fs::exists(kv_buffer_path, error_code)) << kv_buffer_path << ": "
-                                                      << error_code.message();
-  ASSERT_EQ(0, error_code.value());
-
-  for (int i = 0; i != 4; ++i) {
-    value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
-    key = Identity(crypto::Hash<crypto::SHA512>(value));
-    key_value_pairs.push_back(std::make_pair(key, value));
-  }
   size_t cur_idx(0);
   boost::mutex pop_mutex;
   boost::condition_variable pop_cond_var;
+  std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
   KeyValueBuffer::PopFunctor pop_functor(boost::bind(&KeyValueBufferTest::PopFunction,
-                                                     this, _1, _2, key_value_pairs, &cur_idx,
+                                                     this, _1, _2, &key_value_pairs, &cur_idx,
                                                      &pop_mutex, &pop_cond_var));
-  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(OneKB), DiskUsage(4 * OneKB),
-                                             pop_functor, kv_buffer_path));
-
-  for (auto key_value : key_value_pairs) {
-    EXPECT_NO_THROW(key_value_buffer_->Store(key_value.first, key_value.second));
-    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
-    EXPECT_EQ(key_value.second, recovered);
-  }
+  const size_t num_entries(4), num_memory_entries(1), num_disk_entries(4);
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  key_value_pairs = PopulateKVB(num_entries, num_memory_entries, num_disk_entries,
+                                test_path, pop_functor);
   EXPECT_EQ(0, cur_idx);
+
+  NonEmptyString value, recovered;
+  Identity key;
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
   // Trigger pop...
@@ -301,7 +295,97 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
 
-  EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
+}
+
+TEST_F(KeyValueBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
+  size_t cur_idx(0);
+  boost::mutex pop_mutex;
+  boost::condition_variable pop_cond_var;
+  std::vector<std::pair<Identity, NonEmptyString>> old_key_value_pairs,
+                                                   new_key_value_pairs;
+  KeyValueBuffer::PopFunctor pop_functor(boost::bind(&KeyValueBufferTest::PopFunction,
+                                                     this, _1, _2, &old_key_value_pairs, &cur_idx,
+                                                     &pop_mutex, &pop_cond_var));
+  const size_t num_entries(6), num_memory_entries(1), num_disk_entries(6);
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  old_key_value_pairs = PopulateKVB(num_entries, num_memory_entries, num_disk_entries,
+                                    test_path, pop_functor);
+  EXPECT_EQ(0, cur_idx);
+
+  NonEmptyString value, recovered;
+  Identity key;
+  while (new_key_value_pairs.size() < num_entries) {
+    value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
+    key = Identity(crypto::Hash<crypto::SHA512>(value));
+    new_key_value_pairs.push_back(std::make_pair(key, value));
+  }
+
+  std::vector<std::future<void> > async_operations;
+  for (auto key_value : new_key_value_pairs) {
+    value = key_value.second;
+    key = key_value.first;
+    async_operations.push_back(std::async(std::launch::async, [this, key, value] {
+                                                  key_value_buffer_->Store(key, value);
+                                              }));
+  }
+  {
+    boost::mutex::scoped_lock pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(2), [&]()->bool {
+        if (cur_idx == num_entries)
+          return true;
+        else
+          return false;
+    }));
+  }
+  for (auto key_value : new_key_value_pairs) {
+    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
+    EXPECT_EQ(key_value.second, recovered);
+  }
+  EXPECT_EQ(num_entries, cur_idx);
+
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
+}
+
+TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
+  std::vector<std::pair<Identity, NonEmptyString>> old_key_value_pairs,
+                                                   new_key_value_pairs;
+  const size_t num_entries(6), num_memory_entries(0), num_disk_entries(6);
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  old_key_value_pairs = PopulateKVB(num_entries, num_memory_entries, num_disk_entries,
+                                    test_path, pop_functor_);
+
+  NonEmptyString value, recovered;
+  Identity key;
+  while (new_key_value_pairs.size() < num_entries) {
+    value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
+    key = Identity(crypto::Hash<crypto::SHA512>(value));
+    new_key_value_pairs.push_back(std::make_pair(key, value));
+  }
+
+  std::vector<std::future<void> > async_operations;
+  for (auto key_value : new_key_value_pairs) {
+    value = key_value.second;
+    key = key_value.first;
+    async_operations.push_back(std::async(std::launch::async, [this, key, value] {
+                                                  key_value_buffer_->Store(key, value);
+                                              }));
+  }
+  Sleep(boost::posix_time::seconds(1));
+  for (auto key_value : new_key_value_pairs) {
+    EXPECT_THROW(recovered = key_value_buffer_->Get(key_value.first), std::exception);
+    EXPECT_NE(key_value.second, recovered);
+  }
+  for (auto key_value : old_key_value_pairs) {
+    EXPECT_NO_THROW(key_value_buffer_->Delete(key_value.first));
+  }
+  Sleep(boost::posix_time::seconds(1));
+  for (auto key_value : new_key_value_pairs) {
+    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
+    EXPECT_EQ(key_value.second, recovered);
+  }
+
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
 }
 
 class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {
