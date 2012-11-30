@@ -87,6 +87,14 @@ TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
                std::exception);
   EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_)));
   EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
+  EXPECT_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
+               std::exception);
+  EXPECT_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
+               std::exception);
+  EXPECT_NO_THROW(
+     key_value_buffer_->SetMaxDiskUsage(DiskUsage(std::numeric_limits<uint64_t>().max())));
+  EXPECT_NO_THROW(
+     key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(std::numeric_limits<uint64_t>().max())));
 }
 
 TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
@@ -105,7 +113,7 @@ TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
   // Fits into memory buffer successfully.  Background thread in future should throw, causing other
   // API functions to throw on next execution.
   EXPECT_NO_THROW(key_value_buffer_->Store(key, small_value));
-  // Sleep(boost::posix_time::milliseconds(100));
+  Sleep(boost::posix_time::seconds(1));
   EXPECT_THROW(key_value_buffer_->Store(key, small_value), std::exception);
   EXPECT_THROW(key_value_buffer_->Get(key), std::exception);
   EXPECT_THROW(key_value_buffer_->Delete(key), std::exception);
@@ -235,41 +243,6 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
 }
 
-class KeyValueBufferTestDiskUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {
- protected:
-  KeyValueBufferTestDiskUsage()
-      : max_memory_usage_(GetParam().first),
-        max_disk_usage_(GetParam().second),
-        pop_functor_(),
-        key_value_buffer_(new KeyValueBuffer(max_memory_usage_, max_disk_usage_, pop_functor_)) {}
-  MemoryUsage max_memory_usage_;
-  DiskUsage max_disk_usage_;
-  KeyValueBuffer::PopFunctor pop_functor_;
-  std::unique_ptr<KeyValueBuffer> key_value_buffer_;
-};
-
-TEST_P(KeyValueBufferTestDiskUsage, BEH_SuccessfulStore) {
-  uint64_t disk_usage(max_disk_usage_);
-  while (disk_usage != 0) {
-    NonEmptyString value(std::string(RandomAlphaNumericString(
-                      static_cast<uint32_t>(max_memory_usage_))));
-    Identity key(crypto::Hash<crypto::SHA512>(value));
-    EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
-    NonEmptyString recovered;
-    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
-    EXPECT_EQ(value, recovered);
-    disk_usage -= max_memory_usage_;
-  }
-}
-
-INSTANTIATE_TEST_CASE_P(KeyValueBufferSuccessfulStore,
-                        KeyValueBufferTestDiskUsage,
-                        testing::Values(std::make_pair(1, 1024),
-                                        std::make_pair(8, 1024),
-                                        std::make_pair(1024, 2048),
-                                        std::make_pair(1024, 1024)));
-
-
 class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {
  protected:
   KeyValueBufferTestDiskMemoryUsage()
@@ -283,7 +256,7 @@ class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemor
   std::unique_ptr<KeyValueBuffer> key_value_buffer_;
 };
 
-TEST_P(KeyValueBufferTestDiskMemoryUsage, BEH_SuccessfulStore) {
+TEST_P(KeyValueBufferTestDiskMemoryUsage, BEH_Store) {
   uint64_t disk_usage(max_disk_usage_), memory_usage(max_memory_usage_),
            total_usage(disk_usage + memory_usage);
   while (total_usage != 0) {
@@ -330,12 +303,17 @@ TEST_P(KeyValueBufferTestDiskMemoryUsage, BEH_Delete) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(KeyValueBufferStore,
+INSTANTIATE_TEST_CASE_P(TestKeyValueBuffer,
                         KeyValueBufferTestDiskMemoryUsage,
-                        testing::Values(std::make_pair(1, 1024),
+                        testing::Values(std::make_pair(1, 2),
+                                        std::make_pair(1, 1024),
                                         std::make_pair(8, 1024),
                                         std::make_pair(1024, 2048),
-                                        std::make_pair(1024, 1024)));
+                                        std::make_pair(1024, 1024),
+                                        std::make_pair(16, 16 * 1024),
+                                        std::make_pair(32, 32),
+                                        std::make_pair(1000, 10000),
+                                        std::make_pair(10000, 1000000)));
 
 }  // namespace test
 
