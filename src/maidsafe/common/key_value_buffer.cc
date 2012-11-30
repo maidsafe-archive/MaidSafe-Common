@@ -377,7 +377,7 @@ template<typename T>
 typename T::index_type::iterator KeyValueBuffer::Find(T& store, const Identity& key) {
   return std::find_if(store.index.begin(),
                       store.index.end(),
-                      [&key](const T::index_type::value_type& key_value) {
+                      [&key](const typename T::index_type::value_type& key_value) {
                           return key_value.key == key;
                       });
 }
