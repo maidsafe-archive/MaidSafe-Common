@@ -29,6 +29,21 @@ namespace test {
 typedef std::pair<uint64_t, uint64_t> MaxMemoryDiskUsage;
 
 class KeyValueBufferTest : public testing::Test {
+ public:
+  void PopFunction(const Identity& key_popped, const NonEmptyString& value_popped,
+                  const std::vector<std::pair<Identity, NonEmptyString>> &key_value_pairs,
+                  size_t *cur_popped_index, boost::mutex *pop_mutex,
+                  boost::condition_variable *pop_cond_var) {
+    Identity to_be_popped_key(key_value_pairs[*cur_popped_index].first);
+    NonEmptyString to_be_popped_value(key_value_pairs[*cur_popped_index].second);
+    EXPECT_EQ(to_be_popped_key, key_popped);
+    EXPECT_EQ(to_be_popped_value, value_popped);
+
+    boost::mutex::scoped_lock lock(*pop_mutex);
+    (*cur_popped_index)++;
+    pop_cond_var->notify_one();
+  }
+
  protected:
   KeyValueBufferTest()
       : max_memory_usage_(1000),
@@ -237,13 +252,12 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
     key = Identity(crypto::Hash<crypto::SHA512>(value));
     key_value_pairs.push_back(std::make_pair(key, value));
   }
-  Identity first_key(key_value_pairs.front().first);
-  NonEmptyString first_value(key_value_pairs.front().second);
-  KeyValueBuffer::PopFunctor pop_functor([first_key, first_value](const Identity& key,
-                                                                  const NonEmptyString& value) {
-                                            EXPECT_EQ(first_key, key);
-                                            EXPECT_EQ(first_value, value);
-                                         });
+  size_t cur_idx(0);
+  boost::mutex pop_mutex;
+  boost::condition_variable pop_cond_var;
+  KeyValueBuffer::PopFunctor pop_functor(boost::bind(&KeyValueBufferTest::PopFunction,
+                                                     this, _1, _2, key_value_pairs, &cur_idx,
+                                                     &pop_mutex, &pop_cond_var));
   key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(OneKB), DiskUsage(4 * OneKB),
                                              pop_functor, kv_buffer_path));
 
@@ -252,12 +266,41 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
     EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
     EXPECT_EQ(key_value.second, recovered);
   }
+  EXPECT_EQ(0, cur_idx);
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
   // Trigger pop...
   EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
+  {
+    boost::mutex::scoped_lock pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(1), [&]()->bool {
+        if (cur_idx == 1)
+          return true;
+        else
+          return false;
+    }));
+  }
+  EXPECT_EQ(1, cur_idx);
+
+  value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
+  key = Identity(crypto::Hash<crypto::SHA512>(value));
+  // Trigger pop...
+  EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
+  {
+    boost::mutex::scoped_lock pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(2), [&]()->bool {
+        if (cur_idx == 3)
+          return true;
+        else
+          return false;
+    }));
+  }
+  EXPECT_EQ(3, cur_idx);
+  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
+
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path));
 }
 
