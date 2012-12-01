@@ -96,6 +96,8 @@ if(MAIDSAFE_TESTING)
 endif()
 rename_outdated_built_exes()
 
+set(AllExesForCurrentProject ${AllExesForCurrentProject} cryptest)
+
 
 ###################################################################################################
 # Set compiler and linker flags                                                                   #
@@ -112,9 +114,66 @@ if(MAIDSAFE_TESTING)
   list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc")
   list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
   list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.proto")
+
   add_style_test(${STYLE_TESTS})
   add_gtests(TESTcommon)
   # add_gtests(TESTboost)
+
+  label_as_critical_tests(AsioServiceTest.BEH_All
+                          UtilsTest.BEH_VersionToString
+                          UtilsTest.BEH_VersionToInt
+                          UtilsTest.BEH_Cpu_Size
+                          UtilsTest.BEH_Names
+                          UtilsTest.BEH_RandomStringMultiThread
+                          UtilsTest.BEH_RandomStringGenerator
+                          UtilsTest.BEH_IntToString
+                          UtilsTest.BEH_RandomStringSingleThread
+                          UtilsTest.BEH_Base32EncodeDecode
+                          UtilsTest.BEH_TimeFunctions
+                          UtilsTest.BEH_RandomNumberGen
+                          UtilsTest.BEH_ReadWriteFile
+                          UtilsTest.BEH_Sleep
+                          UtilsTest.BEH_AppDir
+                          UtilsTest.BEH_CreateTestPath
+                          RSATest.BEH_RsaEncodeKeys
+                          RSATest.BEH_AsymEncryptDecrypt
+                          RSATest.FUNC_SignValidate
+                          RSATest.BEH_RsaKeysComparing
+                          BoundedStringTest.BEH_DefaultConstructor
+                          BoundedStringTest.BEH_Getters
+                          BoundedStringTest.BEH_StringConstructor
+                          BoundedStringTest.BEH_Swap
+                          BoundedStringTest.BEH_Copy
+                          BoundedStringTest.BEH_Move
+                          BoundedStringTest.BEH_Assignment
+                          BoundedStringTest.BEH_OtherBoundedStringConstructor
+                          BoundedStringTest.BEH_OtherBoundedStringAssignment
+                          BoundedStringTest.BEH_ConcatenationOperators
+                          NodeIdTest.BEH_DefaultConstructor
+                          NodeIdTest.BEH_DistanceCheck
+                          NodeIdTest.BEH_BitToByteCount
+                          NodeIdTest.BEH_DefaultCtr
+                          NodeIdTest.BEH_CopyCtr
+                          NodeIdTest.BEH_KadIdTypeCtr
+                          NodeIdTest.BEH_stringCtr
+                          NodeIdTest.BEH_EncodingCtr
+                          NodeIdTest.BEH_OperatorEqual
+                          NodeIdTest.BEH_OperatorDifferent
+                          NodeIdTest.BEH_OperatorGreaterThan
+                          NodeIdTest.BEH_OperatorLessThan
+                          NodeIdTest.BEH_OperatorGreaterEqual
+                          NodeIdTest.BEH_OperatorLessEqual
+                          NodeIdTest.BEH_OperatorXOR
+                          CryptoTest.BEH_Xor
+                          CryptoTest.BEH_SecurePasswordGeneration
+                          CryptoTest.BEH_Hash
+                          CryptoTest.BEH_SymmEncrypt
+                          CryptoTest.BEH_Compress
+                          CryptoTest.BEH_GzipSHA512Deterministic
+                          CryptoTest.BEH_AESTigerDeterministic
+                          CryptoTest.BEH_SecretSharing
+                          )
+
   add_project_experimental()
   test_summary_output()
 endif()
