@@ -28,6 +28,8 @@ namespace test {
 
 typedef std::pair<uint64_t, uint64_t> MaxMemoryDiskUsage;
 const uint64_t OneKB(1024);
+const uint64_t kDefaultMaxMemoryUsage(1000);
+const uint64_t kDefaultMaxDiskUsage(2000);
 
 class KeyValueBufferTest : public testing::Test {
  public:
@@ -47,8 +49,8 @@ class KeyValueBufferTest : public testing::Test {
 
  protected:
   KeyValueBufferTest()
-      : max_memory_usage_(1000),
-        max_disk_usage_(2000),
+      : max_memory_usage_(kDefaultMaxMemoryUsage),
+        max_disk_usage_(kDefaultMaxDiskUsage),
         kv_buffer_path_(),
         pop_functor_(),
         key_value_buffer_(new KeyValueBuffer(max_memory_usage_, max_disk_usage_, pop_functor_)) {}
@@ -157,12 +159,22 @@ TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
   EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
   EXPECT_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
                std::exception);
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(1))));
   EXPECT_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
                std::exception);
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(1))));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(0))));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))));
   EXPECT_NO_THROW(
      key_value_buffer_->SetMaxDiskUsage(DiskUsage(std::numeric_limits<uint64_t>().max())));
   EXPECT_NO_THROW(
      key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(std::numeric_limits<uint64_t>().max())));
+  EXPECT_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
+               std::exception);
+  EXPECT_NO_THROW(
+     key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
+  EXPECT_NO_THROW(
+     key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
 
 TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
