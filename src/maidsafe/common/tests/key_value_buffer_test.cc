@@ -171,10 +171,8 @@ TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
      key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(std::numeric_limits<uint64_t>().max())));
   EXPECT_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
                std::exception);
-  EXPECT_NO_THROW(
-     key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
-  EXPECT_NO_THROW(
-     key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
 
 TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
