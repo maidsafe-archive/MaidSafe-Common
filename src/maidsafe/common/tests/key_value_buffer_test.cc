@@ -21,6 +21,7 @@
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
+namespace args = std::placeholders;
 
 namespace maidsafe {
 
@@ -28,30 +29,34 @@ namespace test {
 
 typedef std::pair<uint64_t, uint64_t> MaxMemoryDiskUsage;
 const uint64_t OneKB(1024);
+const uint64_t kDefaultMaxMemoryUsage(1000);
+const uint64_t kDefaultMaxDiskUsage(2000);
 
 class KeyValueBufferTest : public testing::Test {
- public:
-  void PopFunction(const Identity& key_popped, const NonEmptyString& value_popped,
-                   std::vector<std::pair<Identity, NonEmptyString>> *key_value_pairs,
-                   size_t *cur_popped_index, boost::mutex *pop_mutex,
-                   boost::condition_variable *pop_cond_var) {
-    Identity to_be_popped_key((*key_value_pairs)[*cur_popped_index].first);
-    NonEmptyString to_be_popped_value((*key_value_pairs)[*cur_popped_index].second);
-    EXPECT_EQ(to_be_popped_key, key_popped);
-    EXPECT_EQ(to_be_popped_value, value_popped);
-
-    boost::mutex::scoped_lock lock(*pop_mutex);
-    (*cur_popped_index)++;
-    pop_cond_var->notify_one();
-  }
-
  protected:
   KeyValueBufferTest()
-      : max_memory_usage_(1000),
-        max_disk_usage_(2000),
+      : max_memory_usage_(kDefaultMaxMemoryUsage),
+        max_disk_usage_(kDefaultMaxDiskUsage),
         kv_buffer_path_(),
         pop_functor_(),
         key_value_buffer_(new KeyValueBuffer(max_memory_usage_, max_disk_usage_, pop_functor_)) {}
+
+  void PopFunction(const Identity& key_popped,
+                   const NonEmptyString& value_popped,
+                   std::vector<std::pair<Identity, NonEmptyString> >& key_value_pairs,
+                   size_t& cur_popped_index,
+                   std::mutex& pop_mutex,
+                   std::condition_variable& pop_cond_var) {
+    {
+      std::unique_lock<std::mutex> lock(pop_mutex);
+      Identity to_be_popped_key(key_value_pairs[cur_popped_index].first);
+      NonEmptyString to_be_popped_value(key_value_pairs[cur_popped_index].second);
+      EXPECT_EQ(to_be_popped_key, key_popped);
+      EXPECT_EQ(to_be_popped_value, value_popped);
+      cur_popped_index++;
+    }
+    pop_cond_var.notify_one();
+  }
 
   bool DeleteDirectory(const fs::path& directory) {
     boost::system::error_code error_code;
@@ -72,7 +77,7 @@ class KeyValueBufferTest : public testing::Test {
 
   std::vector<std::pair<Identity, NonEmptyString>> PopulateKVB(
       size_t num_entries, size_t num_memory_entries, size_t num_disk_entries,
-      TestPath test_path, const KeyValueBuffer::PopFunctor &pop_functor) {
+      TestPath test_path, const KeyValueBuffer::PopFunctor& pop_functor) {
     boost::system::error_code error_code;
     kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
     std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
@@ -102,7 +107,7 @@ class KeyValueBufferTest : public testing::Test {
     return key_value_pairs;
   }
 
-  boost::filesystem::path GetkDiskBuffer(const KeyValueBuffer &kvb) {
+  boost::filesystem::path GetkDiskBuffer(const KeyValueBuffer& kvb) {
     return kvb.kDiskBuffer_;
   }
 
@@ -131,19 +136,17 @@ TEST_F(KeyValueBufferTest, BEH_Constructor) {
   EXPECT_THROW(KeyValueBuffer(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
                file_path / "base"), std::exception);
 
-  file_path = boost::filesystem::path(*test_path / "File1");
-  EXPECT_NO_THROW(KeyValueBuffer(MemoryUsage(1), DiskUsage(1), pop_functor_, file_path));
-  ASSERT_FALSE(test_path->empty());
+  boost::filesystem::path dir_path(*test_path / "Dir");
+  EXPECT_NO_THROW(KeyValueBuffer(MemoryUsage(1), DiskUsage(1), pop_functor_, dir_path));
+  ASSERT_TRUE(fs::exists(dir_path));
 
-  boost::filesystem::path key_path;
+  boost::filesystem::path kvb_path;
   {
     KeyValueBuffer kvb(MemoryUsage(1), DiskUsage(1), pop_functor_);
-    key_path = GetkDiskBuffer(kvb);
-    ASSERT_FALSE(key_path.empty());
-    key_path = key_path / "FILE";
-    ASSERT_TRUE(WriteFile(key_path, " "));
+    kvb_path = GetkDiskBuffer(kvb);
+    ASSERT_TRUE(fs::exists(kvb_path));
   }
-  ASSERT_FALSE(WriteFile(key_path, " "));
+  ASSERT_FALSE(fs::exists(kvb_path));
 }
 
 TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
@@ -157,12 +160,20 @@ TEST_F(KeyValueBufferTest, BEH_SetMaxDiskMemoryUsage) {
   EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
   EXPECT_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
                std::exception);
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(1))));
   EXPECT_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
                std::exception);
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(1))));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(0))));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))));
   EXPECT_NO_THROW(
      key_value_buffer_->SetMaxDiskUsage(DiskUsage(std::numeric_limits<uint64_t>().max())));
   EXPECT_NO_THROW(
      key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(std::numeric_limits<uint64_t>().max())));
+  EXPECT_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
+               std::exception);
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
+  EXPECT_NO_THROW(key_value_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
 
 TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
@@ -247,12 +258,15 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
 
 TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   size_t cur_idx(0);
-  boost::mutex pop_mutex;
-  boost::condition_variable pop_cond_var;
+  std::mutex pop_mutex;
+  std::condition_variable pop_cond_var;
   std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
-  KeyValueBuffer::PopFunctor pop_functor(boost::bind(&KeyValueBufferTest::PopFunction,
-                                                     this, _1, _2, &key_value_pairs, &cur_idx,
-                                                     &pop_mutex, &pop_cond_var));
+  KeyValueBuffer::PopFunctor pop_functor([this, &key_value_pairs, &cur_idx, &pop_mutex,
+                                          &pop_cond_var](const Identity& key_popped,
+                                                         const NonEmptyString& value_popped) {
+        this->PopFunction(key_popped, value_popped, key_value_pairs,
+                          cur_idx, pop_mutex, pop_cond_var);
+      });
   const size_t num_entries(4), num_memory_entries(1), num_disk_entries(4);
   TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
   key_value_pairs = PopulateKVB(num_entries, num_memory_entries, num_disk_entries,
@@ -268,12 +282,9 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
   {
-    boost::mutex::scoped_lock pop_lock(pop_mutex);
-    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(1), [&]()->bool {
-        if (cur_idx == 1)
-          return true;
-        else
-          return false;
+    std::unique_lock<std::mutex> pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.wait_for(pop_lock, std::chrono::seconds(1), [&]()->bool {
+        return cur_idx == 1;
     }));
   }
   EXPECT_EQ(1, cur_idx);
@@ -283,12 +294,9 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   // Trigger pop...
   EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
   {
-    boost::mutex::scoped_lock pop_lock(pop_mutex);
-    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(2), [&]()->bool {
-        if (cur_idx == 3)
-          return true;
-        else
-          return false;
+    std::unique_lock<std::mutex> pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.wait_for(pop_lock, std::chrono::seconds(2), [&]()->bool {
+        return cur_idx == 3;
     }));
   }
   EXPECT_EQ(3, cur_idx);
@@ -300,13 +308,16 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
 
 TEST_F(KeyValueBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   size_t cur_idx(0);
-  boost::mutex pop_mutex;
-  boost::condition_variable pop_cond_var;
+  std::mutex pop_mutex;
+  std::condition_variable pop_cond_var;
   std::vector<std::pair<Identity, NonEmptyString>> old_key_value_pairs,
                                                    new_key_value_pairs;
-  KeyValueBuffer::PopFunctor pop_functor(boost::bind(&KeyValueBufferTest::PopFunction,
-                                                     this, _1, _2, &old_key_value_pairs, &cur_idx,
-                                                     &pop_mutex, &pop_cond_var));
+  KeyValueBuffer::PopFunctor pop_functor([this, &old_key_value_pairs, &cur_idx, &pop_mutex,
+                                          &pop_cond_var](const Identity& key_popped,
+                                                         const NonEmptyString& value_popped) {
+        this->PopFunction(key_popped, value_popped, old_key_value_pairs,
+                          cur_idx, pop_mutex, pop_cond_var);
+      });
   const size_t num_entries(6), num_memory_entries(1), num_disk_entries(6);
   TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
   old_key_value_pairs = PopulateKVB(num_entries, num_memory_entries, num_disk_entries,
@@ -330,12 +341,9 @@ TEST_F(KeyValueBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
                                               }));
   }
   {
-    boost::mutex::scoped_lock pop_lock(pop_mutex);
-    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(2), [&]()->bool {
-        if (cur_idx == num_entries)
-          return true;
-        else
-          return false;
+    std::unique_lock<std::mutex> pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.wait_for(pop_lock, std::chrono::seconds(2), [&]()->bool {
+        return cur_idx == num_entries;
     }));
   }
   for (auto key_value : new_key_value_pairs) {
