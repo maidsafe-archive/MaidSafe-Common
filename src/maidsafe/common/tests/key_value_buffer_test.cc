@@ -45,10 +45,10 @@ class KeyValueBufferTest : public testing::Test {
                    const NonEmptyString& value_popped,
                    std::vector<std::pair<Identity, NonEmptyString> >& key_value_pairs,
                    size_t& cur_popped_index,
-                   boost::mutex& pop_mutex,
-                   boost::condition_variable& pop_cond_var) {
+                   std::mutex& pop_mutex,
+                   std::condition_variable& pop_cond_var) {
     {
-      boost::mutex::scoped_lock lock(pop_mutex);
+      std::unique_lock<std::mutex> lock(pop_mutex);
       Identity to_be_popped_key(key_value_pairs[cur_popped_index].first);
       NonEmptyString to_be_popped_value(key_value_pairs[cur_popped_index].second);
       EXPECT_EQ(to_be_popped_key, key_popped);
@@ -258,8 +258,8 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
 
 TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   size_t cur_idx(0);
-  boost::mutex pop_mutex;
-  boost::condition_variable pop_cond_var;
+  std::mutex pop_mutex;
+  std::condition_variable pop_cond_var;
   std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
   KeyValueBuffer::PopFunctor pop_functor([this, &key_value_pairs, &cur_idx, &pop_mutex,
                                           &pop_cond_var](const Identity& key_popped,
@@ -282,8 +282,8 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
   {
-    boost::mutex::scoped_lock pop_lock(pop_mutex);
-    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(1), [&]()->bool {
+    std::unique_lock<std::mutex> pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.wait_for(pop_lock, std::chrono::seconds(1), [&]()->bool {
         return cur_idx == 1;
     }));
   }
@@ -294,8 +294,8 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
   // Trigger pop...
   EXPECT_NO_THROW(key_value_buffer_->Store(key, value));
   {
-    boost::mutex::scoped_lock pop_lock(pop_mutex);
-    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(2), [&]()->bool {
+    std::unique_lock<std::mutex> pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.wait_for(pop_lock, std::chrono::seconds(2), [&]()->bool {
         return cur_idx == 3;
     }));
   }
@@ -308,8 +308,8 @@ TEST_F(KeyValueBufferTest, BEH_PopOnDiskBufferOverfill) {
 
 TEST_F(KeyValueBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   size_t cur_idx(0);
-  boost::mutex pop_mutex;
-  boost::condition_variable pop_cond_var;
+  std::mutex pop_mutex;
+  std::condition_variable pop_cond_var;
   std::vector<std::pair<Identity, NonEmptyString>> old_key_value_pairs,
                                                    new_key_value_pairs;
   KeyValueBuffer::PopFunctor pop_functor([this, &old_key_value_pairs, &cur_idx, &pop_mutex,
@@ -341,8 +341,8 @@ TEST_F(KeyValueBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
                                               }));
   }
   {
-    boost::mutex::scoped_lock pop_lock(pop_mutex);
-    EXPECT_TRUE(pop_cond_var.timed_wait(pop_lock, boost::posix_time::seconds(2), [&]()->bool {
+    std::unique_lock<std::mutex> pop_lock(pop_mutex);
+    EXPECT_TRUE(pop_cond_var.wait_for(pop_lock, std::chrono::seconds(2), [&]()->bool {
         return cur_idx == num_entries;
     }));
   }
