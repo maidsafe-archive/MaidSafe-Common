@@ -82,7 +82,6 @@ target_link_libraries(maidsafe_common
                         ${BoostFilesystemLibs}
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
-                        ${BoostRegexLibs}
                         ${BoostProgramOptionsLibs})
 
 if(JustThread_FOUND)
