@@ -247,10 +247,10 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   Identity first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
+  EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
   auto async = std::async(std::launch::async, [this, key, value] {
                                                   key_value_buffer_->Store(key, value);
                                               });
-  EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
   EXPECT_NO_THROW(key_value_buffer_->Delete(first_key));
   EXPECT_NO_THROW(key_value_buffer_->Delete(second_key));
   async.wait();

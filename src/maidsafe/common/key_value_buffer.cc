@@ -217,7 +217,8 @@ void KeyValueBuffer::WaitForSpaceOnDisk(const Identity& key,
       }
     } else {
       // Rely on client of this class to call Delete until enough space becomes available
-      disk_store_.cond_var.wait(disk_store_lock);
+      if (running_)
+        disk_store_.cond_var.wait(disk_store_lock);
     }
   }
 }
