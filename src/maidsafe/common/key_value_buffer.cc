@@ -167,41 +167,58 @@ void KeyValueBuffer::StoreOnDisk(const Identity& key, const NonEmptyString& valu
     }
     disk_store_.index.emplace_back(key);
 
-    WaitForSpaceOnDisk(value.string().size(), disk_store_lock);
+    bool cancelled(false);
+    WaitForSpaceOnDisk(key, value.string().size(), disk_store_lock, cancelled);
     if (!running_)
       return;
 
-    if (!WriteFile(GetFilename(key), value.string())) {
-      LOG(kError) << "Failed to move " << HexSubstr(key) << " to disk.";
-      StopRunning();
-      ThrowError(CommonErrors::filesystem_io_error);
-    }
-    auto itr(FindStartedToStoreOnDisk(key));
-    if (itr != disk_store_.index.end())
-      (*itr).state = StoringState::kCompleted;
+    if (!cancelled) {
+      if (!WriteFile(GetFilename(key), value.string())) {
+        LOG(kError) << "Failed to move " << HexSubstr(key) << " to disk.";
+        StopRunning();
+        ThrowError(CommonErrors::filesystem_io_error);
+      }
+      auto itr(FindStartedToStoreOnDisk(key));
+      if (itr != disk_store_.index.end())
+        (*itr).state = StoringState::kCompleted;
 
-    disk_store_.current.data += value.string().size();
+      disk_store_.current.data += value.string().size();
+    }
   }
   disk_store_.cond_var.notify_all();
 }
 
-void KeyValueBuffer::WaitForSpaceOnDisk(const uint64_t& required_space,
-                                        std::unique_lock<std::mutex>& disk_store_lock) {
-  if (kPopFunctor_) {
-    while (!HasSpace(disk_store_, required_space)) {
-      auto itr(FindOldestOnDisk());
-      assert((*itr).state != StoringState::kStarted);
-      Identity oldest_key((*itr).key);
-      NonEmptyString oldest_value;
-      WaitForStoringThenRemove(itr, disk_store_lock, &oldest_value);
-      if (!running_)
-        return;
-      kPopFunctor_(oldest_key, oldest_value);
+void KeyValueBuffer::WaitForSpaceOnDisk(const Identity& key,
+                                        const uint64_t& required_space,
+                                        std::unique_lock<std::mutex>& disk_store_lock,
+                                        bool& cancelled) {
+  while (!HasSpace(disk_store_, required_space) && running_) {
+    auto itr(Find(disk_store_, key));
+    if (itr == disk_store_.index.end()) {
+      cancelled = true;
+      return;
     }
-  } else {
-    // Rely on client of this class to call Delete until enough space becomes available
-    disk_store_.cond_var.wait(disk_store_lock,
-                              [&] { return HasSpace(disk_store_, required_space) || !running_; });  // NOLINT (Fraser)
+
+    if ((*itr).state == StoringState::kCancelled) {
+      disk_store_.index.erase(itr);
+      cancelled = true;
+      return;
+    }
+
+    if (kPopFunctor_) {
+      itr = FindOldestOnDisk();
+      assert((*itr).state != StoringState::kStarted);
+      if ((*itr).state == StoringState::kCompleted) {
+        Identity oldest_key((*itr).key);
+        NonEmptyString oldest_value;
+        RemoveFile((*itr).key, &oldest_value);
+        disk_store_.index.erase(itr);
+        kPopFunctor_(oldest_key, oldest_value);
+      }
+    } else {
+      // Rely on client of this class to call Delete until enough space becomes available
+      disk_store_.cond_var.wait(disk_store_lock);
+    }
   }
 }
 
@@ -213,7 +230,15 @@ NonEmptyString KeyValueBuffer::Get(const Identity& key) {
     if (itr != memory_store_.index.end())
       return (*itr).value;
   }
-  std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
+  std::unique_lock<std::mutex> disk_store_lock(disk_store_.mutex);
+  auto itr(FindAndThrowIfCancelled(key));
+  if ((*itr).state == StoringState::kStarted) {
+    disk_store_.cond_var.wait(disk_store_lock, [this, &key]()->bool {
+        auto itr(Find(disk_store_, key));
+        return (itr == disk_store_.index.end() || (*itr).state != StoringState::kStarted);
+    });
+    itr = FindAndThrowIfCancelled(key);
+  }
   return ReadFile(GetFilename(key));
   // TODO(Fraser#5#): 2012-11-23 - There should maybe be another background task moving the item
   //                               from wherever it's found to the back of the memory index.
@@ -248,36 +273,21 @@ void KeyValueBuffer::DeleteFromMemory(const Identity& key, bool& also_on_disk) {
 
 void KeyValueBuffer::DeleteFromDisk(const Identity& key) {
   {
-    std::unique_lock<std::mutex> disk_store_lock(disk_store_.mutex);
+    std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
     auto itr(Find(disk_store_, key));
     if (itr == disk_store_.index.end()) {
       LOG(kError) << HexSubstr(key) << " is not in the disk index.";
       ThrowError(CommonErrors::no_such_element);
     }
 
-    WaitForStoringThenRemove(itr, disk_store_lock, nullptr);
-    if (!running_)
-      return;
+    if ((*itr).state == StoringState::kStarted) {
+      (*itr).state = StoringState::kCancelled;
+    } else if ((*itr).state == StoringState::kCompleted) {
+      RemoveFile((*itr).key, nullptr);
+      disk_store_.index.erase(itr);
+    }
   }
   disk_store_.cond_var.notify_all();
-}
-
-void KeyValueBuffer::WaitForStoringThenRemove(DiskIndex::iterator itr,
-                                              std::unique_lock<std::mutex>& disk_store_lock,
-                                              NonEmptyString* value) {
-  // bool cancelled_store(false);
-  // if ((*itr).state == StoringState::kStarted) {
-  //   cancelled_store = true;
-  //   (*itr).state = StoringState::kCancelling;
-  //   available_space_on_disk_increased_.notify_all();
-  // }
-  disk_store_.cond_var.wait(disk_store_lock,
-      [this, &itr] { return (*itr).state == StoringState::kCompleted; });  // NOLINT (Fraser)
-
-  // if (!cancelled_store)
-    RemoveFile((*itr).key, value);
-
-  disk_store_.index.erase(itr);
 }
 
 void KeyValueBuffer::RemoveFile(const Identity& key, NonEmptyString* value) {
@@ -382,14 +392,6 @@ typename T::index_type::iterator KeyValueBuffer::Find(T& store, const Identity& 
                       });
 }
 
-// KeyValueBuffer::KeyValueIterator KeyValueBuffer::FindCancellingStoreOnDisk(const Identity& key) {
-//  return std::find_if(values_.begin(),
-//                      values_.end(),
-//                      [&key](const KeyValueInfo& key_value) {
-//                          return key_value.on_disk == OnDisk::kCancelling && key_value.key == key;
-//                      });
-// }
-
 KeyValueBuffer::MemoryIndex::iterator KeyValueBuffer::FindOldestInMemoryOnly() {
   if (memory_store_.index.empty() || memory_store_.index.front().also_on_disk)
     return memory_store_.index.end();
@@ -421,6 +423,15 @@ KeyValueBuffer::DiskIndex::iterator KeyValueBuffer::FindStartedToStoreOnDisk(con
 
 KeyValueBuffer::DiskIndex::iterator KeyValueBuffer::FindOldestOnDisk() {
   return disk_store_.index.begin();
+}
+
+KeyValueBuffer::DiskIndex::iterator KeyValueBuffer::FindAndThrowIfCancelled(const Identity& key) {
+  auto itr(Find(disk_store_, key));
+  if (itr == disk_store_.index.end() || (*itr).state == StoringState::kCancelled) {
+    LOG(kError) << HexSubstr(key) << " is not in the disk index or is cancelled.";
+    ThrowError(CommonErrors::no_such_element);
+  }
+  return itr;
 }
 
 }  // namespace maidsafe

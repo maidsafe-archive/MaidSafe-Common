@@ -20,6 +20,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
+
 namespace fs = boost::filesystem;
 namespace args = std::placeholders;
 
@@ -43,7 +44,7 @@ class KeyValueBufferTest : public testing::Test {
 
   void PopFunction(const Identity& key_popped,
                    const NonEmptyString& value_popped,
-                   std::vector<std::pair<Identity, NonEmptyString> >& key_value_pairs,
+                   const std::vector<std::pair<Identity, NonEmptyString> >& key_value_pairs,
                    size_t& cur_popped_index,
                    std::mutex& pop_mutex,
                    std::condition_variable& pop_cond_var) {
@@ -53,7 +54,7 @@ class KeyValueBufferTest : public testing::Test {
       NonEmptyString to_be_popped_value(key_value_pairs[cur_popped_index].second);
       EXPECT_EQ(to_be_popped_key, key_popped);
       EXPECT_EQ(to_be_popped_value, value_popped);
-      cur_popped_index++;
+      ++cur_popped_index;
     }
     pop_cond_var.notify_one();
   }
@@ -76,8 +77,11 @@ class KeyValueBufferTest : public testing::Test {
   }
 
   std::vector<std::pair<Identity, NonEmptyString>> PopulateKVB(
-      size_t num_entries, size_t num_memory_entries, size_t num_disk_entries,
-      TestPath test_path, const KeyValueBuffer::PopFunctor& pop_functor) {
+      size_t num_entries,
+      size_t num_memory_entries,
+      size_t num_disk_entries,
+      TestPath test_path,
+      const KeyValueBuffer::PopFunctor& pop_functor) {
     boost::system::error_code error_code;
     kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
     std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
@@ -85,10 +89,10 @@ class KeyValueBufferTest : public testing::Test {
     Identity key;
 
     EXPECT_TRUE(fs::create_directories(kv_buffer_path_, error_code)) << kv_buffer_path_ << ": "
-                                                                    << error_code.message();
+                                                                     << error_code.message();
     EXPECT_EQ(0, error_code.value()) << kv_buffer_path_ << ": " << error_code.message();
     EXPECT_TRUE(fs::exists(kv_buffer_path_, error_code)) << kv_buffer_path_ << ": "
-                                                        << error_code.message();
+                                                         << error_code.message();
     EXPECT_EQ(0, error_code.value());
 
     for (size_t i = 0; i < num_entries; ++i) {
@@ -371,27 +375,52 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
     new_key_value_pairs.push_back(std::make_pair(key, value));
   }
 
-  std::vector<std::future<void> > async_operations;
+  std::vector<std::future<void>> async_stores;
   for (auto key_value : new_key_value_pairs) {
     value = key_value.second;
     key = key_value.first;
-    async_operations.push_back(std::async(std::launch::async, [this, key, value] {
+    async_stores.push_back(std::async(std::launch::async, [this, key, value] {
                                                   key_value_buffer_->Store(key, value);
                                               }));
   }
-  Sleep(boost::posix_time::seconds(1));
-  for (auto key_value : new_key_value_pairs) {
-    EXPECT_THROW(recovered = key_value_buffer_->Get(key_value.first), std::exception);
-    EXPECT_NE(key_value.second, recovered);
+
+  // Check the new Store attempts all block pending some Deletes
+  for (auto& async_store : async_stores) {
+    auto status(async_store.wait_for(std::chrono::milliseconds(250)));
+    EXPECT_EQ(std::future_status::timeout, status);
   }
-  for (auto key_value : old_key_value_pairs) {
+
+  std::vector<std::future<NonEmptyString>> async_gets;
+  for (auto key_value : new_key_value_pairs) {
+    async_gets.push_back(std::async(std::launch::async, [this, key_value] {
+                                                  return key_value_buffer_->Get(key_value.first);
+                                              }));
+  }
+
+  // Check Get attempts for the new Store values all block pending the Store attempts completing
+  for (auto& async_get : async_gets) {
+    auto status(async_get.wait_for(std::chrono::milliseconds(100)));
+    EXPECT_EQ(std::future_status::timeout, status);
+  }
+
+  // Delete the last new Store attempt before it has completed
+  EXPECT_NO_THROW(key_value_buffer_->Delete(new_key_value_pairs.back().first));
+
+  // Delete the old values to allow the new Store attempts to complete
+  for (auto key_value : old_key_value_pairs)
     EXPECT_NO_THROW(key_value_buffer_->Delete(key_value.first));
+
+  for (size_t i(0); i != num_entries - 1; ++i) {
+    auto status(async_gets[i].wait_for(std::chrono::milliseconds(100)));
+    ASSERT_EQ(std::future_status::ready, status);
+    recovered = async_gets[i].get();
+    EXPECT_EQ(new_key_value_pairs[i].second, recovered);
   }
-  Sleep(boost::posix_time::seconds(1));
-  for (auto key_value : new_key_value_pairs) {
-    EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key_value.first));
-    EXPECT_EQ(key_value.second, recovered);
-  }
+
+  auto status(async_gets.back().wait_for(std::chrono::milliseconds(100)));
+  EXPECT_EQ(std::future_status::ready, status);
+  EXPECT_TRUE(async_gets.back().has_exception());
+  EXPECT_THROW(async_gets.back().get(), std::exception);
 
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
 }

@@ -67,10 +67,13 @@ class KeyValueBuffer {
   ~KeyValueBuffer();
   // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
   // the size of value is greater than the current specified maximum disk usage, or if the value
-  // can't be written to disk (e.g. value is not initialised).
+  // can't be written to disk (e.g. value is not initialised).  If there is not enough space to
+  // store to memory, blocks until there is enough space to store to disk.  Space will be made
+  // available via external calls to Delete, and also automatically if pop_functor_ is not NULL.
   void Store(const Identity& key, const NonEmptyString& value);
   // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
-  // the value can't be read from disk.
+  // the value can't be read from disk.  If the value isn't in memory and has started to be stored
+  // to disk, blocks while waiting for the storing to complete.
   NonEmptyString Get(const Identity& key);
   // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
   // the value was written to disk and can't be removed.
@@ -105,7 +108,7 @@ class KeyValueBuffer {
   };
   typedef std::deque<MemoryElement> MemoryIndex;
 
-  enum class StoringState { kStarted, kCancelling, kCompleted };
+  enum class StoringState { kStarted, kCancelled, kCompleted };
   struct DiskElement {
     explicit DiskElement(const Identity& key_in) : key(key_in), state(StoringState::kStarted) {}
     Identity key;
@@ -118,13 +121,12 @@ class KeyValueBuffer {
   void WaitForSpaceInMemory(const uint64_t& required_space,
                             std::unique_lock<std::mutex>& memory_store_lock);
   void StoreOnDisk(const Identity& key, const NonEmptyString& value);
-  void WaitForSpaceOnDisk(const uint64_t& required_space,
-                          std::unique_lock<std::mutex>& disk_store_lock);
+  void WaitForSpaceOnDisk(const Identity& key,
+                          const uint64_t& required_space,
+                          std::unique_lock<std::mutex>& disk_store_lock,
+                          bool& cancelled);
   void DeleteFromMemory(const Identity& key, bool& also_on_disk);
   void DeleteFromDisk(const Identity& key);
-  void WaitForStoringThenRemove(DiskIndex::iterator itr,
-                                std::unique_lock<std::mutex>& disk_store_lock,
-                                NonEmptyString* value);
   void RemoveFile(const Identity& key, NonEmptyString* value);
   void CopyQueueToDisk();
   void CheckWorkerIsStillRunning();
@@ -139,6 +141,7 @@ class KeyValueBuffer {
                                                    std::unique_lock<std::mutex>& memory_store_lock);
   DiskIndex::iterator FindStartedToStoreOnDisk(const Identity& key);
   DiskIndex::iterator FindOldestOnDisk();
+  DiskIndex::iterator FindAndThrowIfCancelled(const Identity& key);
 
   Storage<MemoryUsage, MemoryIndex> memory_store_;
   Storage<DiskUsage, DiskIndex> disk_store_;
