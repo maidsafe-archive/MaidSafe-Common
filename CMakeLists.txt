@@ -171,6 +171,33 @@ if(MAIDSAFE_TESTING)
                           CryptoTest.BEH_GzipSHA512Deterministic
                           CryptoTest.BEH_AESTigerDeterministic
                           CryptoTest.BEH_SecretSharing
+                          KeyValueBufferTest.BEH_Constructor
+                          KeyValueBufferTest.BEH_SetMaxDiskMemoryUsage
+                          KeyValueBufferTest.BEH_RemoveDiskBuffer
+                          KeyValueBufferTest.BEH_SuccessfulStore
+                          KeyValueBufferTest.BEH_UnsuccessfulStore
+                          KeyValueBufferTest.BEH_DeleteOnDiskBufferOverfill
+                          KeyValueBufferTest.BEH_PopOnDiskBufferOverfill
+                          KeyValueBufferTest.BEH_AsyncPopOnDiskBufferOverfill
+                          KeyValueBufferTest.BEH_AsyncNonPopOnDiskBufferOverfill
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/0
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/1
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/2
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/3
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/4
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/5
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/6
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/7
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Store/8
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/0
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/1
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/2
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/3
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/4
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/5
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/6
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/7
+                          TestKeyValueBuffer/KeyValueBufferTestDiskMemoryUsage.BEH_Delete/8
                           )
 
   add_project_experimental()
