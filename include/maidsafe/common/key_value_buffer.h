@@ -99,16 +99,17 @@ class KeyValueBuffer {
     std::condition_variable cond_var;
   };
 
+  enum class StoringState { kNotStarted, kStarted, kCancelled, kCompleted };
+
   struct MemoryElement {
     MemoryElement(const Identity& key_in, const NonEmptyString& value_in)
-        : key(key_in), value(value_in), also_on_disk(false) {}
+        : key(key_in), value(value_in), also_on_disk(StoringState::kNotStarted) {}
     Identity key;
     NonEmptyString value;
-    bool also_on_disk;
+    StoringState also_on_disk;
   };
   typedef std::deque<MemoryElement> MemoryIndex;
 
-  enum class StoringState { kStarted, kCancelled, kCompleted };
   struct DiskElement {
     explicit DiskElement(const Identity& key_in) : key(key_in), state(StoringState::kStarted) {}
     Identity key;
@@ -125,7 +126,7 @@ class KeyValueBuffer {
                           const uint64_t& required_space,
                           std::unique_lock<std::mutex>& disk_store_lock,
                           bool& cancelled);
-  void DeleteFromMemory(const Identity& key, bool& also_on_disk);
+  void DeleteFromMemory(const Identity& key, StoringState& also_on_disk);
   void DeleteFromDisk(const Identity& key);
   void RemoveFile(const Identity& key, NonEmptyString* value);
   void CopyQueueToDisk();

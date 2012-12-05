@@ -97,7 +97,14 @@ void KeyValueBuffer::Init() {
 }
 
 KeyValueBuffer::~KeyValueBuffer() {
-  StopRunning();
+  {
+    std::lock(memory_store_.mutex, disk_store_.mutex);
+    std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex, std::adopt_lock);
+    std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex, std::adopt_lock);
+    running_ = false;
+  }
+  memory_store_.cond_var.notify_all();
+  disk_store_.cond_var.notify_all();
   if (worker_.valid()) {
     try {
       worker_.get();
@@ -247,13 +254,13 @@ NonEmptyString KeyValueBuffer::Get(const Identity& key) {
 
 void KeyValueBuffer::Delete(const Identity& key) {
   CheckWorkerIsStillRunning();
-  bool also_on_disk(false);
+  StoringState also_on_disk(StoringState::kNotStarted);
   DeleteFromMemory(key, also_on_disk);
-  if (also_on_disk)
+  if (also_on_disk != StoringState::kNotStarted)
     DeleteFromDisk(key);
 }
 
-void KeyValueBuffer::DeleteFromMemory(const Identity& key, bool& also_on_disk) {
+void KeyValueBuffer::DeleteFromMemory(const Identity& key, StoringState& also_on_disk) {
   bool changed(false);
   {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
@@ -265,7 +272,7 @@ void KeyValueBuffer::DeleteFromMemory(const Identity& key, bool& also_on_disk) {
       changed = true;
     } else {
       // Assume it's on disk so as to invoke a DeleteFromDisk
-      also_on_disk = true;
+      also_on_disk = StoringState::kCompleted;
     }
   }
   if (changed)
@@ -325,10 +332,17 @@ void KeyValueBuffer::CopyQueueToDisk() {
 
       key = (*itr).key;
       value = (*itr).value;
-      (*itr).also_on_disk = true;
+      (*itr).also_on_disk = StoringState::kStarted;
+    }
+    StoreOnDisk(key, value);
+    {
+      // Get oldest value not yet stored to disk
+      std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
+      auto itr(Find(memory_store_, key));
+      if (itr != memory_store_.index.end())
+        (*itr).also_on_disk = StoringState::kCompleted;
     }
     memory_store_.cond_var.notify_all();
-    StoreOnDisk(key, value);
   }
 }
 
@@ -394,7 +408,8 @@ typename T::index_type::iterator KeyValueBuffer::Find(T& store, const Identity& 
 }
 
 KeyValueBuffer::MemoryIndex::iterator KeyValueBuffer::FindOldestInMemoryOnly() {
-  if (memory_store_.index.empty() || memory_store_.index.front().also_on_disk)
+  if (memory_store_.index.empty() ||
+      memory_store_.index.front().also_on_disk != StoringState::kNotStarted)
     return memory_store_.index.end();
   return memory_store_.index.begin();
 }
@@ -406,7 +421,9 @@ KeyValueBuffer::MemoryIndex::iterator KeyValueBuffer::FindMemoryRemovalCandidate
   memory_store_.cond_var.wait(memory_store_lock, [this, &itr, &required_space]()->bool {
       itr = std::find_if(memory_store_.index.begin(),
                          memory_store_.index.end(),
-                         [](const MemoryElement& key_value) { return key_value.also_on_disk; });  // NOLINT (Fraser)
+                         [](const MemoryElement& key_value) {
+                             return key_value.also_on_disk == StoringState::kCompleted;
+                         });
       return itr != memory_store_.index.end() ||
              HasSpace(memory_store_, required_space) ||
              !running_;
