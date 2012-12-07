@@ -247,10 +247,10 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   Identity first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = Identity(crypto::Hash<crypto::SHA512>(value));
-  EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
   auto async = std::async(std::launch::async, [this, key, value] {
                                                   key_value_buffer_->Store(key, value);
                                               });
+  EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
   EXPECT_NO_THROW(key_value_buffer_->Delete(first_key));
   EXPECT_NO_THROW(key_value_buffer_->Delete(second_key));
   async.wait();
@@ -423,6 +423,154 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
   EXPECT_THROW(async_gets.back().get(), std::exception);
 
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
+}
+
+TEST_F(KeyValueBufferTest, FUNC_RandomAsync) {
+  std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
+  uint32_t events(RandomUint32() % 1000);
+  std::vector<std::future<void>> future_stores, future_deletes;
+  std::vector<std::future<NonEmptyString>> future_gets;
+
+  boost::system::error_code error_code;
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
+  KeyValueBuffer::PopFunctor pop_functor([this](const Identity& key,
+                                                const NonEmptyString& value) {
+                                       LOG(kInfo) << "Pop called on " << Base32Substr(key.string())
+                                                  << "with value " << Base32Substr(value.string());
+                                       });
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(1000),
+                                             DiskUsage(2000),
+                                             pop_functor,
+                                             kv_buffer_path_));
+  for (uint32_t i = 0; i != events; ++i) {
+    NonEmptyString value(RandomAlphaNumericString(RandomUint32() % 300));
+    Identity key(crypto::Hash<crypto::SHA512>(value));
+    key_value_pairs.push_back(std::make_pair(key, value));
+
+    uint32_t event(RandomUint32() % 3);
+    switch (event) {
+      case 0: {
+        if (!key_value_pairs.empty() && !(key_value_pairs.size() % 2)) {
+        uint32_t index(RandomUint32() % key_value_pairs.size());
+        future_deletes.push_back(std::async(
+            std::launch::async, [this, key_value_pairs, index]() {
+                                  try {
+                                    key_value_buffer_->Delete(key_value_pairs[index].first);
+                                  }
+                                  catch(const std::exception& e) {
+                                    LOG(kInfo) << "Exception " << e.what()
+                                            << " thrown deleting "
+                                            << Base32Substr(key_value_pairs[index].first.string());
+                                  }
+                                  catch(...) {
+                                    LOG(kInfo) << "Unknown Exception thrown deleting "
+                                            << Base32Substr(key_value_pairs[index].first.string());
+                                  }
+                                }));
+        } else {
+          future_deletes.push_back(std::async(
+            std::launch::async, [this, key, value]() {
+                                  try {
+                                    key_value_buffer_->Delete(key);
+                                  }
+                                  catch(const std::exception& e) {
+                                    LOG(kInfo) << "Exception " << e.what()
+                                              << " thrown deleting " << Base32Substr(key.string());
+                                  }
+                                  catch(...) {
+                                    LOG(kInfo) << "Unknown Exception thrown deleting "
+                                               << Base32Substr(key.string());
+                                  }
+                                }));
+        }
+        break;
+      }
+      case 1: {
+        uint32_t index(RandomUint32() % key_value_pairs.size());
+        future_stores.push_back(std::async(
+            std::launch::async, [this, key_value_pairs, index]() {
+                                  try {
+                                    key_value_buffer_->Store(key_value_pairs[index].first,
+                                                              key_value_pairs[index].second);
+                                  }
+                                  catch(const std::exception& e) {
+                                    LOG(kInfo) << "Exception " << e.what()
+                                            << " thrown storing "
+                                            << Base32Substr(key_value_pairs[index].first.string());
+                                  }
+                                  catch(...) {
+                                    LOG(kInfo) << "Unknown Exception thrown deleting "
+                                            << Base32Substr(key_value_pairs[index].first.string());
+                                  }
+                                }));
+        break;
+      }
+      case 2: {
+        if (!key_value_pairs.empty() && !(key_value_pairs.size() % 2)) {
+          uint32_t index(RandomUint32() % (key_value_pairs.size()));
+          future_gets.push_back(std::async(
+              std::launch::async, [this, key_value_pairs, index]()->NonEmptyString {
+                                    try {
+                                      return
+                                        key_value_buffer_->Get(key_value_pairs[index].first);
+                                    }
+                                    catch(const std::exception& e) {
+                                      LOG(kInfo) << "Exception " << e.what()
+                                            << " thrown getting "
+                                            << Base32Substr(key_value_pairs[index].first.string());
+                                      return NonEmptyString("e");
+                                    }
+                                    catch(...) {
+                                      LOG(kInfo) << "Unknown Exception thrown deleting "
+                                            << Base32Substr(key_value_pairs[index].first.string());
+                                      return NonEmptyString("e");
+                                    }
+                                  }));
+        } else {
+          future_gets.push_back(std::async(
+              std::launch::async, [this, key, value]()->NonEmptyString {
+                                    try {
+                                      return key_value_buffer_->Get(key);
+                                    }
+                                    catch(const std::exception& e) {
+                                      LOG(kInfo) << "Exception " << e.what()
+                                                 << " thrown getting "
+                                                 << Base32Substr(key.string());
+                                      return NonEmptyString("e");
+                                    }
+                                    catch(...) {
+                                      LOG(kInfo) << "Unknown Exception thrown deleting "
+                                                 << Base32Substr(key.string());
+                                      return NonEmptyString("e");
+                                    }
+                                  }));
+        }
+        break;
+      }
+    }
+  }
+
+ /* for (uint32_t i = 0; i != future_stores.size(); ++i)
+    future_stores[i].get();
+  for (uint32_t i = 0; i != future_deletes.size(); ++i)
+    future_deletes[i].get();
+  for (uint32_t i = 0; i != future_gets.size(); ++i) {
+    try {
+      NonEmptyString value(future_gets[i].get());
+      typedef std::vector<std::pair<Identity, NonEmptyString>>::value_type value_type;
+      auto it = std::find_if(key_value_pairs.begin(),
+                              key_value_pairs.end(),
+                              [this, &value](const value_type& key_value) {
+                                return key_value.second == value;
+                              });
+      EXPECT_NE(key_value_pairs.end(), it);
+    } catch (...) {
+      LOG(kInfo) << "Get exception thrown on get from future.";
+    }
+  }*/
+
+  // Sleep(boost::posix_time::seconds(20));
 }
 
 class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {
