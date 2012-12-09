@@ -427,7 +427,7 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
 
 TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
   std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
-  uint32_t events(RandomUint32() % 1000);
+  uint32_t events(RandomUint32() % 500);
   std::vector<std::future<void>> future_stores, future_deletes;
   std::vector<std::future<NonEmptyString>> future_gets;
 
@@ -439,8 +439,8 @@ TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
                                        LOG(kInfo) << "Pop called on " << Base32Substr(key.string())
                                                   << "with value " << Base32Substr(value.string());
                                        });
-  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(1000),
-                                             DiskUsage(2000),
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(kDefaultMaxMemoryUsage),
+                                             DiskUsage(kDefaultMaxDiskUsage),
                                              pop_functor,
                                              kv_buffer_path_));
   for (uint32_t i = 0; i != events; ++i) {
@@ -451,37 +451,16 @@ TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
     uint32_t event(RandomUint32() % 3);
     switch (event) {
       case 0: {
-        if (!key_value_pairs.empty() && !(key_value_pairs.size() % 2)) {
-        uint32_t index(RandomUint32() % key_value_pairs.size());
-        future_deletes.push_back(std::async(
-            std::launch::async, [this, key_value_pairs, index]() {
-                                  try {
+        if (!key_value_pairs.empty()) {
+          uint32_t index(RandomUint32() % key_value_pairs.size());
+          future_deletes.push_back(std::async(
+              std::launch::async, [this, key_value_pairs, index]() {
                                     key_value_buffer_->Delete(key_value_pairs[index].first);
-                                  }
-                                  catch(const std::exception& e) {
-                                    LOG(kInfo) << "Exception " << e.what()
-                                            << " thrown deleting "
-                                            << Base32Substr(key_value_pairs[index].first.string());
-                                  }
-                                  catch(...) {
-                                    LOG(kInfo) << "Unknown Exception thrown deleting "
-                                            << Base32Substr(key_value_pairs[index].first.string());
-                                  }
-                                }));
+                                  }));
         } else {
           future_deletes.push_back(std::async(
             std::launch::async, [this, key, value]() {
-                                  try {
                                     key_value_buffer_->Delete(key);
-                                  }
-                                  catch(const std::exception& e) {
-                                    LOG(kInfo) << "Exception " << e.what()
-                                              << " thrown deleting " << Base32Substr(key.string());
-                                  }
-                                  catch(...) {
-                                    LOG(kInfo) << "Unknown Exception thrown deleting "
-                                               << Base32Substr(key.string());
-                                  }
                                 }));
         }
         break;
@@ -490,60 +469,22 @@ TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
         uint32_t index(RandomUint32() % key_value_pairs.size());
         future_stores.push_back(std::async(
             std::launch::async, [this, key_value_pairs, index]() {
-                                  try {
-                                    key_value_buffer_->Store(key_value_pairs[index].first,
-                                                              key_value_pairs[index].second);
-                                  }
-                                  catch(const std::exception& e) {
-                                    LOG(kInfo) << "Exception " << e.what()
-                                            << " thrown storing "
-                                            << Base32Substr(key_value_pairs[index].first.string());
-                                  }
-                                  catch(...) {
-                                    LOG(kInfo) << "Unknown Exception thrown deleting "
-                                            << Base32Substr(key_value_pairs[index].first.string());
-                                  }
+                                  key_value_buffer_->Store(key_value_pairs[index].first,
+                                                           key_value_pairs[index].second);
                                 }));
         break;
       }
       case 2: {
-        if (!key_value_pairs.empty() && !(key_value_pairs.size() % 2)) {
+        if (!key_value_pairs.empty()) {
           uint32_t index(RandomUint32() % (key_value_pairs.size()));
           future_gets.push_back(std::async(
               std::launch::async, [this, key_value_pairs, index]()->NonEmptyString {
-                                    try {
-                                      return
-                                        key_value_buffer_->Get(key_value_pairs[index].first);
-                                    }
-                                    catch(const std::exception& e) {
-                                      LOG(kInfo) << "Exception " << e.what()
-                                            << " thrown getting "
-                                            << Base32Substr(key_value_pairs[index].first.string());
-                                      return NonEmptyString("e");
-                                    }
-                                    catch(...) {
-                                      LOG(kInfo) << "Unknown Exception thrown deleting "
-                                            << Base32Substr(key_value_pairs[index].first.string());
-                                      return NonEmptyString("e");
-                                    }
+                                     return key_value_buffer_->Get(key_value_pairs[index].first);
                                   }));
         } else {
           future_gets.push_back(std::async(
               std::launch::async, [this, key, value]()->NonEmptyString {
-                                    try {
-                                      return key_value_buffer_->Get(key);
-                                    }
-                                    catch(const std::exception& e) {
-                                      LOG(kInfo) << "Exception " << e.what()
-                                                 << " thrown getting "
-                                                 << Base32Substr(key.string());
-                                      return NonEmptyString("e");
-                                    }
-                                    catch(...) {
-                                      LOG(kInfo) << "Unknown Exception thrown deleting "
-                                                 << Base32Substr(key.string());
-                                      return NonEmptyString("e");
-                                    }
+                                     return key_value_buffer_->Get(key);
                                   }));
         }
         break;
@@ -551,26 +492,35 @@ TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
     }
   }
 
- /* for (uint32_t i = 0; i != future_stores.size(); ++i)
-    future_stores[i].get();
-  for (uint32_t i = 0; i != future_deletes.size(); ++i)
-    future_deletes[i].get();
-  for (uint32_t i = 0; i != future_gets.size(); ++i) {
-    try {
-      NonEmptyString value(future_gets[i].get());
-      typedef std::vector<std::pair<Identity, NonEmptyString>>::value_type value_type;
-      auto it = std::find_if(key_value_pairs.begin(),
-                              key_value_pairs.end(),
-                              [this, &value](const value_type& key_value) {
-                                return key_value.second == value;
-                              });
-      EXPECT_NE(key_value_pairs.end(), it);
-    } catch (...) {
-      LOG(kInfo) << "Get exception thrown on get from future.";
+  for (uint32_t i = 0; i != future_stores.size(); ++i) {
+    auto status(future_stores[i].wait_for(std::chrono::milliseconds(500)));
+    if (status == std::future_status::ready) {
+      if (!future_stores[i].has_exception())
+        EXPECT_NO_THROW(future_stores[i].get());
+      else
+        EXPECT_THROW(future_stores[i].get(), std::exception);
     }
-  }*/
-
-  // Sleep(boost::posix_time::seconds(20));
+  }
+  for (uint32_t i = 0; i != future_deletes.size(); ++i) {
+    if (!future_deletes[i].has_exception())
+      EXPECT_NO_THROW(future_deletes[i].get());
+    else
+      EXPECT_THROW(future_deletes[i].get(), std::exception);
+  }
+  for (uint32_t i = 0; i != future_gets.size(); ++i) {
+    if (!future_gets[i].has_exception()) {
+      NonEmptyString value(future_gets[i].get());
+      typedef std::vector<std::pair<Identity, NonEmptyString> >::value_type value_type;
+      auto it = std::find_if(key_value_pairs.begin(),
+                             key_value_pairs.end(),
+                             [this, &value](const value_type& key_value) {
+                                return key_value.second == value;
+                             });
+      EXPECT_NE(key_value_pairs.end(), it);
+    } else {
+      EXPECT_THROW(future_gets[i].get(), std::exception);
+    }
+  }
 }
 
 class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {
