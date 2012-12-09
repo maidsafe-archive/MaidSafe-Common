@@ -425,7 +425,7 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
 }
 
-TEST_F(KeyValueBufferTest, FUNC_RandomAsync) {
+TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
   std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
   uint32_t events(RandomUint32() % 1000);
   std::vector<std::future<void>> future_stores, future_deletes;
@@ -444,7 +444,7 @@ TEST_F(KeyValueBufferTest, FUNC_RandomAsync) {
                                              pop_functor,
                                              kv_buffer_path_));
   for (uint32_t i = 0; i != events; ++i) {
-    NonEmptyString value(RandomAlphaNumericString(RandomUint32() % 300));
+    NonEmptyString value(RandomAlphaNumericString((RandomUint32() % 300) + 1));
     Identity key(crypto::Hash<crypto::SHA512>(value));
     key_value_pairs.push_back(std::make_pair(key, value));
 
