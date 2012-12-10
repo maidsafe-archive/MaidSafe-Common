@@ -461,8 +461,7 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
       LOG(kError) << "Failed to write: file_path " << file_path << " has no filename";
       return false;
     }
-    fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc |
-                                     std::ios::binary);
+    fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc | std::ios::binary);
     if (!file_out.good()) {
       LOG(kError) << "Can't get ofstream created for " << file_path;
       return false;

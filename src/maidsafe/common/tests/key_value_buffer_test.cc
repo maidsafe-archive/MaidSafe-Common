@@ -426,23 +426,23 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
 }
 
 TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
+  KeyValueBuffer::PopFunctor pop_functor(
+      [](const Identity& key, const NonEmptyString& value) {
+          LOG(kInfo) << "Pop called on " << Base32Substr(key.string())
+                     << "with value " << Base32Substr(value.string());
+      });
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(kDefaultMaxMemoryUsage),
+                                             DiskUsage(kDefaultMaxDiskUsage),
+                                             pop_functor,
+                                             kv_buffer_path_));
+
   std::vector<std::pair<Identity, NonEmptyString>> key_value_pairs;
   uint32_t events(RandomUint32() % 500);
   std::vector<std::future<void>> future_stores, future_deletes;
   std::vector<std::future<NonEmptyString>> future_gets;
 
-  boost::system::error_code error_code;
-  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
-  kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
-  KeyValueBuffer::PopFunctor pop_functor([this](const Identity& key,
-                                                const NonEmptyString& value) {
-                                       LOG(kInfo) << "Pop called on " << Base32Substr(key.string())
-                                                  << "with value " << Base32Substr(value.string());
-                                       });
-  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(kDefaultMaxMemoryUsage),
-                                             DiskUsage(kDefaultMaxDiskUsage),
-                                             pop_functor,
-                                             kv_buffer_path_));
   for (uint32_t i = 0; i != events; ++i) {
     NonEmptyString value(RandomAlphaNumericString((RandomUint32() % 300) + 1));
     Identity key(crypto::Hash<crypto::SHA512>(value));
@@ -452,75 +452,69 @@ TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
     switch (event) {
       case 0: {
         if (!key_value_pairs.empty()) {
-          uint32_t index(RandomUint32() % key_value_pairs.size());
-          future_deletes.push_back(std::async(
-              std::launch::async, [this, key_value_pairs, index]() {
-                                    key_value_buffer_->Delete(key_value_pairs[index].first);
-                                  }));
+          Identity event_key(key_value_pairs[RandomUint32() % key_value_pairs.size()].first);
+          future_deletes.push_back(
+              std::async([this, event_key] { key_value_buffer_->Delete(event_key); }));  // NOLINT (Fraser)
         } else {
-          future_deletes.push_back(std::async(
-            std::launch::async, [this, key, value]() {
-                                    key_value_buffer_->Delete(key);
-                                }));
+          future_deletes.push_back(std::async([this, key] { key_value_buffer_->Delete(key); }));  // NOLINT (Fraser)
         }
         break;
       }
       case 1: {
-        uint32_t index(RandomUint32() % key_value_pairs.size());
-        future_stores.push_back(std::async(
-            std::launch::async, [this, key_value_pairs, index]() {
-                                  key_value_buffer_->Store(key_value_pairs[index].first,
-                                                           key_value_pairs[index].second);
+        // uint32_t index(RandomUint32() % key_value_pairs.size());
+        uint32_t index(i);
+        Identity event_key(key_value_pairs[index].first);
+        NonEmptyString event_value(key_value_pairs[index].second);
+        future_stores.push_back(std::async([this, event_key, event_value] {
+                                    key_value_buffer_->Store(event_key, event_value);
                                 }));
         break;
       }
       case 2: {
         if (!key_value_pairs.empty()) {
-          uint32_t index(RandomUint32() % (key_value_pairs.size()));
-          future_gets.push_back(std::async(
-              std::launch::async, [this, key_value_pairs, index]()->NonEmptyString {
-                                     return key_value_buffer_->Get(key_value_pairs[index].first);
-                                  }));
+          Identity event_key(key_value_pairs[RandomUint32() % key_value_pairs.size()].first);
+          future_gets.push_back(
+              std::async([this, event_key] { return key_value_buffer_->Get(event_key); }));  // NOLINT (Fraser)
         } else {
-          future_gets.push_back(std::async(
-              std::launch::async, [this, key, value]()->NonEmptyString {
-                                     return key_value_buffer_->Get(key);
-                                  }));
+          future_gets.push_back(std::async([this, key] { return key_value_buffer_->Get(key); }));  // NOLINT (Fraser)
         }
         break;
       }
     }
   }
 
-  for (uint32_t i = 0; i != future_stores.size(); ++i) {
-    auto status(future_stores[i].wait_for(std::chrono::milliseconds(500)));
-    if (status == std::future_status::ready) {
-      if (!future_stores[i].has_exception())
-        EXPECT_NO_THROW(future_stores[i].get());
-      else
-        EXPECT_THROW(future_stores[i].get(), std::exception);
-    }
-  }
-  for (uint32_t i = 0; i != future_deletes.size(); ++i) {
-    if (!future_deletes[i].has_exception())
-      EXPECT_NO_THROW(future_deletes[i].get());
+  for (auto& future_store : future_stores)
+    EXPECT_NO_THROW(future_store.get());
+
+  for (auto& future_delete : future_deletes) {
+    if (future_delete.has_exception())
+      EXPECT_THROW(future_delete.get(), std::exception);
     else
-      EXPECT_THROW(future_deletes[i].get(), std::exception);
+      EXPECT_NO_THROW(future_delete.get());
   }
-  for (uint32_t i = 0; i != future_gets.size(); ++i) {
-    if (!future_gets[i].has_exception()) {
-      NonEmptyString value(future_gets[i].get());
-      typedef std::vector<std::pair<Identity, NonEmptyString> >::value_type value_type;
-      auto it = std::find_if(key_value_pairs.begin(),
-                             key_value_pairs.end(),
-                             [this, &value](const value_type& key_value) {
-                                return key_value.second == value;
-                             });
-      EXPECT_NE(key_value_pairs.end(), it);
+
+  for (auto& future_get : future_gets) {
+    if (future_get.has_exception()) {
+      EXPECT_THROW(future_get.get(), std::exception);
     } else {
-      EXPECT_THROW(future_gets[i].get(), std::exception);
+      try {
+        NonEmptyString value(future_get.get());
+        typedef std::vector<std::pair<Identity, NonEmptyString>>::value_type value_type;  // NOLINT (Fraser)
+        auto it = std::find_if(key_value_pairs.begin(),
+                               key_value_pairs.end(),
+                               [this, &value](const value_type& key_value) {
+                                  return key_value.second == value;
+                               });
+        EXPECT_NE(key_value_pairs.end(), it);
+      }
+      catch(const std::exception& e) {
+        std::string msg(e.what());
+        LOG(kError) << msg;
+      }
     }
   }
+  // Need to destroy key_value_buffer_ so that test_path will be able to be deleted
+  key_value_buffer_.reset();
 }
 
 class KeyValueBufferTestDiskMemoryUsage : public testing::TestWithParam<MaxMemoryDiskUsage> {

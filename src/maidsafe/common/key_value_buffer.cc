@@ -336,7 +336,6 @@ void KeyValueBuffer::CopyQueueToDisk() {
     }
     StoreOnDisk(key, value);
     {
-      // Get oldest value not yet stored to disk
       std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
       auto itr(Find(memory_store_, key));
       if (itr != memory_store_.index.end())
@@ -408,10 +407,11 @@ typename T::index_type::iterator KeyValueBuffer::Find(T& store, const Identity& 
 }
 
 KeyValueBuffer::MemoryIndex::iterator KeyValueBuffer::FindOldestInMemoryOnly() {
-  if (memory_store_.index.empty() ||
-      memory_store_.index.front().also_on_disk != StoringState::kNotStarted)
-    return memory_store_.index.end();
-  return memory_store_.index.begin();
+  return std::find_if(memory_store_.index.begin(),
+                      memory_store_.index.end(),
+                      [](const MemoryElement& key_value) {
+                          return key_value.also_on_disk == StoringState::kNotStarted;
+                      });
 }
 
 KeyValueBuffer::MemoryIndex::iterator KeyValueBuffer::FindMemoryRemovalCandidate(
