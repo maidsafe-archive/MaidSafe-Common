@@ -28,6 +28,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TYPES_H_
 #define MAIDSAFE_COMMON_TYPES_H_
 
+#include <type_traits>
+
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/tagged_value.h"
 
@@ -40,6 +42,12 @@ typedef NonEmptyString UserName, UserPassword;
 
 typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
 typedef TaggedValue<uint64_t, struct DiskUsageTag> DiskUsage;
+
+template<typename DataIdentityType>
+struct is_long_term_cacheable : public std::false_type {};
+
+template<typename DataIdentityType>
+struct is_short_term_cacheable : public std::false_type {};
 
 }  // namespace maidsafe
 
