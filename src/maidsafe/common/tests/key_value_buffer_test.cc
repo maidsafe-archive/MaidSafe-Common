@@ -487,30 +487,26 @@ TEST_F(KeyValueBufferTest, BEH_RandomAsync) {
     EXPECT_NO_THROW(future_store.get());
 
   for (auto& future_delete : future_deletes) {
-    if (future_delete.has_exception())
-      EXPECT_THROW(future_delete.get(), std::exception);
-    else
-      EXPECT_NO_THROW(future_delete.get());
+    try {
+      future_delete.get();
+    }
+    catch(const std::exception&) {}
   }
 
   for (auto& future_get : future_gets) {
-    if (future_get.has_exception()) {
-      EXPECT_THROW(future_get.get(), std::exception);
-    } else {
-      try {
-        NonEmptyString value(future_get.get());
-        typedef std::vector<std::pair<Identity, NonEmptyString>>::value_type value_type;  // NOLINT (Fraser)
-        auto it = std::find_if(key_value_pairs.begin(),
-                               key_value_pairs.end(),
-                               [this, &value](const value_type& key_value) {
-                                  return key_value.second == value;
-                               });
-        EXPECT_NE(key_value_pairs.end(), it);
-      }
-      catch(const std::exception& e) {
-        std::string msg(e.what());
-        LOG(kError) << msg;
-      }
+    try {
+      NonEmptyString value(future_get.get());
+      typedef std::vector<std::pair<Identity, NonEmptyString>>::value_type value_type;  // NOLINT (Fraser)
+      auto it = std::find_if(key_value_pairs.begin(),
+                              key_value_pairs.end(),
+                              [this, &value](const value_type& key_value) {
+                                return key_value.second == value;
+                              });
+      EXPECT_NE(key_value_pairs.end(), it);
+    }
+    catch(const std::exception& e) {
+      std::string msg(e.what());
+      LOG(kInfo) << msg;
     }
   }
   // Need to destroy key_value_buffer_ so that test_path will be able to be deleted

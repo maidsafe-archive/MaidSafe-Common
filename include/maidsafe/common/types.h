@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TYPES_H_
 #define MAIDSAFE_COMMON_TYPES_H_
 
+#include <cstdint>
 #include <type_traits>
 
 #include "maidsafe/common/bounded_string.h"

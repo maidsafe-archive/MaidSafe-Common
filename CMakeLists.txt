@@ -125,7 +125,6 @@ if(MAIDSAFE_TESTING)
                           UtilsTest.BEH_Names
                           UtilsTest.BEH_RandomStringMultiThread
                           UtilsTest.BEH_RandomStringGenerator
-                          UtilsTest.BEH_IntToString
                           UtilsTest.BEH_RandomStringSingleThread
                           UtilsTest.BEH_Base32EncodeDecode
                           UtilsTest.BEH_TimeFunctions

@@ -26,10 +26,10 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <cstdlib>
+#include <string>
 
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/path.hpp"
 #include "boost/filesystem/fstream.hpp"
-#include "boost/lexical_cast.hpp"
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
@@ -190,7 +190,7 @@ TEST(CryptoTest, BEH_Hash) {
   std::vector<fs::path> input_files;
   for (size_t i = 0; i < test_data.size(); ++i) {
     fs::path input_path(*test_dir);
-    input_path /= "Input" + boost::lexical_cast<std::string>(i) + ".txt";
+    input_path /= "Input" + std::to_string(i) + ".txt";
     input_files.push_back(input_path);
     std::fstream input_file(input_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
     input_file << test_data.at(i).input;

@@ -33,7 +33,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <chrono>
 
 #include "boost/filesystem.hpp"
-#include "boost/lexical_cast.hpp"
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
@@ -368,13 +367,6 @@ TEST(UtilsTest, BEH_Stats) {
     EXPECT_FLOAT_EQ(11.0f, stats.Sum());
     EXPECT_FLOAT_EQ(2.2f, stats.Mean());
   }
-}
-
-TEST(UtilsTest, BEH_IntToString) {
-  EXPECT_EQ("1234567890", IntToString(1234567890));
-  EXPECT_EQ("-1234567890", IntToString(-1234567890));
-  EXPECT_EQ("0", IntToString(0));
-  EXPECT_EQ("0", IntToString(-0));
 }
 
 TEST(UtilsTest, BEH_RandomStringSingleThread) {

@@ -151,9 +151,6 @@ std::string RandomString(const size_t &length);
 // alphanumeric characters.
 std::string RandomAlphaNumericString(const size_t &length);
 
-// Converts from int to string.
-std::string IntToString(const int &value);
-
 // Encodes a string to hex.
 std::string EncodeToHex(const std::string &non_hex_input);
 template<size_t min, size_t max>

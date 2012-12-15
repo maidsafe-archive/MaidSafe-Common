@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <future>
 #include <limits>
 #include <set>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -56,7 +57,6 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "boost/config.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/filesystem/operations.hpp"
-#include "boost/lexical_cast.hpp"
 #include "boost/thread/mutex.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
@@ -120,25 +120,20 @@ std::string BytesToSiUnits(const uint64_t &num) {
   std::array<std::string, 7> qualifier = UnitType<Units>::Qualifier();
 
   if (num < kKilo)
-    return boost::lexical_cast<std::string>(num) + qualifier[0];
+    return std::to_string(num) + qualifier[0];
 
   size_t count(1);
   uint64_t threshold(0), midpoint(kKilo / 2), divisor(kKilo);
   for (; count != 6; midpoint *= kKilo, divisor *= kKilo, ++count) {
     threshold = (divisor * kKilo) - midpoint;
     if (num < threshold)
-      return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
-             qualifier[count];
+      return std::to_string((num + midpoint) / divisor) + qualifier[count];
   }
 
   threshold = UnitType<Units>::kExaThreshold;
-  if (num < threshold) {
-    return boost::lexical_cast<std::string>((num + midpoint) / divisor) +
-           qualifier[6];
-  } else {
-    return boost::lexical_cast<std::string>(((num - midpoint) / divisor) + 1) +
-           qualifier[6];
-  }
+  return num < threshold ?
+         (std::to_string((num + midpoint) / divisor) + qualifier[6]) :
+         (std::to_string(((num - midpoint) / divisor) + 1) + qualifier[6]);
 }
 
 const char kHexAlphabet[] = "0123456789abcdef";
@@ -174,7 +169,7 @@ std::string VersionToString(int version,
   if (version < 0)
     return "";
 
-  std::string full_version(boost::lexical_cast<std::string>(version));
+  std::string full_version(std::to_string(version));
   size_t padding_count(6 - full_version.size());
   full_version.insert(0, padding_count, '0');
   std::string major_ver(full_version.substr(0, 2));
@@ -201,21 +196,21 @@ int VersionToInt(const std::string& version) {
 
   int16_t major_version(0), minor_version(0), patch_level(0);
   try {
-    major_version = boost::lexical_cast<int16_t>(*(itr++));
+    major_version = static_cast<int16_t>(std::stoi(*(itr++)));
 
-    minor_version = boost::lexical_cast<int16_t>(*itr);
+    minor_version = static_cast<int16_t>(std::stoi(*itr));
     if ((*itr++).size() != 1U) {
       LOG(kWarning) << "Invalid minor version " << version;
       return kInvalidVersion;
     }
 
-    patch_level = boost::lexical_cast<int16_t>(*itr);
+    patch_level = static_cast<int16_t>(std::stoi(*itr));
     if ((*itr++).size() != 3U) {
       LOG(kWarning) << "Invalid patch level " << version;
       return kInvalidVersion;
     }
   }
-  catch(const boost::bad_lexical_cast& e) {
+  catch(const std::logic_error& e) {
     LOG(kWarning) << "Invalid version " << version << ": " << e.what();
     return kInvalidVersion;
   }
@@ -278,10 +273,6 @@ std::string RandomAlphaNumericString(const size_t &length) {
       *it = alpha_numerics[uni()];
   }
   return random_string;
-}
-
-std::string IntToString(const int &value) {
-  return boost::lexical_cast<std::string>(value);
 }
 
 std::string EncodeToHex(const std::string &non_hex_input) {
