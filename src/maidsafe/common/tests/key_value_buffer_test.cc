@@ -253,7 +253,7 @@ TEST_F(KeyValueBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   EXPECT_THROW(recovered = key_value_buffer_->Get(key), std::exception);
   EXPECT_NO_THROW(key_value_buffer_->Delete(first_key));
   EXPECT_NO_THROW(key_value_buffer_->Delete(second_key));
-  async.wait();
+  EXPECT_NO_THROW(async.wait());
   EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
   EXPECT_EQ(recovered, value);
 
@@ -422,6 +422,46 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
   EXPECT_TRUE(async_gets.back().has_exception());
   EXPECT_THROW(async_gets.back().get(), std::exception);
 
+  EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
+}
+
+TEST_F(KeyValueBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
+  TestPath test_path(CreateTestPath("MaidSafe_Test_KeyValueBuffer"));
+  kv_buffer_path_ = fs::path(*test_path / "kv_buffer");
+  KeyValueBuffer::PopFunctor pop_functor(
+      [](const Identity& key, const NonEmptyString& value) {
+          LOG(kInfo) << "Pop called on " << Base32Substr(key.string())
+                     << "with value " << Base32Substr(value.string());
+      });
+  key_value_buffer_.reset(new KeyValueBuffer(MemoryUsage(kDefaultMaxMemoryUsage),
+                                             DiskUsage(kDefaultMaxDiskUsage),
+                                             pop_functor,
+                                             kv_buffer_path_));
+  NonEmptyString value(RandomAlphaNumericString((RandomUint32() % 30) + 1)), recovered, last_value;
+  Identity key(crypto::Hash<crypto::SHA512>(value));
+  auto async = std::async(std::launch::async, [this, key, value] {
+                                                key_value_buffer_->Store(key, value);
+                                              });
+  EXPECT_NO_THROW(async.wait());
+  EXPECT_EQ(true, async.valid());
+  EXPECT_NO_THROW(async.get());
+  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
+
+  uint32_t events(RandomUint32() % 100);
+  for (uint32_t i = 0; i != events; ++i) {
+    last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % 30) + 1));
+    auto async = std::async(std::launch::async, [this, key, last_value] {
+                                                  key_value_buffer_->Store(key, last_value);
+                                                });
+    EXPECT_NO_THROW(async.wait());
+    EXPECT_EQ(true, async.valid());
+    EXPECT_NO_THROW(async.get());
+  }
+  EXPECT_NO_THROW(recovered = key_value_buffer_->Get(key));
+  EXPECT_NE(value, recovered);
+  EXPECT_EQ(last_value, recovered);
+  key_value_buffer_.reset();
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
 }
 

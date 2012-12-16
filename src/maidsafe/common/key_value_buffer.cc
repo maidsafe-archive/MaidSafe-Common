@@ -123,6 +123,14 @@ KeyValueBuffer::~KeyValueBuffer() {
 }
 
 void KeyValueBuffer::Store(const Identity& key, const NonEmptyString& value) {
+  try {
+    Delete(key);
+    LOG(kInfo) << "Re-storing value " << EncodeToBase32(value) << " with key "
+               << EncodeToBase32(key);
+  }
+  catch(const std::exception&) {
+    LOG(kInfo) << "Storing value " << EncodeToBase32(value) << " with key " << EncodeToBase32(key);
+  }
   CheckWorkerIsStillRunning();
   if (!StoreInMemory(key, value))
     StoreOnDisk(key, value);
