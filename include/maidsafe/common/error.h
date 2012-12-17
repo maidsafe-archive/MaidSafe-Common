@@ -79,7 +79,9 @@ enum class PassportErrors {
   fob_parsing_error,
   no_confirmed_fob,
   no_pending_fob,
-  passport_parsing_error
+  passport_parsing_error,
+  public_id_already_exists,
+  no_such_public_id
 };
 
 enum class LifeStuffErrors {

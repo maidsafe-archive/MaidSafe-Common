@@ -173,8 +173,12 @@ std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "No pending fob of requested type available";
     case PassportErrors::passport_parsing_error:
       return "Error parsing passport";
+    case PassportErrors::public_id_already_exists:
+      return "Public ID already exists in the passport";
+    case PassportErrors::no_such_public_id:
+      return "No such public ID exists in the passport";
     default:
-      return "Unknown error in Fob";
+      return "Unknown error in Passport";
   }
 }
 

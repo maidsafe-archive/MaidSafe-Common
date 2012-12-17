@@ -34,6 +34,7 @@ namespace maidsafe {
 template<typename T, typename Tag>
 struct TaggedValue {
   typedef T value_type;
+  typedef Tag tag_type;
   explicit TaggedValue(T const& data_): data(data_) {}
   TaggedValue(): data() {}
   operator T() const { return data; }
