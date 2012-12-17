@@ -74,9 +74,12 @@ enum class AsymmErrors {
   signing_error
 };
 
-enum class FobErrors {
+enum class PassportErrors {
   fob_serialisation_error = 1,
-  fob_parsing_error
+  fob_parsing_error,
+  no_confirmed_fob,
+  no_pending_fob,
+  passport_parsing_error
 };
 
 enum class LifeStuffErrors {
@@ -550,11 +553,11 @@ enum class LifeStuffErrors {
 
 std::error_code make_error_code(CommonErrors code);
 std::error_code make_error_code(AsymmErrors code);
-std::error_code make_error_code(FobErrors code);
+std::error_code make_error_code(PassportErrors code);
 std::error_code make_error_code(LifeStuffErrors code);
 std::error_condition make_error_condition(CommonErrors code);
 std::error_condition make_error_condition(AsymmErrors code);
-std::error_condition make_error_condition(FobErrors code);
+std::error_condition make_error_condition(PassportErrors code);
 std::error_condition make_error_condition(LifeStuffErrors code);
 
 void DoThrowError(const std::error_code& code);
@@ -566,7 +569,7 @@ inline void ThrowError(const std::error_code& code) {
 
 const std::error_category& GetCommonCategory();
 const std::error_category& GetAsymmCategory();
-const std::error_category& GetFobCategory();
+const std::error_category& GetPassportCategory();
 const std::error_category& GetLifeStuffCategory();
 
 }  // namespace maidsafe
@@ -586,7 +589,7 @@ template <>
 struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  // NOLINT (dirvine)
 
 template <>
-struct is_error_code_enum<maidsafe::FobErrors> : public true_type {};  // NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};  // NOLINT (dirvine)
 
 template <>
 struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  // NOLINT (dirvine)

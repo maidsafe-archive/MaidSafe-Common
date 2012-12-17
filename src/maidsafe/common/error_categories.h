@@ -52,7 +52,7 @@ class AsymmCategory : public std::error_category {
   virtual std::error_condition default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT;
 };
 
-class FobCategory : public std::error_category {
+class PassportCategory : public std::error_category {
  public:
   virtual const char* name() const MAIDSAFE_NOEXCEPT;
   virtual std::string message(int error_value) const MAIDSAFE_NOEXCEPT;

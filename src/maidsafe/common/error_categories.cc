@@ -157,24 +157,30 @@ std::error_condition AsymmCategory::default_error_condition(
 }
 
 
-const char* FobCategory::name() const MAIDSAFE_NOEXCEPT {
+const char* PassportCategory::name() const MAIDSAFE_NOEXCEPT {
   return "Maidsafe Identity Ring";
 }
 
-std::string FobCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<FobErrors>(error_value)) {
-    case FobErrors::fob_serialisation_error:
+std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<PassportErrors>(error_value)) {
+    case PassportErrors::fob_serialisation_error:
       return "Error serialising to protocol buffer representation";
-    case FobErrors::fob_parsing_error:
+    case PassportErrors::fob_parsing_error:
       return "Error parsing from protocol buffer representation";
+    case PassportErrors::no_confirmed_fob:
+      return "No confirmed fob of requested type available";
+    case PassportErrors::no_pending_fob:
+      return "No pending fob of requested type available";
+    case PassportErrors::passport_parsing_error:
+      return "Error parsing passport";
     default:
       return "Unknown error in Fob";
   }
 }
 
-std::error_condition FobCategory::default_error_condition(
+std::error_condition PassportCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<FobErrors>(error_value)) {
+//  switch (static_cast<PassportErrors>(error_value)) {
 //    default:
       return std::error_condition(error_value, *this);
 //  }

@@ -42,8 +42,8 @@ std::error_code make_error_code(AsymmErrors code) {
   return std::error_code(static_cast<int>(code), GetAsymmCategory());
 }
 
-std::error_code make_error_code(FobErrors code) {
-  return std::error_code(static_cast<int>(code), GetFobCategory());
+std::error_code make_error_code(PassportErrors code) {
+  return std::error_code(static_cast<int>(code), GetPassportCategory());
 }
 
 std::error_code make_error_code(LifeStuffErrors code) {
@@ -58,8 +58,8 @@ std::error_condition make_error_condition(AsymmErrors code) {
   return std::error_condition(static_cast<int>(code), GetAsymmCategory());
 }
 
-std::error_condition make_error_condition(FobErrors code) {
-  return std::error_condition(static_cast<int>(code), GetFobCategory());
+std::error_condition make_error_condition(PassportErrors code) {
+  return std::error_condition(static_cast<int>(code), GetPassportCategory());
 }
 
 std::error_condition make_error_condition(LifeStuffErrors code) {
@@ -82,8 +82,8 @@ const std::error_category& GetAsymmCategory() {
   return instance;
 }
 
-const std::error_category& GetFobCategory() {
-  static detail::FobCategory instance;
+const std::error_category& GetPassportCategory() {
+  static detail::PassportCategory instance;
   return instance;
 }
 
