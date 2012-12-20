@@ -86,7 +86,8 @@ enum class PassportErrors {
 
 enum class NfsErrors {
   invalid_parameter = 1,
-  message_parsing_error
+  message_parsing_error,
+  failed_to_get_data
 };
 
 enum class LifeStuffErrors {
