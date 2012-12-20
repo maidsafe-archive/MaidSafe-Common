@@ -210,7 +210,7 @@ std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 
 std::error_condition NfsCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<PassportErrors>(error_value)) {
+  switch (static_cast<NfsErrors>(error_value)) {
     case NfsErrors::invalid_parameter:
       return std::errc::invalid_argument;
     default:
