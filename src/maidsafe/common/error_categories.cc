@@ -191,6 +191,32 @@ std::error_condition PassportCategory::default_error_condition(
 }
 
 
+const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "Maidsafe Network Filesystem";
+}
+
+std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<NfsErrors>(error_value)) {
+    case NfsErrors::invalid_parameter:
+      return "One or more invalid parameters were passed when constructing an NFS message";
+    case NfsErrors::message_parsing_error:
+      return "Error parsing NFS message from protocol buffer representation";
+    default:
+      return "Unknown error in NFS";
+  }
+}
+
+std::error_condition NfsCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<PassportErrors>(error_value)) {
+    case NfsErrors::invalid_parameter:
+      return std::errc::invalid_argument;
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
+
 const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
   return "LifeStuff";
 }

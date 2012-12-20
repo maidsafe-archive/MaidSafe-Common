@@ -46,6 +46,10 @@ std::error_code make_error_code(PassportErrors code) {
   return std::error_code(static_cast<int>(code), GetPassportCategory());
 }
 
+std::error_code make_error_code(NfsErrors code) {
+  return std::error_code(static_cast<int>(code), GetNfsCategory());
+}
+
 std::error_code make_error_code(LifeStuffErrors code) {
   return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
 }
@@ -60,6 +64,10 @@ std::error_condition make_error_condition(AsymmErrors code) {
 
 std::error_condition make_error_condition(PassportErrors code) {
   return std::error_condition(static_cast<int>(code), GetPassportCategory());
+}
+
+std::error_condition make_error_condition(NfsErrors code) {
+  return std::error_condition(static_cast<int>(code), GetNfsCategory());
 }
 
 std::error_condition make_error_condition(LifeStuffErrors code) {
@@ -84,6 +92,11 @@ const std::error_category& GetAsymmCategory() {
 
 const std::error_category& GetPassportCategory() {
   static detail::PassportCategory instance;
+  return instance;
+}
+
+const std::error_category& GetNfsCategory() {
+  static detail::NfsCategory instance;
   return instance;
 }
 

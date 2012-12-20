@@ -84,6 +84,11 @@ enum class PassportErrors {
   no_such_public_id
 };
 
+enum class NfsErrors {
+  invalid_parameter = 1,
+  message_parsing_error
+};
+
 enum class LifeStuffErrors {
   // Authentication
   kAuthenticationError = 1,
@@ -556,10 +561,12 @@ enum class LifeStuffErrors {
 std::error_code make_error_code(CommonErrors code);
 std::error_code make_error_code(AsymmErrors code);
 std::error_code make_error_code(PassportErrors code);
+std::error_code make_error_code(NfsErrors code);
 std::error_code make_error_code(LifeStuffErrors code);
 std::error_condition make_error_condition(CommonErrors code);
 std::error_condition make_error_condition(AsymmErrors code);
 std::error_condition make_error_condition(PassportErrors code);
+std::error_condition make_error_condition(NfsErrors code);
 std::error_condition make_error_condition(LifeStuffErrors code);
 
 void DoThrowError(const std::error_code& code);
@@ -572,6 +579,7 @@ inline void ThrowError(const std::error_code& code) {
 const std::error_category& GetCommonCategory();
 const std::error_category& GetAsymmCategory();
 const std::error_category& GetPassportCategory();
+const std::error_category& GetNfsCategory();
 const std::error_category& GetLifeStuffCategory();
 
 }  // namespace maidsafe
@@ -592,6 +600,9 @@ struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  // NOLI
 
 template <>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};  // NOLINT (dirvine)
+
+template <>
+struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};  // NOLINT (dirvine)
 
 template <>
 struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  // NOLINT (dirvine)
