@@ -354,8 +354,10 @@ void KeyValueBuffer::CopyQueueToDisk() {
 }
 
 void KeyValueBuffer::CheckWorkerIsStillRunning() {
-  if (worker_.has_exception())
-    worker_.get();
+  // if this goes ready then we have an exception so get that (throw basically)
+  if (worker_.wait_for(std::chrono::seconds(0)) == std::future_status::ready &&
+      worker_.valid())
+     worker_.get();
   if (!running_) {
     LOG(kError) << "Worker is no longer running.";
     ThrowError(CommonErrors::filesystem_io_error);

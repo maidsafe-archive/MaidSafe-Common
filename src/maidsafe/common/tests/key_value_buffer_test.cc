@@ -419,7 +419,6 @@ TEST_F(KeyValueBufferTest, BEH_AsyncNonPopOnDiskBufferOverfill) {
 
   auto status(async_gets.back().wait_for(std::chrono::milliseconds(100)));
   EXPECT_EQ(std::future_status::ready, status);
-  EXPECT_TRUE(async_gets.back().has_exception());
   EXPECT_THROW(async_gets.back().get(), std::exception);
 
   EXPECT_TRUE(DeleteDirectory(kv_buffer_path_));
