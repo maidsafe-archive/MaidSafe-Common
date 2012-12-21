@@ -70,16 +70,17 @@ void UseUnreferenced() {
 
 std::once_flag logging_initialised;
 std::mutex g_console_mutex;
-const std::array<std::string, 10> kProjects = { { "common",
+const std::array<std::string, 11> kProjects = { { "common",
                                                   "drive",
                                                   "encrypt",
                                                   "lifestuff",
                                                   "lifestuff-gui",
+                                                  "nfs"
                                                   "passport",
-                                                  "pd",
                                                   "private",
                                                   "routing",
-                                                  "rudp"
+                                                  "rudp",
+                                                  "vault"
                                               } };
 
 #ifdef MAIDSAFE_WIN32
@@ -169,8 +170,10 @@ std::string GetProjectAndContractFile(std::string& file) {
   return project;
 }
 
-bool ShouldLog(const std::string& project, int level) {
+bool ShouldLog(std::string project, int level) {
   FilterMap filter(Logging::Instance().Filter());
+  if (project.empty())
+    project = "common";
   auto filter_itr = filter.find(project);
   return (filter_itr != filter.end()) && ((*filter_itr).second <= level);
 }
