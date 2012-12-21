@@ -59,6 +59,24 @@ enum class CommonErrors {
   no_such_element
 };
 
+class common_error : public std::system_error {
+ public:
+  common_error(std::error_code ec, const std::string& what_arg) : std::system_error(ec, what_arg) {}
+  common_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit common_error(std::error_code ec) : std::system_error(ec) {}
+  common_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  common_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  common_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(CommonErrors code);
+std::error_condition make_error_condition(CommonErrors code);
+const std::error_category& GetCommonCategory();
+common_error MakeError(CommonErrors code);
+
+
 enum class AsymmErrors {
   keys_generation_error = 1,
   keys_serialisation_error,
@@ -74,6 +92,24 @@ enum class AsymmErrors {
   signing_error
 };
 
+class asymm_error : public std::system_error {
+ public:
+  asymm_error(std::error_code ec, const std::string& what_arg) : std::system_error(ec, what_arg) {}
+  asymm_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit asymm_error(std::error_code ec) : std::system_error(ec) {}
+  asymm_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  asymm_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  asymm_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(AsymmErrors code);
+std::error_condition make_error_condition(AsymmErrors code);
+const std::error_category& GetAsymmCategory();
+asymm_error MakeError(AsymmErrors code);
+
+
 enum class PassportErrors {
   fob_serialisation_error = 1,
   fob_parsing_error,
@@ -84,11 +120,49 @@ enum class PassportErrors {
   no_such_public_id
 };
 
+class passport_error : public std::system_error {
+ public:
+  passport_error(std::error_code ec, const std::string& what_arg)
+      : std::system_error(ec, what_arg) {}
+  passport_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit passport_error(std::error_code ec) : std::system_error(ec) {}
+  passport_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  passport_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  passport_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(PassportErrors code);
+std::error_condition make_error_condition(PassportErrors code);
+const std::error_category& GetPassportCategory();
+passport_error MakeError(PassportErrors code);
+
+
 enum class NfsErrors {
   invalid_parameter = 1,
   message_parsing_error,
   failed_to_get_data
 };
+
+class nfs_error : public std::system_error {
+ public:
+  nfs_error(std::error_code ec, const std::string& what_arg) : std::system_error(ec, what_arg) {}
+  nfs_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit nfs_error(std::error_code ec) : std::system_error(ec) {}
+  nfs_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  nfs_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  nfs_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(NfsErrors code);
+std::error_condition make_error_condition(NfsErrors code);
+const std::error_category& GetNfsCategory();
+nfs_error MakeError(NfsErrors code);
+
+
 
 enum class LifeStuffErrors {
   // Authentication
@@ -559,31 +633,35 @@ enum class LifeStuffErrors {
   kFailedSymmDecrypt
 };
 
-std::error_code make_error_code(CommonErrors code);
-std::error_code make_error_code(AsymmErrors code);
-std::error_code make_error_code(PassportErrors code);
-std::error_code make_error_code(NfsErrors code);
+class lifestuff_error : public std::system_error {
+ public:
+  lifestuff_error(std::error_code ec, const std::string& what_arg)
+      : std::system_error(ec, what_arg) {}
+  lifestuff_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit lifestuff_error(std::error_code ec) : std::system_error(ec) {}
+  lifestuff_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  lifestuff_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  lifestuff_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
 std::error_code make_error_code(LifeStuffErrors code);
-std::error_condition make_error_condition(CommonErrors code);
-std::error_condition make_error_condition(AsymmErrors code);
-std::error_condition make_error_condition(PassportErrors code);
-std::error_condition make_error_condition(NfsErrors code);
 std::error_condition make_error_condition(LifeStuffErrors code);
+const std::error_category& GetLifeStuffCategory();
+lifestuff_error MakeError(LifeStuffErrors code);
 
-void DoThrowError(const std::error_code& code);
 
-inline void ThrowError(const std::error_code& code) {
-  if (code)
-    DoThrowError(code);
+
+template<typename MaidsafeErrorCode>
+inline void ThrowError(const MaidsafeErrorCode& code) {
+  auto error(MakeError(code));
+  if (error.code())
+    boost::throw_exception(error);
 }
 
-const std::error_category& GetCommonCategory();
-const std::error_category& GetAsymmCategory();
-const std::error_category& GetPassportCategory();
-const std::error_category& GetNfsCategory();
-const std::error_category& GetLifeStuffCategory();
-
 }  // namespace maidsafe
+
 
 
 namespace std {
@@ -594,19 +672,19 @@ namespace std {
 #endif
 
 template <>
-struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};  // NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};  // NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};  // NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};  // NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};  // NOLINT (dirvine)
+struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};
 
 
 #ifdef __GNUC__

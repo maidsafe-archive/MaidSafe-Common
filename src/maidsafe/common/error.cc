@@ -38,47 +38,71 @@ std::error_code make_error_code(CommonErrors code) {
   return std::error_code(static_cast<int>(code), GetCommonCategory());
 }
 
-std::error_code make_error_code(AsymmErrors code) {
-  return std::error_code(static_cast<int>(code), GetAsymmCategory());
-}
-
-std::error_code make_error_code(PassportErrors code) {
-  return std::error_code(static_cast<int>(code), GetPassportCategory());
-}
-
-std::error_code make_error_code(NfsErrors code) {
-  return std::error_code(static_cast<int>(code), GetNfsCategory());
-}
-
-std::error_code make_error_code(LifeStuffErrors code) {
-  return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
-}
-
 std::error_condition make_error_condition(CommonErrors code) {
   return std::error_condition(static_cast<int>(code), GetCommonCategory());
+}
+
+common_error MakeError(CommonErrors code) {
+  return common_error(make_error_code(code));
+}
+
+
+
+std::error_code make_error_code(AsymmErrors code) {
+  return std::error_code(static_cast<int>(code), GetAsymmCategory());
 }
 
 std::error_condition make_error_condition(AsymmErrors code) {
   return std::error_condition(static_cast<int>(code), GetAsymmCategory());
 }
 
+asymm_error MakeError(AsymmErrors code) {
+  return asymm_error(make_error_code(code));
+}
+
+
+
+std::error_code make_error_code(PassportErrors code) {
+  return std::error_code(static_cast<int>(code), GetPassportCategory());
+}
+
 std::error_condition make_error_condition(PassportErrors code) {
   return std::error_condition(static_cast<int>(code), GetPassportCategory());
+}
+
+passport_error MakeError(PassportErrors code) {
+  return passport_error(make_error_code(code));
+}
+
+
+
+std::error_code make_error_code(NfsErrors code) {
+  return std::error_code(static_cast<int>(code), GetNfsCategory());
 }
 
 std::error_condition make_error_condition(NfsErrors code) {
   return std::error_condition(static_cast<int>(code), GetNfsCategory());
 }
 
+nfs_error MakeError(NfsErrors code) {
+  return nfs_error(make_error_code(code));
+}
+
+
+
+std::error_code make_error_code(LifeStuffErrors code) {
+  return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
+}
+
 std::error_condition make_error_condition(LifeStuffErrors code) {
   return std::error_condition(static_cast<int>(code), GetLifeStuffCategory());
 }
 
-
-void DoThrowError(const std::error_code& code) {
-  std::system_error c(code);
-  boost::throw_exception(c);
+lifestuff_error MakeError(LifeStuffErrors code) {
+  return lifestuff_error(make_error_code(code));
 }
+
+
 
 const std::error_category& GetCommonCategory() {
   static detail::CommonCategory instance;
