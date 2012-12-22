@@ -75,7 +75,7 @@ const std::array<std::string, 11> kProjects = { { "common",
                                                   "encrypt",
                                                   "lifestuff",
                                                   "lifestuff-gui",
-                                                  "nfs"
+                                                  "nfs",
                                                   "passport",
                                                   "private",
                                                   "routing",
