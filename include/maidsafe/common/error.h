@@ -144,6 +144,7 @@ passport_error MakeError(PassportErrors code);
 enum class NfsErrors {
   invalid_parameter = 1,
   message_parsing_error,
+  return_code_parsing_error,
   failed_to_get_data
 };
 

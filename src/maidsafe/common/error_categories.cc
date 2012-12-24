@@ -201,6 +201,8 @@ std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "One or more invalid parameters were passed when constructing an NFS message";
     case NfsErrors::message_parsing_error:
       return "Error parsing NFS message from protocol buffer representation";
+    case NfsErrors::return_code_parsing_error:
+      return "Error parsing NFS return code from protocol buffer representation";
     case NfsErrors::failed_to_get_data:
       return "Routing failed to return requested data";
     default:
