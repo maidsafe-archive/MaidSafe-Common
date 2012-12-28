@@ -115,6 +115,8 @@ asymm_error MakeError(AsymmErrors code);
 enum class PassportErrors {
   fob_serialisation_error = 1,
   fob_parsing_error,
+  mid_parsing_error,
+  tmid_parsing_error,
   no_confirmed_fob,
   no_pending_fob,
   passport_parsing_error,

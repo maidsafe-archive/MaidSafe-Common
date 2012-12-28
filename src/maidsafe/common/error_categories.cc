@@ -166,7 +166,11 @@ std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
     case PassportErrors::fob_serialisation_error:
       return "Error serialising to protocol buffer representation";
     case PassportErrors::fob_parsing_error:
-      return "Error parsing from protocol buffer representation";
+      return "Error parsing fob from protocol buffer representation";
+    case PassportErrors::mid_parsing_error:
+      return "Error parsing MID or SMID from protocol buffer representation";
+    case PassportErrors::tmid_parsing_error:
+      return "Error parsing TMID from protocol buffer representation";
     case PassportErrors::no_confirmed_fob:
       return "No confirmed fob of requested type available";
     case PassportErrors::no_pending_fob:
