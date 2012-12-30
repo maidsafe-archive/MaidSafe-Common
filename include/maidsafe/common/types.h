@@ -44,10 +44,10 @@ typedef NonEmptyString UserName, UserPassword;
 typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
 typedef TaggedValue<uint64_t, struct DiskUsageTag> DiskUsage;
 
-template<typename DataIdentityType>
+template<typename T>
 struct is_long_term_cacheable : public std::false_type {};
 
-template<typename DataIdentityType>
+template<typename T>
 struct is_short_term_cacheable : public std::false_type {};
 
 }  // namespace maidsafe
