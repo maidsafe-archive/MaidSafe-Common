@@ -78,6 +78,7 @@ typedef CryptoPP::SHA256 SHA256;
 typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
+typedef CryptoPP::Integer BigInt;
 
 enum { AES256_KeySize = 32 };  // size in bytes.
 enum { AES256_IVSize = 16 };  // size in bytes.

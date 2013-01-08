@@ -50,6 +50,9 @@ struct is_long_term_cacheable : public std::false_type {};
 template<typename T>
 struct is_short_term_cacheable : public std::false_type {};
 
+template<typename T>
+struct is_payable : public std::false_type {};
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_TYPES_H_
