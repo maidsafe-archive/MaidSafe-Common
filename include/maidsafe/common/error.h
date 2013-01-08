@@ -150,7 +150,8 @@ enum class NfsErrors {
   pmidregistration_parsing_error,
   pmidsize_parsing_error,
   return_code_parsing_error,
-  failed_to_get_data
+  failed_to_get_data,
+  invalid_signature
 };
 
 class nfs_error : public std::system_error {
