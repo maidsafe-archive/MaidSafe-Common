@@ -233,6 +233,30 @@ std::error_condition NfsCategory::default_error_condition(
 }
 
 
+const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "Maidsafe Routing";
+}
+
+std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RoutingErrors>(error_value)) {
+    case RoutingErrors::timed_out:
+      return "timed out";
+    default:
+      return "Unknown error in Routing";
+  }
+}
+
+std::error_condition RoutingCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RoutingErrors>(error_value)) {
+    case RoutingErrors::timed_out:
+      return std::errc::timed_out;
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
+
 const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
   return "LifeStuff";
 }

@@ -173,6 +173,30 @@ nfs_error MakeError(NfsErrors code);
 
 
 
+enum class RoutingErrors {
+  timed_out = 1
+};
+
+class routing_error : public std::system_error {
+ public:
+  routing_error(std::error_code ec, const std::string& what_arg)
+      : std::system_error(ec, what_arg) {}
+  routing_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit routing_error(std::error_code ec) : std::system_error(ec) {}
+  routing_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  routing_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  routing_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(RoutingErrors code);
+std::error_condition make_error_condition(RoutingErrors code);
+const std::error_category& GetRoutingCategory();
+routing_error MakeError(RoutingErrors code);
+
+
+
 enum class LifeStuffErrors {
   // Authentication
   kAuthenticationError = 1,

@@ -90,6 +90,20 @@ nfs_error MakeError(NfsErrors code) {
 
 
 
+std::error_code make_error_code(RoutingErrors code) {
+  return std::error_code(static_cast<int>(code), GetRoutingCategory());
+}
+
+std::error_condition make_error_condition(RoutingErrors code) {
+  return std::error_condition(static_cast<int>(code), GetRoutingCategory());
+}
+
+routing_error MakeError(RoutingErrors code) {
+  return routing_error(make_error_code(code));
+}
+
+
+
 std::error_code make_error_code(LifeStuffErrors code) {
   return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
 }
@@ -121,6 +135,11 @@ const std::error_category& GetPassportCategory() {
 
 const std::error_category& GetNfsCategory() {
   static detail::NfsCategory instance;
+  return instance;
+}
+
+const std::error_category& GetRoutingCategory() {
+  static detail::RoutingCategory instance;
   return instance;
 }
 
