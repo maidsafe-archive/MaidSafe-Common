@@ -150,7 +150,10 @@ enum class NfsErrors {
   pmid_registration_parsing_error,
   pmid_size_parsing_error,
   return_code_parsing_error,
-  failed_to_get_data
+  failed_to_get_data,
+  failed_to_find_managed_element,
+  managed_element_parsing_error,
+  managed_element_serialisation_error
 };
 
 class nfs_error : public std::system_error {
