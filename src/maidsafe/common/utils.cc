@@ -30,10 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <algorithm>
 #include <array>
-#include <future>
 #include <limits>
 #include <set>
-#include <string>
 #include <thread>
 #include <vector>
 
@@ -57,10 +55,10 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "boost/config.hpp"
 #include "boost/filesystem/fstream.hpp"
 #include "boost/filesystem/operations.hpp"
-#include "boost/thread/mutex.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
+#include "boost/token_functions.hpp"
 
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"

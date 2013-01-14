@@ -43,6 +43,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "boost/algorithm/string/case_conv.hpp"
 #include "boost/algorithm/string/replace.hpp"
+#include "boost/filesystem/operations.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/program_options/parsers.hpp"
 #include "boost/program_options/value_semantic.hpp"

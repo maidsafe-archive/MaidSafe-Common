@@ -28,12 +28,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_UTILS_H_
 #define MAIDSAFE_COMMON_UTILS_H_
 
+#include <chrono>
 #include <cstdint>
+#include <future>
 #include <functional>
 #include <memory>
-#include <string>
 #include <ratio>
-#include <chrono>  // to get duration class
+#include <string>
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -41,10 +42,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/path.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/asio/ip/udp.hpp"
-#include "boost/token_functions.hpp"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -78,38 +78,6 @@ boost::asio::ip::address GetLocalIp(
     boost::asio::ip::udp::endpoint peer_endpoint =
         boost::asio::ip::udp::endpoint(
             boost::asio::ip::address_v4::from_string("203.0.113.0"), 80));
-
-// A simple class to determine statistical properties of a data set, computed
-// without storing the values. Data type must be numerical.
-template <typename T>
-class Stats {
- public:
-  Stats() : size_(0), min_(0), max_(0), sum_(0) {}
-  void Add(const T &value) {
-    sum_ += value;
-    ++size_;
-    if (size_ == 1) {
-      min_ = value;
-      max_ = value;
-    } else {
-      if (value < min_)
-        min_ = value;
-      if (value > max_)
-        max_ = value;
-    }
-  }
-  uint64_t Size() const { return size_; }
-  T Min() const { return min_; }
-  T Max() const { return max_; }
-  T Sum() const { return sum_; }
-  T Mean() const { return size_ > 0 ? static_cast<T>(sum_ / size_) : 0; }
-
- private:
-  uint64_t size_;
-  T min_;
-  T max_;
-  T sum_;
-};
 
 // Takes a version as an int and returns the string form, e.g. 901 returns "0.09.01"
 std::string VersionToString(int version,
@@ -224,27 +192,25 @@ bool WriteFile(const boost::filesystem::path &file_path, const std::string &cont
 // duration, returns false if the sleep is interrupted.
 bool Sleep(const boost::posix_time::time_duration &duration);
 
-// NOTE: DOES NOT CREATE PATH
 // Retrieve homedir from environment
 boost::filesystem::path GetHomeDir();
 
-// NOTE: DOES NOT CREATE PATH
-// Application support directory in userspace,
-// uses kCompanyName and kApplicationName
+// Application support directory in userspace; uses kCompanyName and kApplicationName
 boost::filesystem::path GetUserAppDir();
 
-// NOTE: DOES NOT CREATE PATH
-// Application support directory for all users,
-// uses kCompanyName and kApplicationName
+// Application support directory for all users; uses kCompanyName and kApplicationName
 boost::filesystem::path GetSystemAppSupportDir();
 
-// NOTE: DOES NOT CREATE PATH
-// Application install directory
-// uses kCompanyName and kApplicationName
+// Application install directory; uses kCompanyName and kApplicationName
 boost::filesystem::path GetAppInstallDir();
 
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
+
+template<typename T>
+bool IsReady(std::future<T>& future) {
+  return future.wait_for(std::chrono::seconds::zero()) == std::future_status::ready;
+}
 
 }  // namespace maidsafe
 

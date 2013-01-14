@@ -30,6 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <future>
 #include <vector>
 
+#include "boost/filesystem/operations.hpp"
+
 #include "maidsafe/common/utils.h"
 
 

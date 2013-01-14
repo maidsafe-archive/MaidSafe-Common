@@ -32,7 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <chrono>
 
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
@@ -323,49 +324,6 @@ TEST(UtilsTest, BEH_RandomStringGenerator) {
     }
     EXPECT_GE(kMaxDuplicates, kCount - random_strings.size());
     random_strings.clear();
-  }
-}
-
-TEST(UtilsTest, BEH_Stats) {
-  {
-    Stats<int> stats;
-    EXPECT_EQ(0, stats.Size());
-    EXPECT_EQ(0, stats.Min());
-    EXPECT_EQ(0, stats.Max());
-    EXPECT_EQ(0, stats.Sum());
-    EXPECT_EQ(0, stats.Mean());
-
-    stats.Add(1);
-    stats.Add(2);
-    stats.Add(4);
-    stats.Add(5);
-    stats.Add(0);
-
-    EXPECT_EQ(5, stats.Size());
-    EXPECT_EQ(0, stats.Min());
-    EXPECT_EQ(5, stats.Max());
-    EXPECT_EQ(12, stats.Sum());
-    EXPECT_EQ(2, stats.Mean());
-  }
-  {
-    Stats<float> stats;
-    EXPECT_EQ(0, stats.Size());
-    EXPECT_FLOAT_EQ(0.0, stats.Min());
-    EXPECT_FLOAT_EQ(0.0, stats.Max());
-    EXPECT_FLOAT_EQ(0.0, stats.Sum());
-    EXPECT_FLOAT_EQ(0.0, stats.Mean());
-
-    stats.Add(1.1f);
-    stats.Add(2.2f);
-    stats.Add(3.3f);
-    stats.Add(4.4f);
-    stats.Add(0.0f);
-
-    EXPECT_EQ(5, stats.Size());
-    EXPECT_FLOAT_EQ(0.0f, stats.Min());
-    EXPECT_FLOAT_EQ(4.4f, stats.Max());
-    EXPECT_FLOAT_EQ(11.0f, stats.Sum());
-    EXPECT_FLOAT_EQ(2.2f, stats.Mean());
   }
 }
 
