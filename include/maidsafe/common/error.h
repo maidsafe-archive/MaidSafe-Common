@@ -199,6 +199,29 @@ routing_error MakeError(RoutingErrors code);
 
 
 
+enum class VaultErrors {
+};
+
+class vault_error : public std::system_error {
+ public:
+  vault_error(std::error_code ec, const std::string& what_arg)
+      : std::system_error(ec, what_arg) {}
+  vault_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit vault_error(std::error_code ec) : std::system_error(ec) {}
+  vault_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  vault_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  vault_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(VaultErrors code);
+std::error_condition make_error_condition(VaultErrors code);
+const std::error_category& GetVaultCategory();
+vault_error MakeError(VaultErrors code);
+
+
+
 enum class LifeStuffErrors {
   // Authentication
   kAuthenticationError = 1,

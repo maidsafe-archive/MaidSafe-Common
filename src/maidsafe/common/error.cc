@@ -104,6 +104,20 @@ routing_error MakeError(RoutingErrors code) {
 
 
 
+std::error_code make_error_code(VaultErrors code) {
+  return std::error_code(static_cast<int>(code), GetVaultCategory());
+}
+
+std::error_condition make_error_condition(VaultErrors code) {
+  return std::error_condition(static_cast<int>(code), GetVaultCategory());
+}
+
+vault_error MakeError(VaultErrors code) {
+  return vault_error(make_error_code(code));
+}
+
+
+
 std::error_code make_error_code(LifeStuffErrors code) {
   return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
 }
@@ -140,6 +154,11 @@ const std::error_category& GetNfsCategory() {
 
 const std::error_category& GetRoutingCategory() {
   static detail::RoutingCategory instance;
+  return instance;
+}
+
+const std::error_category& GetVaultCategory() {
+  static detail::VaultCategory instance;
   return instance;
 }
 

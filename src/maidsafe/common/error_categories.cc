@@ -255,6 +255,26 @@ std::error_condition RoutingCategory::default_error_condition(
 }
 
 
+const char* VaultCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "Maidsafe Vault";
+}
+
+std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<VaultErrors>(error_value)) {
+    default:
+      return "Unknown error in Vault";
+  }
+}
+
+std::error_condition VaultCategory::default_error_condition(int error_value)
+    const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<VaultErrors>(error_value)) {
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
+
 const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
   return "LifeStuff";
 }
