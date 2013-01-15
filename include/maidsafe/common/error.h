@@ -58,7 +58,9 @@ enum class CommonErrors {
   cannot_invoke_from_this_thread,
   cannot_exceed_max_disk_usage,
   filesystem_io_error,
-  no_such_element
+  no_such_element,
+  serialisation_error,
+  parsing_error
 };
 
 class common_error : public std::system_error {

@@ -78,6 +78,10 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Filesystem IO error";
     case CommonErrors::no_such_element:
       return "Element does not exist";
+    case CommonErrors::serialisation_error:
+      return "Error serialising to protocol buffer";
+    case CommonErrors::parsing_error:
+      return "Error parsing from protocol buffer";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";

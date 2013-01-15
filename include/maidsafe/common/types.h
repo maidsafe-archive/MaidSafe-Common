@@ -44,7 +44,7 @@ typedef NonEmptyString UserName, UserPassword;
 typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
 typedef TaggedValue<uint64_t, struct DiskUsageTag> DiskUsage;
 
-typedef TaggedValue<uint64_t, struct CachSizeTag> CacheSize;
+typedef TaggedValue<uint64_t, struct CacheSizeTag> CacheSize;
 
 template<typename T>
 struct is_long_term_cacheable : public std::false_type {};
