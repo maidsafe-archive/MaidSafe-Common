@@ -35,7 +35,7 @@ namespace maidsafe {
 namespace detail {
 
 const char* CommonCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "Common";
+  return "MaidSafe Common";
 }
 
 std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
@@ -112,7 +112,7 @@ std::error_condition CommonCategory::default_error_condition(
 
 
 const char* AsymmCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "Asymmetric Crypto";
+  return "MaidSafe Asymmetric Crypto";
 }
 
 std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
@@ -162,7 +162,7 @@ std::error_condition AsymmCategory::default_error_condition(
 
 
 const char* PassportCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "Maidsafe Identity Ring";
+  return "MaidSafe Identity Ring";
 }
 
 std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
@@ -200,7 +200,7 @@ std::error_condition PassportCategory::default_error_condition(
 
 
 const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "Maidsafe Network Filesystem";
+  return "MaidSafe Network Filesystem";
 }
 
 std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
@@ -236,13 +236,13 @@ std::error_condition NfsCategory::default_error_condition(
 
 
 const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "Maidsafe Routing";
+  return "MaidSafe Routing";
 }
 
 std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<RoutingErrors>(error_value)) {
     case RoutingErrors::timed_out:
-      return "timed out";
+      return "Timed out";
     default:
       return "Unknown error in Routing";
   }
@@ -260,19 +260,22 @@ std::error_condition RoutingCategory::default_error_condition(
 
 
 const char* VaultCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "Maidsafe Vault";
+  return "MaidSafe Vault";
 }
 
 std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
+    case VaultErrors::failed_to_join_network:
+      return "Failed to join network";
     default:
       return "Unknown error in Vault";
   }
 }
 
-std::error_condition VaultCategory::default_error_condition(int error_value)
-    const MAIDSAFE_NOEXCEPT {
+std::error_condition VaultCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
+    case VaultErrors::failed_to_join_network:
     default:
       return std::error_condition(error_value, *this);
   }

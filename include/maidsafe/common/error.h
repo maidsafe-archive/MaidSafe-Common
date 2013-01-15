@@ -202,6 +202,7 @@ routing_error MakeError(RoutingErrors code);
 
 
 enum class VaultErrors {
+  failed_to_join_network = 1
 };
 
 class vault_error : public std::system_error {
@@ -742,6 +743,12 @@ struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};
+
+template <>
+struct is_error_code_enum<maidsafe::RoutingErrors> : public true_type {};
+
+template <>
+struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};
