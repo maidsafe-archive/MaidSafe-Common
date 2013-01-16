@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdint>
 #include <type_traits>
+#include <utility>
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/tagged_value.h"
@@ -39,7 +40,7 @@ namespace maidsafe {
 
 typedef detail::BoundedString<1> NonEmptyString;
 typedef detail::BoundedString<64, 64> Identity;
-typedef NonEmptyString UserName, UserPassword;
+typedef NonEmptyString UserPassword;
 
 typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
 typedef TaggedValue<uint64_t, struct DiskUsageTag> DiskUsage;
@@ -54,6 +55,12 @@ struct is_short_term_cacheable : public std::false_type {};
 
 template<typename T>
 struct is_payable : public std::false_type {};
+
+template<typename T>
+struct is_mutable : public std::false_type {};
+
+template<typename T>
+struct is_unique_on_network : public std::true_type {};
 
 }  // namespace maidsafe
 

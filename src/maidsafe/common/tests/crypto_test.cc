@@ -243,7 +243,6 @@ TEST(CryptoTest, BEH_Hash) {
   // Check using default-constructed BoundedStrings
   EXPECT_THROW(Hash<SHA1>(NonEmptyString()), std::exception);
   EXPECT_THROW(Hash<SHA256>(Identity()), std::exception);
-  EXPECT_THROW(Hash<SHA384>(UserName()), std::exception);
   EXPECT_THROW(Hash<SHA512>(UserPassword()), std::exception);
   EXPECT_THROW(Hash<Tiger>(SHA512Hash()), std::exception);
 
