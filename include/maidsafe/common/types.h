@@ -57,9 +57,6 @@ template<typename T>
 struct is_payable : public std::false_type {};
 
 template<typename T>
-struct is_mutable : public std::false_type {};
-
-template<typename T>
 struct is_unique_on_network : public std::true_type {};
 
 }  // namespace maidsafe
