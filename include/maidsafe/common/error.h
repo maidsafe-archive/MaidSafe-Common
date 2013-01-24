@@ -147,15 +147,7 @@ passport_error MakeError(PassportErrors code);
 
 enum class NfsErrors {
   invalid_parameter = 1,
-  message_parsing_error,
-  maid_account_parsing_error,
-  pmid_registration_parsing_error,
-  pmid_size_parsing_error,
-  return_code_parsing_error,
   failed_to_get_data,
-  failed_to_find_managed_element,
-  managed_element_parsing_error,
-  managed_element_serialisation_error
 };
 
 class nfs_error : public std::system_error {
@@ -202,7 +194,10 @@ routing_error MakeError(RoutingErrors code);
 
 
 enum class VaultErrors {
-  failed_to_join_network = 1
+  failed_to_join_network = 1,
+  operation_not_supported,
+  permission_denied,
+  no_such_account
 };
 
 class vault_error : public std::system_error {

@@ -207,16 +207,6 @@ std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<NfsErrors>(error_value)) {
     case NfsErrors::invalid_parameter:
       return "One or more invalid parameters were passed when constructing an NFS message";
-    case NfsErrors::message_parsing_error:
-      return "Error parsing NFS message from protocol buffer representation";
-    case NfsErrors::maid_account_parsing_error:
-      return "Error parsing MAID account from protocol buffer representation";
-    case NfsErrors::pmid_registration_parsing_error:
-      return "Error parsing PMID registration from protocol buffer representation";
-    case NfsErrors::pmid_size_parsing_error:
-      return "Error parsing PMID size details from protocol buffer representation";
-    case NfsErrors::return_code_parsing_error:
-      return "Error parsing NFS return code from protocol buffer representation";
     case NfsErrors::failed_to_get_data:
       return "Routing failed to return requested data";
     default:
@@ -267,6 +257,12 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
     case VaultErrors::failed_to_join_network:
       return "Failed to join network";
+    case VaultErrors::operation_not_supported:
+      return "Requested operation not supported";
+    case VaultErrors::permission_denied:
+      return "Permission denied for request";
+    case VaultErrors::no_such_account:
+      return "Account not known on this vault";
     default:
       return "Unknown error in Vault";
   }
@@ -275,7 +271,10 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 std::error_condition VaultCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
-    case VaultErrors::failed_to_join_network:
+    case VaultErrors::operation_not_supported:
+      return std::errc::operation_not_supported;
+    case VaultErrors::permission_denied:
+      return std::errc::permission_denied;
     default:
       return std::error_condition(error_value, *this);
   }
