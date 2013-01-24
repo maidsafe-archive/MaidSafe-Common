@@ -147,7 +147,7 @@ passport_error MakeError(PassportErrors code);
 
 enum class NfsErrors {
   invalid_parameter = 1,
-  failed_to_get_data,
+  failed_to_get_data
 };
 
 class nfs_error : public std::system_error {
