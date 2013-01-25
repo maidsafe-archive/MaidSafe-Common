@@ -263,6 +263,8 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Permission denied for request";
     case VaultErrors::no_such_account:
       return "Account not known on this vault";
+    case VaultErrors::not_enough_space:
+      return "Not enough space in account";
     default:
       return "Unknown error in Vault";
   }

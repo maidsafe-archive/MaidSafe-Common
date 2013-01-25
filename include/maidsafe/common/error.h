@@ -197,7 +197,8 @@ enum class VaultErrors {
   failed_to_join_network = 1,
   operation_not_supported,
   permission_denied,
-  no_such_account
+  no_such_account,
+  not_enough_space
 };
 
 class vault_error : public std::system_error {
