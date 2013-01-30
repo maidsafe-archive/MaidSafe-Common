@@ -60,7 +60,8 @@ enum class CommonErrors {
   filesystem_io_error,
   no_such_element,
   serialisation_error,
-  parsing_error
+  parsing_error,
+  path_not_a_directory,
 };
 
 class common_error : public std::system_error {
@@ -199,10 +200,7 @@ enum class VaultErrors {
   permission_denied,
   no_such_account,
   not_enough_space,
-  path_not_a_directory,
-  hash_failure,
   failed_elements_extraction,
-  parse_failure,
   adding_to_file_failure,
   put_file_failure
 };
