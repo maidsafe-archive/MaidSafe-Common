@@ -198,7 +198,13 @@ enum class VaultErrors {
   operation_not_supported,
   permission_denied,
   no_such_account,
-  not_enough_space
+  not_enough_space,
+  path_not_a_directory,
+  hash_failure,
+  failed_elements_extraction,
+  parse_failure,
+  adding_to_file_failure,
+  put_file_failure
 };
 
 class vault_error : public std::system_error {
