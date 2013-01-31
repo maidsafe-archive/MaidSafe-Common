@@ -38,6 +38,19 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace maidsafe {
 
+class maidsafe_error : public std::system_error {
+ public:
+  maidsafe_error(std::error_code ec, const std::string& what_arg)
+      : std::system_error(ec, what_arg) {}
+  maidsafe_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit maidsafe_error(std::error_code ec) : std::system_error(ec) {}
+  maidsafe_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  maidsafe_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+};
+
 enum class CommonErrors {
   success = 0,
   pending_result,
@@ -64,16 +77,16 @@ enum class CommonErrors {
   path_not_a_directory,
 };
 
-class common_error : public std::system_error {
+class common_error : public maidsafe_error {
  public:
-  common_error(std::error_code ec, const std::string& what_arg) : std::system_error(ec, what_arg) {}
-  common_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit common_error(std::error_code ec) : std::system_error(ec) {}
+  common_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  common_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit common_error(std::error_code ec) : maidsafe_error(ec) {}
   common_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   common_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  common_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  common_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(CommonErrors code);
@@ -97,16 +110,16 @@ enum class AsymmErrors {
   signing_error
 };
 
-class asymm_error : public std::system_error {
+class asymm_error : public maidsafe_error {
  public:
-  asymm_error(std::error_code ec, const std::string& what_arg) : std::system_error(ec, what_arg) {}
-  asymm_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit asymm_error(std::error_code ec) : std::system_error(ec) {}
+  asymm_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  asymm_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit asymm_error(std::error_code ec) : maidsafe_error(ec) {}
   asymm_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   asymm_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  asymm_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  asymm_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(AsymmErrors code);
@@ -127,17 +140,17 @@ enum class PassportErrors {
   no_such_public_id
 };
 
-class passport_error : public std::system_error {
+class passport_error : public maidsafe_error {
  public:
   passport_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg) {}
-  passport_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit passport_error(std::error_code ec) : std::system_error(ec) {}
+      : maidsafe_error(ec, what_arg) {}
+  passport_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit passport_error(std::error_code ec) : maidsafe_error(ec) {}
   passport_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   passport_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  passport_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  passport_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(PassportErrors code);
@@ -151,16 +164,16 @@ enum class NfsErrors {
   failed_to_get_data
 };
 
-class nfs_error : public std::system_error {
+class nfs_error : public maidsafe_error {
  public:
-  nfs_error(std::error_code ec, const std::string& what_arg) : std::system_error(ec, what_arg) {}
-  nfs_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit nfs_error(std::error_code ec) : std::system_error(ec) {}
+  nfs_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  nfs_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit nfs_error(std::error_code ec) : maidsafe_error(ec) {}
   nfs_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   nfs_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  nfs_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  nfs_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(NfsErrors code);
@@ -174,17 +187,17 @@ enum class RoutingErrors {
   timed_out = 1
 };
 
-class routing_error : public std::system_error {
+class routing_error : public maidsafe_error {
  public:
   routing_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg) {}
-  routing_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit routing_error(std::error_code ec) : std::system_error(ec) {}
+      : maidsafe_error(ec, what_arg) {}
+  routing_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit routing_error(std::error_code ec) : maidsafe_error(ec) {}
   routing_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   routing_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  routing_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  routing_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(RoutingErrors code);
@@ -205,17 +218,17 @@ enum class VaultErrors {
   put_file_failure
 };
 
-class vault_error : public std::system_error {
+class vault_error : public maidsafe_error {
  public:
   vault_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg) {}
-  vault_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit vault_error(std::error_code ec) : std::system_error(ec) {}
+      : maidsafe_error(ec, what_arg) {}
+  vault_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit vault_error(std::error_code ec) : maidsafe_error(ec) {}
   vault_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   vault_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  vault_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  vault_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(VaultErrors code);
@@ -694,17 +707,17 @@ enum class LifeStuffErrors {
   kFailedSymmDecrypt
 };
 
-class lifestuff_error : public std::system_error {
+class lifestuff_error : public maidsafe_error {
  public:
   lifestuff_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg) {}
-  lifestuff_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
-  explicit lifestuff_error(std::error_code ec) : std::system_error(ec) {}
+      : maidsafe_error(ec, what_arg) {}
+  lifestuff_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit lifestuff_error(std::error_code ec) : maidsafe_error(ec) {}
   lifestuff_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
   lifestuff_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
-  lifestuff_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : maidsafe_error(ev, ecat, what_arg) {}
+  lifestuff_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
 std::error_code make_error_code(LifeStuffErrors code);
