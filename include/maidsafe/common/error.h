@@ -184,7 +184,9 @@ nfs_error MakeError(NfsErrors code);
 
 
 enum class RoutingErrors {
-  timed_out = 1
+  timed_out = 1,
+  not_in_range,
+  not_connected
 };
 
 class routing_error : public maidsafe_error {
@@ -209,6 +211,8 @@ routing_error MakeError(RoutingErrors code);
 
 enum class VaultErrors {
   failed_to_join_network = 1,
+  failed_handle_node_up,
+  failed_handle_node_down,
   operation_not_supported,
   permission_denied,
   no_such_account,
