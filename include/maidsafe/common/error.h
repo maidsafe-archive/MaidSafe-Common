@@ -212,8 +212,7 @@ routing_error MakeError(RoutingErrors code);
 
 enum class VaultErrors {
   failed_to_join_network = 1,
-  failed_handle_node_up,
-  failed_handle_node_down,
+  failed_to_handle_request,
   operation_not_supported,
   permission_denied,
   no_such_account,

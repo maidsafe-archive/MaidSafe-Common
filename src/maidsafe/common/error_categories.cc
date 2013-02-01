@@ -263,6 +263,8 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
     case VaultErrors::failed_to_join_network:
       return "Failed to join network";
+    case VaultErrors::failed_to_handle_request:
+      return "Failed to handle request";
     case VaultErrors::operation_not_supported:
       return "Requested operation not supported";
     case VaultErrors::permission_denied:
