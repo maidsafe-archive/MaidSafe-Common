@@ -74,7 +74,8 @@ enum class CommonErrors {
   no_such_element,
   serialisation_error,
   parsing_error,
-  path_not_a_directory
+  not_a_directory,
+  unexpected_filename_format
 };
 
 class common_error : public maidsafe_error {
@@ -216,10 +217,7 @@ enum class VaultErrors {
   operation_not_supported,
   permission_denied,
   no_such_account,
-  not_enough_space,
-  failed_elements_extraction,
-  adding_to_file_failure,
-  put_file_failure
+  not_enough_space
 };
 
 class vault_error : public maidsafe_error {
