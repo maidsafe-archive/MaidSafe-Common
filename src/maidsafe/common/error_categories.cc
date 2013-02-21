@@ -273,6 +273,10 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Account not known on this vault";
     case VaultErrors::not_enough_space:
       return "Not enough space in account";
+    case VaultErrors::unique_data_clash:
+      return "Attempt to overwrite existing unique data";
+    case VaultErrors::data_available_not_given:
+      return "Data is held by the network, but was not provided";
     default:
       return "Unknown error in Vault";
   }

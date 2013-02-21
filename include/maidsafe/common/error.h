@@ -216,7 +216,9 @@ enum class VaultErrors {
   operation_not_supported,
   permission_denied,
   no_such_account,
-  not_enough_space
+  not_enough_space,
+  unique_data_clash,
+  data_available_not_given
 };
 
 class vault_error : public maidsafe_error {
