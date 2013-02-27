@@ -42,11 +42,7 @@ struct on_scope_exit {
   typedef std::function<void(void)> ExitAction;
 
   template<typename CleanupAction>
-  explicit on_scope_exit(CleanupAction action)
-  try : action_(action) {}
-  catch(...) {
-    action();
-  }
+  explicit on_scope_exit(CleanupAction action) : action_(action) {}
 
   explicit on_scope_exit(ExitAction action) : action_(action) {}
 
