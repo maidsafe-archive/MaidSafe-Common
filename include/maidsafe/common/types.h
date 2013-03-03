@@ -52,6 +52,11 @@ template<typename T>
 struct is_short_term_cacheable : public std::false_type {};
 
 template<typename T>
+struct is_cacheable : public std::integral_constant<
+    bool,
+    is_long_term_cacheable<T>::value || is_short_term_cacheable<T>::value> {};  // NOLINT
+
+template<typename T>
 struct is_payable : public std::true_type {};
 
 template<typename T>
