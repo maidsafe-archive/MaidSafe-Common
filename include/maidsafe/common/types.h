@@ -40,6 +40,7 @@ namespace maidsafe {
 
 typedef detail::BoundedString<1> NonEmptyString;
 typedef detail::BoundedString<64, 64> Identity;
+typedef NonEmptyString UserKeyword;
 typedef NonEmptyString UserPassword;
 
 typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
