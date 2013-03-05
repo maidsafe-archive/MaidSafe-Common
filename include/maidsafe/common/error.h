@@ -216,6 +216,7 @@ enum class VaultErrors {
   operation_not_supported,
   permission_denied,
   no_such_account,
+  low_space,
   not_enough_space,
   unique_data_clash,
   data_available_not_given
