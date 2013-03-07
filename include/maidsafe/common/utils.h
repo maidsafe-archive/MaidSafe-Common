@@ -60,6 +60,9 @@ namespace maidsafe {
 extern const boost::posix_time::ptime kMaidSafeEpoch;
 
 extern const int kInvalidVersion;
+
+extern const int kLivePort;
+
 // SI units !! (note MS windows will report on the 'old' system, for drive space)
 // this is (cheeckily using chrono::duration)
 typedef std::chrono::duration<uint64_t           > Bytes;

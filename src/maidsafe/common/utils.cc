@@ -144,6 +144,8 @@ const boost::posix_time::ptime kMaidSafeEpoch(
 
 const int kInvalidVersion(-1);
 
+const int kLivePort(5483);
+
 boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
   boost::asio::io_service io_service;
   boost::asio::ip::udp::socket socket(io_service);
