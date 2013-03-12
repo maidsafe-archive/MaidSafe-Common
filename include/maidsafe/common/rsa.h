@@ -56,17 +56,23 @@ namespace rsa {
 
 typedef CryptoPP::RSA::PrivateKey PrivateKey;
 typedef CryptoPP::RSA::PublicKey PublicKey;
-// TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
-typedef detail::BoundedString<2> EncodedPublicKey;
-typedef detail::BoundedString<3> EncodedPrivateKey;
-typedef NonEmptyString PlainText, CipherText, Signature;
-
 struct Keys {
-  enum { kKeySize = 2048 };
+  // The signature will be the same size as the key size in bytes
+  // http://stackoverflow.com/questions/5403808/private-key-length-bytes
+  // http://stackoverflow.com/questions/6658728/rsa-signature-size
+  enum { kKeyBitSize = 2048, kSignatureByteSize = kKeyBitSize / 8 };
   Keys() : private_key(), public_key() {}
   PrivateKey private_key;
   PublicKey public_key;
 };
+
+// TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
+typedef detail::BoundedString<2> EncodedPublicKey;
+typedef detail::BoundedString<3> EncodedPrivateKey;
+
+typedef NonEmptyString PlainText, CipherText;
+typedef detail::BoundedString<Keys::kSignatureByteSize> Signature;
+
 
 Keys GenerateKeyPair();
 

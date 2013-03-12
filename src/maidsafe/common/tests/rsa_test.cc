@@ -143,6 +143,19 @@ TEST_F(RSATest, BEH_RsaKeysComparing) {
   });
 }
 
+TEST_F(RSATest, BEH_SignatureSize) {
+  maidsafe::test::RunInParallel(6, [&] {
+    Keys k1;
+    EXPECT_NO_THROW(k1 = GenerateKeyPair());
+    for (int n(0); n != 21; ++n) {
+      size_t string_size(static_cast<size_t>(std::pow(2, n)));
+      PlainText random_string(RandomString(string_size));
+      Signature signature(Sign(random_string, k1.private_key));
+      EXPECT_EQ(Keys::kSignatureByteSize, static_cast<int>(signature.string().size()));
+    }
+  });
+}
+
 }  //  namespace test
 
 }  //  namespace rsa
