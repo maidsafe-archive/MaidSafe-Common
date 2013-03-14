@@ -30,22 +30,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <vector>
 
-#ifdef __MSVC__
-#  pragma warning(push, 1)
-#  pragma warning(disable: 4702)
-#endif
-
-#include "cryptopp/gzip.h"
-#include "cryptopp/hex.h"
-#include "cryptopp/modes.h"
-#include "cryptopp/pssr.h"
-#include "cryptopp/pwdbased.h"
-#include "cryptopp/cryptlib.h"
-
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
-
 #include "maidsafe/common/utils.h"
 
 
@@ -79,28 +63,6 @@ std::string XOR(const std::string& first, const std::string& second) {
     result[i] = first[i] ^ second[i];
 
   return result;
-}
-
-SecurePassword CreateSecurePassword(const UserPassword& password,
-                                    const Salt& salt,
-                                    const uint32_t& pin,
-                                    const std::string& label) {
-  if (!password.IsInitialised() || !salt.IsInitialised())
-    ThrowError(CommonErrors::uninitialised);
-  uint16_t iter = (pin % 10000) + 10000;
-  CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
-  CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
-  byte purpose = 0;  // unused in this pbkdf implementation
-  CryptoPP::SecByteBlock context(salt.string().size() + label.size());
-  std::copy_n(salt.string().data(), salt.string().size(), &context[0]);
-  std::copy_n(label.data(),  label.size(), &context[salt.string().size()]);
-  pbkdf.DeriveKey(derived, derived.size(), purpose,
-                  reinterpret_cast<const byte*>(password.string().data()),
-                  password.string().size(), context.data(), context.size(), iter);
-  std::string derived_password;
-  CryptoPP::StringSink string_sink(derived_password);
-  string_sink.Put(derived, derived.size());
-  return SecurePassword(derived_password);
 }
 
 CipherText SymmEncrypt(const PlainText& input,

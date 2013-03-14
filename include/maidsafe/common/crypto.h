@@ -39,6 +39,22 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  pragma warning(disable: 4355 4702)
 #endif
 
+#ifdef __MSVC__
+#  pragma warning(push, 1)
+#  pragma warning(disable: 4702)
+#endif
+
+#include "cryptopp/gzip.h"
+#include "cryptopp/hex.h"
+#include "cryptopp/modes.h"
+#include "cryptopp/pssr.h"
+#include "cryptopp/pwdbased.h"
+#include "cryptopp/cryptlib.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
 #include "boost/filesystem/path.hpp"
 
 #include "cryptopp/channels.h"
@@ -115,10 +131,28 @@ std::string XOR(const std::string& first, const std::string& second);
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
 // provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
 // parameters are passed.
-SecurePassword CreateSecurePassword(const UserPassword& password,
+template<typename PasswordType>
+SecurePassword CreateSecurePassword(const PasswordType& password,
                                     const Salt& salt,
                                     const uint32_t& pin,
-                                    const std::string& label = kMaidSafeVersionLabel);
+                                    const std::string& label = kMaidSafeVersionLabel) {
+  if (!password.IsInitialised() || !salt.IsInitialised())
+    ThrowError(CommonErrors::uninitialised);
+  uint16_t iter = (pin % 10000) + 10000;
+  CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
+  CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
+  byte purpose = 0;  // unused in this pbkdf implementation
+  CryptoPP::SecByteBlock context(salt.string().size() + label.size());
+  std::copy_n(salt.string().data(), salt.string().size(), &context[0]);
+  std::copy_n(label.data(),  label.size(), &context[salt.string().size()]);
+  pbkdf.DeriveKey(derived, derived.size(), purpose,
+                  reinterpret_cast<const byte*>(password.string().data()),
+                  password.string().size(), context.data(), context.size(), iter);
+  std::string derived_password;
+  CryptoPP::StringSink string_sink(derived_password);
+  string_sink.Put(derived, derived.size());
+  return SecurePassword(derived_password);
+}
 
 // Hash function operating on a string.
 template <typename HashType>
@@ -141,6 +175,25 @@ template <typename HashType, size_t min, size_t max>
 detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
     const detail::BoundedString<min, max>& input) {
   return Hash<HashType>(input.string());
+}
+
+// Hash function operating on an arbitrary string type.
+template <typename HashType, typename StringType>
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType>
+      Hash(const StringType& input) {
+  typedef detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType>
+            BoundedString;
+  StringType result;
+  HashType hash;
+  try {
+    CryptoPP::StringSource(reinterpret_cast<const byte*>(input.data()), input.length(), true,
+        new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result)));
+  }
+  catch(const CryptoPP::Exception& e) {
+    LOG(kError) << "Error hashing string: " << e.what();
+    ThrowError(CommonErrors::hashing_error);
+  }
+  return BoundedString(result);
 }
 
 // Hash function operating on a file.
