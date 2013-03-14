@@ -447,7 +447,6 @@ enum class LifeStuffErrors {
   kNotJoined,
   kResponseTimeout,
   kResponseCancelled,
-  kAnonymousSessionEnded,
   kInvalidDestinationId,
   kEmptyData,
   kTypeNotAllowed,
