@@ -45,7 +45,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/safe_encrypt_pb.h"
+#include "maidsafe/common/safe_encrypt.pb.h"
 
 
 namespace maidsafe {

@@ -1,75 +1,51 @@
-#==============================================================================#
-#                                                                              #
-#  Copyright (c) 2012 MaidSafe.net limited                                     #
-#                                                                              #
-#  The following source code is property of MaidSafe.net limited and is not    #
-#  meant for external use.  The use of this code is governed by the license    #
-#  file licence.txt found in the root directory of this project and also on    #
-#  www.maidsafe.net.                                                           #
-#                                                                              #
-#  You are not free to copy, amend or otherwise use this source code without   #
-#  the explicit written permission of the board of directors of MaidSafe.net.  #
-#                                                                              #
-#==============================================================================#
+#==================================================================================================#
+#                                                                                                  #
+#  Copyright (c) 2012 MaidSafe.net limited                                                         #
+#                                                                                                  #
+#  The following source code is property of MaidSafe.net limited and is not meant for external     #
+#  use.  The use of this code is governed by the license file licence.txt found in the root        #
+#  directory of this project and also on www.maidsafe.net.                                         #
+#                                                                                                  #
+#  You are not free to copy, amend or otherwise use this source code without the explicit written  #
+#  permission of the board of directors of MaidSafe.net.                                           #
+#                                                                                                  #
+#==================================================================================================#
 
 
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.10 FATAL_ERROR)
 project(common)
 
-set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/common/*.proto")
-include(../../cmake_modules/maidsafe_standard_setup.cmake)
+include(../../cmake_modules/standard_setup.cmake)
 
 
-###################################################################################################
-# Set up all files as GLOBs                                                                       #
-###################################################################################################
-file(GLOB SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.cc")
-file(GLOB HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.h")
-file(GLOB PROTO_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.proto")
-file(GLOB SOURCE_PROTO_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.pb.cc")
-file(GLOB HEADER_PROTO_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*.pb.h")
-file(GLOB MS_HEADER_PROTO_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/*_pb.h")
-file(GLOB API_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/include/maidsafe/common/*.h")
-
+#==================================================================================================#
+# Set up all files as GLOBs                                                                        #
+#==================================================================================================#
+set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
+glob_dir(Common ${CommonSourcesDir} Common)
 if(APPLE)
   # Currently not supporting breakpad using OSX, so remove breakpad header and source
-  list(REMOVE_ITEM SOURCE_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.cc")
-  list(REMOVE_ITEM HEADER_FILES_COMMON_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/breakpad.h")
+  list(REMOVE_ITEM CommonAllFiles ${CommonSourcesDir}/breakpad.cc)
+  list(REMOVE_ITEM CommonAllFiles ${CommonSourcesDir}/breakpad.h)
 endif()
-set(ALL_FILES_COMMON_DIR ${SOURCE_FILES_COMMON_DIR} ${HEADER_FILES_COMMON_DIR} ${PROTO_FILES_COMMON_DIR} ${API_FILES_COMMON_DIR})
-list(REMOVE_ITEM SOURCE_FILES_COMMON_DIR ${SOURCE_PROTO_FILES_COMMON_DIR})
-list(REMOVE_ITEM HEADER_FILES_COMMON_DIR ${HEADER_PROTO_FILES_COMMON_DIR} ${MS_HEADER_PROTO_FILES_COMMON_DIR})
-source_group("Common Source Files" FILES ${SOURCE_FILES_COMMON_DIR})
-source_group("Common Header Files" FILES ${HEADER_FILES_COMMON_DIR})
-source_group("Common Proto Files" FILES ${PROTO_FILES_COMMON_DIR} ${SOURCE_PROTO_FILES_COMMON_DIR} ${HEADER_PROTO_FILES_COMMON_DIR} ${MS_HEADER_PROTO_FILES_COMMON_DIR})
-source_group("Common API Files" FILES ${API_FILES_COMMON_DIR})
+set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
+list(REMOVE_ITEM CommonAllFiles ${TestsMain})
 
-set(TEST_MAIN "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/tests_main.cc")
-
-file(GLOB SOURCE_FILES_COMMON_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/*.cc")
-file(GLOB HEADER_FILES_COMMON_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/*.h")
-set(ALL_FILES_COMMON_TESTS_DIR ${SOURCE_FILES_COMMON_TESTS_DIR} ${HEADER_FILES_COMMON_TESTS_DIR})
-source_group("Tests Source Files" FILES ${SOURCE_FILES_COMMON_TESTS_DIR})
-source_group("Tests Header Files" FILES ${HEADER_FILES_COMMON_TESTS_DIR})
-
-file(GLOB SOURCE_FILES_COMMON_BOOST_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/boost/*.cc")
-file(GLOB HEADER_FILES_COMMON_BOOST_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/common/tests/boost/*.h")
-set(ALL_FILES_COMMON_BOOST_TESTS_DIR ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR} ${HEADER_FILES_COMMON_BOOST_TESTS_DIR})
-source_group("Boost Tests Source Files" FILES ${SOURCE_FILES_COMMON_BOOST_TESTS_DIR})
-source_group("Boost Tests Header Files" FILES ${HEADER_FILES_COMMON_BOOST_TESTS_DIR})
+glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
+glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
 
-###################################################################################################
-# Define MaidSafe libraries and executables                                                       #
-###################################################################################################
-ms_add_static_library(common ${ALL_FILES_COMMON_DIR})
-if(MAIDSAFE_TESTING)
-  ms_add_executable(TESTcommon "Tests/Common" ${TEST_MAIN} "${ALL_FILES_COMMON_TESTS_DIR}")
-  # ms_add_executable(TESTboost "Tests/Common" ${TEST_MAIN} ${ALL_FILES_COMMON_BOOST_TESTS_DIR})
+#==================================================================================================#
+# Define MaidSafe libraries and executables                                                        #
+#==================================================================================================#
+ms_add_static_library(common ${CommonAllFiles})
+
+if(MaidsafeTesting)
+  ms_add_executable(TESTcommon "Tests/Common" ${TestsMain} ${CommonTestsAllFiles})
+  # ms_add_executable(TESTboost "Tests/Common" ${TestsMain} ${BoostTestsAllFiles})
 endif()
 
 target_link_libraries(maidsafe_common
@@ -89,7 +65,7 @@ if(JustThread_FOUND)
 endif()
 
 target_link_libraries(maidsafe_common ${SYS_LIB})
-if(MAIDSAFE_TESTING)
+if(MaidsafeTesting)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 endif()
@@ -98,25 +74,38 @@ rename_outdated_built_exes()
 set(AllExesForCurrentProject ${AllExesForCurrentProject} cryptest)
 
 
-###################################################################################################
-# Set compiler and linker flags                                                                   #
-###################################################################################################
-include(maidsafe_standard_flags)
-ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc)
+#==================================================================================================#
+# Set compiler and linker flags                                                                    #
+#==================================================================================================#
+include(standard_flags)
 
 
-###################################################################################################
-# Tests                                                                                           #
-###################################################################################################
-if(MAIDSAFE_TESTING)
-  set(STYLE_TESTS ${ALL_FILES_COMMON_DIR} ${ALL_FILES_COMMON_TESTS_DIR})
-  list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.cc")
-  list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.pb.h")
-  list(REMOVE_ITEM STYLE_TESTS "${PROJECT_SOURCE_DIR}/src/maidsafe/common/safe_encrypt.proto")
-
-  add_style_test(${STYLE_TESTS})
+#==================================================================================================#
+# Tests                                                                                            #
+#==================================================================================================#
+if(MaidsafeTesting)
+  add_style_test()
   add_gtests(TESTcommon)
   # add_gtests(TESTboost)
+  add_test(NAME CryptoppTest.BEH_FULL COMMAND $<TARGET_FILE:cryptest> v WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest>)
+  add_test(NAME CryptoppTest.BEH_AES COMMAND $<TARGET_FILE:cryptest> tv aes WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest>)
+  add_test(NAME CryptoppTest.BEH_SHA COMMAND $<TARGET_FILE:cryptest> tv sha WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest>)
+  add_test(NAME CryptoppTest.BEH_RSA_PSS COMMAND $<TARGET_FILE:cryptest> tv rsa_pss WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest>)
+  add_test(NAME CryptoppTest.BEH_RSA_OAEP COMMAND $<TARGET_FILE:cryptest> tv rsa_oaep WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest>)
+  add_test(NAME CryptoppTest.BEH_RSA_PKCS1_1_5 COMMAND $<TARGET_FILE:cryptest> tv rsa_pkcs1_1_5 WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest>)
+  
+  set_property(TEST CryptoppTest.BEH_FULL PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
+  set_property(TEST CryptoppTest.BEH_FULL PROPERTY TIMEOUT 60)
+  set_property(TEST CryptoppTest.BEH_AES PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
+  set_property(TEST CryptoppTest.BEH_AES PROPERTY TIMEOUT 60)
+  set_property(TEST CryptoppTest.BEH_SHA PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
+  set_property(TEST CryptoppTest.BEH_SHA PROPERTY TIMEOUT 60)
+  set_property(TEST CryptoppTest.BEH_RSA_PSS PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
+  set_property(TEST CryptoppTest.BEH_RSA_PSS PROPERTY TIMEOUT 60)
+  set_property(TEST CryptoppTest.BEH_RSA_OAEP PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
+  set_property(TEST CryptoppTest.BEH_RSA_OAEP PROPERTY TIMEOUT 60)
+  set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
+  set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY TIMEOUT 60)
 
   label_as_critical_tests(AsioServiceTest.BEH_All
                           UtilsTest.BEH_VersionToString
