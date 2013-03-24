@@ -115,9 +115,15 @@ std::string SRandomString(const size_t &length);
 // Generates a non-cryptographically-secure random string.
 std::string RandomString(const size_t &length);
 
+template<typename StringType>
+StringType RandomSafeString(const size_t &length);
+
 // Generates a non-cryptographically-secure random string containing only
 // alphanumeric characters.
 std::string RandomAlphaNumericString(const size_t &length);
+
+template<typename StringType>
+StringType RandomAlphaNumericSafeString(const size_t& length);
 
 // Encodes a string to hex.
 std::string EncodeToHex(const std::string &non_hex_input);
@@ -125,6 +131,11 @@ template<size_t min, size_t max>
 std::string EncodeToHex(const detail::BoundedString<min, max> &non_hex_input) {
   return EncodeToHex(non_hex_input.string());
 }
+
+template<typename StringType>
+StringType EncodeStringToHex(const StringType& non_hex_input);
+template<size_t min, size_t max, typename StringType>
+StringType EncodeStringToHex(const detail::BoundedString<min, max, StringType> &non_hex_input);
 
 // Encodes a string to Base64.
 std::string EncodeToBase64(const std::string &non_base64_input);
@@ -155,6 +166,11 @@ template<size_t min, size_t max>
 std::string HexSubstr(const detail::BoundedString<min, max> &non_hex) {
   return HexSubstr(non_hex.string());
 }
+
+template<typename StringType>
+StringType HexStringSubstr(const StringType& non_hex);
+template<size_t min, size_t max, typename StringType>
+StringType HexStringSubstr(const detail::BoundedString<min, max, StringType> &non_hex);
 
 // Returns an appreviated Base32 representation of a hash or other small data.
 std::string Base32Substr(const std::string &non_base32);
@@ -213,5 +229,7 @@ bool IsReady(std::future<T>& future) {
 }
 
 }  // namespace maidsafe
+
+#include "maidsafe/common/utils-inl.h"
 
 #endif  // MAIDSAFE_COMMON_UTILS_H_

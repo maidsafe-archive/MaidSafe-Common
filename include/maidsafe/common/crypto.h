@@ -109,7 +109,7 @@ typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash
 typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
 typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
 typedef detail::BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
-typedef NonEmptyString SecurePassword, UserPassword, Salt, PlainText, CipherText,
+typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText,
         CompressedText, UncompressedText;
 
 
