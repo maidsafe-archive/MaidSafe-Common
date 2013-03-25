@@ -125,7 +125,7 @@ class BoundedString {
 
   bool IsInitialised() const { return valid_; }
 
-  template<size_t other_min, size_t other_max, typename StringType> friend class BoundedString;
+  template<size_t other_min, size_t other_max, typename OtherStringType> friend class BoundedString;
 
  private:
   bool SizeOutOfBounds(std::string::size_type size) const {
