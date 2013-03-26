@@ -102,7 +102,7 @@ class BoundedString {
                   "Bounds of copied BoundedString must be within bounds of this BoundedString");
     // No need for check for self-assignment since these are different types
     swap(string_, other.string_);
-    swap(valid_, other.valid_);
+    std::swap(valid_, other.valid_);
     return *this;
   }
 

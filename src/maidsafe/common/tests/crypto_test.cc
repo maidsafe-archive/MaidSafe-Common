@@ -46,6 +46,8 @@ namespace crypto {
 
 namespace test {
 
+typedef NonEmptyString UserPassword;
+
 TEST(CryptoTest, FUNC_Obfuscation) {
   const size_t kStringSize(1024*256);
   detail::BoundedString<kStringSize, kStringSize> str1(RandomString(kStringSize));
