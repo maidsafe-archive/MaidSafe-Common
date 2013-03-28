@@ -99,7 +99,7 @@ TEST(NodeIdTest, BEH_DefaultCtr) {
   ASSERT_EQ(hex_id, node_id.ToStringEncoded(NodeId::kHex));
   std::string bin_id(NodeId::kSize * 8, '0');
   ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::kBinary));
-  EXPECT_ANY_THROW(NodeId dave("not64long"));
+  EXPECT_THROW(NodeId dave("not64long"), maidsafe_error);
 }
 
 TEST(NodeIdTest, BEH_CopyCtr) {
@@ -128,13 +128,14 @@ TEST(NodeIdTest, BEH_KadIdTypeCtr) {
   ASSERT_EQ(NodeId::kSize, rand_id.string().size());
   // TODO(Fraser#5#): 2010-06-06 - Test for randomness properly
   ASSERT_NE(rand_id.string(), NodeId(NodeId::kRandomId).string());
+  EXPECT_THROW(NodeId(static_cast<NodeId::IdType>(-999)), maidsafe_error);
 }
 
-TEST(NodeIdTest, BEH_stringCtr) {
+TEST(NodeIdTest, BEH_StringCtr) {
   std::string rand_str(RandomString(NodeId::kSize));
   NodeId id1(rand_str);
   ASSERT_TRUE(id1.string() == rand_str);
-  EXPECT_ANY_THROW(NodeId id2(rand_str.substr(0, NodeId::kSize - 1)));
+  EXPECT_THROW(NodeId id2(rand_str.substr(0, NodeId::kSize - 1)), maidsafe_error);
 }
 
 TEST(NodeIdTest, BEH_EncodingCtr) {
@@ -165,7 +166,7 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
       default :
         break;
     }
-    EXPECT_ANY_THROW(NodeId bad_id(bad_encoded, type));
+    EXPECT_THROW(NodeId bad_id(bad_encoded, type), maidsafe_error);
 //    ASSERT_TRUE(bad_id.string().empty());
 //    ASSERT_FALSE(bad_id.IsValid());
 //    ASSERT_TRUE(bad_id.ToStringEncoded(type).empty());

@@ -40,17 +40,18 @@ NodeId::NodeId() : raw_id_(kSize, 0) {}
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) {}
 
-NodeId::NodeId(const IdType& type) : raw_id_(kSize, -1) {
-  switch (type) {
-    case kMaxId :
-      break;  // already set
-    case kRandomId :
-      std::generate(raw_id_.begin(), raw_id_.end(), std::bind(&RandomUint32));
-      break;
-    default :
-      break;
-  }
-}
+NodeId::NodeId(const IdType& type) : raw_id_(
+    [type]()->std::string {
+        switch (type) {
+          case kMaxId:
+            return std::string(kSize, -1);
+          case kRandomId:
+            return RandomString(kSize);
+          default:
+            ThrowError(CommonErrors::invalid_parameter);
+        }
+        return "";
+    }()) {}
 
 NodeId::NodeId(const std::string& id) : raw_id_(id) {
   if (raw_id_.size() != kSize) {

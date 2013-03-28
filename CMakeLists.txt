@@ -142,7 +142,7 @@ if(MaidsafeTesting)
                           NodeIdTest.BEH_DefaultCtr
                           NodeIdTest.BEH_CopyCtr
                           NodeIdTest.BEH_KadIdTypeCtr
-                          NodeIdTest.BEH_stringCtr
+                          NodeIdTest.BEH_StringCtr
                           NodeIdTest.BEH_EncodingCtr
                           NodeIdTest.BEH_OperatorEqual
                           NodeIdTest.BEH_OperatorDifferent

@@ -39,7 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace maidsafe {
 
 struct on_scope_exit {
-  typedef std::function<void(void)> ExitAction;
+  typedef std::function<void()> ExitAction;
 
   template<typename CleanupAction>
   explicit on_scope_exit(CleanupAction action)

@@ -234,8 +234,7 @@ std::string BytesToBinarySiUnits(const uint64_t &num) {
 }
 
 int32_t RandomInt32() {
-  boost::uniform_int<> uniform_distribution(0,
-      boost::integer_traits<int32_t>::const_max);
+  boost::uniform_int<> uniform_distribution(0, boost::integer_traits<int32_t>::const_max);
   std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
   boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
       g_random_number_generator, uniform_distribution);

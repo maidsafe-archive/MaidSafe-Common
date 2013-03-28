@@ -84,8 +84,6 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error parsing from protocol buffer";
     case CommonErrors::not_a_directory:
       return "Path is not a directory";
-    case CommonErrors::unexpected_filename_format:
-      return "Filename format unexpected";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";
