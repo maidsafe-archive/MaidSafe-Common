@@ -48,9 +48,11 @@ class NodeId {
   NodeId();
 
   NodeId(const NodeId& other);
+  NodeId(NodeId&& other);
+  NodeId& operator=(NodeId other);
 
   // Creates an ID = (2 ^ kKeySizeBits) - 1 or a random ID in the interval [0, 2 ^ kKeySizeBits).
-  explicit NodeId(const IdType& type);
+  explicit NodeId(IdType type);
 
   // Creates a NodeId from a raw (decoded) string.  Will throw if id is invalid.
   explicit NodeId(const std::string& id);
@@ -59,13 +61,8 @@ class NodeId {
   explicit NodeId(const crypto::SHA512Hash& id);
 
   // Creates a NodeId from an encoded string.  Will throw if id is invalid.
-  NodeId(const std::string& id, const EncodingType& encoding_type);
+  NodeId(const std::string& id, EncodingType encoding_type);
 
-//  // Creates a NodeId equal to 2 ^ power.
-//  explicit NodeId(const uint16_t& power);
-
-//  // Creates a random NodeId in range [lower ID, higher ID].  Prefer to pass lower ID as id1.
-//  NodeId(const NodeId& id1, const NodeId& id2);
 
   // Checks if id1 is closer in XOR distance to target_id than id2.
   static bool CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id);
@@ -78,18 +75,11 @@ class NodeId {
 
   bool IsZero() const;
 
-//  bool operator()(const NodeId& lhs, const NodeId& rhs) const;
-  bool operator==(const NodeId& rhs) const;
-  bool operator!=(const NodeId& rhs) const;
-  bool operator<(const NodeId& rhs) const;
-  bool operator>(const NodeId& rhs) const;
-  bool operator<=(const NodeId& rhs) const;
-  bool operator>=(const NodeId& rhs) const;
-  NodeId& operator=(const NodeId& rhs);
-
   // XOR distance between two IDs.  XOR bit to bit.
-  const NodeId operator^(const NodeId& rhs) const;
+  NodeId& operator^=(const NodeId& rhs);
 
+  friend bool operator==(const NodeId& lhs, const NodeId& rhs);
+  friend bool operator<(const NodeId& lhs, const NodeId& rhs);
   friend std::string DebugId(const NodeId& node_id);
 
  private:
@@ -97,6 +87,18 @@ class NodeId {
   void DecodeFromBinary(const std::string& binary_id);
   std::string raw_id_;
 };
+
+inline bool operator==(const NodeId& lhs, const NodeId& rhs) { return lhs.raw_id_ == rhs.raw_id_; }
+inline bool operator!=(const NodeId& lhs, const NodeId& rhs) { return !operator==(lhs, rhs); }
+inline bool operator<(const NodeId& lhs, const NodeId& rhs) { return lhs.raw_id_ < rhs.raw_id_; }
+inline bool operator>(const NodeId& lhs, const NodeId& rhs) { return operator<(rhs, lhs); }
+inline bool operator<=(const NodeId& lhs, const NodeId& rhs) { return !operator>(lhs, rhs); }
+inline bool operator>=(const NodeId& lhs, const NodeId& rhs) { return !operator<(lhs, rhs); }
+// XOR distance between two IDs.  XOR bit to bit.
+inline NodeId operator^(NodeId lhs, const NodeId& rhs) {
+  lhs ^= rhs;
+  return lhs;
+}
 
 // Returns an abbreviated hex representation of node_id.
 std::string DebugId(const NodeId& node_id);

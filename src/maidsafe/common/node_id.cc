@@ -40,7 +40,15 @@ NodeId::NodeId() : raw_id_(kSize, 0) {}
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) {}
 
-NodeId::NodeId(const IdType& type) : raw_id_(
+NodeId::NodeId(NodeId&& other) : raw_id_(std::move(other.raw_id_)) {}
+
+NodeId& NodeId::operator=(NodeId other) {
+  using std::swap;
+  swap(raw_id_, other.raw_id_);
+  return *this;
+}
+
+NodeId::NodeId(IdType type) : raw_id_(
     [type]()->std::string {
         switch (type) {
           case kMaxId:
@@ -62,7 +70,7 @@ NodeId::NodeId(const std::string& id) : raw_id_(id) {
 
 NodeId::NodeId(const crypto::SHA512Hash& id) : raw_id_(id.string()) {}
 
-NodeId::NodeId(const std::string& id, const EncodingType& encoding_type) : raw_id_() {
+NodeId::NodeId(const std::string& id, EncodingType encoding_type) : raw_id_() {
   try {
     switch (encoding_type) {
       case kBinary: DecodeFromBinary(id);
@@ -143,46 +151,10 @@ bool NodeId::IsZero() const {
   return true;
 }
 
-// TODO(Fraser#5#): 2012-09-28 - Check if required - probably used before in multi-index.
-// bool NodeId::operator()(const NodeId& lhs, const NodeId& rhs) const {
-//   return lhs.raw_id_ < rhs.raw_id_;
-// }
-
-bool NodeId::operator==(const NodeId& rhs) const {
-  return raw_id_ == rhs.raw_id_;
-}
-
-bool NodeId::operator!=(const NodeId& rhs) const {
-  return raw_id_ != rhs.raw_id_;
-}
-
-bool NodeId::operator<(const NodeId& rhs) const {
-  return raw_id_ < rhs.raw_id_;
-}
-
-bool NodeId::operator>(const NodeId& rhs) const {
-  return raw_id_ > rhs.raw_id_;
-}
-
-bool NodeId::operator<=(const NodeId& rhs) const {
-  return raw_id_ <= rhs.raw_id_;
-}
-
-bool NodeId::operator>=(const NodeId& rhs) const {
-  return raw_id_ >= rhs.raw_id_;
-}
-
-NodeId& NodeId::operator=(const NodeId& rhs) {
-  if (this != &rhs)
-    this->raw_id_ = rhs.raw_id_;
-  return* this;
-}
-
-const NodeId NodeId::operator^(const NodeId& rhs) const {
-  NodeId result;
+NodeId& NodeId::operator^=(const NodeId& rhs) {
   for (uint16_t i(0); i != kSize; ++i)
-    result.raw_id_[i] = raw_id_[i] ^ rhs.raw_id_[i];
-  return result;
+    raw_id_[i] ^= rhs.raw_id_[i];
+  return *this;
 }
 
 std::string DebugId(const NodeId& node_id) {
