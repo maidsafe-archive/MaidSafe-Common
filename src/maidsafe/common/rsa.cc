@@ -81,7 +81,7 @@ Keys GenerateKeyPair() {
   Keys keypair;
   CryptoPP::InvertibleRSAFunction parameters;
   try {
-    parameters.GenerateRandomWithKeySize(rng(), Keys::kKeySize);
+    parameters.GenerateRandomWithKeySize(rng(), Keys::kKeyBitSize);
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Failed generating key pair: " << e.what();
