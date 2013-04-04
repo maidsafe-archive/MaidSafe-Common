@@ -58,10 +58,8 @@ namespace maidsafe {
 
 // 01 Jan 2000
 extern const boost::posix_time::ptime kMaidSafeEpoch;
-
 extern const int kInvalidVersion;
-
-extern const int kLivePort;
+extern const uint16_t kLivePort;
 
 // SI units !! (note MS windows will report on the 'old' system, for drive space)
 // this is (cheeckily using chrono::duration)

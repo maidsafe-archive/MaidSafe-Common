@@ -30,6 +30,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <algorithm>
 #include <array>
+#include <fstream>
 #include <limits>
 #include <set>
 #include <thread>
@@ -53,7 +54,6 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #endif
 
 #include "boost/config.hpp"
-#include "boost/filesystem/fstream.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
@@ -74,13 +74,14 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 
 
 namespace fs = boost::filesystem;
+namespace bptime = boost::posix_time;
 
 namespace maidsafe {
 
 namespace {
 
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
-      boost::posix_time::microsec_clock::universal_time().time_of_day().
+      bptime::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
 std::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex;
 
@@ -139,12 +140,9 @@ const char kHexAlphabet[] = "0123456789abcdef";
 }  // unnamed namespace
 
 
-const boost::posix_time::ptime kMaidSafeEpoch(
-    boost::posix_time::from_iso_string("20000101T000000"));
-
+const bptime::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));
 const int kInvalidVersion(-1);
-
-const int kLivePort(5483);
+const uint16_t kLivePort(5483);
 
 boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
   boost::asio::io_service io_service;
@@ -360,48 +358,36 @@ std::string DebugId(const Identity& id) {
   return id.IsInitialised() ? "Uninitialised Identity" : HexSubstr(id.string());
 }
 
-boost::posix_time::time_duration GetDurationSinceEpoch() {
-  return boost::posix_time::microsec_clock::universal_time() - kMaidSafeEpoch;
+bptime::time_duration GetDurationSinceEpoch() {
+  return bptime::microsec_clock::universal_time() - kMaidSafeEpoch;
 }
 
 uint32_t GetTimeStamp() {
-  boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
+  bptime::time_duration since_epoch(GetDurationSinceEpoch());
   return since_epoch.total_seconds();
 }
 
 int64_t MillisecondTimeStamp() {
-  boost::posix_time::time_duration since_epoch(GetDurationSinceEpoch());
+  bptime::time_duration since_epoch(GetDurationSinceEpoch());
   return since_epoch.total_milliseconds();
 }
 
 bool ReadFile(const fs::path &file_path, std::string *content) {
   if (!content) {
-    LOG(kError) << "Failed to read file " << file_path
-                << ": NULL pointer passed";
+    LOG(kError) << "Failed to read file " << file_path << ": NULL pointer passed";
     return false;
   }
 
   try {
     uintmax_t file_size(fs::file_size(file_path));
-    if (file_size > std::numeric_limits<unsigned int>::max()) {
+    if (file_size > std::numeric_limits<size_t>::max()) {
       LOG(kError) << "Failed to read file " << file_path << ": File size "
                   << file_size << " too large (over "
-                  << std::numeric_limits<unsigned int>::max() << ")";
+                  << std::numeric_limits<size_t>::max() << ")";
       return false;
     }
 
-    uint16_t i(0), seed(10 + RandomUint32() % 10);
-
-    while ((i < 5) && (file_size == 0U)) {
-      Sleep(boost::posix_time::milliseconds(seed));
-      file_size = fs::file_size(file_path);
-      ++i;
-      LOG(kWarning) << "Re-read attempt " << i << " after sleeping for " << seed
-                    << " ms, file size is " << file_size;
-      seed *= 2;
-    }
-
-    fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
+    std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
     if (!file_in.good()) {
       LOG(kError) << "Failed to read file " << file_path << ": Bad filestream";
       return false;
@@ -411,7 +397,7 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
       return true;
     }
 
-    content->resize(static_cast<unsigned int>(file_size));
+    content->resize(static_cast<size_t>(file_size));
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
   }
@@ -424,25 +410,15 @@ bool ReadFile(const fs::path &file_path, std::string *content) {
 
 NonEmptyString ReadFile(const fs::path &file_path) {
   uintmax_t file_size(fs::file_size(file_path));
-  if (file_size > std::numeric_limits<unsigned int>::max())
+  if (file_size > std::numeric_limits<size_t>::max())
     ThrowError(CommonErrors::file_too_large);
 
-  uint16_t i(0), seed(10 + RandomUint32() % 10);
-  while ((i < 5) && (file_size == 0U)) {
-    Sleep(boost::posix_time::milliseconds(seed));
-    file_size = fs::file_size(file_path);
-    ++i;
-    LOG(kWarning) << "Re-read attempt " << i << " after sleeping for " << seed
-                  << " ms, file size is " << file_size;
-    seed *= 2;
-  }
+  std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
 
-  fs::ifstream file_in(file_path, std::ios::in | std::ios::binary);
-
-  std::vector<char> file_content(static_cast<unsigned int>(file_size));
+  std::vector<char> file_content(static_cast<size_t>(file_size));
   file_in.read(&file_content[0], file_size);
   file_in.close();
-  return NonEmptyString(std::string(&file_content[0], static_cast<unsigned int>(file_size)));
+  return NonEmptyString(std::string(&file_content[0], static_cast<size_t>(file_size)));
 }
 
 bool WriteFile(const fs::path &file_path, const std::string &content) {
@@ -451,7 +427,7 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
       LOG(kError) << "Failed to write: file_path " << file_path << " has no filename";
       return false;
     }
-    fs::ofstream file_out(file_path, std::ios::out | std::ios::trunc | std::ios::binary);
+    std::ofstream file_out(file_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
     if (!file_out.good()) {
       LOG(kError) << "Can't get ofstream created for " << file_path;
       return false;
@@ -466,7 +442,7 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
   return true;
 }
 
-bool Sleep(const boost::posix_time::time_duration &duration) {
+bool Sleep(const bptime::time_duration &duration) {
   try {
     boost::this_thread::sleep(duration);
   }
