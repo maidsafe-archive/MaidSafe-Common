@@ -40,7 +40,7 @@ namespace maidsafe {
 namespace {
 
 size_t IdentityHash(const Identity& identity, size_t part) {
-  assert(8 * part < crypto::SHA512::DIGESTSIZE);
+  assert((8U * part) < crypto::SHA512::DIGESTSIZE);
   return *static_cast<const size_t*>(
       static_cast<const void*>(identity.string().c_str() + (8 * part)));
 }
