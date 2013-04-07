@@ -74,8 +74,7 @@ double BloomFilter::FalsePositiveRateEstimate() const {
   const double n(static_cast<double>(InsertionCountEstimate()));
   static const double k(static_cast<double>(kHashFunctionsCount));
   const double m(static_cast<double>(bitset_.size()));
-  static const double e(2.718281828459045235360287471352662497757247093699959574966);
-  return std::pow(1 - std::pow(e, -k * n / m), k);
+  return std::pow(1 - std::pow(1 - 1 / m, k * n), k);
 }
 
 void BloomFilter::Insert(const Identity& identity) {
