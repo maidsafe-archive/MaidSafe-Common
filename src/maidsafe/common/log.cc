@@ -218,7 +218,7 @@ std::string GetColouredLogEntry(char log_level) {
 #else
   oss << ' ';
 #endif
-  oss << boost::posix_time::microsec_clock().universal_time().time_of_day();
+  oss << GetLocalTime();
   return oss.str();
 }
 

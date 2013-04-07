@@ -30,11 +30,13 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctype.h>
 #include <algorithm>
 #include <array>
+#include <ctime>
 #include <fstream>
 #include <limits>
 #include <set>
 #include <thread>
 #include <vector>
+
 
 #if defined(macintosh) || defined(__APPLE__) || \
 defined(__APPLE_CC__) || (defined(linux) || \
@@ -370,6 +372,22 @@ uint32_t GetTimeStamp() {
 int64_t MillisecondTimeStamp() {
   bptime::time_duration since_epoch(GetDurationSinceEpoch());
   return since_epoch.total_milliseconds();
+}
+
+std::string GetLocalTime() {
+  auto now(std::chrono::system_clock::now());
+  auto seconds_since_epoch(
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+
+  std::time_t now_t(
+      std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::time_point(seconds_since_epoch)));
+
+  char temp[10];
+  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
+    ThrowError(CommonErrors::unknown);
+
+  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
 }
 
 bool ReadFile(const fs::path &file_path, std::string *content) {

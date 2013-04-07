@@ -198,6 +198,8 @@ uint32_t GetTimeStamp();
 
 int64_t MillisecondTimeStamp();
 
+std::string GetLocalTime();
+
   // Reads the given file and returns the contents as a string.
 bool ReadFile(const boost::filesystem::path &file_path, std::string *content);
 NonEmptyString ReadFile(const boost::filesystem::path &file_path);
