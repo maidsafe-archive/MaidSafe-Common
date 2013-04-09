@@ -4,14 +4,14 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-* Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-* Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-* Neither the name of the maidsafe.net limited nor the names of its
-contributors may be used to endorse or promote products derived from this
-software without specific prior written permission.
+    * Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+    * Neither the name of the maidsafe.net limited nor the names of its
+    contributors may be used to endorse or promote products derived from this
+    software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -41,9 +41,6 @@ class BloomFilter {
 
   BloomFilter();
   explicit BloomFilter(size_t bit_capacity);
-  template<typename InputIterator>
-  BloomFilter(InputIterator start, InputIterator end)
-      : bitset_(std::distance(start, end) * 4) { Insert(start, end); }
   BloomFilter(const BloomFilter& other);
   BloomFilter(BloomFilter&& other);
   BloomFilter& operator=(BloomFilter other);
@@ -76,10 +73,24 @@ class BloomFilter {
   boost::dynamic_bitset<size_t> bitset_;
 };
 
-inline BloomFilter operator|(BloomFilter lhs, const BloomFilter& rhs);
-inline BloomFilter operator&(BloomFilter lhs, const BloomFilter& rhs);
-inline bool operator==(const BloomFilter& lhs, const BloomFilter& rhs);
-inline bool operator!=(const BloomFilter& lhs, const BloomFilter& rhs);
+
+inline BloomFilter operator|(BloomFilter lhs, const BloomFilter& rhs) {
+  lhs |= rhs;
+  return lhs;
+}
+
+inline BloomFilter operator&(BloomFilter lhs, const BloomFilter& rhs) {
+  lhs &= rhs;
+  return lhs;
+}
+
+inline bool operator==(const BloomFilter& lhs, const BloomFilter& rhs) {
+  return lhs.bitset_ == rhs.bitset_;
+}
+
+inline bool operator!=(const BloomFilter& lhs, const BloomFilter& rhs) {
+  return !operator==(lhs, rhs);
+}
 
 }  // namespace maidsafe
 

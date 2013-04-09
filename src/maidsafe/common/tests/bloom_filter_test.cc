@@ -54,10 +54,17 @@ std::string MsDuration(const std::chrono::steady_clock::time_point& start,
 }  // unnamed namespace
 
 
-class BloomFilterTest : public testing::TestWithParam<size_t> {
+class BloomFilterTest : public testing::Test {
  protected:
   BloomFilterTest()
-      : kInsertionCount_(GetParam()),
+      : kInsertionCount_(10000),
+        kCheckCount_(100000),
+        bloom_filter_((kInsertionCount_ * 96) / 10),
+        inserted_values_(),
+        check_values_() {}
+
+  explicit BloomFilterTest(size_t insertion_count)
+      : kInsertionCount_(insertion_count),
         kCheckCount_(100000),
         bloom_filter_((kInsertionCount_ * 96) / 10),
         inserted_values_(),
@@ -81,7 +88,24 @@ class BloomFilterTest : public testing::TestWithParam<size_t> {
   std::vector<Identity> inserted_values_, check_values_;
 };
 
-TEST_P(BloomFilterTest, BEH_All) {
+TEST_F(BloomFilterTest, BEH_Constructor) {
+  for (const auto& inserted_value : inserted_values_)
+    bloom_filter_.Insert(inserted_value);
+  BloomFilter copy1(bloom_filter_.BitCapacity());
+  copy1.Insert(std::begin(inserted_values_), std::end(inserted_values_));
+  BloomFilter copy2(copy1);
+  BloomFilter copy3(std::move(copy1));
+  EXPECT_EQ(bloom_filter_, copy2);
+  EXPECT_EQ(bloom_filter_, copy3);
+}
+
+class ParameterisedBloomFilterTest : public BloomFilterTest,
+                                     public testing::WithParamInterface<size_t> {
+ protected:
+  ParameterisedBloomFilterTest() : BloomFilterTest(GetParam()) {}
+};
+
+TEST_P(ParameterisedBloomFilterTest, BEH_All) {
   auto start(std::chrono::steady_clock::now());
   for (const auto& inserted_value : inserted_values_)
     bloom_filter_.Insert(inserted_value);
@@ -116,7 +140,8 @@ TEST_P(BloomFilterTest, BEH_All) {
              << "%";
 }
 
-INSTANTIATE_TEST_CASE_P(BloomFilterAll, BloomFilterTest, testing::Values(100, 1000, 10000, 100000));
+INSTANTIATE_TEST_CASE_P(BloomFilterAll, ParameterisedBloomFilterTest,
+                        testing::Values(100, 1000, 10000, 100000));
 
 }  // namespace test
 
