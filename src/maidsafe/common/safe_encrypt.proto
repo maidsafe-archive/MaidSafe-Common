@@ -1,4 +1,4 @@
-package maidsafe.rsa;
+package maidsafe.rsa.protobuf;
 
 message SafeEncrypt {
   required bytes key = 1;

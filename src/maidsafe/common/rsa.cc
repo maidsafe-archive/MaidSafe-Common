@@ -71,10 +71,6 @@ void DecodeKey(const std::string& key, CryptoPP::BufferedTransformation& bt) {
   bt.MessageEnd();
 }
 
-bool ParseSafeEncrypt(const std::string& serialised_safe_encrypt, SafeEncrypt& safe_encrypt) {
-  return safe_encrypt.ParseFromString(serialised_safe_encrypt);
-}
-
 }  // Unnamed namespace
 
 Keys GenerateKeyPair() {
@@ -102,11 +98,12 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 
   std::string result;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-  SafeEncrypt safe_enc;
+  protobuf::SafeEncrypt safe_encrypt;
   try {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-    safe_enc.set_data(crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv).string());
+    safe_encrypt.set_data(crypto::SymmEncrypt(data, symm_encryption_key,
+                                              symm_encryption_iv).string());
     std::string encryption_key_encrypted;
     std::string const local_key_and_iv = symm_encryption_key.string() + symm_encryption_iv.string();
     CryptoPP::StringSource(local_key_and_iv,
@@ -115,8 +112,8 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
                                                             encryptor,
                                                             new CryptoPP::StringSink(
                                                                 encryption_key_encrypted)));
-    safe_enc.set_key(encryption_key_encrypted);
-    if (!safe_enc.SerializeToString(&result))
+    safe_encrypt.set_key(encryption_key_encrypted);
+    if (!safe_encrypt.SerializeToString(&result))
       ThrowError(AsymmErrors::keys_serialisation_error);
   }
   catch(const CryptoPP::Exception& e) {
@@ -133,10 +130,10 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   PlainText result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
-    SafeEncrypt safe_enc;
-    if (ParseSafeEncrypt(data.string(), safe_enc)) {
+    protobuf::SafeEncrypt safe_encrypt;
+    if (safe_encrypt.ParseFromString(data.string())) {
       std::string out_data;
-      CryptoPP::StringSource(safe_enc.key(),
+      CryptoPP::StringSource(safe_encrypt.key(),
                              true,
                              new CryptoPP::PK_DecryptorFilter(rng(),
                                                               decryptor,
@@ -145,7 +142,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
         LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
         ThrowError(AsymmErrors::decryption_error);
       }
-      result = crypto::SymmDecrypt(crypto::CipherText(safe_enc.data()),
+      result = crypto::SymmDecrypt(crypto::CipherText(safe_encrypt.data()),
                                    crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
                                    crypto::AES256InitialisationVector(
                                        out_data.substr(crypto::AES256_KeySize,
