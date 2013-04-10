@@ -26,6 +26,7 @@ include(../../cmake_modules/standard_setup.cmake)
 #==================================================================================================#
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 glob_dir(Common ${CommonSourcesDir} Common)
+glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 if(APPLE)
   # Currently not supporting breakpad using OSX, so remove breakpad header and source
   list(REMOVE_ITEM CommonAllFiles ${CommonSourcesDir}/breakpad.cc)
@@ -42,6 +43,8 @@ glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 ms_add_static_library(common ${CommonAllFiles})
+ms_add_static_library(network_viewer ${CommonToolsAllFiles})
+                                                              ms_add_executable(network_viewer_tool "Tools" ${CommonSourcesDir}/tools/main.cc)
 
 if(MaidsafeTesting)
   ms_add_executable(TESTcommon "Tests/Common" ${TestsMain} ${CommonTestsAllFiles})
@@ -65,6 +68,9 @@ if(JustThread_FOUND)
 endif()
 
 target_link_libraries(maidsafe_common ${SYS_LIB})
+target_link_libraries(maidsafe_network_viewer maidsafe_common)
+                                                                               target_link_libraries(network_viewer_tool maidsafe_network_viewer)
+
 if(MaidsafeTesting)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})

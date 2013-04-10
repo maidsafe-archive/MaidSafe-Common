@@ -1,0 +1,10 @@
+package maidsafe.network_viewer.protobuf;
+
+message MatrixRecord {
+  message Element {
+    required bytes id = 1;
+    required int32 type = 2;
+  }
+  required bytes owner_id = 1;
+  repeated Element matrix_ids = 2;
+}
