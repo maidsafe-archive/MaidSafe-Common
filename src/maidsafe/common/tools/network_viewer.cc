@@ -281,7 +281,7 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
   // TODO(Fraser#5#): 2013-04-10 - Optimise this
   // Construct deep copy of g_nodes using NodeInfo with empty matrix.
   for (const auto& node : g_nodes)
-    snapshot.emplace(node.id);
+    snapshot.insert(NodeInfo(node.id));
   // Apply the links in each entry's matrix
   auto main_itr(std::begin(g_nodes));
   auto snapshot_itr(std::begin(snapshot));
