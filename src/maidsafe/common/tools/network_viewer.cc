@@ -69,11 +69,10 @@ void SigHandler(int signum) {
 
 struct NodeInfo;
 
-typedef std::set<NodeInfo, std::function<bool(const NodeInfo&, const NodeInfo&)>> NodeSet;
-typedef std::map<NodeSet::iterator, ChildType,
-                 std::function<bool(NodeSet::iterator, NodeSet::iterator)>> MatrixMap;
-
 struct NodeInfo {
+  typedef std::set<NodeInfo, std::function<bool(const NodeInfo&, const NodeInfo&)>> NodeSet;
+  typedef std::map<NodeSet::iterator, ChildType,
+                   std::function<bool(NodeSet::iterator, NodeSet::iterator)>> MatrixMap;
   explicit NodeInfo(const NodeId& id_in)
       : id(id_in),
         matrix([id_in](NodeSet::iterator lhs, NodeSet::iterator rhs) {
@@ -89,11 +88,13 @@ struct NodeInfo {
   }
   NodeId id;
   mutable MatrixMap matrix;
+
+
 };
 
-NodeSet g_nodes([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
+NodeInfo::NodeSet g_nodes([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
 
-std::map<int, NodeSet> g_snapshots;
+std::map<int, NodeInfo::NodeSet> g_snapshots;
 
 }  // unnamed namespace
 
@@ -209,11 +210,11 @@ void PrintDetails(const NodeInfo& node_info) {
   LOG(kInfo) << printout << '\n';
 }
 
-MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
+NodeInfo::MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, NodeInfo::MatrixMap& matrix) {
   NodeId node_id(node_info.id);
   return std::find_if(std::begin(matrix),
                       std::end(matrix),
-                      [node_id](const MatrixMap::value_type& child) {
+                      [node_id](const NodeInfo::MatrixMap::value_type& child) {
                           return child.first->id == node_id;
                       });
 }
@@ -277,7 +278,7 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
     InsertNode(matrix_record);
 
   ++g_state_id;
-  NodeSet snapshot([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
+  NodeInfo::NodeSet snapshot([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
   // TODO(Fraser#5#): 2013-04-10 - Optimise this
   // Construct deep copy of g_nodes using NodeInfo with empty matrix.
   for (const auto& node : g_nodes)
