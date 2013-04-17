@@ -46,7 +46,7 @@ namespace protobuf { class MatrixRecord; }
 
 extern const std::string kMessageQueueName;
 
-enum class ChildType : int32_t { kGroup, kClosest, kMatrix };
+enum class ChildType : int32_t { kGroup, kClosest, kMatrix, kNotConnected };
 
 struct ViewableNode {
   ViewableNode();

@@ -69,15 +69,16 @@ void SigHandler(int signum) {
 
 struct NodeInfo;
 
+typedef std::set<NodeInfo, std::function<bool(const NodeInfo&, const NodeInfo&)>> NodeSet;
+typedef std::map<NodeSet::iterator, ChildType,
+                 std::function<bool(NodeSet::iterator, NodeSet::iterator)>> MatrixMap;
+
 struct NodeInfo {
-  typedef std::set<NodeInfo, std::function<bool(const NodeInfo&, const NodeInfo&)>> NodeSet;
-  typedef std::map<NodeSet::iterator, ChildType,
-                   std::function<bool(NodeSet::iterator, NodeSet::iterator)>> MatrixMap;
   explicit NodeInfo(const NodeId& id_in)
       : id(id_in),
-        matrix([id_in](NodeSet::iterator lhs, NodeSet::iterator rhs) {
-                   return NodeId::CloserToTarget(lhs->id, rhs->id, id_in);
-               }) {}
+        matrix(new MatrixMap([id_in](NodeSet::iterator lhs, NodeSet::iterator rhs) {
+                                 return NodeId::CloserToTarget(lhs->id, rhs->id, id_in);
+                             })) {}
   NodeInfo(const NodeInfo& other) : id(other.id), matrix(other.matrix) {}
   NodeInfo(NodeInfo&& other) : id(std::move(other.id)), matrix(std::move(other.matrix)) {}
   NodeInfo& operator=(NodeInfo other) {
@@ -87,14 +88,12 @@ struct NodeInfo {
     return *this;
   }
   NodeId id;
-  mutable MatrixMap matrix;
-
-
+  mutable std::shared_ptr<MatrixMap> matrix;
 };
 
-NodeInfo::NodeSet g_nodes([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
+NodeSet g_nodes([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
 
-std::map<int, NodeInfo::NodeSet> g_snapshots;
+std::map<int, NodeSet> g_snapshots;
 
 }  // unnamed namespace
 
@@ -205,16 +204,16 @@ void PrintDetails(const NodeInfo& node_info) {
   static int count(0);
   std::string printout(std::to_string(count++));
   printout += "\tReceived: Owner: " + DebugId(node_info.id) + "\n";
-  for (const auto& node : node_info.matrix)
+  for (const auto& node : *node_info.matrix)
     printout += "\t\t" + DebugId(node.first->id) + "\n";
   LOG(kInfo) << printout << '\n';
 }
 
-NodeInfo::MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, NodeInfo::MatrixMap& matrix) {
+MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
   NodeId node_id(node_info.id);
   return std::find_if(std::begin(matrix),
                       std::end(matrix),
-                      [node_id](const NodeInfo::MatrixMap::value_type& child) {
+                      [node_id](const MatrixMap::value_type& child) {
                           return child.first->id == node_id;
                       });
 }
@@ -249,20 +248,20 @@ void InsertNode(const MatrixRecord& matrix_record) {
     if (matrix_entry.id == itr->id)
       continue;
     sent_matrix.insert(matrix_entry.id);
-    auto matrix_itr(FindInMatrix(matrix_entry, itr->matrix));
-    if (matrix_itr != std::end(itr->matrix))
+    auto matrix_itr(FindInMatrix(matrix_entry, *itr->matrix));
+    if (matrix_itr != std::end(*itr->matrix))
       continue;
     auto global_itr(g_nodes.insert(matrix_entry).first);
 //    global_itr->matrix.insert(itr);
-    itr->matrix.insert(std::make_pair(global_itr, child.second));
+    itr->matrix->insert(std::make_pair(global_itr, child.second));
   }
   // Check all pre-existing matrix entries are still entries.  Any that aren't, remove this node
   // from its matrix
-  auto referee_itr(std::begin(itr->matrix));
-  while (referee_itr != std::end(itr->matrix)) {
+  auto referee_itr(std::begin(*itr->matrix));
+  while (referee_itr != std::end(*itr->matrix)) {
     if (sent_matrix.find((*(*referee_itr).first).id) == std::end(sent_matrix)) {
 //      EraseThisNodeFromReferreesMatrix(*itr, *referee_itr);
-      referee_itr = itr->matrix.erase(referee_itr);
+      referee_itr = itr->matrix->erase(referee_itr);
     } else {
       ++referee_itr;
     }
@@ -278,7 +277,7 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
     InsertNode(matrix_record);
 
   ++g_state_id;
-  NodeInfo::NodeSet snapshot([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
+  NodeSet snapshot([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
   // TODO(Fraser#5#): 2013-04-10 - Optimise this
   // Construct deep copy of g_nodes using NodeInfo with empty matrix.
   for (const auto& node : g_nodes)
@@ -287,14 +286,14 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
   auto main_itr(std::begin(g_nodes));
   auto snapshot_itr(std::begin(snapshot));
   while (main_itr != std::end(g_nodes)) {
-    for (const auto& child : main_itr->matrix) {
+    for (const auto& child : *main_itr->matrix) {
       // Find the child in the new NodeSet
       auto g_itr(std::find_if(std::begin(snapshot),
                               std::end(snapshot),
                               [&child](const NodeInfo& node_info) {
                                   return child.first->id == node_info.id;
                               }));
-      snapshot_itr->matrix.insert(std::make_pair(g_itr, child.second));
+      snapshot_itr->matrix->insert(std::make_pair(g_itr, child.second));
     }
     ++main_itr;
     ++snapshot_itr;
@@ -325,14 +324,42 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
   if (snapshot_itr == std::end(g_snapshots))
     --snapshot_itr;
 
-  NodeId node_id(hex_encoded_id, NodeId::kHex);
+  NodeId target_id(hex_encoded_id, NodeId::kHex);
   auto itr(std::find_if(std::begin(snapshot_itr->second),
                         std::end(snapshot_itr->second),
-                        [&node_id](const NodeInfo& node_info) { return node_id == node_info.id; }));
+                        [&target_id](const NodeInfo& node_info) {
+                            return target_id == node_info.id;
+                        }));
 
   std::vector<ViewableNode> children;
-  if (itr != std::end(snapshot_itr->second)) {
-    for (const auto& child : itr->matrix)
+  if (itr == std::end(snapshot_itr->second)) {
+    // Data / account request
+    for (const auto& node : snapshot_itr->second) {
+      bool needs_sorted(false);
+      if (children.size() < 4) {
+        children.emplace_back(node.id.ToStringEncoded(NodeId::kHex),
+                              (target_id ^ node.id).ToStringEncoded(NodeId::kHex),
+                              ChildType::kNotConnected);
+        if (children.size() == 4)
+          needs_sorted = true;
+      } else if (NodeId::CloserToTarget(node.id, NodeId(children[3].id, NodeId::kHex), target_id)) {
+        children[3] = ViewableNode(node.id.ToStringEncoded(NodeId::kHex),
+                                   (target_id ^ node.id).ToStringEncoded(NodeId::kHex),
+                                   ChildType::kNotConnected);
+        needs_sorted = true;
+      }
+      if (needs_sorted) {
+        std::sort(std::begin(children), std::end(children),
+                  [&target_id](const ViewableNode& lhs, const ViewableNode& rhs) {
+                      return NodeId::CloserToTarget(NodeId(lhs.id, NodeId::kHex),
+                                                    NodeId(rhs.id, NodeId::kHex),
+                                                    target_id);
+                  });
+      }
+    }
+  } else {
+    // Node request
+    for (const auto& child : *itr->matrix)
       children.emplace_back((*child.first).id.ToStringEncoded(NodeId::kHex),
                             (itr->id ^ (*child.first).id).ToStringEncoded(NodeId::kHex),
                             child.second);
