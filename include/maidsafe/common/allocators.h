@@ -223,20 +223,24 @@ struct secure_allocator : public std::allocator<T>
     {
         if (p != NULL)
         {
-            // OPENSSL_cleanse(p, sizeof(T) * n);
-            static unsigned char cleanse_ctr = 0;
-            unsigned char* ptr = reinterpret_cast<unsigned char*>(p);
-	          size_t loop = n, ctr = cleanse_ctr;
-	          while(loop--)
-		        {
-		          *(ptr++) = (unsigned char)ctr;
-		          ctr += (17 + ((size_t)ptr & 0xF));
-		        }
-	          ptr = (unsigned char*)memchr((void*)p, (unsigned char)ctr, n);
-	          if(ptr)
-		          ctr += (63 + (size_t)ptr);
-	          cleanse_ctr = (unsigned char)ctr;
-            LockedPageManager::instance.UnlockRange(p, sizeof(T) * n);
+#if defined(WIN32)
+          SecureZeroMemory(p, sizeof(T) * n);
+#else
+          // OPENSSL_cleanse(p, sizeof(T) * n);
+          static unsigned char cleanse_ctr = 0;
+          volatile unsigned char* ptr = reinterpret_cast<volatile unsigned char*>(p);
+          size_t loop = n, ctr = cleanse_ctr;
+          while(loop--)
+          {
+            *(ptr++) = (unsigned char)ctr;
+            ctr += (17 + ((size_t)ptr & 0xF));
+          }
+          ptr = (volatile unsigned char*)memchr((void*)p, (unsigned char)ctr, n);
+          if(ptr)
+            ctr += (63 + (size_t)ptr);
+          cleanse_ctr = (unsigned char)ctr;
+#endif
+          LockedPageManager::instance.UnlockRange(p, sizeof(T) * n);
         }
         std::allocator<T>::deallocate(p, n);
     }
@@ -269,19 +273,23 @@ struct zero_after_free_allocator : public std::allocator<T>
     void deallocate(T* p, std::size_t n)
     {
         if (p != NULL) {
-            // OPENSSL_cleanse(p, sizeof(T) * n);
-            static unsigned char cleanse_ctr = 0;
-            unsigned char* ptr = reinterpret_cast<unsigned char*>(p);
-	          size_t loop = n, ctr = cleanse_ctr;
-	          while(loop--)
-		        {
-		          *(ptr++) = (unsigned char)ctr;
-		          ctr += (17 + ((size_t)ptr & 0xF));
-		        }
-	          ptr = (unsigned char*)memchr((void*)p, (unsigned char)ctr, n);
-	          if(ptr)
-		          ctr += (63 + (size_t)ptr);
-	          cleanse_ctr = (unsigned char)ctr;
+#if defined(WIN32)
+          SecureZeroMemory(p, sizeof(T) * n);
+#else
+          // OPENSSL_cleanse(p, sizeof(T) * n);
+          static unsigned char cleanse_ctr = 0;
+          volatile unsigned char* ptr = reinterpret_cast<volatile unsigned char*>(p);
+          size_t loop = n, ctr = cleanse_ctr;
+          while(loop--)
+          {
+            *(ptr++) = (unsigned char)ctr;
+            ctr += (17 + ((size_t)ptr & 0xF));
+          }
+          ptr = (volatile unsigned char*)memchr((void*)p, (unsigned char)ctr, n);
+          if(ptr)
+            ctr += (63 + (size_t)ptr);
+          cleanse_ctr = (unsigned char)ctr;
+#endif
         }
         std::allocator<T>::deallocate(p, n);
     }
