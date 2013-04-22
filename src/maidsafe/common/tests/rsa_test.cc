@@ -97,7 +97,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
     EXPECT_THROW(Sign(kData, empty_priv_key), std::exception);
     EXPECT_THROW(CheckSignature(kData, signature, empty_pub_key), std::exception);
 
-    Signature bad_signature("bad");
+    Signature bad_signature(RandomString(Keys::kSignatureByteSize));
     EXPECT_FALSE(CheckSignature(kData, bad_signature, keys.public_key));
   });
 }
@@ -113,7 +113,7 @@ TEST_F(RSATest, FUNC_SignFileValidate) {
     EXPECT_TRUE(WriteFile(test_file, kData));
     ASSERT_FALSE(test_path->empty());
 
-    Signature bad_signature("bad");
+    Signature bad_signature(RandomString(Keys::kSignatureByteSize));
     PrivateKey empty_private_key;
     EXPECT_NO_THROW(SignFile(test_file, keys.private_key));
     Signature signature = SignFile(test_file, keys.private_key);
