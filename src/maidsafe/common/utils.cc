@@ -73,7 +73,6 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/allocators.h"
 
 namespace fs = boost::filesystem;
 namespace bptime = boost::posix_time;
@@ -542,8 +541,5 @@ fs::path GetAppInstallDir() {
 unsigned int Concurrency() {
   return std::max(std::thread::hardware_concurrency(), 2U);
 }
-
-// see allocators.h
-LockedPageManager LockedPageManager::instance;
 
 }  // namespace maidsafe
