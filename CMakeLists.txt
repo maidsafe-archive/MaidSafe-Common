@@ -44,7 +44,6 @@ glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 #==================================================================================================#
 ms_add_static_library(common ${CommonAllFiles})
 ms_add_static_library(network_viewer ${CommonToolsAllFiles})
-                                                              ms_add_executable(network_viewer_tool "Tools" ${CommonSourcesDir}/tools/main.cc)
 
 if(MaidsafeTesting)
   ms_add_executable(TESTcommon "Tests/Common" ${TestsMain} ${CommonTestsAllFiles})
@@ -69,7 +68,6 @@ endif()
 
 target_link_libraries(maidsafe_common ${SYS_LIB})
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
-                                                                               target_link_libraries(network_viewer_tool maidsafe_network_viewer)
 
 if(MaidsafeTesting)
   target_link_libraries(TESTcommon maidsafe_common)

@@ -89,7 +89,8 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
 
 void EraseSnapshot(int state_id);
 
-int Run(int argc, char **argv);
+void Run();
+void Stop();
 
 }  // namespace network_viewer
 

@@ -33,6 +33,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <condition_variable>
 #include <mutex>
 #include <set>
+#include <thread>
 
 #include "boost/interprocess/ipc/message_queue.hpp"
 
@@ -55,17 +56,9 @@ namespace {
 std::function<void(int /*state_id*/)> g_functor;
 std::mutex g_mutex;
 std::condition_variable g_cond_var;
-bool g_ctrlc_pressed(false);
+bool g_stop(false);
+std::thread g_thread;
 int g_state_id(0);
-
-void SigHandler(int signum) {
-  LOG(kInfo) << " Signal received: " << signum;
-  {
-    std::lock_guard<std::mutex> lock(g_mutex);
-    g_ctrlc_pressed = true;
-  }
-  g_cond_var.notify_one();
-}
 
 struct NodeInfo;
 
@@ -298,6 +291,7 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
     ++main_itr;
     ++snapshot_itr;
   }
+  g_snapshots[g_state_id] = snapshot;
 
   if (g_functor)
     g_functor(g_state_id);
@@ -309,13 +303,15 @@ void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor) {
 }
 
 std::vector<std::string> GetNodesInNetwork(int state_id) {
-  auto snapshot_itr(g_snapshots.find(state_id));
-  if (snapshot_itr == std::end(g_snapshots))
-    --snapshot_itr;
   std::vector<std::string> hex_encoded_ids;
-  hex_encoded_ids.reserve(snapshot_itr->second.size());
-  for (const auto& node : snapshot_itr->second)
-    hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::kHex));
+  if (!g_snapshots.empty()) {
+    auto snapshot_itr(g_snapshots.find(state_id));
+    if (snapshot_itr == std::end(g_snapshots))
+      --snapshot_itr;
+    hex_encoded_ids.reserve(snapshot_itr->second.size());
+    for (const auto& node : snapshot_itr->second)
+      hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::kHex));
+  }
   return hex_encoded_ids;
 }
 
@@ -372,37 +368,40 @@ void EraseSnapshot(int state_id) {
   g_snapshots.erase(state_id);
 }
 
-int Run(int argc, char **argv) {
-#ifndef MAIDSAFE_WIN32
-  signal(SIGHUP, SigHandler);
-#endif
-  signal(SIGINT, SigHandler);
-  signal(SIGTERM, SigHandler);
+void Run() {
+  g_thread = std::move(std::thread([]() {
+    try {
+      bi::message_queue::remove(kMessageQueueName.c_str());
+      on_scope_exit cleanup([]() { bi::message_queue::remove(kMessageQueueName.c_str()); });
 
-  log::Logging::Instance().Initialise(argc, argv);
-  try {
-    bi::message_queue::remove(kMessageQueueName.c_str());
-    on_scope_exit cleanup([]() { bi::message_queue::remove(kMessageQueueName.c_str()); });
-
-    bi::message_queue matrix_messages(bi::create_only, kMessageQueueName.c_str(), 1000, 10000);
-    LOG(kSuccess) << "Running...";
-    unsigned int priority;
-    bi::message_queue::size_type received_size;
-    char input[10000];
-    for (;;) {
-      if (matrix_messages.try_receive(&input[0], 10000, received_size, priority)) {
-        std::string received(&input[0], received_size);
-        UpdateNodeInfo(received);
+      bi::message_queue matrix_messages(bi::create_only, kMessageQueueName.c_str(), 1000, 10000);
+      LOG(kSuccess) << "Running...";
+      unsigned int priority;
+      bi::message_queue::size_type received_size;
+      char input[10000];
+      for (;;) {
+        std::string received;
+        if (matrix_messages.try_receive(&input[0], 10000, received_size, priority))
+          received = std::string(&input[0], received_size);
+        std::unique_lock<std::mutex> lock(g_mutex);
+        if (!received.empty())
+          UpdateNodeInfo(received);
+        if (g_cond_var.wait_for(lock, std::chrono::milliseconds(2000), [] { return g_stop; }))
+          return;
       }
-      std::unique_lock<std::mutex> lock(g_mutex);
-      if (g_cond_var.wait_for(lock, std::chrono::milliseconds(20), [] { return g_ctrlc_pressed; }))
-        return 0;
     }
+    catch(bi::interprocess_exception &ex) {
+      LOG(kError) << ex.what();
+    }
+  }));
+}
+
+void Stop() {
+  {
+    std::lock_guard<std::mutex> lock(g_mutex);
+    g_stop = true;
   }
-  catch(bi::interprocess_exception &ex) {
-    LOG(kError) << ex.what();
-    return 1;
-  }
+  g_cond_var.notify_one();
 }
 
 }  // namespace network_viewer
