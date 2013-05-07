@@ -28,6 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_COMMON_TOOLS_NETWORK_VIEWER_H_
 #define MAIDSAFE_COMMON_TOOLS_NETWORK_VIEWER_H_
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <map>
@@ -89,7 +90,7 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
 
 void EraseSnapshot(int state_id);
 
-void Run();
+void Run(const std::chrono::milliseconds& notify_interval);
 void Stop();
 
 }  // namespace network_viewer

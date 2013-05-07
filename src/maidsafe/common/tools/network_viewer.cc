@@ -29,7 +29,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <signal.h>
 
-#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <set>
@@ -59,6 +58,8 @@ std::condition_variable g_cond_var;
 bool g_stop(false);
 std::thread g_thread;
 int g_state_id(0);
+std::chrono::milliseconds g_notify_interval(1000);
+const size_t kMaxSnapshotCount(1000);
 
 struct NodeInfo;
 
@@ -269,8 +270,14 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
   else
     InsertNode(matrix_record);
 
-  ++g_state_id;
-  NodeSet snapshot([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < rhs.id; });
+  static std::chrono::steady_clock::time_point last_notified(std::chrono::steady_clock::now());
+  if (!g_functor || std::chrono::steady_clock::now() - last_notified < g_notify_interval)
+    return;
+
+  auto& snapshot(g_snapshots.insert(
+      std::make_pair(++g_state_id, NodeSet([](const NodeInfo& lhs, const NodeInfo& rhs) {
+                                               return lhs.id < rhs.id;
+                                           }))).first->second);
   // TODO(Fraser#5#): 2013-04-10 - Optimise this
   // Construct deep copy of g_nodes using NodeInfo with empty matrix.
   for (const auto& node : g_nodes)
@@ -291,10 +298,12 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
     ++main_itr;
     ++snapshot_itr;
   }
-  g_snapshots[g_state_id] = snapshot;
 
-  if (g_functor)
-    g_functor(g_state_id);
+  if (g_snapshots.size() > kMaxSnapshotCount)
+    g_snapshots.erase(std::begin(g_snapshots));
+
+  g_functor(g_state_id);
+  last_notified = std::chrono::steady_clock::now();
 }
 
 void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor) {
@@ -304,18 +313,26 @@ void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor) {
 
 std::vector<std::string> GetNodesInNetwork(int state_id) {
   std::vector<std::string> hex_encoded_ids;
-  if (!g_snapshots.empty()) {
-    auto snapshot_itr(g_snapshots.find(state_id));
-    if (snapshot_itr == std::end(g_snapshots))
-      --snapshot_itr;
-    hex_encoded_ids.reserve(snapshot_itr->second.size());
-    for (const auto& node : snapshot_itr->second)
-      hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::kHex));
-  }
+  std::lock_guard<std::mutex> lock(g_mutex);
+  if (g_snapshots.empty())
+    return hex_encoded_ids;
+
+  auto snapshot_itr(g_snapshots.find(state_id));
+  if (snapshot_itr == std::end(g_snapshots))
+    --snapshot_itr;
+  hex_encoded_ids.reserve(snapshot_itr->second.size());
+  for (const auto& node : snapshot_itr->second)
+    hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::kHex));
+
   return hex_encoded_ids;
 }
 
 std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_encoded_id) {
+  std::vector<ViewableNode> children;
+  std::lock_guard<std::mutex> lock(g_mutex);
+  if (g_snapshots.empty())
+    return children;
+
   auto snapshot_itr(g_snapshots.find(state_id));
   if (snapshot_itr == std::end(g_snapshots))
     --snapshot_itr;
@@ -327,7 +344,6 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
                             return target_id == node_info.id;
                         }));
 
-  std::vector<ViewableNode> children;
   if (itr == std::end(snapshot_itr->second)) {
     // Data / account request
     for (const auto& node : snapshot_itr->second) {
@@ -365,11 +381,13 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
 }
 
 void EraseSnapshot(int state_id) {
+  std::lock_guard<std::mutex> lock(g_mutex);
   g_snapshots.erase(state_id);
 }
 
-void Run() {
-  g_thread = std::move(std::thread([]() {
+void Run(const std::chrono::milliseconds& notify_interval) {
+  g_notify_interval = notify_interval;
+  g_thread = std::move(std::thread([&]() {
     try {
       bi::message_queue::remove(kMessageQueueName.c_str());
       on_scope_exit cleanup([]() { bi::message_queue::remove(kMessageQueueName.c_str()); });
@@ -384,10 +402,12 @@ void Run() {
         if (matrix_messages.try_receive(&input[0], 10000, received_size, priority))
           received = std::string(&input[0], received_size);
         std::unique_lock<std::mutex> lock(g_mutex);
-        if (!received.empty())
+        if (received.empty()) {
+          if (g_cond_var.wait_for(lock, std::chrono::milliseconds(20), [] { return g_stop; }))
+            return;
+        } else {
           UpdateNodeInfo(received);
-        if (g_cond_var.wait_for(lock, std::chrono::milliseconds(2000), [] { return g_stop; }))
-          return;
+        }
       }
     }
     catch(bi::interprocess_exception &ex) {
@@ -402,6 +422,7 @@ void Stop() {
     g_stop = true;
   }
   g_cond_var.notify_one();
+  g_thread.join();
 }
 
 }  // namespace network_viewer
