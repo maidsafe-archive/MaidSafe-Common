@@ -108,53 +108,22 @@ MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
                       });
 }
 
-// void EraseThisNodeFromReferreesMatrix(const NodeInfo& node_info, MatrixMap::value_type referee) {
-//   auto referred_entry(FindInMatrix(node_info, referee.first->matrix));
-//   assert(referred_entry != std::end(referee.first->matrix));
-//   referee.first->matrix.erase(referred_entry);
-//   if (referee.first->matrix.empty())
-//     g_nodes.erase(referee);
-// }
-
-void EraseNode(const NodeInfo& node_info) {
-  auto itr(g_nodes.find(node_info));
-  if (itr != std::end(g_nodes)) {
-//  // Remove from all referees (if referee's matrix becomes empty, erase referee from global set)
-//  // then erase this node from global set.
-//  for (auto referee : itr->matrix)
-//    EraseThisNodeFromReferreesMatrix(*itr, referee);
-    g_nodes.erase(itr);
-  }
-}
-
 void InsertNode(const MatrixRecord& matrix_record) {
   // Insert or find node
   auto itr(g_nodes.insert(NodeInfo(matrix_record.owner_id())).first);
-  std::set<NodeId> sent_matrix;
+  itr->matrix->clear();
   for (const auto& child : matrix_record.matrix_ids()) {
     // If matrix entry doesn't already exist in this node's matrix, add entry or find entry in
     // global set, then add it to this node's matrix.
     NodeInfo matrix_entry(child.first);
     if (matrix_entry.id == itr->id)
       continue;
-    sent_matrix.insert(matrix_entry.id);
     auto matrix_itr(FindInMatrix(matrix_entry, *itr->matrix));
     if (matrix_itr != std::end(*itr->matrix))
       continue;
     auto global_itr(g_nodes.insert(matrix_entry).first);
 //    global_itr->matrix.insert(itr);
     itr->matrix->insert(std::make_pair(global_itr, child.second));
-  }
-  // Check all pre-existing matrix entries are still entries.  Any that aren't, remove this node
-  // from its matrix
-  auto referee_itr(std::begin(*itr->matrix));
-  while (referee_itr != std::end(*itr->matrix)) {
-    if (sent_matrix.find((*(*referee_itr).first).id) == std::end(sent_matrix)) {
-//      EraseThisNodeFromReferreesMatrix(*itr, *referee_itr);
-      referee_itr = itr->matrix->erase(referee_itr);
-    } else {
-      ++referee_itr;
-    }
   }
   PrintDetails(*itr);
 }
@@ -204,7 +173,7 @@ void TakeSnapshotAndNotify() {
 void UpdateNodeInfo(const std::string& serialised_matrix_record) {
   MatrixRecord matrix_record(serialised_matrix_record);
   if (matrix_record.matrix_ids().empty())
-    EraseNode(NodeInfo(matrix_record.owner_id()));
+    g_nodes.erase(NodeInfo(matrix_record.owner_id()));
   else
     InsertNode(matrix_record);
 
