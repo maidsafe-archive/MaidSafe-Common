@@ -43,8 +43,6 @@ namespace maidsafe {
 
 namespace network_viewer {
 
-namespace protobuf { class MatrixRecord; }
-
 extern const std::string kMessageQueueName;
 
 enum class ChildType : int32_t { kGroup, kClosest, kMatrix, kNotConnected };
@@ -88,9 +86,10 @@ std::vector<std::string> GetNodesInNetwork(int state_id);
 
 std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_encoded_id);
 
-void EraseSnapshot(int state_id);
+void SetNotifyInterval(const std::chrono::milliseconds& notify_interval);
 
 void Run(const std::chrono::milliseconds& notify_interval);
+
 void Stop();
 
 }  // namespace network_viewer

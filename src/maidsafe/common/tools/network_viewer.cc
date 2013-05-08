@@ -60,6 +60,7 @@ std::thread g_thread;
 int g_state_id(0);
 std::chrono::milliseconds g_notify_interval(1000);
 const size_t kMaxSnapshotCount(1000);
+bool g_last_notified_state_current(true);
 
 struct NodeInfo;
 
@@ -89,7 +90,130 @@ NodeSet g_nodes([](const NodeInfo& lhs, const NodeInfo& rhs) { return lhs.id < r
 
 std::map<int, NodeSet> g_snapshots;
 
+void PrintDetails(const NodeInfo& node_info) {
+  static int count(0);
+  std::string printout(std::to_string(count++));
+  printout += "\tReceived: Owner: " + DebugId(node_info.id) + "\n";
+  for (const auto& node : *node_info.matrix)
+    printout += "\t\t" + DebugId(node.first->id) + "\n";
+  LOG(kInfo) << printout << '\n';
+}
+
+MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
+  NodeId node_id(node_info.id);
+  return std::find_if(std::begin(matrix),
+                      std::end(matrix),
+                      [node_id](const MatrixMap::value_type& child) {
+                          return child.first->id == node_id;
+                      });
+}
+
+// void EraseThisNodeFromReferreesMatrix(const NodeInfo& node_info, MatrixMap::value_type referee) {
+//   auto referred_entry(FindInMatrix(node_info, referee.first->matrix));
+//   assert(referred_entry != std::end(referee.first->matrix));
+//   referee.first->matrix.erase(referred_entry);
+//   if (referee.first->matrix.empty())
+//     g_nodes.erase(referee);
+// }
+
+void EraseNode(const NodeInfo& node_info) {
+  auto itr(g_nodes.find(node_info));
+  if (itr != std::end(g_nodes)) {
+//  // Remove from all referees (if referee's matrix becomes empty, erase referee from global set)
+//  // then erase this node from global set.
+//  for (auto referee : itr->matrix)
+//    EraseThisNodeFromReferreesMatrix(*itr, referee);
+    g_nodes.erase(itr);
+  }
+}
+
+void InsertNode(const MatrixRecord& matrix_record) {
+  // Insert or find node
+  auto itr(g_nodes.insert(NodeInfo(matrix_record.owner_id())).first);
+  std::set<NodeId> sent_matrix;
+  for (const auto& child : matrix_record.matrix_ids()) {
+    // If matrix entry doesn't already exist in this node's matrix, add entry or find entry in
+    // global set, then add it to this node's matrix.
+    NodeInfo matrix_entry(child.first);
+    if (matrix_entry.id == itr->id)
+      continue;
+    sent_matrix.insert(matrix_entry.id);
+    auto matrix_itr(FindInMatrix(matrix_entry, *itr->matrix));
+    if (matrix_itr != std::end(*itr->matrix))
+      continue;
+    auto global_itr(g_nodes.insert(matrix_entry).first);
+//    global_itr->matrix.insert(itr);
+    itr->matrix->insert(std::make_pair(global_itr, child.second));
+  }
+  // Check all pre-existing matrix entries are still entries.  Any that aren't, remove this node
+  // from its matrix
+  auto referee_itr(std::begin(*itr->matrix));
+  while (referee_itr != std::end(*itr->matrix)) {
+    if (sent_matrix.find((*(*referee_itr).first).id) == std::end(sent_matrix)) {
+//      EraseThisNodeFromReferreesMatrix(*itr, *referee_itr);
+      referee_itr = itr->matrix->erase(referee_itr);
+    } else {
+      ++referee_itr;
+    }
+  }
+  PrintDetails(*itr);
+}
+
+void TakeSnapshotAndNotify() {
+  static std::chrono::steady_clock::time_point last_notified(std::chrono::steady_clock::now());
+
+  if (g_last_notified_state_current ||
+      !g_functor ||
+      std::chrono::steady_clock::now() - last_notified < g_notify_interval) {
+    return;
+  }
+
+  auto& snapshot(g_snapshots.insert(
+      std::make_pair(++g_state_id, NodeSet([](const NodeInfo& lhs, const NodeInfo& rhs) {
+                                               return lhs.id < rhs.id;
+                                           }))).first->second);
+  // TODO(Fraser#5#): 2013-04-10 - Optimise this
+  // Construct deep copy of g_nodes using NodeInfo with empty matrix.
+  for (const auto& node : g_nodes)
+    snapshot.insert(NodeInfo(node.id));
+  // Apply the links in each entry's matrix
+  auto main_itr(std::begin(g_nodes));
+  auto snapshot_itr(std::begin(snapshot));
+  while (main_itr != std::end(g_nodes)) {
+    for (const auto& child : *main_itr->matrix) {
+      // Find the child in the new NodeSet
+      auto g_itr(std::find_if(std::begin(snapshot),
+                              std::end(snapshot),
+                              [&child](const NodeInfo& node_info) {
+                                  return child.first->id == node_info.id;
+                              }));
+      snapshot_itr->matrix->insert(std::make_pair(g_itr, child.second));
+    }
+    ++main_itr;
+    ++snapshot_itr;
+  }
+
+  if (g_snapshots.size() > kMaxSnapshotCount)
+    g_snapshots.erase(std::begin(g_snapshots));
+
+  g_functor(g_state_id);
+  last_notified = std::chrono::steady_clock::now();
+  g_last_notified_state_current = true;
+}
+
+void UpdateNodeInfo(const std::string& serialised_matrix_record) {
+  MatrixRecord matrix_record(serialised_matrix_record);
+  if (matrix_record.matrix_ids().empty())
+    EraseNode(NodeInfo(matrix_record.owner_id()));
+  else
+    InsertNode(matrix_record);
+
+  g_last_notified_state_current = false;
+  TakeSnapshotAndNotify();
+}
+
 }  // unnamed namespace
+
 
 
 ViewableNode::ViewableNode() : id(), distance(), type(static_cast<ChildType>(-1)) {}
@@ -121,6 +245,8 @@ ViewableNode& ViewableNode::operator=(ViewableNode other) {
   swap(type, other.type);
   return *this;
 }
+
+
 
 MatrixRecord::MatrixRecord()
     : owner_id_(),
@@ -194,117 +320,7 @@ MatrixRecord::MatrixIds MatrixRecord::matrix_ids() const {
   return matrix_ids_;
 }
 
-void PrintDetails(const NodeInfo& node_info) {
-  static int count(0);
-  std::string printout(std::to_string(count++));
-  printout += "\tReceived: Owner: " + DebugId(node_info.id) + "\n";
-  for (const auto& node : *node_info.matrix)
-    printout += "\t\t" + DebugId(node.first->id) + "\n";
-  LOG(kInfo) << printout << '\n';
-}
 
-MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
-  NodeId node_id(node_info.id);
-  return std::find_if(std::begin(matrix),
-                      std::end(matrix),
-                      [node_id](const MatrixMap::value_type& child) {
-                          return child.first->id == node_id;
-                      });
-}
-
-// void EraseThisNodeFromReferreesMatrix(const NodeInfo& node_info, MatrixMap::value_type referee) {
-//   auto referred_entry(FindInMatrix(node_info, referee.first->matrix));
-//   assert(referred_entry != std::end(referee.first->matrix));
-//   referee.first->matrix.erase(referred_entry);
-//   if (referee.first->matrix.empty())
-//     g_nodes.erase(referee);
-// }
-
-void EraseNode(const NodeInfo& node_info) {
-  auto itr(g_nodes.find(node_info));
-  if (itr != std::end(g_nodes)) {
-//  // Remove from all referees (if referee's matrix becomes empty, erase referee from global set)
-//  // then erase this node from global set.
-//  for (auto referee : itr->matrix)
-//    EraseThisNodeFromReferreesMatrix(*itr, referee);
-    g_nodes.erase(itr);
-  }
-}
-
-void InsertNode(const MatrixRecord& matrix_record) {
-  // Insert or find node
-  auto itr(g_nodes.insert(NodeInfo(matrix_record.owner_id())).first);
-  std::set<NodeId> sent_matrix;
-  for (const auto& child : matrix_record.matrix_ids()) {
-    // If matrix entry doesn't already exist in this node's matrix, add entry or find entry in
-    // global set, then add it to this node's matrix.
-    NodeInfo matrix_entry(child.first);
-    if (matrix_entry.id == itr->id)
-      continue;
-    sent_matrix.insert(matrix_entry.id);
-    auto matrix_itr(FindInMatrix(matrix_entry, *itr->matrix));
-    if (matrix_itr != std::end(*itr->matrix))
-      continue;
-    auto global_itr(g_nodes.insert(matrix_entry).first);
-//    global_itr->matrix.insert(itr);
-    itr->matrix->insert(std::make_pair(global_itr, child.second));
-  }
-  // Check all pre-existing matrix entries are still entries.  Any that aren't, remove this node
-  // from its matrix
-  auto referee_itr(std::begin(*itr->matrix));
-  while (referee_itr != std::end(*itr->matrix)) {
-    if (sent_matrix.find((*(*referee_itr).first).id) == std::end(sent_matrix)) {
-//      EraseThisNodeFromReferreesMatrix(*itr, *referee_itr);
-      referee_itr = itr->matrix->erase(referee_itr);
-    } else {
-      ++referee_itr;
-    }
-  }
-  PrintDetails(*itr);
-}
-
-void UpdateNodeInfo(const std::string& serialised_matrix_record) {
-  MatrixRecord matrix_record(serialised_matrix_record);
-  if (matrix_record.matrix_ids().empty())
-    EraseNode(NodeInfo(matrix_record.owner_id()));
-  else
-    InsertNode(matrix_record);
-
-  static std::chrono::steady_clock::time_point last_notified(std::chrono::steady_clock::now());
-  if (!g_functor || std::chrono::steady_clock::now() - last_notified < g_notify_interval)
-    return;
-
-  auto& snapshot(g_snapshots.insert(
-      std::make_pair(++g_state_id, NodeSet([](const NodeInfo& lhs, const NodeInfo& rhs) {
-                                               return lhs.id < rhs.id;
-                                           }))).first->second);
-  // TODO(Fraser#5#): 2013-04-10 - Optimise this
-  // Construct deep copy of g_nodes using NodeInfo with empty matrix.
-  for (const auto& node : g_nodes)
-    snapshot.insert(NodeInfo(node.id));
-  // Apply the links in each entry's matrix
-  auto main_itr(std::begin(g_nodes));
-  auto snapshot_itr(std::begin(snapshot));
-  while (main_itr != std::end(g_nodes)) {
-    for (const auto& child : *main_itr->matrix) {
-      // Find the child in the new NodeSet
-      auto g_itr(std::find_if(std::begin(snapshot),
-                              std::end(snapshot),
-                              [&child](const NodeInfo& node_info) {
-                                  return child.first->id == node_info.id;
-                              }));
-      snapshot_itr->matrix->insert(std::make_pair(g_itr, child.second));
-    }
-    ++main_itr;
-    ++snapshot_itr;
-  }
-
-  if (g_snapshots.size() > kMaxSnapshotCount)
-    g_snapshots.erase(std::begin(g_snapshots));
-
-  g_functor(g_state_id);
-  last_notified = std::chrono::steady_clock::now();
-}
 
 void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor) {
   std::lock_guard<std::mutex> lock(g_mutex);
@@ -324,6 +340,7 @@ std::vector<std::string> GetNodesInNetwork(int state_id) {
   for (const auto& node : snapshot_itr->second)
     hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::kHex));
 
+  TakeSnapshotAndNotify();
   return hex_encoded_ids;
 }
 
@@ -377,12 +394,13 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
                             child.second);
   }
 
+  TakeSnapshotAndNotify();
   return children;
 }
 
-void EraseSnapshot(int state_id) {
+void SetNotifyInterval(const std::chrono::milliseconds& notify_interval) {
   std::lock_guard<std::mutex> lock(g_mutex);
-  g_snapshots.erase(state_id);
+  g_notify_interval = notify_interval;
 }
 
 void Run(const std::chrono::milliseconds& notify_interval) {
