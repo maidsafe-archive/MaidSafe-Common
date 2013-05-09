@@ -94,8 +94,24 @@ void PrintDetails(const NodeInfo& node_info) {
   static int count(0);
   std::string printout(std::to_string(count++));
   printout += "\tReceived: Owner: " + DebugId(node_info.id) + "\n";
-  for (const auto& node : *node_info.matrix)
-    printout += "\t\t" + DebugId(node.first->id) + "\n";
+  for (const auto& node : *node_info.matrix) {
+    switch (node.second) {
+      case ChildType::kGroup:
+        printout += "\t\t" + DebugId(node.first->id) + ": kGroup\n";
+        break;
+      case ChildType::kClosest:
+        printout += "\t\t" + DebugId(node.first->id) + ": kClosest\n";
+        break;
+      case ChildType::kMatrix:
+        printout += "\t\t" + DebugId(node.first->id) + ": kMatrix\n";
+        break;
+      case ChildType::kNotConnected:
+        printout += "\t\t" + DebugId(node.first->id) + ": kNotConnected\n";
+        break;
+      default:
+        assert(false);
+    }
+  }
   LOG(kInfo) << printout << '\n';
 }
 
@@ -168,6 +184,7 @@ void TakeSnapshotAndNotify() {
   g_functor(g_state_id);
   last_notified = std::chrono::steady_clock::now();
   g_last_notified_state_current = true;
+  LOG(kInfo) << "Increased state version to " << g_state_id << '\n';
 }
 
 void UpdateNodeInfo(const std::string& serialised_matrix_record) {
@@ -297,6 +314,7 @@ void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor) {
 }
 
 std::vector<std::string> GetNodesInNetwork(int state_id) {
+  LOG(kInfo) << "Handling GetNodesInNetwork request for state " << state_id << '\n';
   std::vector<std::string> hex_encoded_ids;
   std::lock_guard<std::mutex> lock(g_mutex);
   if (g_snapshots.empty())
@@ -314,6 +332,8 @@ std::vector<std::string> GetNodesInNetwork(int state_id) {
 }
 
 std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_encoded_id) {
+  LOG(kInfo) << "Handling GetCloseNodes request for "
+             << DebugId(NodeId(hex_encoded_id, NodeId::kHex)) << " at state " << state_id;
   std::vector<ViewableNode> children;
   std::lock_guard<std::mutex> lock(g_mutex);
   if (g_snapshots.empty())
