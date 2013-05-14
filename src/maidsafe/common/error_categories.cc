@@ -74,6 +74,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "This function cannot be invoked from this thread";
     case CommonErrors::cannot_exceed_limit:
       return "Cannot exceed specified limit";
+    case CommonErrors::unable_to_handle_request:
+      return "Unable to handle request";
     case CommonErrors::filesystem_io_error:
       return "Filesystem IO error";
     case CommonErrors::no_such_element:
@@ -103,6 +105,8 @@ std::error_condition CommonCategory::default_error_condition(
       return std::errc::file_too_large;
     case CommonErrors::cannot_invoke_from_this_thread:
       return std::errc::operation_not_permitted;
+    case CommonErrors::unable_to_handle_request:
+      return std::errc::not_supported;
     case CommonErrors::filesystem_io_error:
       return std::errc::io_error;
     case CommonErrors::not_a_directory:

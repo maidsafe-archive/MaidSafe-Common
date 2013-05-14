@@ -70,6 +70,7 @@ enum class CommonErrors {
   uncompression_error,
   cannot_invoke_from_this_thread,
   cannot_exceed_limit,
+  unable_to_handle_request,
   filesystem_io_error,
   no_such_element,
   serialisation_error,
