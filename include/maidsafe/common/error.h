@@ -69,7 +69,7 @@ enum class CommonErrors {
   compression_error,
   uncompression_error,
   cannot_invoke_from_this_thread,
-  cannot_exceed_max_disk_usage,
+  cannot_exceed_limit,
   filesystem_io_error,
   no_such_element,
   serialisation_error,
@@ -160,8 +160,7 @@ passport_error MakeError(PassportErrors code);
 
 
 enum class NfsErrors {
-  invalid_parameter = 1,
-  failed_to_get_data
+  failed_to_get_data = 1
 };
 
 class nfs_error : public maidsafe_error {

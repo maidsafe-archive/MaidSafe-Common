@@ -74,11 +74,6 @@ class BoundedString {
     return *this;
   }
 
-//  BoundedString& operator=(BoundedString&& other) {
-//    string_ = std::move(other.string_);
-//    return *this;
-//  }
-
   BoundedString& operator+=(const BoundedString& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);

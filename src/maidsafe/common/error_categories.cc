@@ -72,8 +72,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error during uncompression";
     case CommonErrors::cannot_invoke_from_this_thread:
       return "This function cannot be invoked from this thread";
-    case CommonErrors::cannot_exceed_max_disk_usage:
-      return "Cannot exceed specified maximum disk usage";
+    case CommonErrors::cannot_exceed_limit:
+      return "Cannot exceed specified limit";
     case CommonErrors::filesystem_io_error:
       return "Filesystem IO error";
     case CommonErrors::no_such_element:
@@ -103,8 +103,6 @@ std::error_condition CommonCategory::default_error_condition(
       return std::errc::file_too_large;
     case CommonErrors::cannot_invoke_from_this_thread:
       return std::errc::operation_not_permitted;
-    case CommonErrors::cannot_exceed_max_disk_usage:
-      return std::errc::no_buffer_space;
     case CommonErrors::filesystem_io_error:
       return std::errc::io_error;
     case CommonErrors::not_a_directory:
@@ -209,8 +207,6 @@ const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT {
 
 std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<NfsErrors>(error_value)) {
-    case NfsErrors::invalid_parameter:
-      return "One or more invalid parameters were passed when constructing an NFS message";
     case NfsErrors::failed_to_get_data:
       return "Routing failed to return requested data";
     default:
@@ -220,12 +216,10 @@ std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 
 std::error_condition NfsCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<NfsErrors>(error_value)) {
-    case NfsErrors::invalid_parameter:
-      return std::errc::invalid_argument;
-    default:
+//  switch (static_cast<NfsErrors>(error_value)) {
+//    default:
       return std::error_condition(error_value, *this);
-  }
+//  }
 }
 
 
