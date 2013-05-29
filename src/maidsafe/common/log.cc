@@ -161,14 +161,23 @@ void ColouredPrint(Colour colour, const std::string &text) {
 
 std::string GetProjectAndContractFile(std::string& file) {
   boost::replace_all(file, "\\", "/");
-  std::string project;
+  std::string project(file);
   size_t position(file.rfind("maidsafe"));
-  if (position != std::string::npos) {
-    file = file.substr(position + 9);
-    position = file.find('/');
-    project = file.substr(0, position);
-  }
-  return project;
+  if (position == std::string::npos || position == 0)
+    return "";
+
+  file = file.substr(position + 9);
+
+  project = project.substr(0, position - 1);
+  size_t end_position = project.rfind('/');
+  if (end_position == std::string::npos || end_position == 0)
+    return "";
+
+  size_t start_position = project.rfind('/', end_position - 1);
+  if (start_position == std::string::npos)
+    return "";
+
+  return project.substr(start_position + 1, end_position - start_position - 1);
 }
 
 bool ShouldLog(std::string project, int level) {
