@@ -60,11 +60,8 @@ target_link_libraries(maidsafe_common
                         ${BoostFilesystemLibs}
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
-                        ${BoostProgramOptionsLibs})
-
-if(JustThread_FOUND)
-  target_link_libraries(maidsafe_common optimized ${JustThread_LIBRARY} debug ${JustThread_LIBRARY_DEBUG})
-endif()
+                        ${BoostProgramOptionsLibs}
+                        ${JustThread_LIBRARIES})
 
 target_link_libraries(maidsafe_common ${SYS_LIB})
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
