@@ -402,7 +402,7 @@ void Run(const std::chrono::milliseconds& notify_interval) {
       bi::message_queue matrix_messages(bi::create_only, kMessageQueueName.c_str(), 1000, 10000);
       LOG(kSuccess) << "Running...";
       unsigned int priority;
-      bi::message_queue::size_type received_size;
+      bi::message_queue::size_type received_size(0);
       char input[10000];
       for (;;) {
         std::string received;
