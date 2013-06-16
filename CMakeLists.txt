@@ -44,6 +44,9 @@ glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 #==================================================================================================#
 ms_add_static_library(common ${CommonAllFiles})
 ms_add_static_library(network_viewer ${CommonToolsAllFiles})
+add_dependencies(maidsafe_common boost boost_process)
+# target_include_directories(maidsafe_common INTERFACE ${PROJECT_SOURCE_DIR}/include)
+# target_include_directories(maidsafe_network_viewer INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 if(MaidsafeTesting)
   ms_add_executable(TESTcommon "Tests/Common" ${TestsMain} ${CommonTestsAllFiles})
