@@ -38,7 +38,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/omp.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
