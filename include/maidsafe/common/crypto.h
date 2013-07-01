@@ -174,8 +174,10 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType>
   StringType result;
   HashType hash;
   try {
-    CryptoPP::StringSource(reinterpret_cast<const byte*>(input.data()), input.length(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result)));
+      static_cast<void>(CryptoPP::StringSource(reinterpret_cast<const byte*>(input.data()),
+          input.length(),
+          true,
+          new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result))));
   }
   catch(const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
