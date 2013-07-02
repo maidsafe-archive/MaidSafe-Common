@@ -344,7 +344,7 @@ void KeyValueBuffer::CopyQueueToDisk() {
 
 void KeyValueBuffer::CheckWorkerIsStillRunning() {
   // if this goes ready then we have an exception so get that (throw basically)
-  if (worker_.wait_for(std::chrono::seconds(1)) == std::future_status::ready &&
+  if (worker_.wait_for(std::chrono::nanoseconds(1)) == std::future_status::ready &&
       worker_.valid())
      worker_.get();
   if (!running_) {
