@@ -15,6 +15,7 @@ License.
 
 #include "maidsafe/common/key_value_buffer.h"
 
+#include <chrono>
 #include "boost/filesystem/convenience.hpp"
 
 #include "maidsafe/common/log.h"
@@ -343,7 +344,7 @@ void KeyValueBuffer::CopyQueueToDisk() {
 
 void KeyValueBuffer::CheckWorkerIsStillRunning() {
   // if this goes ready then we have an exception so get that (throw basically)
-  if (worker_.wait_for(std::chrono::seconds(0)) == std::future_status::ready &&
+  if (worker_.wait_for(std::chrono::seconds(1)) == std::future_status::ready &&
       worker_.valid())
      worker_.get();
   if (!running_) {
