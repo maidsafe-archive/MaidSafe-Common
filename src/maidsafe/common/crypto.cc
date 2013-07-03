@@ -139,7 +139,7 @@ UncompressedText Uncompress(const CompressedText& input) {
 std::vector<std::string> SecretShareData(const int32_t& threshold,
                                          const int32_t& number_of_shares,
                                          const std::string& data) {
-  CryptoPP::ChannelSwitch* channel_switch = new CryptoPP::ChannelSwitch;
+  auto  channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::StringSource source(data, false,
       new CryptoPP::SecretSharing(rng(), threshold, number_of_shares, channel_switch));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
