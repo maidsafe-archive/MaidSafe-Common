@@ -255,8 +255,8 @@ std::string RandomAlphaNumericString(const size_t &length) {
     std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
     boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
         g_random_number_generator, uniform_distribution);
-    for (auto it = random_string.begin(); it != random_string.end(); ++it)
-      *it = alpha_numerics[uni()];
+    for (auto & elem : random_string)
+      elem = alpha_numerics[uni()];
   }
   return random_string;
 }
