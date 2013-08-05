@@ -21,8 +21,10 @@ License.
 
 #ifdef MAIDSAFE_WIN32
 #  define MAIDSAFE_NOEXCEPT
+#  define MAIDSAFE_DELETE
 #else
 #  define MAIDSAFE_NOEXCEPT noexcept(true)
+#  define MAIDSAFE_DELETE = delete
 #endif
 
 namespace maidsafe {
