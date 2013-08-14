@@ -138,6 +138,7 @@ class KeyValueBuffer {
   const boost::filesystem::path kDiskBuffer_;
   const bool kShouldRemoveRoot_;
   std::atomic<bool> running_;
+  std::mutex worker_mutex_;
   std::future<void> worker_;
 };
 

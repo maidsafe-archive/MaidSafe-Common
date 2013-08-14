@@ -58,6 +58,7 @@ KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage,
       kDiskBuffer_(fs::unique_path(fs::temp_directory_path() / "KVB-%%%%-%%%%-%%%%-%%%%")),
       kShouldRemoveRoot_(true),
       running_(true),
+      worker_mutex_(),
       worker_() {
   Init();
 }
@@ -72,6 +73,7 @@ KeyValueBuffer::KeyValueBuffer(MemoryUsage max_memory_usage,
       kDiskBuffer_(disk_buffer),
       kShouldRemoveRoot_(false),
       running_(true),
+      worker_mutex_(),
       worker_() {
   Init();
 }
@@ -92,14 +94,23 @@ KeyValueBuffer::~KeyValueBuffer() {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex, std::adopt_lock);
     running_ = false;
   }
-  memory_store_.cond_var.notify_all();
-  disk_store_.cond_var.notify_all();
-  if (worker_.valid()) {
-    try {
-      worker_.get();
+  {
+    std::unique_lock<std::mutex> worker_lock(worker_mutex_);
+    while (worker_.valid() &&
+           worker_.wait_for(std::chrono::seconds(0)) == std::future_status::timeout) {
+      worker_lock.unlock();
+      memory_store_.cond_var.notify_all();
+      disk_store_.cond_var.notify_all();
+      std::this_thread::yield();
+      worker_lock.lock();
     }
-    catch(const std::exception& e) {
-      LOG(kError) << e.what();
+    if (worker_.valid()) {
+      try {
+        worker_.get();
+      }
+      catch(const std::exception& e) {
+        LOG(kError) << e.what();
+      }
     }
   }
 
@@ -135,7 +146,11 @@ bool KeyValueBuffer::StoreInMemory(const Identity& key, const NonEmptyString& va
     WaitForSpaceInMemory(required_space, memory_store_lock);
 
     if (!running_) {
-      worker_.get();
+      {
+        std::lock_guard<std::mutex> worker_lock(worker_mutex_);
+        if (worker_.valid())
+           worker_.get();
+      }
       return true;
     }
 
@@ -344,9 +359,11 @@ void KeyValueBuffer::CopyQueueToDisk() {
 
 void KeyValueBuffer::CheckWorkerIsStillRunning() {
   // if this goes ready then we have an exception so get that (throw basically)
-  if (worker_.wait_for(std::chrono::nanoseconds(1)) == std::future_status::ready &&
-      worker_.valid())
-     worker_.get();
+  {
+    std::lock_guard<std::mutex> worker_lock(worker_mutex_);
+    if (worker_.valid() && worker_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+      worker_.get();
+  }
   if (!running_) {
     LOG(kError) << "Worker is no longer running.";
     ThrowError(CommonErrors::filesystem_io_error);
