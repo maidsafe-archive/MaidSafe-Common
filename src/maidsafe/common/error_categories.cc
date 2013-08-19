@@ -201,17 +201,20 @@ std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<NfsErrors>(error_value)) {
     case NfsErrors::failed_to_get_data:
       return "Routing failed to return requested data";
+    case NfsErrors::timed_out:
+      return "Timed out";
     default:
       return "Unknown error in NFS";
   }
 }
 
-std::error_condition NfsCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<NfsErrors>(error_value)) {
-//    default:
+std::error_condition NfsCategory::default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<NfsErrors>(error_value)) {
+    case NfsErrors::timed_out:
+      return std::errc::timed_out;
+    default:
       return std::error_condition(error_value, *this);
-//  }
+  }
 }
 
 

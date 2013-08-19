@@ -149,7 +149,8 @@ passport_error MakeError(PassportErrors code);
 
 
 enum class NfsErrors {
-  failed_to_get_data = 1
+  failed_to_get_data = 1,
+  timed_out
 };
 
 class nfs_error : public maidsafe_error {
