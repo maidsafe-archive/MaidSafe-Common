@@ -44,7 +44,7 @@ std::string LocationToString(const ProfileEntry::Location& location) {
 std::string DurationToString(const std::chrono::high_resolution_clock::duration& duration) {
   auto nanos(std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());
   std::vector<char> buffer(21, 0);
-  std::sprintf(&buffer[0], "%8lli.%09lli s", nanos / 1000000000, nanos % 1000000000);  // NOLINT
+  std::sprintf(&buffer[0], "%8li.%09li s", nanos / 1000000000, nanos % 1000000000);  // NOLINT
   return std::string(&buffer[0]);
 }
 
@@ -109,7 +109,8 @@ Profiler& Profiler::Instance() {
 Profiler::~Profiler() {
   std::cout << "Preparing profiler output";
   auto output_future(std::async(std::launch::async,
-                                std::bind(&std::shared_ptr<Active>::reset, background_)));
+                                std::bind(static_cast<void(std::shared_ptr<Active>::*)()>(
+                                          &std::shared_ptr<Active>::reset), background_)));
   background_.reset();
   while (output_future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
     std::cout << '.';
