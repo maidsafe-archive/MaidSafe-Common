@@ -22,9 +22,6 @@ License.
 #endif
 #include <chrono>
 #include <cstdio>
-#include <ctime>
-#include <fstream>
-#include <iostream>
 #include <iterator>
 #include <mutex>
 #include <thread>
