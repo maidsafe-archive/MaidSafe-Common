@@ -48,29 +48,8 @@ void AsioService::Start() {
   }
   service_.reset();
   work_.reset(new boost::asio::io_service::work(service_));
-  for (auto& asio_thread : threads_) {
-    asio_thread = std::move(boost::thread([&] {
-#ifdef NDEBUG
-        try {
-          service_.run();
-        }
-        catch(const boost::system::system_error& e) {
-          LOG(kError) << e.what();
-          assert(false);
-        }
-        catch(const std::exception& e) {
-          LOG(kError) << e.what();
-          assert(false);
-        }
-        catch(...) {
-          LOG(kError) << "Unknown exception.";
-          assert(false);
-        }
-#else
-        service_.run();
-#endif
-    }));
-  }
+  for (auto& asio_thread : threads_)
+    asio_thread = std::move(boost::thread([&] { service_.run(); }));
 }
 
 void AsioService::Stop() {
@@ -92,8 +71,7 @@ void AsioService::Stop() {
         while (threads_[i].joinable()) {
           try {
             threads_[i].interrupt();
-            threads_[i].timed_join(bptime::milliseconds(1));
-            boost::this_thread::sleep(bptime::milliseconds(10));
+            threads_[i].try_join_for(boost::chrono::milliseconds(20));
           }
           catch(const boost::thread_interrupted&) {
             LOG(kError) << "Exception joining boost thread with ID " << threads_[i].get_id();

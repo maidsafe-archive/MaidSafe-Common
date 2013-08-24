@@ -32,7 +32,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(AsioServiceTest, BEH_All) {
+TEST(AsioServiceTest, BEH_InvalidStart) {
   bool done(false);
   std::mutex mutex;
   std::condition_variable cond_var;
@@ -59,45 +59,6 @@ TEST(AsioServiceTest, BEH_All) {
     asio_service.Start();
   }
 
-  {  // Stop while executing interruptible long-running tasks
-    int task_count(500);
-    const bptime::seconds kTaskDuration(2);
-    int sleeps_interrupted(0), sleeps_not_interrupted(0);
-
-    auto interruptible_task([&] {
-      bool sleep_completed(Sleep(kTaskDuration));
-      std::lock_guard<std::mutex> lock(mutex);
-      sleep_completed ? ++sleeps_not_interrupted : ++sleeps_interrupted;
-    });
-
-    AsioService asio_service(5);
-    asio_service.Start();
-    bptime::ptime start_time(bptime::microsec_clock::local_time());
-    for (int i(0); i != task_count; ++i)
-      asio_service.service().post(interruptible_task);
-    asio_service.Stop();
-    EXPECT_EQ(task_count, sleeps_interrupted);
-    EXPECT_EQ(0, sleeps_not_interrupted);
-    EXPECT_LT(bptime::microsec_clock::local_time() - start_time, kTaskDuration * 2);
-
-    // Stop while executing non-interruptible long-running tasks
-    task_count = 4;
-    sleeps_interrupted = sleeps_not_interrupted = 0;
-    auto non_interruptible_task([interruptible_task] {
-      boost::this_thread::disable_interruption disable_interruption;
-      interruptible_task();
-    });
-
-    asio_service.Start();
-    start_time = bptime::microsec_clock::local_time();
-    for (int i(0); i != task_count; ++i)
-      asio_service.service().post(non_interruptible_task);
-    asio_service.Stop();
-    EXPECT_EQ(task_count, sleeps_not_interrupted);
-    EXPECT_EQ(0, sleeps_interrupted);
-    EXPECT_GE(bptime::microsec_clock::local_time() - start_time, kTaskDuration);
-  }
-
 #ifndef NDEBUG
   // Check Start and Stop called from one of the service's own threads throws
   auto death_start = [] {
@@ -116,6 +77,47 @@ TEST(AsioServiceTest, BEH_All) {
   };
   ASSERT_DEATH(death_stop(), "");
 #endif
+}
+
+TEST(AsioServiceTest, BEH_Interrupt) {
+  // Stop while executing interruptible long-running tasks
+  std::mutex mutex;
+  int task_count(100);
+  const bptime::seconds kTaskDuration(2);
+  int sleeps_interrupted(0), sleeps_not_interrupted(0);
+
+  auto interruptible_task([&] {
+    bool sleep_completed(Sleep(kTaskDuration));
+    std::lock_guard<std::mutex> lock(mutex);
+    sleep_completed ? ++sleeps_not_interrupted : ++sleeps_interrupted;
+  });
+
+  AsioService asio_service(5);
+  asio_service.Start();
+  bptime::ptime start_time(bptime::microsec_clock::local_time());
+  for (int i(0); i != task_count; ++i)
+    asio_service.service().post(interruptible_task);
+  asio_service.Stop();
+  EXPECT_EQ(task_count, sleeps_interrupted);
+  EXPECT_EQ(0, sleeps_not_interrupted);
+  EXPECT_LT(bptime::microsec_clock::local_time() - start_time, kTaskDuration * 2);
+
+  // Stop while executing non-interruptible long-running tasks
+  task_count = 4;
+  sleeps_interrupted = sleeps_not_interrupted = 0;
+  auto non_interruptible_task([interruptible_task] {
+    boost::this_thread::disable_interruption disable_interruption;
+    interruptible_task();
+  });
+
+  asio_service.Start();
+  start_time = bptime::microsec_clock::local_time();
+  for (int i(0); i != task_count; ++i)
+    asio_service.service().post(non_interruptible_task);
+  asio_service.Stop();
+  EXPECT_EQ(task_count, sleeps_not_interrupted);
+  EXPECT_EQ(0, sleeps_interrupted);
+  EXPECT_GE(bptime::microsec_clock::local_time() - start_time, kTaskDuration);
 }
 
 }  // namespace test
