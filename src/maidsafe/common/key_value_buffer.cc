@@ -132,16 +132,18 @@ void KeyValueBuffer::Store(const Identity& key, const NonEmptyString& value) {
     LOG(kInfo) << "Storing value " << EncodeToBase32(value) << " with key " << EncodeToBase32(key);
   }
   CheckWorkerIsStillRunning();
-  if (!StoreInMemory(key, value))
-    StoreOnDisk(key, value);
+  auto disk_store_lock(StoreInMemory(key, value));
+  if (disk_store_lock)
+    StoreOnDisk(key, value, std::move(disk_store_lock));
 }
 
-bool KeyValueBuffer::StoreInMemory(const Identity& key, const NonEmptyString& value) {
+std::unique_lock<std::mutex> KeyValueBuffer::StoreInMemory(const Identity& key,
+                                                           const NonEmptyString& value) {
   {
     uint64_t required_space(value.string().size());
     std::unique_lock<std::mutex> memory_store_lock(memory_store_.mutex);
     if (required_space > memory_store_.max)
-      return false;
+      return std::move(std::unique_lock<std::mutex>(disk_store_.mutex));
 
     WaitForSpaceInMemory(required_space, memory_store_lock);
 
@@ -151,14 +153,14 @@ bool KeyValueBuffer::StoreInMemory(const Identity& key, const NonEmptyString& va
         if (worker_.valid())
            worker_.get();
       }
-      return true;
+      return std::move(std::unique_lock<std::mutex>());
     }
 
     memory_store_.current.data += required_space;
     memory_store_.index.emplace_back(key, value);
   }
   memory_store_.cond_var.notify_all();
-  return true;
+  return std::move(std::unique_lock<std::mutex>());
 }
 
 void KeyValueBuffer::WaitForSpaceInMemory(const uint64_t& required_space,
@@ -175,35 +177,36 @@ void KeyValueBuffer::WaitForSpaceInMemory(const uint64_t& required_space,
   }
 }
 
-void KeyValueBuffer::StoreOnDisk(const Identity& key, const NonEmptyString& value) {
-  {
-    std::unique_lock<std::mutex> disk_store_lock(disk_store_.mutex);
-    if (value.string().size() > disk_store_.max) {
-      LOG(kError) << "Cannot store " << HexSubstr(key) << " since its " << value.string().size()
-                  << " bytes exceeds max of " << disk_store_.max << " bytes.";
-      StopRunning();
-      ThrowError(CommonErrors::cannot_exceed_limit);
-    }
-    disk_store_.index.emplace_back(key);
-
-    bool cancelled(false);
-    WaitForSpaceOnDisk(key, value.string().size(), disk_store_lock, cancelled);
-    if (!running_)
-      return;
-
-    if (!cancelled) {
-      if (!WriteFile(GetFilename(key), value.string())) {
-        LOG(kError) << "Failed to move " << HexSubstr(key) << " to disk.";
-        StopRunning();
-        ThrowError(CommonErrors::filesystem_io_error);
-      }
-      auto itr(FindStartedToStoreOnDisk(key));
-      if (itr != disk_store_.index.end())
-        (*itr).state = StoringState::kCompleted;
-
-      disk_store_.current.data += value.string().size();
-    }
+void KeyValueBuffer::StoreOnDisk(const Identity& key,
+                                 const NonEmptyString& value,
+                                 std::unique_lock<std::mutex>&& disk_store_lock) {
+  assert(disk_store_lock);
+  if (value.string().size() > disk_store_.max) {
+    LOG(kError) << "Cannot store " << HexSubstr(key) << " since its " << value.string().size()
+                << " bytes exceeds max of " << disk_store_.max << " bytes.";
+    StopRunning();
+    ThrowError(CommonErrors::cannot_exceed_limit);
   }
+  disk_store_.index.emplace_back(key);
+
+  bool cancelled(false);
+  WaitForSpaceOnDisk(key, value.string().size(), disk_store_lock, cancelled);
+  if (!running_)
+    return;
+
+  if (!cancelled) {
+    if (!WriteFile(GetFilename(key), value.string())) {
+      LOG(kError) << "Failed to move " << HexSubstr(key) << " to disk.";
+      StopRunning();
+      ThrowError(CommonErrors::filesystem_io_error);
+    }
+    auto itr(FindStartedToStoreOnDisk(key));
+    if (itr != disk_store_.index.end())
+      (*itr).state = StoringState::kCompleted;
+
+    disk_store_.current.data += value.string().size();
+  }
+  disk_store_lock.unlock();
   disk_store_.cond_var.notify_all();
 }
 
@@ -345,11 +348,10 @@ void KeyValueBuffer::CopyQueueToDisk() {
       key = (*itr).key;
       value = (*itr).value;
       (*itr).also_on_disk = StoringState::kStarted;
-    }
-    StoreOnDisk(key, value);
-    {
-      std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
-      auto itr(Find(memory_store_, key));
+      memory_store_lock.unlock();
+      StoreOnDisk(key, value, std::unique_lock<std::mutex>(disk_store_.mutex));
+      memory_store_lock.lock();
+      itr = Find(memory_store_, key);
       if (itr != memory_store_.index.end())
         (*itr).also_on_disk = StoringState::kCompleted;
     }

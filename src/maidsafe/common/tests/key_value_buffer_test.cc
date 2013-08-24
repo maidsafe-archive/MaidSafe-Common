@@ -453,7 +453,9 @@ TEST_F(KeyValueBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
 
   uint32_t events(RandomUint32() % 100);
   for (uint32_t i = 0; i != events; ++i) {
-    last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % 30) + 1));
+    last_value = value;
+    while (last_value == value)
+      last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % 30) + 1));
     auto async = std::async(std::launch::async, [this, key, last_value] {
                                                   key_value_buffer_->Store(key, last_value);
                                                 });

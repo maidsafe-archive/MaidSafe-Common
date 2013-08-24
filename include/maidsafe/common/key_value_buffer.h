@@ -106,10 +106,12 @@ class KeyValueBuffer {
   typedef std::deque<DiskElement> DiskIndex;
 
   void Init();
-  bool StoreInMemory(const Identity& key, const NonEmptyString& value);
+  std::unique_lock<std::mutex> StoreInMemory(const Identity& key, const NonEmptyString& value);
   void WaitForSpaceInMemory(const uint64_t& required_space,
                             std::unique_lock<std::mutex>& memory_store_lock);
-  void StoreOnDisk(const Identity& key, const NonEmptyString& value);
+  void StoreOnDisk(const Identity& key,
+                   const NonEmptyString& value,
+                   std::unique_lock<std::mutex>&& disk_store_lock);
   void WaitForSpaceOnDisk(const Identity& key,
                           const uint64_t& required_space,
                           std::unique_lock<std::mutex>& disk_store_lock,
