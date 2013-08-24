@@ -17,6 +17,7 @@ License.
 #define MAIDSAFE_COMMON_UTILS_INL_H_
 
 #include <string>
+#include <type_traits>
 
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
@@ -105,6 +106,12 @@ template<size_t min, size_t max, typename StringType>
 StringType HexStringSubstr(const detail::BoundedString<min, max, StringType> &non_hex) {
   return HexStringSubstr(non_hex.string());
 }
+
+template<typename Rep, typename Period>
+void Sleep(const std::chrono::duration<Rep, Period>& duration) {
+  std::this_thread::sleep_for(duration);
+}
+
 
 }  // namespace maidsafe
 

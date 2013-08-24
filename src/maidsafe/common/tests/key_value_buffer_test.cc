@@ -200,7 +200,7 @@ TEST_F(KeyValueBufferTest, BEH_RemoveDiskBuffer) {
   // Fits into memory buffer successfully.  Background thread in future should throw, causing other
   // API functions to throw on next execution.
   EXPECT_NO_THROW(key_value_buffer_->Store(key, small_value));
-  Sleep(boost::chrono::seconds(1));
+  Sleep(std::chrono::seconds(1));
   EXPECT_THROW(key_value_buffer_->Store(key, small_value), std::exception);
   EXPECT_THROW(key_value_buffer_->Get(key), std::exception);
   EXPECT_THROW(key_value_buffer_->Delete(key), std::exception);

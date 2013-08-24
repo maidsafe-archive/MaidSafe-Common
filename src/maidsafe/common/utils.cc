@@ -447,7 +447,7 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
   return true;
 }
 
-bool Sleep(const boost::chrono::high_resolution_clock::duration &duration) {
+bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration &duration) {
   try {
     boost::this_thread::sleep_for(duration);
   }

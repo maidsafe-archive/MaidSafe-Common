@@ -197,7 +197,11 @@ bool WriteFile(const boost::filesystem::path &file_path, const std::string &cont
 
 // Causes running thread to sleep for specified duration.  Returns true if sleep completes full
 // duration, returns false if the sleep is interrupted.
-bool Sleep(const boost::chrono::high_resolution_clock::duration &duration);
+bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration &duration);
+
+// For use with std::chrono durations - provides a non-interruptible sleep.
+template<typename Rep, typename Period>
+void Sleep(const std::chrono::duration<Rep, Period>& duration);
 
 // Retrieve homedir from environment
 boost::filesystem::path GetHomeDir();

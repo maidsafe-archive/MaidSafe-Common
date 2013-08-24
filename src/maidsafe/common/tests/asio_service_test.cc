@@ -68,7 +68,7 @@ TEST(AsioServiceTest, BEH_Interrupt) {
   int sleeps_interrupted(0), sleeps_not_interrupted(0);
 
   auto interruptible_task([&] {
-    bool sleep_completed(Sleep(kTaskDuration));
+    bool sleep_completed(InterruptibleSleep(kTaskDuration));
     std::lock_guard<std::mutex> lock(mutex);
     sleep_completed ? ++sleeps_not_interrupted : ++sleeps_interrupted;
   });
