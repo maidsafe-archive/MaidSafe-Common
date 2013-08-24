@@ -58,25 +58,6 @@ TEST(AsioServiceTest, BEH_InvalidStart) {
     EXPECT_TRUE(done);
     asio_service.Start();
   }
-
-#ifndef NDEBUG
-  // Check Start and Stop called from one of the service's own threads throws
-  auto death_start = [] {
-    AsioService asio_service(1);
-    asio_service.Start();
-    asio_service.service().post([&] { asio_service.Start(); });  // NOLINT (Fraser)
-    Sleep(boost::chrono::milliseconds(200));
-  };
-  ASSERT_DEATH(death_start(), "");
-
-  auto death_stop = [] {
-    AsioService asio_service(1);
-    asio_service.Start();
-    asio_service.service().post([&] { asio_service.Stop(); });  // NOLINT (Fraser)
-    Sleep(boost::chrono::milliseconds(200));
-  };
-  ASSERT_DEATH(death_stop(), "");
-#endif
 }
 
 TEST(AsioServiceTest, BEH_Interrupt) {
