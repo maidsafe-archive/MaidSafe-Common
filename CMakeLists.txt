@@ -103,12 +103,12 @@ if(MaidsafeTesting)
   add_custom_command(TARGET TESTcommon
                        POST_BUILD
                        COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory $<TARGET_FILE_DIR:cryptest>/TestVectors ${CMAKE_CURRENT_BINARY_DIR}/TestVectors)
-  add_test(NAME CryptoppTest.BEH_FULL WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest> COMMAND $<TARGET_FILE:cryptest> v)
-  add_test(NAME CryptoppTest.BEH_AES WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest> COMMAND $<TARGET_FILE:cryptest> tv aes)
-  add_test(NAME CryptoppTest.BEH_SHA WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest> COMMAND $<TARGET_FILE:cryptest> tv sha)
-  add_test(NAME CryptoppTest.BEH_RSA_PSS WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest> COMMAND $<TARGET_FILE:cryptest> tv rsa_pss)
-  add_test(NAME CryptoppTest.BEH_RSA_OAEP WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest> COMMAND $<TARGET_FILE:cryptest> tv rsa_oaep)
-  add_test(NAME CryptoppTest.BEH_RSA_PKCS1_1_5 WORKING_DIRECTORY $<TARGET_FILE_DIR:cryptest> COMMAND $<TARGET_FILE:cryptest> tv rsa_pkcs1_1_5)
+  add_test(NAME CryptoppTest.BEH_FULL COMMAND cryptest v)
+  add_test(NAME CryptoppTest.BEH_AES COMMAND cryptest tv aes)
+  add_test(NAME CryptoppTest.BEH_SHA COMMAND cryptest tv sha)
+  add_test(NAME CryptoppTest.BEH_RSA_PSS COMMAND cryptest tv rsa_pss)
+  add_test(NAME CryptoppTest.BEH_RSA_OAEP COMMAND cryptest tv rsa_oaep)
+  add_test(NAME CryptoppTest.BEH_RSA_PKCS1_1_5 COMMAND cryptest tv rsa_pkcs1_1_5)
 
   set_property(TEST CryptoppTest.BEH_FULL PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
   set_property(TEST CryptoppTest.BEH_FULL PROPERTY TIMEOUT 60)
