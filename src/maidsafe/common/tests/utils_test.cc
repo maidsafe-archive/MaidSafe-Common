@@ -468,7 +468,6 @@ TEST(UtilsTest, BEH_ReadWriteFile) {
   EXPECT_NO_THROW(ReadFile(file_path));
   EXPECT_EQ(crypto::Hash<crypto::SHA512>(file_content),
             crypto::HashFile<crypto::SHA512>(file_path));
-
   std::string file_content_in;
   EXPECT_TRUE(ReadFile(file_path, &file_content_in));
   EXPECT_EQ(file_content, file_content_in);
