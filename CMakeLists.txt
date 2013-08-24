@@ -123,7 +123,8 @@ if(MaidsafeTesting)
   set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
   set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY TIMEOUT 60)
 
-  label_as_critical_tests(AsioServiceTest.BEH_All
+  label_as_critical_tests(AsioServiceTest.BEH_InvalidStart
+                          AsioServiceTest.BEH_Interrupt
                           UtilsTest.BEH_VersionToString
                           UtilsTest.BEH_VersionToInt
                           UtilsTest.BEH_Cpu_Size
