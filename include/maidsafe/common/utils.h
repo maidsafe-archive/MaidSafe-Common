@@ -197,7 +197,7 @@ bool WriteFile(const boost::filesystem::path &file_path, const std::string &cont
 
 // Causes running thread to sleep for specified duration.  Returns true if sleep completes full
 // duration, returns false if the sleep is interrupted.
-bool Sleep(const boost::posix_time::time_duration &duration);
+bool Sleep(const boost::chrono::high_resolution_clock::duration &duration);
 
 // Retrieve homedir from environment
 boost::filesystem::path GetHomeDir();

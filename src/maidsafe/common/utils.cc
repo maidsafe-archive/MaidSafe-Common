@@ -447,12 +447,14 @@ bool WriteFile(const fs::path &file_path, const std::string &content) {
   return true;
 }
 
-bool Sleep(const bptime::time_duration &duration) {
+bool Sleep(const boost::chrono::high_resolution_clock::duration &duration) {
   try {
-    boost::this_thread::sleep(duration);
+    boost::this_thread::sleep_for(duration);
   }
   catch(const boost::thread_interrupted&) {
-    LOG(kWarning) << "Thread was interrupted while sleeping for " << duration;
+    LOG(kWarning) << "Thread was interrupted while sleeping for "
+                  << boost::chrono::duration_cast<boost::chrono::microseconds>(duration).count()
+                  << " microseconds.";
     return false;
   }
   return true;

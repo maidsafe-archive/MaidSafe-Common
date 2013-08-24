@@ -482,7 +482,7 @@ TEST(UtilsTest, BEH_Sleep) {
   bptime::ptime first_time(bptime::microsec_clock::universal_time());
   bptime::ptime second_time(bptime::microsec_clock::universal_time());
   EXPECT_LT((second_time - first_time).total_milliseconds(), 100);
-  Sleep(bptime::milliseconds(100));
+  Sleep(boost::chrono::milliseconds(100));
   bptime::ptime third_time(bptime::microsec_clock::universal_time());
   EXPECT_GE((third_time - first_time).total_milliseconds(), 100);
 }

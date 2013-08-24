@@ -65,7 +65,7 @@ TEST(AsioServiceTest, BEH_InvalidStart) {
     AsioService asio_service(1);
     asio_service.Start();
     asio_service.service().post([&] { asio_service.Start(); });  // NOLINT (Fraser)
-    Sleep(boost::posix_time::milliseconds(200));
+    Sleep(boost::chrono::milliseconds(200));
   };
   ASSERT_DEATH(death_start(), "");
 
@@ -73,7 +73,7 @@ TEST(AsioServiceTest, BEH_InvalidStart) {
     AsioService asio_service(1);
     asio_service.Start();
     asio_service.service().post([&] { asio_service.Stop(); });  // NOLINT (Fraser)
-    Sleep(boost::posix_time::milliseconds(200));
+    Sleep(boost::chrono::milliseconds(200));
   };
   ASSERT_DEATH(death_stop(), "");
 #endif
@@ -83,7 +83,7 @@ TEST(AsioServiceTest, BEH_Interrupt) {
   // Stop while executing interruptible long-running tasks
   std::mutex mutex;
   int task_count(100);
-  const bptime::seconds kTaskDuration(2);
+  const boost::chrono::seconds kTaskDuration(2);
   int sleeps_interrupted(0), sleeps_not_interrupted(0);
 
   auto interruptible_task([&] {
@@ -94,13 +94,13 @@ TEST(AsioServiceTest, BEH_Interrupt) {
 
   AsioService asio_service(5);
   asio_service.Start();
-  bptime::ptime start_time(bptime::microsec_clock::local_time());
+  auto start_time(boost::chrono::high_resolution_clock::now());
   for (int i(0); i != task_count; ++i)
     asio_service.service().post(interruptible_task);
   asio_service.Stop();
   EXPECT_EQ(task_count, sleeps_interrupted);
   EXPECT_EQ(0, sleeps_not_interrupted);
-  EXPECT_LT(bptime::microsec_clock::local_time() - start_time, kTaskDuration * 2);
+  EXPECT_LT(boost::chrono::high_resolution_clock::now() - start_time, kTaskDuration * 2);
 
   // Stop while executing non-interruptible long-running tasks
   task_count = 4;
@@ -111,13 +111,13 @@ TEST(AsioServiceTest, BEH_Interrupt) {
   });
 
   asio_service.Start();
-  start_time = bptime::microsec_clock::local_time();
+  start_time = boost::chrono::high_resolution_clock::now();
   for (int i(0); i != task_count; ++i)
     asio_service.service().post(non_interruptible_task);
   asio_service.Stop();
   EXPECT_EQ(task_count, sleeps_not_interrupted);
   EXPECT_EQ(0, sleeps_interrupted);
-  EXPECT_GE(bptime::microsec_clock::local_time() - start_time, kTaskDuration);
+  EXPECT_GE(boost::chrono::high_resolution_clock::now() - start_time, kTaskDuration);
 }
 
 }  // namespace test
