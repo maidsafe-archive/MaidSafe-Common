@@ -348,8 +348,9 @@ void KeyValueBuffer::CopyQueueToDisk() {
       key = (*itr).key;
       value = (*itr).value;
       (*itr).also_on_disk = StoringState::kStarted;
+      std::unique_lock<std::mutex> disk_store_lock(disk_store_.mutex);
       memory_store_lock.unlock();
-      StoreOnDisk(key, value, std::unique_lock<std::mutex>(disk_store_.mutex));
+      StoreOnDisk(key, value, std::move(disk_store_lock));
       memory_store_lock.lock();
       itr = Find(memory_store_, key);
       if (itr != memory_store_.index.end())
