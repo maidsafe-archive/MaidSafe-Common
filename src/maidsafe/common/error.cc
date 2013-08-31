@@ -92,6 +92,20 @@ routing_error MakeError(RoutingErrors code) {
 
 
 
+std::error_code make_error_code(DriveErrors code) {
+  return std::error_code(static_cast<int>(code), GetDriveCategory());
+}
+
+std::error_condition make_error_condition(DriveErrors code) {
+  return std::error_condition(static_cast<int>(code), GetDriveCategory());
+}
+
+drive_error MakeError(DriveErrors code) {
+  return drive_error(make_error_code(code));
+}
+
+
+
 std::error_code make_error_code(VaultErrors code) {
   return std::error_code(static_cast<int>(code), GetVaultCategory());
 }
@@ -142,6 +156,11 @@ const std::error_category& GetNfsCategory() {
 
 const std::error_category& GetRoutingCategory() {
   static detail::RoutingCategory instance;
+  return instance;
+}
+
+const std::error_category& GetDriveCategory() {
+  static detail::DriveCategory instance;
   return instance;
 }
 

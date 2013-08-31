@@ -105,6 +105,7 @@ std::error_condition CommonCategory::default_error_condition(
 }
 
 
+
 const char* AsymmCategory::name() const MAIDSAFE_NOEXCEPT {
   return "MaidSafe Asymmetric Crypto";
 }
@@ -155,6 +156,7 @@ std::error_condition AsymmCategory::default_error_condition(
 }
 
 
+
 const char* PassportCategory::name() const MAIDSAFE_NOEXCEPT {
   return "MaidSafe Identity Ring";
 }
@@ -193,6 +195,7 @@ std::error_condition PassportCategory::default_error_condition(
 }
 
 
+
 const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT {
   return "MaidSafe Network Filesystem";
 }
@@ -218,6 +221,7 @@ std::error_condition NfsCategory::default_error_condition(int error_value) const
 }
 
 
+
 const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT {
   return "MaidSafe Routing";
 }
@@ -240,6 +244,34 @@ std::error_condition RoutingCategory::default_error_condition(
       return std::error_condition(error_value, *this);
   }
 }
+
+
+
+const char* DriveCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "MaidSafe Drive";
+}
+
+std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<DriveErrors>(error_value)) {
+    case DriveErrors::no_service_storage_allocated:
+      return "No data store has been allocated for use with this service";
+    case DriveErrors::no_drive_letter_available:
+      return "There are no available drive letters left";
+    case DriveErrors::failed_to_mount:
+      return "Failed to mount the drive";
+    default:
+      return "Unknown error in Drive";
+  }
+}
+
+std::error_condition DriveCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
+//  switch (static_cast<DriveErrors>(error_value)) {
+//    default:
+      return std::error_condition(error_value, *this);
+//  }
+}
+
 
 
 const char* VaultCategory::name() const MAIDSAFE_NOEXCEPT {
@@ -284,13 +316,14 @@ std::error_condition VaultCategory::default_error_condition(
 }
 
 
+
 const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
   return "LifeStuff";
 }
 
 std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<LifeStuffErrors>(error_value)) {
-    case LifeStuffErrors::kAuthenticationError:
+    case LifeStuffErrors::kPasswordFailure:
     default:
       return "Unknown error in LifeStuff";
   }
@@ -299,7 +332,7 @@ std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT 
 std::error_condition LifeStuffCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<LifeStuffErrors>(error_value)) {
-    case LifeStuffErrors::kAuthenticationError:
+    case LifeStuffErrors::kPasswordFailure:
     default:
       return std::error_condition(error_value, *this);
   }

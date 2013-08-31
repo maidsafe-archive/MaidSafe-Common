@@ -84,6 +84,7 @@ const std::error_category& GetCommonCategory();
 common_error MakeError(CommonErrors code);
 
 
+
 enum class AsymmErrors {
   keys_generation_error = 1,
   keys_serialisation_error,
@@ -117,6 +118,7 @@ const std::error_category& GetAsymmCategory();
 asymm_error MakeError(AsymmErrors code);
 
 
+
 enum class PassportErrors {
   fob_serialisation_error = 1,
   fob_parsing_error,
@@ -146,6 +148,7 @@ std::error_code make_error_code(PassportErrors code);
 std::error_condition make_error_condition(PassportErrors code);
 const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
+
 
 
 enum class NfsErrors {
@@ -198,6 +201,31 @@ routing_error MakeError(RoutingErrors code);
 
 
 
+enum class DriveErrors {
+  no_service_storage_allocated = 1,
+  no_drive_letter_available,
+  failed_to_mount
+};
+
+class drive_error : public maidsafe_error {
+ public:
+  drive_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  drive_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit drive_error(std::error_code ec) : maidsafe_error(ec) {}
+  drive_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  drive_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  drive_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(DriveErrors code);
+std::error_condition make_error_condition(DriveErrors code);
+const std::error_category& GetDriveCategory();
+drive_error MakeError(DriveErrors code);
+
+
+
 enum class VaultErrors {
   failed_to_join_network = 1,
   failed_to_handle_request,
@@ -231,471 +259,7 @@ vault_error MakeError(VaultErrors code);
 
 
 enum class LifeStuffErrors {
-  // Authentication
-  kAuthenticationError = 1,
-  kPasswordFailure,
-  kUserDoesntExist,
-  kUserExists,
-  kPublicUsernameExists,
-  kPublicUsernameAlreadySet,
-  kFailedToDeleteOldPacket,
-  kBadPacket,
-  // BufferPacketHandler
-  kBPError,
-  kBPSerialiseError,
-  kBPInfoSerialiseError,
-  kBPParseError,
-  kBPInfoParseError,
-  kStoreNewBPError,
-  kModifyBPError,
-  kBPAddUserError,
-  kBPStoreAddedUserError,
-  kBPDeleteUserError,
-  kBPStoreDeletedUserError,
-  kBPRetrievalError,
-  kBPMessagesRetrievalError,
-  kGetBPInfoError,
-  kBPAddMessageError,
-  kBPAwaitingCallback,
-  kBPGetPresenceError,
-  kBPAddPresenceError,
-  // Chunkstore
-  kInvalidChunkType,
-  kChunkstoreError,
-  kChunkFileDoesntExist,
-  kErrorReadingChunkFile,
-  kChunkstoreUninitialised,
-  kChunkstoreFailedStore,
-  kChunkstoreFailedDelete,
-  kChunkstoreException,
-  kHashCheckFailure,
-  kChunkExistsInChunkstore,
-  // ClientController
-  kClientControllerError,
-  kClientControllerNotInitialised,
-  // DataAtlasHandler
-  kDataAtlasError,
-  kDBDoesntExist,
-  kDBOpenException,
-  kDBCreateException,
-  kDBReadWriteException,
-  kDBCloseException,
-  kDBCantFindFile,
-  kDBCantFindDirKey,
-  kParseDataMapError,
-  kAddElementError,
-  kModifyElementError,
-  kRemoveElementError,
-  kRenameElementError,
-  kCopyElementError,
-  kDataAtlasException,
-  // StoreManagers
-  kStoreManagerError,
-  kStoreManagerInitError,
-  kNotConnected,
-  kLoadChunkFindNodesFailure,
-  kStoreChunkFindNodesFailure,
-  kStoreChunkError,
-  kChunkNotInChunkstore,
-  kGetRequestSigError,
-  kGetStorePeerError,
-  kSendPrepResponseUninitialised,
-  kSendPrepPeerError,
-  kSendPrepSignedSizeAltered,
-  kSendPrepFailure,
-  kSendPrepInvalidId,
-  kSendPrepInvalidResponseSignature,
-  kSendPrepInvalidContractSignature,
-  kSendContentFailure,
-  kSendChunkFailure,
-  kTaskCancelledOffline,
-  kFindNodesError,
-  kFindNodesFailure,
-  kFindNodesParseError,
-  kFindValueError,
-  kFindValueFailure,
-  kFindValueParseError,
-  kLoadChunkFailure,
-  kDeleteChunkFindNodesFailure,
-  kDeleteChunkError,
-  kDeleteSizeError,
-  kDeleteChunkFailure,
-  kLoadedChunkEmpty,
-  kGetChunkFailure,
-  kSendPacketError,
-  kSendPacketFailure,
-  kSendPacketFindValueFailure,
-  kSendPacketCached,
-  kSendPacketAlreadyExists,
-  kSendPacketUnknownExistsType,
-  kSendPacketParseError,
-  kDeletePacketFindValueFailure,
-  kDeletePacketError,
-  kDeletePacketParseError,
-  kDeletePacketFailure,
-  kLoadPacketCached,
-  kLoadPacketFailure,
-  kPacketUnknownType,
-  kDirUnknownType,
-  kStoreManagerException,
-  kFindAccountHoldersError,
-  kRequestPendingConsensus,
-  kRequestFailedConsensus,
-  kRequestInsufficientResponses,
-  kNoPublicKeyToCheck,
-  kInvalidPublicKey,
-  kKeyUnique,
-  kKeyNotUnique,
-  kUpdatePacketFailure,
-  kUpdatePacketError,
-  kUpdatePacketParseError,
-  kChunkStorePending,
-  kAmendAccountFailure,
-  kModifyChunkFailure,
-  // KadOps
-  kKadConfigException,
-  kKadOpsInitFailure,
-  kKadIdError,
-  // MessageHandler
-  kConnectionNotExists,
-  kFailedToConnect,
-  kFailedToSend,
-  kFailedToStartHandler,
-  kHandlerAlreadyStarted,
-  kHandlerNotStarted,
-  kConnectionAlreadyExists,
-  kConnectionDown,
-  // Session & FileSystem
-  kEmptyConversationId,
-  kNonExistentConversation,
-  kExistingConversation,
-  kLoadKeysFailure,
-  kGetKeyFailure,
-  kContactListFailure,
-  kSessionNameEmpty,
-  kFileSystemMountError,
-  kFileSystemUnmountError,
-  kFuseMountPointError,
-  kFileSystemException,
-  kAddLiveContactFailure,
-  kLiveContactNotFound,
-  kLiveContactNoEp,
-  // SelfEncryptionHandler(-12000)
-  kGeneralEncryptionError,
-  kEncryptFileFailure,
-  kEncryptStringFailure,
-  kEncryptDbFailure,
-  kDecryptFileFailure,
-  kDecryptStringFailure,
-  kDecryptDbFailure,
-  kEncryptionLocked,
-  kEncryptionLink,
-  kEncryptionChunk,
-  kEncryptionNotForProcessing,
-  kEncryptionUnknownType,
-  kEncryptionMDMFailure,
-  kEncryptionDAHFailure,
-  kEncryptionDMFailure,
-  kEncryptionSMFailure,
-  kEncryptionSmallInput,
-  kEncryptionKeyGenFailure,
-  kEncryptionGetDirKeyFailure,
-  kEncryptionDbMissing,
-  kEncryptionDbException,
-  kEncryptionDmNotInMap,
-  // StoreManagerTaskHandler
-  kStoreManagerTaskHandlerError,
-  kStoreManagerTaskIncorrectParameter,
-  kStoreManagerTaskIncorrectOperation,
-  kStoreManagerTaskParentNotActive,
-  kStoreManagerTaskNotFound,
-  kStoreManagerTaskCancelledOrDone,
-  kStoreManagerTaskConflict,
-  // Validator
-  kValidatorNoParameters,
-  kValidatorNoPrivateKey,
-  kInvalidPointer,
-  kTimedOut,
-  // DataStore
-  kEmptyKey,
-  kZeroTTL,
-  kFailedToModifyKeyValue,
-  // RoutingTable
-  kOwnIdNotIncludable,
-  kFailedToInsertNewContact,
-  kFailedToFindContact,
-  kFailedToSetPublicKey,
-  kFailedToUpdateRankInfo,
-  kFailedToSetPreferredEndpoint,
-  kFailedToIncrementFailedRpcCount,
-  // Node
-  kNoOnlineBootstrapContacts,
-  kInvalidBootstrapContacts,
-  kNotListening,
-  kNotJoined,
-  kResponseTimeout,
-  kResponseCancelled,
-  kInvalidDestinationId,
-  kEmptyData,
-  kTypeNotAllowed,
-  kFailedtoSendFindNode,
-  kDataSizeNotAllowed,
-  kFailedtoGetEndpoint,
-  kPartialJoinSessionEnded,
-  // DirectoryListing
-  kFailedToAddChild,
-  kFailedToRemoveChild,
-  // DirectoryListingHandler
-  kFailedToInitialise,
-  kFailedToGetDirectoryData,
-  kFailedToAddDirectoryListing,
-  kFailedToDeleteDirectoryListing,
-  kFailedToRenameDirectoryListing,
-  kFailedToCreateDirectory,
-  kFailedToSaveParentDirectoryListing,
-  kFailedToSaveChanges,
-  kFailedToDeleteDirectoryListingNotEmpty,
-  kFailedToStoreEncryptedDataMap,
-  kFailedToModifyEncryptedDataMap,
-  kFailedToDeleteEncryptedDataMap,
-  kFailedToDecryptDataMap,
-  kFailedToParseShares,
-  kNotAuthorised,
-  kNestedShareDisallowed,
-  kHiddenNotAllowed,
-  kFailedToRetrieveData,
-  kInvalidDataMap,
-  kFailedToGetLock,
-  // DriveInUserSpace
-  kChildAlreadyExists,
-  kFailedToGetChild,
-  kFailedChunkStoreInit,
-  kCBFSError,
-  kCreateStorageError,
-  kMountError,
-  kFuseFailedToParseCommandLine,
-  kFuseFailedToMount,
-  kFuseNewFailed,
-  kFuseFailedToDaemonise,
-  kFuseFailedToSetSignalHandlers,
-  kUnmountError,
-  kInvalidSelfEncryptor,
-  kReadError,
-  kWriteError,
-  kInvalidSeek,
-  kInvalidPath,
-  kFailedToGetMetaData,
-  kNoDataMap,
-  kFailedToSerialiseDataMap,
-  kFailedToParseDataMap,
-  kNoDirectoryId,
-  kInvalidIds,
-  kInvalidKey,
-  kParentShared,
-  kFailedToUpdateShareKeys,
-  kFailedToGetShareKeys,
-  kNoMsHidden,
-  kMsHiddenAlreadyExists,
-  kShareAlreadyExistsInHierarchy,
-  kDirectoryRecursionException,
-  // meta_data_ops
-  kSerialisingError,
-  kParsingError,
-  // Shares
-  kFailedToParseShareUsers,
-  kFailedToSerialiseShareUsers,
-  kShareUserAlreadyExists,
-  kFailedToFindShareUser,
-  kShareByIdNotFound,
-  kNotBootstrapped,
-  kFull,
-  kInvalidTransport,
-  kInvalidConnection,
-  kNotConnectable,
-  kInvalidEndpoint,
-  kTransportStartFailure,
-  kEmptyValidationData,
-  kConnectError,
-  kMessageTooLarge,
-  kPingFailed,
-  kWontPingAlreadyConnected,
-  kWontPingOurself,
-  kConnectAttemptAlreadyRunning,
-  kOwnId,
-  kNoPendingConnectAttempt,
-  kBootstrapUpgradeFailure,
-  kInvalidParameter,
-  kNoBootstrapEndpoints,
-  kFailedToGetLocalAddress,
-
-  // Upper limit of values for this enum.
-  kReturnCodeLimit,
-  kGeneralError,
-  kUnknownFailure,
-  kParseFailure,
-  kPreOperationCheckFailure,
-  kDuplicateNameFailure,
-  kVerifyDataFailure,
-  kGetFailure,
-  kStoreFailure,
-  kDeleteFailure,
-  kModifyFailure,
-  kInvalidSignedData,
-  kFailedSignatureCheck,
-  kNotHashable,
-  kNotOwner,
-  kFailedToFindChunk,
-  kAppendDisallowed,
-  kHashFailure,
-  kDifferentVersion,
-  kChunkNotModified,
-  kDataNotPublicKey,
-  // DownloadManager
-  kManifestFailure,
-  kDownloadFailure,
-  kNoVersionChange,
-  kLocalFailure,
-  // Transport
-  kListenError,
-  kMessageSizeTooLarge,
-  kReceiveFailure,
-  kReceiveTimeout,
-  kSendTimeout,
-  kConnectFailure,
-  kReadOnlyRestrictedSuccess,
-  kRemoteChunkStoreFailure,
-  kPublicIdNotFoundFailure,
-  kGetPublicIdError,
-  // LifeStuffImpl and API
-  kWrongState,
-  kWrongLoggedInState,
-  kWrongAccessLevel,
-  kInitialiseUpdateFunctionFailure,
-  kInitialiseBootstrapsFailure,
-  kInitialiseChunkStoreFailure,
-  kSetSlotsFailure,
-  kConnectSignalsFailure,
-  kLogoutCredentialsFailure,
-  kLogoutCompleteChunkFailure,
-  kCreateDirectoryError,
-  kMountDriveOnCreationError,
-  kCreateMyStuffError,
-  kCreateSharedStuffError,
-  kMountDriveTryManualUnMount,
-  kMountDriveMountPointCreationFailure,
-  kMountDriveError,
-  kUnMountDriveError,
-  kStartMessagesAndContactsNoPublicIds,
-  kChangePictureWrongSize,
-  kChangePictureWriteHiddenFileFailure,
-  kChangePictureEmptyDataMap,
-  kChangePictureReconstructionError,
-  kSendMessageSizeFailure,
-  kAcceptFilePathError,
-  kAcceptFileSerialisedIdentifierEmpty,
-  kAcceptFileGetFileNameDataFailure,
-  kAcceptFileCorruptDatamap,
-  kAcceptFileVerifyCreatePathFailure,
-  kAcceptFileNameFailure,
-  kReadHiddenFileContentFailure,
-  kCheckPasswordFailure,
-  kVaultCreationCredentialsFailure,
-  kVaultCreationStartFailure,
-  kNoShareTarget,
-  kCouldNotAcquirePmidKeys,
-  // Account Locking
-  kLidParseToSignedDataFailure,
-  kLidDecryptDataFailure,
-  kLidParseToLockingPacketFailure,
-  kLidAddItemIdentifierInUse,
-  kLidAddItemFullAccessUnavailable,
-  kLidRemoveItemIdentifierNotFound,
-  kLidRemoveItemsIdentifierNotFound,
-  kLidUpdateTimestampIdentifierNotFound,
-  kLidCheckOthersIdentifierNotFound,
-  kAccountAlreadyLoggedIn,
-  kLidNotFound,
-  kLidIdentifierFound,
-  // Contacts
-  kContactInsertionFailure,
-  kContactErasureFailure,
-  kContactNotPresentFailure,
-  kContactReplacementFailure,
-  // MessageHander
-  kStartMessagesNoPublicIds,
-  kPublicIdTimeout,
-  kMessageHandlerException,
-  kCannotConvertInboxItemToProtobuf,
-  kContactInfoContentsFailure,
-  // PublicID
-  kStartContactsNoPublicIds,
-  kGetPublicKeyFailure,
-  kContactNotFoundFailure,
-  kSigningError,
-  kEncryptingError,
-  kPublicIdException,
-  kSendContactInfoFailure,
-  kStorePublicIdFailure,
-  kModifyAppendabilityFailure,
-  kGenerateNewMMIDFailure,
-  kRemoveContactFailure,
-  kDeletePublicIdFailure,
-  kCannotAddOwnPublicId,
-  kCanOnlyRejectPendingResponseContact,
-  kConfirmContactGetInfoFailure,
-  kConfirmContactInformFailure,
-  kConfirmContactStatusFailure,
-  kPRWERGetInfoFailure,
-  kPRWERPublicKeyFailure,
-  kPRWERInformFailure,
-  kPRWERStatusFailure,
-  // Session
-  kTryAgainLater,
-  kPublicIdInsertionFailure,
-  kParseDataAtlasTmidEmpty,
-  kParseDataAtlasTmidDoesNotParse,
-  kParseDataAtlasKeyringDoesNotParse,
-  kSerialiseDataAtlasKeyringFailure,
-  kSerialiseDataAtlasToStringFailure,
-  // UserCredentials
-  kChangePasswordFailure,
-  kLoginUserNonExistence,
-  kLoginAccountCorrupted,
-  kLoginSessionNotYetSaved,
-  kLoginUsingNextToLastSession,
-  kMustDieFailure,
-  kCorruptedPacket,
-  kIdPacketNotFound,
-  kTemporaryIdPacketNotFound,
-  kSetIdentityPacketsFailure,
-  kStoreIdentityPacketsFailure,
-  kDeleteIdentityPacketsFailure,
-  kCreateSignaturePacketInfoFailure,
-  kCreateSignaturePacketsFailure,
-  kDeleteSignaturePacketsFailure,
-  kSessionFailure,
-  kSessionSerialisationFailure,
-  kSaveSessionFailure,
-  kUsingNextToLastSession,
-  // UserStorage
-  kOwnerTryingToLeave,
-  // Utils
-  kWordSizeInvalid,
-  kWordPatternInvalid,
-  kKeywordSizeInvalid,
-  kKeywordPatternInvalid,
-  kPinSizeInvalid,
-  kPinPatternInvalid,
-  kPasswordSizeInvalid,
-  kPasswordPatternInvalid,
-  kPublicIdEmpty,
-  kPublicIdLengthInvalid,
-  kPublicIdEndSpaceInvalid,
-  kPublicIdDoubleSpaceInvalid,
-  kAtLeastOneFailure,
-  // Codes remaining in DISABLED tests.  Expect these codes to be redundant soon.
-  kReadOnlyFailure,
-  kFailedSymmDecrypt
+  kPasswordFailure = 1
 };
 
 class lifestuff_error : public maidsafe_error {
@@ -731,36 +295,29 @@ inline void ThrowError(const MaidsafeErrorCode& code) {
 
 namespace std {
 
-#ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Weffc++"
-#endif
-
-template <>
+template<>
 struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};
 
-template <>
+template<>
 struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};
 
-template <>
+template<>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
 
-template <>
+template<>
 struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};
 
-template <>
+template<>
 struct is_error_code_enum<maidsafe::RoutingErrors> : public true_type {};
 
-template <>
+template<>
+struct is_error_code_enum<maidsafe::DriveErrors> : public true_type {};
+
+template<>
 struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
 
-template <>
+template<>
 struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};
-
-
-#ifdef __GNUC__
-#  pragma GCC diagnostic pop
-#endif
 
 }  // namespace std
 
