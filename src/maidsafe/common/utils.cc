@@ -479,55 +479,6 @@ fs::path GetHomeDir() {
   return fs::path();
 }
 
-fs::path GetUserAppDir() {
-  const fs::path kHomeDir(GetHomeDir());
-  if (kHomeDir.empty()) {
-    LOG(kError) << "Cannot deduce user application directory path";
-    return fs::path();
-  }
-#if defined(MAIDSAFE_WIN32)
-  return fs::path(getenv("APPDATA")) / kCompanyName / kApplicationName;
-#elif defined(MAIDSAFE_APPLE)
-  return kHomeDir / "/Library/Application Support/" / kCompanyName /
-         kApplicationName;
-#elif defined(MAIDSAFE_LINUX)
-  return kHomeDir / ".config" / kCompanyName / kApplicationName;
-#else
-  LOG(kError) << "Cannot deduce user application directory path";
-  return fs::path();
-#endif
-}
-
-
-fs::path GetSystemAppSupportDir() {
-#if defined(MAIDSAFE_WIN32)
-  return fs::path(getenv("ALLUSERSPROFILE")) / kCompanyName / kApplicationName;
-#elif defined(MAIDSAFE_APPLE)
-  return fs::path("/Library/Application Support/") / kCompanyName /
-         kApplicationName;
-#elif defined(MAIDSAFE_LINUX)
-  return fs::path("/usr/share/") / kCompanyName / kApplicationName;
-#else
-  LOG(kError) << "Cannot deduce system wide application directory path";
-  return fs::path();
-#endif
-}
-
-fs::path GetAppInstallDir() {
-#if defined(MAIDSAFE_WIN32)
-  std::string program_files =
-      getenv(kTargetArchitecture == "x86_64" ? "ProgramFiles(x86)" : "ProgramFiles");
-  return fs::path(program_files) / kCompanyName / kApplicationName;
-#elif defined(MAIDSAFE_APPLE)
-  return fs::path("/Applications/");
-#elif defined(MAIDSAFE_LINUX)
-  return fs::path("/usr/bin/");
-#else
-  LOG(kError) << "Cannot deduce application directory path";
-  return fs::path();
-#endif
-}
-
 unsigned int Concurrency() {
   return std::max(std::thread::hardware_concurrency(), 2U);
 }

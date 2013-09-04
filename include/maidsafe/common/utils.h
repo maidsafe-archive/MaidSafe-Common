@@ -207,13 +207,55 @@ void Sleep(const std::chrono::duration<Rep, Period>& duration);
 boost::filesystem::path GetHomeDir();
 
 // Application support directory in userspace; uses kCompanyName and kApplicationName
-boost::filesystem::path GetUserAppDir();
+inline boost::filesystem::path GetUserAppDir() {
+  const boost::filesystem::path kHomeDir(GetHomeDir());
+  if (kHomeDir.empty()) {
+    LOG(kError) << "Cannot deduce user application directory path";
+    return boost::filesystem::path();
+  }
+#if defined(MAIDSAFE_WIN32)
+  return boost::filesystem::path(getenv("APPDATA")) / kCompanyName() / kApplicationName();
+#elif defined(MAIDSAFE_APPLE)
+  return kHomeDir / "/Library/Application Support/" / kCompanyName() /
+         kApplicationName();
+#elif defined(MAIDSAFE_LINUX)
+  return kHomeDir / ".config" / kCompanyName() / kApplicationName();
+#else
+  LOG(kError) << "Cannot deduce user application directory path";
+  return boost::filesystem::path();
+#endif
+}
 
 // Application support directory for all users; uses kCompanyName and kApplicationName
-boost::filesystem::path GetSystemAppSupportDir();
+inline boost::filesystem::path GetSystemAppSupportDir() {
+#if defined(MAIDSAFE_WIN32)
+  return boost::filesystem::path(getenv("ALLUSERSPROFILE")) / kCompanyName() / kApplicationName();
+#elif defined(MAIDSAFE_APPLE)
+  return boost::filesystem::path("/Library/Application Support/") / kCompanyName() /
+         kApplicationName();
+#elif defined(MAIDSAFE_LINUX)
+  return boost::filesystem::path("/usr/share/") / kCompanyName() / kApplicationName();
+#else
+  LOG(kError) << "Cannot deduce system wide application directory path";
+  return boost::filesystem::path();
+#endif
+}
 
 // Application install directory; uses kCompanyName and kApplicationName
-boost::filesystem::path GetAppInstallDir();
+inline boost::filesystem::path GetAppInstallDir() {
+#if defined(MAIDSAFE_WIN32)
+  std::string program_files =
+      getenv(kTargetArchitecture == "x86_64" ? "ProgramFiles(x86)" : "ProgramFiles");
+  return boost::filesystem::path(program_files) / kCompanyName() / kApplicationName();
+#elif defined(MAIDSAFE_APPLE)
+  return boost::filesystem::path("/Applications/");
+#elif defined(MAIDSAFE_LINUX)
+  return boost::filesystem::path("/usr/bin/");
+#else
+  LOG(kError) << "Cannot deduce application directory path";
+  return boost::filesystem::path();
+#endif
+}
 
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
