@@ -202,9 +202,9 @@ routing_error MakeError(RoutingErrors code);
 
 
 enum class DriveErrors {
-  no_service_storage_allocated = 1,
-  no_drive_letter_available,
-  failed_to_mount
+  no_drive_letter_available = 1,
+  failed_to_mount,
+  permission_denied
 };
 
 class drive_error : public maidsafe_error {

@@ -253,12 +253,12 @@ const char* DriveCategory::name() const MAIDSAFE_NOEXCEPT {
 
 std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<DriveErrors>(error_value)) {
-    case DriveErrors::no_service_storage_allocated:
-      return "No data store has been allocated for use with this service";
     case DriveErrors::no_drive_letter_available:
       return "There are no available drive letters left";
     case DriveErrors::failed_to_mount:
       return "Failed to mount the drive";
+    case DriveErrors::permission_denied:
+      return "Permission denied for given action";
     default:
       return "Unknown error in Drive";
   }
@@ -266,10 +266,12 @@ std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 
 std::error_condition DriveCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<DriveErrors>(error_value)) {
-//    default:
+  switch (static_cast<DriveErrors>(error_value)) {
+    case DriveErrors::permission_denied:
+      return std::errc::permission_denied;
+    default:
       return std::error_condition(error_value, *this);
-//  }
+  }
 }
 
 
