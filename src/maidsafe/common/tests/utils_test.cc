@@ -32,6 +32,9 @@ License.
 namespace fs = boost::filesystem;
 namespace bptime = boost::posix_time;
 
+const std::string kCompanyName = "MaidSafe";
+const std::string kApplicationName = "LifeStuff";
+
 namespace maidsafe {
 
 namespace test {
@@ -139,11 +142,6 @@ TEST(UtilsTest, BEH_VersionToInt) {
 
 TEST(UtilsTest, BEH_Cpu_Size) {
   ASSERT_TRUE(CpuSize() == 32 || CpuSize() == 64);
-}
-
-TEST(UtilsTest, BEH_Names) {
-  ASSERT_EQ(kCompanyName, "maidsafe");
-  ASSERT_EQ(kApplicationName, "lifestuff");
 }
 
 TEST(UtilsTest, BEH_ByteRatios) {

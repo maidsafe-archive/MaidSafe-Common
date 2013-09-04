@@ -27,19 +27,12 @@ License.
 #  define MAIDSAFE_DELETE = delete
 #endif
 
+// These 2 extern variables are NOT defined by this library.  You must define these in a source file
+// which gets linked to this library.
+extern const std::string kCompanyName;
+extern const std::string kApplicationName;
+
 namespace maidsafe {
-
-#ifdef COMPANY_NAME
-const std::string kCompanyName(BOOST_PP_STRINGIZE(COMPANY_NAME));
-#else
-#  error COMPANY_NAME must be defined.
-#endif
-
-#ifdef APPLICATION_NAME
-const std::string kApplicationName(BOOST_PP_STRINGIZE(APPLICATION_NAME));
-#else
-#  error APPLICATION_NAME must be defined.
-#endif
 
 #if defined APPLICATION_VERSION_MAJOR && \
     defined APPLICATION_VERSION_MINOR && \
