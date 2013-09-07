@@ -31,7 +31,6 @@ License.
 
 
 #ifndef NDEBUG
-#  define USE_LOGGING
 #  define USE_PROFILING
 #endif
 
