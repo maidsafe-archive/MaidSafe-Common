@@ -34,7 +34,17 @@ common_error MakeError(CommonErrors code) {
   return common_error(make_error_code(code));
 }
 
+std::error_code make_error_code(EncryptErrors code) {
+  return std::error_code(static_cast<int>(code), GetEncryptCategory());
+}
 
+std::error_condition make_error_condition(EncryptErrors code) {
+  return std::error_condition(static_cast<int>(code), GetEncryptCategory());
+}
+
+encrypt_error MakeError(EncryptErrors code) {
+  return encrypt_error(make_error_code(code));
+}
 
 std::error_code make_error_code(AsymmErrors code) {
   return std::error_code(static_cast<int>(code), GetAsymmCategory());
@@ -135,6 +145,11 @@ lifestuff_error MakeError(LifeStuffErrors code) {
 
 
 const std::error_category& GetCommonCategory() {
+  static detail::CommonCategory instance;
+  return instance;
+}
+
+const std::error_category& GetEncryptCategory() {
   static detail::CommonCategory instance;
   return instance;
 }

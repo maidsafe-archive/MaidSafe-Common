@@ -83,7 +83,27 @@ std::error_condition make_error_condition(CommonErrors code);
 const std::error_category& GetCommonCategory();
 common_error MakeError(CommonErrors code);
 
+enum class EncryptErrors {
+  bad_sequence = 1,
+  no_data
+};
 
+class encrypt_error : public maidsafe_error {
+ public:
+  encrypt_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  encrypt_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit encrypt_error(std::error_code ec) : maidsafe_error(ec) {}
+  encrypt_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  encrypt_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  encrypt_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(EncryptErrors code);
+std::error_condition make_error_condition(EncryptErrors code);
+const std::error_category& GetEncryptCategory();
+encrypt_error MakeError(EncryptErrors code);
 
 enum class AsymmErrors {
   keys_generation_error = 1,
