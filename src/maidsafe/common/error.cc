@@ -33,21 +33,16 @@ std::error_condition make_error_condition(CommonErrors code) {
   return std::error_condition(static_cast<int>(code), GetCommonCategory());
 }
 
+const std::error_category& GetCommonCategory() {
+  static detail::CommonCategory instance;
+  return instance;
+}
+
 common_error MakeError(CommonErrors code) {
   return common_error(make_error_code(code));
 }
 
-std::error_code make_error_code(EncryptErrors code) {
-  return std::error_code(static_cast<int>(code), GetEncryptCategory());
-}
 
-std::error_condition make_error_condition(EncryptErrors code) {
-  return std::error_condition(static_cast<int>(code), GetEncryptCategory());
-}
-
-encrypt_error MakeError(EncryptErrors code) {
-  return encrypt_error(make_error_code(code));
-}
 
 std::error_code make_error_code(AsymmErrors code) {
   return std::error_code(static_cast<int>(code), GetAsymmCategory());
@@ -55,6 +50,11 @@ std::error_code make_error_code(AsymmErrors code) {
 
 std::error_condition make_error_condition(AsymmErrors code) {
   return std::error_condition(static_cast<int>(code), GetAsymmCategory());
+}
+
+const std::error_category& GetAsymmCategory() {
+  static detail::AsymmCategory instance;
+  return instance;
 }
 
 asymm_error MakeError(AsymmErrors code) {
@@ -71,22 +71,32 @@ std::error_condition make_error_condition(PassportErrors code) {
   return std::error_condition(static_cast<int>(code), GetPassportCategory());
 }
 
+const std::error_category& GetPassportCategory() {
+  static detail::PassportCategory instance;
+  return instance;
+}
+
 passport_error MakeError(PassportErrors code) {
   return passport_error(make_error_code(code));
 }
 
 
 
-std::error_code make_error_code(NfsErrors code) {
-  return std::error_code(static_cast<int>(code), GetNfsCategory());
+std::error_code make_error_code(EncryptErrors code) {
+  return std::error_code(static_cast<int>(code), GetEncryptCategory());
 }
 
-std::error_condition make_error_condition(NfsErrors code) {
-  return std::error_condition(static_cast<int>(code), GetNfsCategory());
+std::error_condition make_error_condition(EncryptErrors code) {
+  return std::error_condition(static_cast<int>(code), GetEncryptCategory());
 }
 
-nfs_error MakeError(NfsErrors code) {
-  return nfs_error(make_error_code(code));
+const std::error_category& GetEncryptCategory() {
+  static detail::EncryptCategory instance;
+  return instance;
+}
+
+encrypt_error MakeError(EncryptErrors code) {
+  return encrypt_error(make_error_code(code));
 }
 
 
@@ -99,8 +109,32 @@ std::error_condition make_error_condition(RoutingErrors code) {
   return std::error_condition(static_cast<int>(code), GetRoutingCategory());
 }
 
+const std::error_category& GetRoutingCategory() {
+  static detail::RoutingCategory instance;
+  return instance;
+}
+
 routing_error MakeError(RoutingErrors code) {
   return routing_error(make_error_code(code));
+}
+
+
+
+std::error_code make_error_code(NfsErrors code) {
+  return std::error_code(static_cast<int>(code), GetNfsCategory());
+}
+
+std::error_condition make_error_condition(NfsErrors code) {
+  return std::error_condition(static_cast<int>(code), GetNfsCategory());
+}
+
+const std::error_category& GetNfsCategory() {
+  static detail::NfsCategory instance;
+  return instance;
+}
+
+nfs_error MakeError(NfsErrors code) {
+  return nfs_error(make_error_code(code));
 }
 
 
@@ -111,6 +145,11 @@ std::error_code make_error_code(DriveErrors code) {
 
 std::error_condition make_error_condition(DriveErrors code) {
   return std::error_condition(static_cast<int>(code), GetDriveCategory());
+}
+
+const std::error_category& GetDriveCategory() {
+  static detail::DriveCategory instance;
+  return instance;
 }
 
 drive_error MakeError(DriveErrors code) {
@@ -127,6 +166,11 @@ std::error_condition make_error_condition(VaultErrors code) {
   return std::error_condition(static_cast<int>(code), GetVaultCategory());
 }
 
+const std::error_category& GetVaultCategory() {
+  static detail::VaultCategory instance;
+  return instance;
+}
+
 vault_error MakeError(VaultErrors code) {
   return vault_error(make_error_code(code));
 }
@@ -141,55 +185,13 @@ std::error_condition make_error_condition(LifeStuffErrors code) {
   return std::error_condition(static_cast<int>(code), GetLifeStuffCategory());
 }
 
-lifestuff_error MakeError(LifeStuffErrors code) {
-  return lifestuff_error(make_error_code(code));
-}
-
-
-
-const std::error_category& GetCommonCategory() {
-  static detail::CommonCategory instance;
-  return instance;
-}
-
-const std::error_category& GetEncryptCategory() {
-  static detail::CommonCategory instance;
-  return instance;
-}
-
-const std::error_category& GetAsymmCategory() {
-  static detail::AsymmCategory instance;
-  return instance;
-}
-
-const std::error_category& GetPassportCategory() {
-  static detail::PassportCategory instance;
-  return instance;
-}
-
-const std::error_category& GetNfsCategory() {
-  static detail::NfsCategory instance;
-  return instance;
-}
-
-const std::error_category& GetRoutingCategory() {
-  static detail::RoutingCategory instance;
-  return instance;
-}
-
-const std::error_category& GetDriveCategory() {
-  static detail::DriveCategory instance;
-  return instance;
-}
-
-const std::error_category& GetVaultCategory() {
-  static detail::VaultCategory instance;
-  return instance;
-}
-
 const std::error_category& GetLifeStuffCategory() {
   static detail::LifeStuffCategory instance;
   return instance;
+}
+
+lifestuff_error MakeError(LifeStuffErrors code) {
+  return lifestuff_error(make_error_code(code));
 }
 
 }  // namespace maidsafe

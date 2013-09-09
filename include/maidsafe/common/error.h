@@ -42,6 +42,8 @@ class maidsafe_error : public std::system_error {
   maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
 };
 
+
+
 enum class CommonErrors {
   success = 0,
   pending_result,
@@ -86,27 +88,7 @@ std::error_condition make_error_condition(CommonErrors code);
 const std::error_category& GetCommonCategory();
 common_error MakeError(CommonErrors code);
 
-enum class EncryptErrors {
-  bad_sequence = 1,
-  no_data
-};
 
-class encrypt_error : public maidsafe_error {
- public:
-  encrypt_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  encrypt_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit encrypt_error(std::error_code ec) : maidsafe_error(ec) {}
-  encrypt_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  encrypt_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  encrypt_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
-};
-
-std::error_code make_error_code(EncryptErrors code);
-std::error_condition make_error_condition(EncryptErrors code);
-const std::error_category& GetEncryptCategory();
-encrypt_error MakeError(EncryptErrors code);
 
 enum class AsymmErrors {
   keys_generation_error = 1,
@@ -174,27 +156,27 @@ passport_error MakeError(PassportErrors code);
 
 
 
-enum class NfsErrors {
-  failed_to_get_data = 1,
-  timed_out
+enum class EncryptErrors {
+  bad_sequence = 1,
+  no_data
 };
 
-class nfs_error : public maidsafe_error {
+class encrypt_error : public maidsafe_error {
  public:
-  nfs_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  nfs_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit nfs_error(std::error_code ec) : maidsafe_error(ec) {}
-  nfs_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+  encrypt_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  encrypt_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit encrypt_error(std::error_code ec) : maidsafe_error(ec) {}
+  encrypt_error(int ev, const std::error_category& ecat, const std::string& what_arg)
       : maidsafe_error(ev, ecat, what_arg) {}
-  nfs_error(int ev, const std::error_category& ecat, const char* what_arg)
+  encrypt_error(int ev, const std::error_category& ecat, const char* what_arg)
       : maidsafe_error(ev, ecat, what_arg) {}
-  nfs_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+  encrypt_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
-std::error_code make_error_code(NfsErrors code);
-std::error_condition make_error_condition(NfsErrors code);
-const std::error_category& GetNfsCategory();
-nfs_error MakeError(NfsErrors code);
+std::error_code make_error_code(EncryptErrors code);
+std::error_condition make_error_condition(EncryptErrors code);
+const std::error_category& GetEncryptCategory();
+encrypt_error MakeError(EncryptErrors code);
 
 
 
@@ -221,6 +203,30 @@ std::error_code make_error_code(RoutingErrors code);
 std::error_condition make_error_condition(RoutingErrors code);
 const std::error_category& GetRoutingCategory();
 routing_error MakeError(RoutingErrors code);
+
+
+
+enum class NfsErrors {
+  failed_to_get_data = 1,
+  timed_out
+};
+
+class nfs_error : public maidsafe_error {
+ public:
+  nfs_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  nfs_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit nfs_error(std::error_code ec) : maidsafe_error(ec) {}
+  nfs_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  nfs_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  nfs_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(NfsErrors code);
+std::error_condition make_error_condition(NfsErrors code);
+const std::error_category& GetNfsCategory();
+nfs_error MakeError(NfsErrors code);
 
 
 
@@ -328,10 +334,13 @@ template<>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
 
 template<>
-struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};
+struct is_error_code_enum<maidsafe::EncryptErrors> : public true_type {};
 
 template<>
 struct is_error_code_enum<maidsafe::RoutingErrors> : public true_type {};
+
+template<>
+struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};
 
 template<>
 struct is_error_code_enum<maidsafe::DriveErrors> : public true_type {};

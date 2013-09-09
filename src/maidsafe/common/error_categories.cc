@@ -199,6 +199,60 @@ std::error_condition PassportCategory::default_error_condition(
 
 
 
+const char* EncryptCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "MaidSafe Encryption";
+}
+
+std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<EncryptErrors>(error_value)) {
+    case EncryptErrors::bad_sequence:
+      return "Bad sequence";
+    case EncryptErrors::no_data:
+      return "No data";
+    default:
+      return "Unknown error in Encrypt";
+  }
+}
+
+std::error_condition EncryptCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
+//  switch (static_cast<EncryptErrors>(error_value)) {
+//    default:
+      return std::error_condition(error_value, *this);
+//  }
+}
+
+
+
+const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT {
+  return "MaidSafe Routing";
+}
+
+std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RoutingErrors>(error_value)) {
+    case RoutingErrors::timed_out:
+      return "Timed out";
+    case RoutingErrors::not_in_range:
+      return "Not in range";
+    case RoutingErrors::not_connected:
+      return "Not connected";
+    default:
+      return "Unknown error in Routing";
+  }
+}
+
+std::error_condition RoutingCategory::default_error_condition(
+    int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RoutingErrors>(error_value)) {
+    case RoutingErrors::timed_out:
+      return std::errc::timed_out;
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
+
+
 const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT {
   return "MaidSafe Network Filesystem";
 }
@@ -217,31 +271,6 @@ std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 std::error_condition NfsCategory::default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<NfsErrors>(error_value)) {
     case NfsErrors::timed_out:
-      return std::errc::timed_out;
-    default:
-      return std::error_condition(error_value, *this);
-  }
-}
-
-
-
-const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Routing";
-}
-
-std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<RoutingErrors>(error_value)) {
-    case RoutingErrors::timed_out:
-      return "Timed out";
-    default:
-      return "Unknown error in Routing";
-  }
-}
-
-std::error_condition RoutingCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<RoutingErrors>(error_value)) {
-    case RoutingErrors::timed_out:
       return std::errc::timed_out;
     default:
       return std::error_condition(error_value, *this);
@@ -329,6 +358,7 @@ const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
 std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<LifeStuffErrors>(error_value)) {
     case LifeStuffErrors::kPasswordFailure:
+      return "Failed to validate password";
     default:
       return "Unknown error in LifeStuff";
   }
@@ -336,13 +366,11 @@ std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT 
 
 std::error_condition LifeStuffCategory::default_error_condition(
     int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<LifeStuffErrors>(error_value)) {
-    case LifeStuffErrors::kPasswordFailure:
-    default:
+//  switch (static_cast<LifeStuffErrors>(error_value)) {
+//    default:
       return std::error_condition(error_value, *this);
-  }
+//  }
 }
-
 
 }  // namespace detail
 
