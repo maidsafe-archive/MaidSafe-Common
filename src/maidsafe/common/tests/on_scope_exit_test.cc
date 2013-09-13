@@ -19,6 +19,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 
 #include <vector>
+#include <cstdint>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
@@ -38,7 +39,7 @@ void IncrementAndThrow(std::vector<int32_t>& data) {
 }
 
 TEST(OnScopeExit, BEH_RevertValue) {
-  std::vector<int32_t> before;
+  std::vector<int> before;
   for (int i(0); i != 100; ++i)
     before.push_back(i);
   {

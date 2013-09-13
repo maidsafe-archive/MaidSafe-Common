@@ -7,9 +7,13 @@
 #define MAIDSAFE_COMMON_ON_SCOPE_EXIT_H_
 
 #include <functional>
-
+#include "boost/bind.hpp"
 
 namespace maidsafe {
+
+
+template<typename T>
+void SetValue(T& t, T value) { t = value; }
 
 struct on_scope_exit {
   typedef std::function<void()> ExitAction;
@@ -33,10 +37,7 @@ struct on_scope_exit {
   void Release() { SetAction(); }
 
   template<typename T>
-  static void SetValue(T& t, T value) { t = value; }
-
-  template<typename T>
-  static ExitAction RevertValue(T& t) { return std::bind(SetValue<T>, std::ref(t), t); }
+  static ExitAction RevertValue(T& t) { return boost::bind(SetValue<T>, std::ref(t), t); }
 
  private:
   on_scope_exit();
@@ -46,6 +47,7 @@ struct on_scope_exit {
   on_scope_exit& operator=(on_scope_exit&&);
   ExitAction action_;
 };
+
 
 }  // namespace maidsafe
 
