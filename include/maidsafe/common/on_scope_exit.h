@@ -11,10 +11,6 @@
 
 namespace maidsafe {
 
-
-template<typename T>
-void SetValue(T& t, T value) { t = value; }
-
 struct on_scope_exit {
   typedef std::function<void()> ExitAction;
 
@@ -34,10 +30,17 @@ struct on_scope_exit {
 
   void SetAction(ExitAction action = nullptr) { action_ = action; }
 
+  template<typename T>
+  static void SetValue(T& t, T value) { t = value; }
+
   void Release() { SetAction(); }
 
   template<typename T>
+#ifdef __clang__
   static ExitAction RevertValue(T& t) { return boost::bind(SetValue<T>, std::ref(t), t); }
+#else
+  static ExitAction RevertValue(T& t) { return std::bind(SetValue<T>, std::ref(t), t); }
+#endif
 
  private:
   on_scope_exit();
