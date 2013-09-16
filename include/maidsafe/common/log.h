@@ -28,6 +28,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
@@ -113,7 +114,8 @@ class GtestLogMessage {
 class Logging {
  public:
   static Logging& Instance();
-  void Initialise(int argc, char **argv);
+  // Returns unused options
+  std::vector<std::string> Initialise(int argc, char** argv);
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);

@@ -23,11 +23,13 @@
 #else
 #  include <unistd.h>
 #endif
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <iterator>
 #include <mutex>
 #include <thread>
+#include <vector>
 
 #include "boost/algorithm/string/case_conv.hpp"
 #include "boost/algorithm/string/replace.hpp"
@@ -281,15 +283,18 @@ po::options_description SetProgramOptions(std::string& config_file,
   return log_config;
 }
 
-po::variables_map ParseProgramOptions(const po::options_description& log_config,
-                                      const std::string& config_file,
-                                      int argc,
-                                      char **argv) {
+void ParseProgramOptions(const po::options_description& log_config,
+                         const std::string& config_file,
+                         int argc,
+                         char** argv,
+                         po::variables_map& log_variables,
+                         std::vector<std::string>& unused_options) {
   po::options_description cmdline_options;
   cmdline_options.add(log_config);
-  po::variables_map log_variables;
-  po::store(po::command_line_parser(argc, argv).options(cmdline_options).allow_unregistered().
-                                                run(), log_variables);
+  po::parsed_options parsed(
+      po::command_line_parser(argc, argv).options(cmdline_options).allow_unregistered().run());
+
+  po::store(parsed, log_variables);
   po::notify(log_variables);
 
   po::options_description config_file_options;
@@ -300,7 +305,9 @@ po::variables_map ParseProgramOptions(const po::options_description& log_config,
     po::notify(log_variables);
   }
 
-  return log_variables;
+  unused_options = po::collect_unrecognized(parsed.options, po::include_positional);
+  if (log_variables.count("help"))
+    unused_options.push_back("--help");
 }
 
 void DoCasts(int col_mode,
@@ -418,14 +425,15 @@ Logging& Logging::Instance() {
   return logging;
 }
 
-void Logging::Initialise(int argc, char **argv) {
-  std::call_once(logging_initialised, [this, argc, argv]() {
+std::vector<std::string> Logging::Initialise(int argc, char** argv) {
+  std::vector<std::string> unused_options;
+  std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
     try {
       std::string config_file, log_folder;
       int colour_mode(-1);
       po::options_description log_config(SetProgramOptions(config_file, no_log_to_console_,
                                                            log_folder, no_async_, colour_mode));
-      log_variables_ = ParseProgramOptions(log_config, config_file, argc, argv);
+      ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
       if (IsHelpOption(log_config))
         return;
       DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
@@ -436,6 +444,7 @@ void Logging::Initialise(int argc, char **argv) {
       std::cout << "Exception initialising logging: " << e.what() << "\n\n";
     }
   });
+  return unused_options;
 }
 
 bool Logging::IsHelpOption(const po::options_description& log_config) const {

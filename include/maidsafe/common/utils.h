@@ -32,10 +32,11 @@
 #  pragma warning(disable: 4127)
 #endif
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-#include "boost/filesystem/path.hpp"
 #include "boost/asio/ip/address.hpp"
 #include "boost/asio/ip/udp.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "boost/filesystem/path.hpp"
+#include "boost/program_options.hpp"
 
 #ifdef __MSVC__
 #  pragma warning(pop)
@@ -259,6 +260,12 @@ inline boost::filesystem::path GetAppInstallDir() {
   return boost::filesystem::path();
 #endif
 }
+
+boost::filesystem::path GetPathFromProgramOptions(
+    const std::string& option_name,
+    const boost::program_options::variables_map& variables_map,
+    bool is_dir,
+    bool create_new_if_absent);
 
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();

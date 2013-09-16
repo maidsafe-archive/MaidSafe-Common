@@ -67,6 +67,8 @@ defined(__linux) || defined(__linux__) || defined(__GNU__) \
 
 namespace fs = boost::filesystem;
 namespace bptime = boost::posix_time;
+namespace po = boost::program_options;
+
 
 namespace maidsafe {
 
@@ -480,6 +482,61 @@ fs::path GetHomeDir() {
 #endif
   LOG(kError) << "Cannot deduce home directory path";
   return fs::path();
+}
+
+fs::path GetPathFromProgramOptions(const std::string& option_name,
+                                   const po::variables_map& variables_map,
+                                   bool is_dir,
+                                   bool create_new_if_absent) {
+  fs::path option_path;
+  if (variables_map.count(option_name))
+    option_path = variables_map.at(option_name).as<std::string>();
+  if (option_path.empty())
+    return fs::path();
+
+  boost::system::error_code ec;
+  if (!fs::exists(option_path, ec) || ec) {
+    if (!create_new_if_absent) {
+      LOG(kError) << "Invalid " << option_name << ", " << option_path
+                  << " doesn't exist or can't be accessed (" << ec.message() << ")";
+      return fs::path();
+    }
+
+    if (is_dir) {  // Create new dir
+      fs::create_directories(option_path, ec);
+      if (ec) {
+        LOG(kError) << "Unable to create new dir " << option_path << " (" << ec.message() << ")";
+        return fs::path();
+      }
+    } else {  // Create new file
+      if (option_path.has_filename()) {
+        try {
+          std::ofstream ofs(option_path.c_str());
+        }
+        catch(const std::exception &e) {
+          LOG(kError) << "Exception while creating new file: " << e.what();
+          return fs::path();
+        }
+      }
+    }
+  }
+
+  if (is_dir) {
+    if (!fs::is_directory(option_path, ec) || ec) {
+      LOG(kError) << "Invalid " << option_name << ", " << option_path << " is not a directory ("
+                  << ec.message() << ")";
+      return fs::path();
+    }
+  } else {
+    if (!fs::is_regular_file(option_path, ec) || ec) {
+      LOG(kError) << "Invalid " << option_name << ", " << option_path << " is not a regular file ("
+                  << ec.message() << ")";
+      return fs::path();
+    }
+  }
+
+  LOG(kInfo) << '\"' << option_name << "\" option is " << option_path;
+  return option_path;
 }
 
 unsigned int Concurrency() {
