@@ -46,9 +46,9 @@ NodeId IncreaseId(const NodeId& kad_id) {
 const std::string ToBinary(const std::string& raw_id)  {
   std::string hex_encoded(EncodeToHex(raw_id));
   std::string result;
-  for (size_t i = 0; i < hex_encoded.size(); ++i) {
+  for (auto& elem : hex_encoded) {
     std::string temp;
-    switch (hex_encoded[i]) {
+    switch (elem) {
       case '0': temp = "0000"; break;
       case '1': temp = "0001"; break;
       case '2': temp = "0010"; break;
@@ -324,7 +324,7 @@ TEST(NodeIdTest, BEH_OperatorXOR) {
     }
   }
   std::string binzero;
-  for (size_t i = 0; i < binid1.size(); ++i)
+  while (binzero.size() < binid1.size())
     binzero += "0";
   ASSERT_NE(binzero, kadid3.ToStringEncoded(NodeId::kBinary));
   ASSERT_EQ(binresult, kadid3.ToStringEncoded(NodeId::kBinary));

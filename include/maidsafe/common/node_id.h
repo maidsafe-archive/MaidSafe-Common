@@ -46,7 +46,7 @@ class NodeId {
   explicit NodeId(IdType type);
 
   // Creates a NodeId from a raw (decoded) string.  Will throw if id is invalid.
-  explicit NodeId(const std::string& id);
+  explicit NodeId(std::string id);
 
   // Creates a NodeId from a SHA512 hash.
   explicit NodeId(const crypto::SHA512Hash& id);

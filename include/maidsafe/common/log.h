@@ -90,7 +90,7 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFat
 
 class LogMessage {
  public:
-  LogMessage(const std::string &file, int line, const std::string &function, int level);
+  LogMessage(std::string file, int line, std::string function, int level);
   ~LogMessage();
   std::ostringstream& messageStream() { return stream_; }
  private:

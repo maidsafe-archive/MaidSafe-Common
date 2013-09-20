@@ -109,13 +109,12 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 }
 
 struct HashTestData {
-  HashTestData(const std::string &input_data,
-               const std::string &SHA1_hex_res,
+  HashTestData(std::string input_data, const std::string &SHA1_hex_res,
                const std::string &SHA256_hex_res,
                const std::string &SHA384_hex_res,
                const std::string &SHA512_hex_res,
                const std::string &Tiger_hex_res)
-      : input(input_data),
+      : input(std::move(input_data)),
         SHA1_hex_result(SHA1_hex_res),
         SHA256_hex_result(SHA256_hex_res),
         SHA384_hex_result(SHA384_hex_res),

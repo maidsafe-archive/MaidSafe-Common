@@ -21,7 +21,7 @@ struct on_scope_exit {
     action();
   }
 
-  explicit on_scope_exit(ExitAction action) : action_(action) {}
+  explicit on_scope_exit(ExitAction action) : action_(std::move(action)) {}
 
   ~on_scope_exit() {
     if (action_)

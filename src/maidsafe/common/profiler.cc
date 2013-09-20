@@ -64,12 +64,11 @@ void AppendInfo(
 
 }  // unnamed namespace
 
-ProfileEntry::Location::Location(const std::string& file_in,
-                                 int line_in,
-                                 const std::string& function_in)
-    : file(file_in),
+ProfileEntry::Location::Location(std::string file_in, int line_in,
+                                 std::string function_in)
+    : file(std::move(file_in)),
       line(line_in),
-      function(function_in) {}
+      function(std::move(function_in)) {}
 
 ProfileEntry::Location::Location(const Location& other)
     : file(other.file),

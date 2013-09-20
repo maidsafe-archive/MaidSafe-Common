@@ -226,7 +226,7 @@ bool CheckFileSignature(const boost::filesystem::path& filename,
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
-    auto  verifier_filter = new CryptoPP::VerifierFilter(verifier);
+    auto verifier_filter = new CryptoPP::VerifierFilter(verifier);
     verifier_filter->Put(reinterpret_cast<const byte*>(signature.string().c_str()),
                          verifier.SignatureLength());
     CryptoPP::FileSource file_source(filename.c_str(), true, verifier_filter);

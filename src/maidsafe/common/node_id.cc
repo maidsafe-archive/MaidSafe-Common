@@ -52,7 +52,7 @@ NodeId::NodeId(IdType type) : raw_id_(
         return "";
     }()) {}
 
-NodeId::NodeId(const std::string& id) : raw_id_(id) {
+NodeId::NodeId(std::string id) : raw_id_(std::move(id)) {
   if (raw_id_.size() != kSize) {
     raw_id_.clear();
     ThrowError(CommonErrors::invalid_node_id);

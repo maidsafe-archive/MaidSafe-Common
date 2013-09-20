@@ -54,7 +54,7 @@ namespace profile {
 
 struct ProfileEntry {
   struct Location {
-    Location(const std::string& file_in, int line_in, const std::string& function_in);
+    Location(std::string file_in, int line_in, std::string function_in);
     Location(const Location& other);
     Location(Location&& other);
     Location& operator=(Location other);

@@ -454,7 +454,7 @@ TEST(UtilsTest, BEH_ReadWriteFile) {
   fs::path file_path(*test_path / "file.dat");
   std::string file_content;
   ASSERT_FALSE(fs::exists(file_path));
-  EXPECT_FALSE(ReadFile(file_path, NULL));
+  EXPECT_FALSE(ReadFile(file_path, nullptr));
   EXPECT_FALSE(ReadFile(file_path, &file_content));
   EXPECT_TRUE(file_content.empty());
   EXPECT_THROW(ReadFile(file_path), std::exception);
@@ -462,7 +462,7 @@ TEST(UtilsTest, BEH_ReadWriteFile) {
   EXPECT_TRUE(WriteFile(file_path, file_content));
   EXPECT_TRUE(fs::exists(file_path));
   EXPECT_EQ(0, fs::file_size(file_path));
-  EXPECT_FALSE(ReadFile(file_path, NULL));
+  EXPECT_FALSE(ReadFile(file_path, nullptr));
   EXPECT_TRUE(ReadFile(file_path, &file_content));
   EXPECT_TRUE(file_content.empty());
 
@@ -536,7 +536,7 @@ void CleanupTest(fs::path *&test_path) {
                    << "  (error message: " << error_code.message() << ")";
   }
   delete test_path;
-  test_path = NULL;
+  test_path = nullptr;
 }
 
 }  // unnamed namespace
@@ -565,12 +565,12 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
         << error_code.message();
   // Ensure we're able to cope with error cases
-  fs::path *empty_path(new fs::path);
+  auto empty_path(new fs::path);
   CleanupTest(empty_path);
-  EXPECT_TRUE(NULL == empty_path);
+  EXPECT_TRUE(nullptr == empty_path);
   fs::path *non_existent(new fs::path(std::string(100, 'a')));
   CleanupTest(non_existent);
-  EXPECT_TRUE(NULL == non_existent);
+  EXPECT_TRUE(nullptr == non_existent);
 }
 
 }  // namespace test

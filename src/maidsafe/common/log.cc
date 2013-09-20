@@ -359,10 +359,11 @@ bool SetupLogFolder(const fs::path& log_folder) {
 
 }  // unnamed namespace
 
-LogMessage::LogMessage(const std::string &file, int line, const std::string &function, int level)
-    : file_(file),
+LogMessage::LogMessage(std::string file, int line, std::string function,
+                       int level)
+    : file_(std::move(file)),
       kLine_(line),
-      kFunction_(function),
+      kFunction_(std::move(function)),
       kLevel_(level),
       stream_() {}
 

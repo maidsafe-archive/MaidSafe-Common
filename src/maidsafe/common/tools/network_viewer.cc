@@ -195,12 +195,9 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
 
 ViewableNode::ViewableNode() : id(), distance(), type(static_cast<ChildType>(-1)) {}
 
-ViewableNode::ViewableNode(const std::string& id_in,
-                           const std::string& distance_in,
+ViewableNode::ViewableNode(std::string id_in, std::string distance_in,
                            ChildType type_in)
-    : id(id_in),
-      distance(distance_in),
-      type(type_in) {
+    : id(std::move(id_in)), distance(std::move(distance_in)), type(type_in) {
   assert(id.size() == 2 * NodeId::kSize);
   assert(distance.size() == 2 * NodeId::kSize);
 }

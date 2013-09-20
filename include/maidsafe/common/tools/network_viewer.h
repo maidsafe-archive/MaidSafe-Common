@@ -40,7 +40,7 @@ enum class ChildType : int32_t { kGroup, kClosest, kMatrix, kNotConnected };
 
 struct ViewableNode {
   ViewableNode();
-  ViewableNode(const std::string& id_in, const std::string& distance_in, ChildType type_in);
+  ViewableNode(std::string id_in, std::string distance_in, ChildType type_in);
   ViewableNode(const ViewableNode& other);
   ViewableNode(ViewableNode&& other);
   ViewableNode& operator=(ViewableNode other);
