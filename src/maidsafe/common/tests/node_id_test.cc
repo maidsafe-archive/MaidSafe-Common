@@ -161,13 +161,9 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
         encoded = EncodeToHex(rand_str);
         known_encoded = EncodeToHex(known_raw);
         break;
-      case NodeId::kBase32 :
-        encoded = EncodeToBase32(rand_str);
-        known_encoded = EncodeToBase32(known_raw);
-        break;
       case NodeId::kBase64 :
-        encoded = EncodeToBase64(rand_str);
-        known_encoded = EncodeToBase64(known_raw);
+        encoded = Base64Encode(rand_str);
+        known_encoded = Base64Encode(known_raw);
         break;
       default :
         break;
@@ -198,10 +194,6 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
         ASSERT_EQ("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d"
                   "1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b"
                   "3c3d3e3f", known_encoded);
-        break;
-      case NodeId::kBase32 :
-        ASSERT_EQ("aaasea2eawdaqcajbifs2diqb6ibcesvcsktnf22depbyha7d2ruaijcenuc"
-                  "kjthfawuwk3nfwzc8nbtgi3vipjyg66duqt5hs8v6r2", known_encoded);
         break;
       case NodeId::kBase64 :
         ASSERT_EQ("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss"

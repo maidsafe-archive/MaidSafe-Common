@@ -355,43 +355,46 @@ TEST(UtilsTest, BEH_Base64EncodeDecode) {
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
-      std::string encoded = EncodeToBase64(original);
-      EXPECT_EQ(136U, encoded.size()) << "Encoding failed.";
-      std::string decoded = DecodeFromBase64(encoded);
-      EXPECT_EQ(original, decoded) << "encoded -> decoded failed.";
+      EXPECT_EQ(original,  Base64Decode(Base64Encode(original))) << "encoded -> decoded failed.";
     }
   });
-  const std::string kKnownEncoded("BCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqr"
-                                  "stuvwxyz0123456789+/A");
-  const std::string kKnownDecoded("\x04\x20\xc4\x14\x61\xc8\x24\xa2\xcc\x34\xe3"
-      "\xd0\x45\x24\xd4\x55\x65\xd8\x65\xa6\xdc\x75\xe7\xe0\x86\x28\xe4\x96\x69"
-      "\xe8\xa6\xaa\xec\xb6\xeb\xf0\xc7\x2c\xf4\xd7\x6d\xf8\xe7\xae\xfc\xf7\xef"
-      "\xc0");
-  EXPECT_EQ(kKnownEncoded, EncodeToBase64(kKnownDecoded));
-  EXPECT_EQ(kKnownDecoded, DecodeFromBase64(kKnownEncoded));
-  EXPECT_TRUE(EncodeToBase64("").empty());
-  EXPECT_TRUE(DecodeFromBase64("").empty());
-  EXPECT_TRUE(DecodeFromBase64("{").empty());
-}
-
-TEST(UtilsTest, BEH_Base32EncodeDecode) {
-  maidsafe::test::RunInParallel(100, [&] {
-    for (int i = 0; i < 10; ++i) {
-      std::string original = RandomString(100);
-      std::string encoded = EncodeToBase32(original);
-      EXPECT_EQ(160U, encoded.size()) << "Encoding failed.";
-      std::string decoded = DecodeFromBase32(encoded);
-      EXPECT_EQ(original, decoded) << "encoded -> decoded failed.";
-    }
-  });
-  const std::string kKnownEncoded("bcdefghijkmnpqrstuvwxyz23456789a");
-  const std::string kKnownDecoded("\x08\x86\x42\x98\xe8\x4a\x96\xc6\xb9\xf0\x8c"
-                                  "\xa7\x4a\xda\xf8\xce\xb7\xce\xfb\xe0");
-  EXPECT_EQ(kKnownEncoded, EncodeToBase32(kKnownDecoded));
-  EXPECT_EQ(kKnownDecoded, DecodeFromBase32(kKnownEncoded));
-  EXPECT_TRUE(EncodeToBase32("").empty());
-  EXPECT_TRUE(DecodeFromBase32("").empty());
-  EXPECT_TRUE(DecodeFromBase32("{").empty());
+  // from wikipedia
+  std::string man;
+  man += "Man is distinguished, not only by his reason, but by this singular ";
+  man += "passion from other animals, which is a lust of the mind, that by a ";
+  man += "perseverance of delight in the continued and indefatigable generation";
+  man += " of knowledge, exceeds the short vehemence of any carnal pleasure.";
+  std::string encoded_man;
+  encoded_man += "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlz";
+  encoded_man += "IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg";
+  encoded_man += "dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu";
+  encoded_man += "dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo";
+  encoded_man +=  "ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+  EXPECT_EQ(Base64Encode(man) , encoded_man);
+  EXPECT_EQ(man, Base64Decode(Base64Encode(man)));
+  EXPECT_EQ(Base64Encode("pleasure."), "cGxlYXN1cmUu");
+  EXPECT_EQ("pleasure",  Base64Decode(Base64Encode("pleasure")));
+  EXPECT_EQ(Base64Encode("leasure."), "bGVhc3VyZS4=");
+  EXPECT_EQ("leasure.", Base64Decode(Base64Encode("leasure.")));
+  EXPECT_EQ(Base64Encode("easure."), "ZWFzdXJlLg==");
+  EXPECT_EQ("easure.", Base64Decode(Base64Encode("easure.")));
+  EXPECT_EQ(Base64Encode("asure."), "YXN1cmUu");
+  EXPECT_EQ("asure.", Base64Decode(Base64Encode("asure.")));
+  EXPECT_EQ(Base64Encode("sure."), "c3VyZS4=");
+  EXPECT_EQ("sure.", Base64Decode(Base64Encode("sure.")));
+  // test vectors from RFC4648
+  EXPECT_EQ(Base64Encode("f"), "Zg==");
+  EXPECT_EQ(Base64Encode("fo"), "Zm8=");
+  EXPECT_EQ(Base64Encode("foo"), "Zm9v");
+  EXPECT_EQ(Base64Encode("foob"), "Zm9vYg==");
+  EXPECT_EQ(Base64Encode("fooba"), "Zm9vYmE=");
+  EXPECT_EQ(Base64Encode("foobar"), "Zm9vYmFy");
+  EXPECT_EQ("f", Base64Decode("Zg=="));
+  EXPECT_EQ("fo", Base64Decode("Zm8="));
+  EXPECT_EQ("foo", Base64Decode("Zm9v"));
+  EXPECT_EQ("foob", Base64Decode("Zm9vYg=="));
+  EXPECT_EQ("fooba", Base64Decode("Zm9vYmE="));
+  EXPECT_EQ("foobar", Base64Decode("Zm9vYmFy"));
 }
 
 TEST(UtilsTest, BEH_HexSubstr) {
@@ -401,15 +404,6 @@ TEST(UtilsTest, BEH_HexSubstr) {
   EXPECT_EQ("616263646566", HexSubstr("abcdef"));
   EXPECT_EQ("616263..656667", HexSubstr("abcdefg"));
   EXPECT_EQ(14U, HexSubstr(RandomString(8 + RandomUint32() % 20)).size());
-}
-
-TEST(UtilsTest, BEH_Base32Substr) {
-  EXPECT_TRUE(Base32Substr("").empty());
-  EXPECT_EQ("ie", Base32Substr("A"));
-  EXPECT_EQ("mbnxw", Base32Substr("XYZ"));
-  EXPECT_EQ("nftgg3dfn3vys", Base32Substr("abcdefgh"));
-  EXPECT_EQ("nftgg3d..ys4mkpn", Base32Substr("abcdefghijk"));
-  EXPECT_EQ(16U, Base32Substr(RandomString(16 + RandomUint32() % 20)).size());
 }
 
 TEST(UtilsTest, BEH_Base64Substr) {

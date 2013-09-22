@@ -46,7 +46,7 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
     case CommonErrors::invalid_parameter:
       return "One or more invalid parameters were passed";
     case CommonErrors::invalid_conversion:
-      return "Invalid conversion between BoundedString types";
+      return "Invalid conversion between types";
     case CommonErrors::file_too_large:
       return "File too large";
     case CommonErrors::uninitialised:
