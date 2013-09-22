@@ -32,7 +32,7 @@ namespace maidsafe {
 class NodeId {
  public:
   enum IdType { kMaxId, kRandomId };
-  enum EncodingType { kBinary, kHex, kBase64 };
+  enum class EncodingType { kBinary = 0, kHex, kBase64 };
   enum { kSize = crypto::SHA512::DIGESTSIZE };
 
   // Creates an ID equal to 0.

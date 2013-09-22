@@ -313,7 +313,7 @@ std::vector<std::string> GetNodesInNetwork(int state_id) {
     --snapshot_itr;
   hex_encoded_ids.reserve(snapshot_itr->second.size());
   for (const auto& node : snapshot_itr->second)
-    hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::kHex));
+    hex_encoded_ids.push_back(node.id.ToStringEncoded(NodeId::EncodingType::kHex));
 
   TakeSnapshotAndNotify();
   return hex_encoded_ids;
@@ -321,7 +321,7 @@ std::vector<std::string> GetNodesInNetwork(int state_id) {
 
 std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_encoded_id) {
   LOG(kInfo) << "Handling GetCloseNodes request for "
-             << DebugId(NodeId(hex_encoded_id, NodeId::kHex)) << " at state " << state_id;
+             << DebugId(NodeId(hex_encoded_id, NodeId::EncodingType::kHex)) << " at state " << state_id;
   std::vector<ViewableNode> children;
   std::lock_guard<std::mutex> lock(g_mutex);
   if (g_snapshots.empty())
@@ -331,7 +331,7 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
   if (snapshot_itr == std::end(g_snapshots))
     --snapshot_itr;
 
-  NodeId target_id(hex_encoded_id, NodeId::kHex);
+  NodeId target_id(hex_encoded_id, NodeId::EncodingType::kHex);
   auto itr(std::find_if(std::begin(snapshot_itr->second),
                         std::end(snapshot_itr->second),
                         [&target_id](const NodeInfo& node_info) {
@@ -343,22 +343,22 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
     for (const auto& node : snapshot_itr->second) {
       bool needs_sorted(false);
       if (children.size() < 4) {
-        children.emplace_back(node.id.ToStringEncoded(NodeId::kHex),
-                              (target_id ^ node.id).ToStringEncoded(NodeId::kHex),
+        children.emplace_back(node.id.ToStringEncoded(NodeId::EncodingType::kHex),
+                              (target_id ^ node.id).ToStringEncoded(NodeId::EncodingType::kHex),
                               ChildType::kNotConnected);
         if (children.size() == 4)
           needs_sorted = true;
-      } else if (NodeId::CloserToTarget(node.id, NodeId(children[3].id, NodeId::kHex), target_id)) {
-        children[3] = ViewableNode(node.id.ToStringEncoded(NodeId::kHex),
-                                   (target_id ^ node.id).ToStringEncoded(NodeId::kHex),
+      } else if (NodeId::CloserToTarget(node.id, NodeId(children[3].id, NodeId::EncodingType::kHex), target_id)) {
+        children[3] = ViewableNode(node.id.ToStringEncoded(NodeId::EncodingType::kHex),
+                                   (target_id ^ node.id).ToStringEncoded(NodeId::EncodingType::kHex),
                                    ChildType::kNotConnected);
         needs_sorted = true;
       }
       if (needs_sorted) {
         std::sort(std::begin(children), std::end(children),
                   [&target_id](const ViewableNode& lhs, const ViewableNode& rhs) {
-                      return NodeId::CloserToTarget(NodeId(lhs.id, NodeId::kHex),
-                                                    NodeId(rhs.id, NodeId::kHex),
+                      return NodeId::CloserToTarget(NodeId(lhs.id, NodeId::EncodingType::kHex),
+                                                    NodeId(rhs.id, NodeId::EncodingType::kHex),
                                                     target_id);
                   });
       }
@@ -366,8 +366,8 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
   } else {
     // Node request
     for (const auto& child : *itr->matrix)
-      children.emplace_back((*child.first).id.ToStringEncoded(NodeId::kHex),
-                            (itr->id ^ (*child.first).id).ToStringEncoded(NodeId::kHex),
+      children.emplace_back((*child.first).id.ToStringEncoded(NodeId::EncodingType::kHex),
+                            (itr->id ^ (*child.first).id).ToStringEncoded(NodeId::EncodingType::kHex),
                             child.second);
   }
 

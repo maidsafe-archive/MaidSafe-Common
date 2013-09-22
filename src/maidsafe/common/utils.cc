@@ -350,10 +350,10 @@ std::string Base64Decode(const std::string& input) {
             decodedBytes.push_back((temp >> 10) & 0x000000FF);
             return decodedBytes;
           default:
-            throw std::runtime_error("Invalid Padding in Base 64!");
+            ThrowError(CommonErrors::invalid_conversion);
         }
       }  else
-        throw std::runtime_error("Non-Valid Character in Base 64!");
+        ThrowError(CommonErrors::invalid_conversion);
       cursor++;
     }
     decodedBytes.push_back((temp >> 16) & 0x000000FF);
@@ -402,7 +402,7 @@ std::string HexSubstr(const std::string &non_hex) {
   return hex;
 }
 
-std::string Base64Substr(const std::string &non_base64) {
+std::string Base64Substr(std::string non_base64) {
   std::string base64(Base64Encode(non_base64));
   if (base64.size() > 16)
     return (base64.substr(0, 7) + ".." + base64.substr(base64.size() - 7));

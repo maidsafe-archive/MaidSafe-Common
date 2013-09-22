@@ -139,7 +139,14 @@ std::string EncodeToBase64(const detail::BoundedString<min, max> &non_base64_inp
 }
 
 // hacked from https://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
-std::string Base64Encode(std::string inputBuffer);
+
+
+std::string Base64Encode(std::string input);
+template<size_t min, size_t max>
+std::string Base64Encode(detail::BoundedString<min, max> non_base64_input) {
+  return Base64Encode(non_base64_input.string());
+}
+
 std::string Base64Decode(const std::string& input);
 
 // Decodes a string from hex.
@@ -163,9 +170,9 @@ StringType HexStringSubstr(const detail::BoundedString<min, max, StringType> &no
 
 
 // Returns an appreviated Base64 representation of a hash or other small data.
-std::string Base64Substr(const std::string &non_base64);
+std::string Base64Substr(std::string non_base64);
 template<size_t min, size_t max>
-std::string Base64Substr(const detail::BoundedString<min, max> &non_base64) {
+std::string Base64Substr(detail::BoundedString<min, max> non_base64) {
   return Base64Substr(non_base64.string());
 }
 

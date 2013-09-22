@@ -61,14 +61,14 @@ NodeId::NodeId(std::string id) : raw_id_(std::move(id)) {
 
 NodeId::NodeId(const crypto::SHA512Hash& id) : raw_id_(id.string()) {}
 
-NodeId::NodeId(const std::string& id, EncodingType encoding_type) : raw_id_() {
+NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_id_() {
   try {
     switch (encoding_type) {
-      case kBinary: DecodeFromBinary(id);
+      case EncodingType::kBinary: DecodeFromBinary(id);
         break;
-      case kHex: raw_id_ = DecodeFromHex(id);
+      case EncodingType::kHex: raw_id_ = DecodeFromHex(id);
         break;
-      case kBase64: raw_id_ = Base64Decode(id);
+      case EncodingType::kBase64: raw_id_ = Base64Decode(id);
         break;
       default: raw_id_ = id;
     }
@@ -77,9 +77,11 @@ NodeId::NodeId(const std::string& id, EncodingType encoding_type) : raw_id_() {
     LOG(kError) << "NodeId Ctor: " << e.what();
     raw_id_.clear();
   }
-  if (raw_id_.size() != kSize) {
-    raw_id_.clear();
-    ThrowError(CommonErrors::invalid_node_id);
+  if (encoding_type == EncodingType::kBase64) {
+    Base64Decode(id);
+  } else if (raw_id_.size() != kSize) {
+      raw_id_.clear();
+      ThrowError(CommonErrors::invalid_node_id);
   }
 }
 
@@ -119,12 +121,12 @@ const std::string NodeId::string() const {
 
 const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
   switch (encoding_type) {
-    case kBinary:
+    case EncodingType::kBinary:
       return EncodeToBinary();
-    case kHex:
+    case EncodingType::kHex:
       return EncodeToHex(raw_id_);
-    case kBase64:
-      return Base64Decode(raw_id_);
+    case EncodingType::kBase64:
+      return Base64Encode(raw_id_);
     default:
       return raw_id_;
   }
