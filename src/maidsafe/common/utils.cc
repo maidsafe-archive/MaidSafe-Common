@@ -77,7 +77,7 @@ namespace {
 boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
       bptime::microsec_clock::universal_time().time_of_day().
       total_microseconds()));
-std::mutex g_random_number_generator_mutex, g_srandom_number_generator_mutex;
+std::mutex g_random_number_generator_mutex;
 
 struct BinaryUnit;
 struct DecimalUnit;
@@ -131,10 +131,22 @@ std::string BytesToSiUnits(const uint64_t &num) {
 
 const char kHexAlphabet[] = "0123456789abcdef";
 
+const std::string kBase64Alphabet(
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+
+const char kPadCharacter('=');
+
 }  // unnamed namespace
 
 
-const bptime::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));
+namespace detail {
+
+boost::mt19937& random_number_generator() { return g_random_number_generator; }
+std::mutex& random_number_generator_mutex() { return g_random_number_generator_mutex; }
+
+}  // namespace detail
+
+
 const int kInvalidVersion(-1);
 const uint16_t kLivePort(5483);
 
@@ -152,31 +164,6 @@ boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint
     LOG(kError) << "Failed trying to connect to " << peer_endpoint << " - " << e.what();
     return boost::asio::ip::address();
   }
-}
-
-std::string VersionToString(int version,
-                            std::string* major_version,
-                            std::string* minor_version,
-                            std::string* patch_version) {
-  if (version < 0)
-    return "";
-
-  std::string full_version(std::to_string(version));
-  size_t padding_count(6 - full_version.size());
-  full_version.insert(0, padding_count, '0');
-  std::string major_ver(full_version.substr(0, 2));
-  std::string minor_ver(full_version.substr(2, 1));
-  std::string patch_ver(full_version.substr(3, 3));
-
-  if (major_ver.at(0) == '0')
-    major_ver.assign(major_ver.substr(1, 1));
-  if (major_version)
-    *major_version = major_ver;
-  if (minor_version)
-    *minor_version = minor_ver;
-  if (patch_version)
-    *patch_version = patch_ver;
-  return major_ver + "." + minor_ver + "." + patch_ver;
 }
 
 int VersionToInt(const std::string& version) {
@@ -215,10 +202,6 @@ int VersionToInt(const std::string& version) {
   return (major_version * 10000) + (minor_version * 1000) + patch_level;
 }
 
-int32_t CpuSize() {
-  return (sizeof(void *) * 8);  // NOLINT (Fraser)
-}
-
 std::string BytesToDecimalSiUnits(const uint64_t &num) {
   return BytesToSiUnits<DecimalUnit>(num);
 }
@@ -239,132 +222,15 @@ uint32_t RandomUint32() {
   return static_cast<uint32_t>(RandomInt32());
 }
 
-std::string RandomString(const size_t &length) {
-  boost::uniform_int<> uniform_distribution(0, 255);
-  std::string random_string(length, 0);
-  {
-    std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
-    boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
-        g_random_number_generator, uniform_distribution);
-    std::generate(random_string.begin(), random_string.end(), uni);
-  }
-  return random_string;
+std::string RandomString(const size_t& size) {
+  return GetRandomString<std::string>(size);
 }
 
-std::string RandomAlphaNumericString(const size_t &length) {
-  static const char alpha_numerics[] =
-      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  boost::uniform_int<> uniform_distribution(0, 61);
-  std::string random_string(length, 0);
-  {
-    std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
-    boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
-        g_random_number_generator, uniform_distribution);
-    for (auto & elem : random_string)
-      elem = alpha_numerics[uni()];
-  }
-  return random_string;
+std::string RandomAlphaNumericString(const size_t &size) {
+  return GetRandomAlphaNumericString<std::string>(size);
 }
 
-namespace {
-const std::string encodeLookup("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-const char32_t padCharacter('=');
-}  //unanmed namespace
-
-std::string Base64Encode(std::string input) {
-// messy but required
-  std::basic_string<byte> inputBuffer;
-   std::move(std::begin(input), std::end(input), std::back_inserter(inputBuffer));
-  std::basic_string<byte> encodedString;
-  encodedString.reserve(((inputBuffer.size()/3) + (inputBuffer.size() % 3 > 0)) * 4);
-  int32_t temp;
-  auto cursor = inputBuffer.begin();
-  for(size_t idx = 0; idx < inputBuffer.size()/3; idx++) {
-    temp  = (*cursor++) << 16; //Convert to big endian
-    temp += (*cursor++) << 8;
-    temp += (*cursor++);
-    encodedString.append(1,encodeLookup[(temp & 0x00FC0000) >> 18]);
-    encodedString.append(1,encodeLookup[(temp & 0x0003F000) >> 12]);
-    encodedString.append(1,encodeLookup[(temp & 0x00000FC0) >> 6 ]);
-    encodedString.append(1,encodeLookup[(temp & 0x0000003F)      ]);
-  }
-  switch(inputBuffer.size() % 3) {
-    case 1:
-      temp  = (*cursor++) << 16; //Convert to big endian
-      encodedString.append(1,encodeLookup[(temp & 0x00FC0000) >> 18]);
-      encodedString.append(1,encodeLookup[(temp & 0x0003F000) >> 12]);
-      encodedString.append(2,padCharacter);
-      break;
-    case 2:
-      temp  = (*cursor++) << 16; //Convert to big endian
-      temp += (*cursor++) << 8;
-      encodedString.append(1,encodeLookup[(temp & 0x00FC0000) >> 18]);
-      encodedString.append(1,encodeLookup[(temp & 0x0003F000) >> 12]);
-      encodedString.append(1,encodeLookup[(temp & 0x00000FC0) >> 6 ]);
-      encodedString.append(1,padCharacter);
-      break;
-  }
- std::string result;
- std::move(std::begin(encodedString), std::end(encodedString), std::back_inserter(result));
-  return result;
-}
-
-std::string Base64Decode(const std::string& input) {
-  if (input.length() % 4) //Sanity check
-    ThrowError(CommonErrors::invalid_conversion);
-  size_t padding = 0;
-  if (input.length())
-  {
-    if (input[input.length() - 1] == padCharacter)
-      padding++;
-    if (input[input.length() - 2] == padCharacter)
-      padding++;
-  }
-  //Setup a vector to hold the result
-  std::string decodedBytes;
-  decodedBytes.reserve(((input.length()/4)*3) - padding);
-  int32_t temp=0; //Holds decoded quanta
-  auto cursor = input.begin();
-  while (cursor < input.end()) {
-    for (size_t quantumPosition = 0; quantumPosition < 4; quantumPosition++) {
-      temp <<= 6;
-      if       (*cursor >= 0x41 && *cursor <= 0x5A) // This area will need tweaking if
-        temp |= *cursor - 0x41;                       // you are using an alternate alphabet
-      else if  (*cursor >= 0x61 && *cursor <= 0x7A)
-        temp |= *cursor - 0x47;
-      else if  (*cursor >= 0x30 && *cursor <= 0x39)
-        temp |= *cursor + 0x04;
-      else if  (*cursor == 0x2B)
-        temp |= 0x3E; //change to 0x2D for URL alphabet
-      else if  (*cursor == 0x2F)
-        temp |= 0x3F; //change to 0x5F for URL alphabet
-      else if  (*cursor == padCharacter) //pad
-      {
-        switch( input.end() - cursor )
-        {
-          case 1: //One pad character
-            decodedBytes.push_back((temp >> 16) & 0x000000FF);
-            decodedBytes.push_back((temp >> 8 ) & 0x000000FF);
-            return decodedBytes;
-          case 2: //Two pad characters
-            decodedBytes.push_back((temp >> 10) & 0x000000FF);
-            return decodedBytes;
-          default:
-            ThrowError(CommonErrors::invalid_conversion);
-        }
-      }  else
-        ThrowError(CommonErrors::invalid_conversion);
-      cursor++;
-    }
-    decodedBytes.push_back((temp >> 16) & 0x000000FF);
-    decodedBytes.push_back((temp >> 8 ) & 0x000000FF);
-    decodedBytes.push_back((temp      ) & 0x000000FF);
-  }
-  return decodedBytes;
-}
-
-
-std::string EncodeToHex(const std::string &non_hex_input) {
+std::string HexEncode(const std::string &non_hex_input) {
   auto size(non_hex_input.size());
   std::string hex_output(size * 2, 0);
   for (size_t i(0), j(0); i != size; ++i) {
@@ -374,17 +240,109 @@ std::string EncodeToHex(const std::string &non_hex_input) {
   return hex_output;
 }
 
-std::string DecodeFromHex(const std::string &hex_input) {
+std::string HexDecode(const std::string &hex_input) {
   std::string non_hex_output;
   CryptoPP::StringSource(hex_input, true,
       new CryptoPP::HexDecoder(new CryptoPP::StringSink(non_hex_output)));
   return non_hex_output;
 }
 
+std::string Base64Encode(const std::string &non_base64_input) {
+  std::basic_string<byte> input_buffer;
+  std::move(std::begin(non_base64_input), std::end(non_base64_input),
+            std::back_inserter(input_buffer));
+  std::basic_string<byte> encoded_string;
+  encoded_string.reserve(((input_buffer.size() / 3) + (input_buffer.size() % 3 > 0)) * 4);
+  int32_t temp;
+  auto cursor = std::begin(input_buffer);
+  for (size_t i = 0; i < input_buffer.size() / 3; ++i) {
+    temp = (*cursor++) << 16;  // Convert to big endian
+    temp += (*cursor++) << 8;
+    temp += (*cursor++);
+    encoded_string.append(1, kBase64Alphabet[(temp & 0x00FC0000) >> 18]);
+    encoded_string.append(1, kBase64Alphabet[(temp & 0x0003F000) >> 12]);
+    encoded_string.append(1, kBase64Alphabet[(temp & 0x00000FC0) >> 6]);
+    encoded_string.append(1, kBase64Alphabet[(temp & 0x0000003F)]);
+  }
+  switch(input_buffer.size() % 3) {
+    case 1:
+      temp  = (*cursor++) << 16;  // Convert to big endian
+      encoded_string.append(1, kBase64Alphabet[(temp & 0x00FC0000) >> 18]);
+      encoded_string.append(1, kBase64Alphabet[(temp & 0x0003F000) >> 12]);
+      encoded_string.append(2, kPadCharacter);
+      break;
+    case 2:
+      temp = (*cursor++) << 16;  // Convert to big endian
+      temp += (*cursor++) << 8;
+      encoded_string.append(1, kBase64Alphabet[(temp & 0x00FC0000) >> 18]);
+      encoded_string.append(1, kBase64Alphabet[(temp & 0x0003F000) >> 12]);
+      encoded_string.append(1, kBase64Alphabet[(temp & 0x00000FC0) >> 6]);
+      encoded_string.append(1, kPadCharacter);
+      break;
+  }
+  std::string result;
+  std::move(std::begin(encoded_string), std::end(encoded_string), std::back_inserter(result));
+  return result;
+}
+
+std::string Base64Decode(const std::string& base64_input) {
+  if (base64_input.size() % 4)  // Sanity check
+    ThrowError(CommonErrors::invalid_conversion);
+
+  size_t padding = 0;
+  if (base64_input.size()) {
+    if (base64_input[base64_input.size() - 1] == static_cast<size_t>(kPadCharacter))
+      ++padding;
+    if (base64_input[base64_input.size() - 2] == static_cast<size_t>(kPadCharacter))
+      ++padding;
+  }
+
+  // Setup a vector to hold the result
+  std::string decoded_bytes;
+  decoded_bytes.reserve(((base64_input.size() / 4) * 3) - padding);
+  int32_t temp = 0;  // Holds decoded quanta
+  auto cursor = std::begin(base64_input);
+  while (cursor < std::end(base64_input)) {
+    for (size_t quantum_position = 0; quantum_position < 4; ++quantum_position) {
+      temp <<= 6;
+      if (*cursor >= 0x41 && *cursor <= 0x5A)
+        temp |= *cursor - 0x41;
+      else if (*cursor >= 0x61 && *cursor <= 0x7A)
+        temp |= *cursor - 0x47;
+      else if (*cursor >= 0x30 && *cursor <= 0x39)
+        temp |= *cursor + 0x04;
+      else if (*cursor == 0x2B)
+        temp |= 0x3E;  // change to 0x2D for URL alphabet
+      else if (*cursor == 0x2F)
+        temp |= 0x3F;  // change to 0x5F for URL alphabet
+      else if (*cursor == kPadCharacter) {  // pad
+        switch (std::end(base64_input) - cursor) {
+          case 1:  // One pad character
+            decoded_bytes.push_back((temp >> 16) & 0x000000FF);
+            decoded_bytes.push_back((temp >> 8) & 0x000000FF);
+            return decoded_bytes;
+          case 2:  // Two pad characters
+            decoded_bytes.push_back((temp >> 10) & 0x000000FF);
+            return decoded_bytes;
+          default:
+            ThrowError(CommonErrors::invalid_conversion);
+        }
+      } else {
+        ThrowError(CommonErrors::invalid_conversion);
+      }
+      ++cursor;
+    }
+    decoded_bytes.push_back((temp >> 16) & 0x000000FF);
+    decoded_bytes.push_back((temp >> 8) & 0x000000FF);
+    decoded_bytes.push_back(temp & 0x000000FF);
+  }
+  return decoded_bytes;
+}
+
 std::string HexSubstr(const std::string &non_hex) {
   size_t non_hex_size(non_hex.size());
   if (non_hex_size < 7)
-    return EncodeToHex(non_hex);
+    return HexEncode(non_hex);
 
   std::string hex(14, 0);
   size_t non_hex_index(0), hex_index(0);
@@ -402,7 +360,7 @@ std::string HexSubstr(const std::string &non_hex) {
   return hex;
 }
 
-std::string Base64Substr(std::string non_base64) {
+std::string Base64Substr(const std::string& non_base64) {
   std::string base64(Base64Encode(non_base64));
   if (base64.size() > 16)
     return (base64.substr(0, 7) + ".." + base64.substr(base64.size() - 7));
@@ -415,33 +373,14 @@ std::string DebugId(const Identity& id) {
 }
 
 bptime::time_duration GetDurationSinceEpoch() {
+  // 01 Jan 2000
+  static const boost::posix_time::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));
   return bptime::microsec_clock::universal_time() - kMaidSafeEpoch;
 }
 
 uint32_t GetTimeStamp() {
   bptime::time_duration since_epoch(GetDurationSinceEpoch());
   return since_epoch.total_seconds();
-}
-
-int64_t MillisecondTimeStamp() {
-  bptime::time_duration since_epoch(GetDurationSinceEpoch());
-  return since_epoch.total_milliseconds();
-}
-
-std::string GetLocalTime() {
-  auto now(std::chrono::system_clock::now());
-  auto seconds_since_epoch(
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
-
-  std::time_t now_t(
-      std::chrono::system_clock::to_time_t(
-          std::chrono::system_clock::time_point(seconds_since_epoch)));
-
-  char temp[10];
-  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
-    ThrowError(CommonErrors::unknown);
-
-  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
 }
 
 bool ReadFile(const fs::path &file_path, std::string *content) {

@@ -39,56 +39,6 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(UtilsTest, BEH_VersionToString) {
-  EXPECT_TRUE(VersionToString(-2).empty());
-  EXPECT_TRUE(VersionToString(kInvalidVersion).empty());
-  EXPECT_EQ("0.0.000", VersionToString(0));
-  EXPECT_EQ("0.0.001", VersionToString(1));
-  EXPECT_EQ("0.0.010", VersionToString(10));
-  EXPECT_EQ("0.0.100", VersionToString(100));
-  EXPECT_EQ("0.1.000", VersionToString(1000));
-  EXPECT_EQ("0.1.001", VersionToString(1001));
-  EXPECT_EQ("0.1.010", VersionToString(1010));
-  EXPECT_EQ("0.1.100", VersionToString(1100));
-  EXPECT_EQ("0.9.000", VersionToString(9000));
-  EXPECT_EQ("0.9.001", VersionToString(9001));
-  EXPECT_EQ("0.9.010", VersionToString(9010));
-  EXPECT_EQ("0.9.100", VersionToString(9100));
-  EXPECT_EQ("1.0.000", VersionToString(10000));
-  EXPECT_EQ("1.0.001", VersionToString(10001));
-  EXPECT_EQ("1.0.010", VersionToString(10010));
-  EXPECT_EQ("1.0.100", VersionToString(10100));
-  EXPECT_EQ("1.1.000", VersionToString(11000));
-  EXPECT_EQ("1.1.001", VersionToString(11001));
-  EXPECT_EQ("1.1.010", VersionToString(11010));
-  EXPECT_EQ("1.1.100", VersionToString(11100));
-  EXPECT_EQ("1.9.000", VersionToString(19000));
-  EXPECT_EQ("1.9.001", VersionToString(19001));
-  EXPECT_EQ("1.9.010", VersionToString(19010));
-  EXPECT_EQ("1.9.100", VersionToString(19100));
-  EXPECT_EQ("10.0.000", VersionToString(100000));
-  EXPECT_EQ("10.0.001", VersionToString(100001));
-  EXPECT_EQ("10.0.010", VersionToString(100010));
-  EXPECT_EQ("10.0.100", VersionToString(100100));
-  EXPECT_EQ("10.1.000", VersionToString(101000));
-  EXPECT_EQ("10.1.001", VersionToString(101001));
-  EXPECT_EQ("10.1.010", VersionToString(101010));
-  EXPECT_EQ("10.1.100", VersionToString(101100));
-  EXPECT_EQ("10.9.000", VersionToString(109000));
-  EXPECT_EQ("10.9.001", VersionToString(109001));
-  EXPECT_EQ("10.9.010", VersionToString(109010));
-  EXPECT_EQ("10.9.100", VersionToString(109100));
-  std::string major_version, minor_version, patch_version;
-  EXPECT_EQ("1.1.001", VersionToString(11001, &major_version, &minor_version, &patch_version));
-  EXPECT_EQ("1", major_version);
-  EXPECT_EQ("1", minor_version);
-  EXPECT_EQ("001", patch_version);
-  EXPECT_EQ("12.3.456", VersionToString(123456, &major_version, &minor_version, &patch_version));
-  EXPECT_EQ("12", major_version);
-  EXPECT_EQ("3", minor_version);
-  EXPECT_EQ("456", patch_version);
-}
-
 TEST(UtilsTest, BEH_VersionToInt) {
   EXPECT_EQ(kInvalidVersion, VersionToInt(""));
   EXPECT_EQ(kInvalidVersion, VersionToInt("Rubbish"));
@@ -138,10 +88,6 @@ TEST(UtilsTest, BEH_VersionToInt) {
   EXPECT_EQ(109001, VersionToInt("10.9.001"));
   EXPECT_EQ(109010, VersionToInt("10.9.010"));
   EXPECT_EQ(109100, VersionToInt("10.9.100"));
-}
-
-TEST(UtilsTest, BEH_Cpu_Size) {
-  ASSERT_TRUE(CpuSize() == 32 || CpuSize() == 64);
 }
 
 TEST(UtilsTest, BEH_Names) {
@@ -336,19 +282,19 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
-      std::string encoded = EncodeToHex(original);
+      std::string encoded = HexEncode(original);
       EXPECT_EQ(200U, encoded.size());
-      std::string decoded = DecodeFromHex(encoded);
+      std::string decoded = HexDecode(encoded);
       EXPECT_EQ(original, decoded);
     }
   });
   const std::string kKnownEncoded("0123456789abcdef");
   const std::string kKnownDecoded("\x1\x23\x45\x67\x89\xab\xcd\xef");
-  EXPECT_EQ(kKnownEncoded, EncodeToHex(kKnownDecoded));
-  EXPECT_EQ(kKnownDecoded, DecodeFromHex(kKnownEncoded));
-  EXPECT_TRUE(EncodeToHex("").empty());
-  EXPECT_TRUE(DecodeFromHex("").empty());
-  EXPECT_TRUE(DecodeFromHex("{").empty());
+  EXPECT_EQ(kKnownEncoded, HexEncode(kKnownDecoded));
+  EXPECT_EQ(kKnownDecoded, HexDecode(kKnownEncoded));
+  EXPECT_TRUE(HexEncode("").empty());
+  EXPECT_TRUE(HexDecode("").empty());
+  EXPECT_TRUE(HexDecode("{").empty());
 }
 
 TEST(UtilsTest, BEH_Base64EncodeDecode) {
@@ -424,7 +370,6 @@ TEST(UtilsTest, BEH_TimeFunctions) {
   EXPECT_EQ(s, ms / 1000) << "s vs. ms failed.";
   EXPECT_EQ(s, ns / 1000000000) << "s vs. ns failed.";
   EXPECT_EQ(ms, ns / 1000000) << "ms vs. ns failed.";
-  EXPECT_GE(GetTimeStamp() + 1 , MillisecondTimeStamp() / 1000);
 }
 
 TEST(UtilsTest, BEH_RandomNumberGen) {

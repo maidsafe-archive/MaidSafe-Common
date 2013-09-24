@@ -213,6 +213,22 @@ void GetColourAndLevel(char& log_level, Colour& colour, int level) {
   }
 }
 
+std::string GetLocalTime() {
+  auto now(std::chrono::system_clock::now());
+  auto seconds_since_epoch(
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+
+  std::time_t now_t(
+      std::chrono::system_clock::to_time_t(
+          std::chrono::system_clock::time_point(seconds_since_epoch)));
+
+  char temp[10];
+  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
+    ThrowError(CommonErrors::unknown);
+
+  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+}
+
 std::string GetColouredLogEntry(char log_level) {
   std::ostringstream oss;
   oss << log_level << " " << std::this_thread::get_id();

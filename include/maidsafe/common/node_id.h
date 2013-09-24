@@ -54,7 +54,6 @@ class NodeId {
   // Creates a NodeId from an encoded string.  Will throw if id is invalid.
   NodeId(const std::string& id, EncodingType encoding_type);
 
-
   // Checks if id1 is closer in XOR distance to target_id than id2.
   static bool CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id);
 

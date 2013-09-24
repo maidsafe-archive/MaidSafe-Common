@@ -66,7 +66,7 @@ NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_
     switch (encoding_type) {
       case EncodingType::kBinary: DecodeFromBinary(id);
         break;
-      case EncodingType::kHex: raw_id_ = DecodeFromHex(id);
+      case EncodingType::kHex: raw_id_ = HexDecode(id);
         break;
       case EncodingType::kBase64: raw_id_ = Base64Decode(id);
         break;
@@ -124,7 +124,7 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
     case EncodingType::kBinary:
       return EncodeToBinary();
     case EncodingType::kHex:
-      return EncodeToHex(raw_id_);
+      return HexEncode(raw_id_);
     case EncodingType::kBase64:
       return Base64Encode(raw_id_);
     default:

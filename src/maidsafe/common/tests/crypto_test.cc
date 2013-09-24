@@ -84,10 +84,10 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   EXPECT_THROW(SecurePassword(""), std::exception);
   EXPECT_THROW(UserPassword(""), std::exception);
   EXPECT_THROW(Salt(""), std::exception);
-  const UserPassword kKnownPassword1(DecodeFromHex("70617373776f7264"));
-  const Salt kKnownSalt1(DecodeFromHex("1234567878563412"));
+  const UserPassword kKnownPassword1(HexDecode("70617373776f7264"));
+  const Salt kKnownSalt1(HexDecode("1234567878563412"));
   const uint32_t kKnownIterations1(5);
-  const SecurePassword kKnownDerived1(DecodeFromHex(
+  const SecurePassword kKnownDerived1(HexDecode(
       "4391697b647773d2ac29693853dc66c21f036d36256a8b1e6"
       "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0"));
   EXPECT_THROW(CreateSecurePassword(UserPassword(), kKnownSalt1, kKnownIterations1),
@@ -96,12 +96,12 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 
   SecurePassword password(CreateSecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
   EXPECT_EQ(kKnownDerived1, password);
-  const UserPassword kKnownPassword2(DecodeFromHex("416c6c206e2d656e746974696573206d75737420636f6"
+  const UserPassword kKnownPassword2(HexDecode("416c6c206e2d656e746974696573206d75737420636f6"
       "d6d756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656"
       "568656568656573"));
-  const Salt kKnownSalt2(DecodeFromHex("1234567878563412"));
+  const Salt kKnownSalt2(HexDecode("1234567878563412"));
   const uint32_t kKnownIterations2(500);
-  const SecurePassword kKnownDerived2(DecodeFromHex(
+  const SecurePassword kKnownDerived2(HexDecode(
       "c1999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9"
       "c697256c7b131d3bcf310b523e05c3ffc14d7fd8511c840"));
   password = CreateSecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2);
@@ -120,11 +120,11 @@ struct HashTestData {
         SHA384_hex_result(SHA384_hex_res),
         SHA512_hex_result(SHA512_hex_res),
         Tiger_hex_result(Tiger_hex_res),
-        SHA1_raw_result(DecodeFromHex(SHA1_hex_res)),
-        SHA256_raw_result(DecodeFromHex(SHA256_hex_res)),
-        SHA384_raw_result(DecodeFromHex(SHA384_hex_res)),
-        SHA512_raw_result(DecodeFromHex(SHA512_hex_res)),
-        Tiger_raw_result(DecodeFromHex(Tiger_hex_res)) {}
+        SHA1_raw_result(HexDecode(SHA1_hex_res)),
+        SHA256_raw_result(HexDecode(SHA256_hex_res)),
+        SHA384_raw_result(HexDecode(SHA384_hex_res)),
+        SHA512_raw_result(HexDecode(SHA512_hex_res)),
+        Tiger_raw_result(HexDecode(Tiger_hex_res)) {}
   std::string input;
   std::string SHA1_hex_result;
   std::string SHA256_hex_result;
@@ -193,41 +193,41 @@ TEST(CryptoTest, BEH_Hash) {
   for (size_t j = 0; j < test_data.size(); ++j) {
     std::string input(test_data.at(j).input);
     if (!test_data.at(j).SHA1_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA1_hex_result, EncodeToHex(Hash<SHA1>(input)));
+      EXPECT_EQ(test_data.at(j).SHA1_hex_result, HexEncode(Hash<SHA1>(input)));
       EXPECT_EQ(test_data.at(j).SHA1_raw_result, Hash<SHA1>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA1_hex_result, EncodeToHex(HashFile<SHA1>(input_files.at(j))));
+      EXPECT_EQ(test_data.at(j).SHA1_hex_result, HexEncode(HashFile<SHA1>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA1_raw_result, HashFile<SHA1>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA256_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA256_hex_result, EncodeToHex(Hash<SHA256>(input)));
+      EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(Hash<SHA256>(input)));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<SHA256>(input).string());
       EXPECT_EQ(test_data.at(j).SHA256_hex_result,
-                EncodeToHex(HashFile<SHA256>(input_files.at(j))));
+                HexEncode(HashFile<SHA256>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, HashFile<SHA256>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA384_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA384_hex_result, EncodeToHex(Hash<SHA384>(input)));
+      EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(Hash<SHA384>(input)));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<SHA384>(input).string());
       EXPECT_EQ(test_data.at(j).SHA384_hex_result,
-                EncodeToHex(HashFile<SHA384>(input_files.at(j))));
+                HexEncode(HashFile<SHA384>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, HashFile<SHA384>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA512_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA512_hex_result, EncodeToHex(Hash<SHA512>(input)));
+      EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(Hash<SHA512>(input)));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<SHA512>(input).string());
       EXPECT_EQ(test_data.at(j).SHA512_hex_result,
-                EncodeToHex(HashFile<SHA512>(input_files.at(j))));
+                HexEncode(HashFile<SHA512>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, HashFile<SHA512>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).Tiger_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).Tiger_hex_result, EncodeToHex(Hash<Tiger>(input)));
+      EXPECT_EQ(test_data.at(j).Tiger_hex_result, HexEncode(Hash<Tiger>(input)));
       EXPECT_EQ(test_data.at(j).Tiger_raw_result, Hash<Tiger>(input).string());
       EXPECT_EQ(test_data.at(j).Tiger_hex_result,
-                EncodeToHex(HashFile<Tiger>(input_files.at(j))));
+                HexEncode(HashFile<Tiger>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).Tiger_raw_result, HashFile<Tiger>(input_files.at(j)).string());
     }
   }
@@ -256,12 +256,12 @@ std::string CorruptData(const std::string &input) {
 TEST(CryptoTest, BEH_SymmEncrypt) {
   // Set up data
   const AES256Key kKey(
-      DecodeFromHex("0a89927670e292af98080a3c3e2bdee4289b768de74570f9f470282756390fe3"));
-  const AES256InitialisationVector kIV(DecodeFromHex("92af98080a3c3e2bdee4289b768de7af"));
-  const PlainText kUnencrypted(DecodeFromHex(
+      HexDecode("0a89927670e292af98080a3c3e2bdee4289b768de74570f9f470282756390fe3"));
+  const AES256InitialisationVector kIV(HexDecode("92af98080a3c3e2bdee4289b768de7af"));
+  const PlainText kUnencrypted(HexDecode(
       "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984"
       "a6a01b2r15e48a47bc46af231d2b146e54a87db43f51c2a5"));
-  const CipherText kEncrypted(DecodeFromHex(
+  const CipherText kEncrypted(HexDecode(
       "441f907b71a14c2f482c4d1fef61f3d7ffc0f14953f4f57"
       "5601803feed5d10a3387c273f9a92b2ceb4d9236167d707"));
   const AES256Key kBadKey(CorruptData(kKey.string()));
@@ -336,25 +336,25 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
   std::string answer = "d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b";
   answer += "8dd4c44e6d01a88526647df8c7555330f3d347e1ac37";
   answer += "35e1a73c79c258e9fa7094f9ab07e33";
-  EXPECT_EQ(EncodeToHex(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer);
+  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer);
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
   // 23 Mb approx
   std::string answer2 ="651d460d960d3329da36304f0e0bb3098112e4f0583f6e34d2fc";
   answer2 += "3ecdf7908c2a493c4defdce4109d9e715e767890cef558f6b7ae02";
   answer2 += "4f6e8561be2ef0d483872f";
-  EXPECT_EQ(EncodeToHex(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer2);
+  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer2);
 }
 
 TEST(CryptoTest, BEH_AESTigerDeterministic) {
   // if the algorithm changes this test will start failing as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
   std::string answer = "43ecf84f0b07b3f6df2b2910dbdc5022fd6c6124c89647c9";
-  EXPECT_EQ(EncodeToHex(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer);
+  EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer);
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
   std::string answer2 ="f98bb1b55f14f3ec8612212919d47db91bb94c2e9329de2d";
-  EXPECT_EQ(EncodeToHex(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer2);
+  EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer2);
 }
 
 TEST(CryptoTest, BEH_SecretSharing) {

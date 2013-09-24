@@ -44,7 +44,7 @@ NodeId IncreaseId(const NodeId& kad_id) {
 }
 
 const std::string ToBinary(const std::string& raw_id)  {
-  std::string hex_encoded(EncodeToHex(raw_id));
+  std::string hex_encoded(HexEncode(raw_id));
   std::string result;
   for (auto& elem : hex_encoded) {
     std::string temp;
@@ -158,8 +158,8 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
         known_encoded = ToBinary(known_raw);
         break;
       case NodeId::EncodingType::kHex :
-        encoded = EncodeToHex(rand_str);
-        known_encoded = EncodeToHex(known_raw);
+        encoded = HexEncode(rand_str);
+        known_encoded = HexEncode(known_raw);
         break;
       case NodeId::EncodingType::kBase64 :
         encoded = Base64Encode(rand_str);
