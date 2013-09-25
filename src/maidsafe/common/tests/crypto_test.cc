@@ -260,10 +260,10 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
   const AES256InitialisationVector kIV(HexDecode("92af98080a3c3e2bdee4289b768de7af"));
   const PlainText kUnencrypted(HexDecode(
       "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984"
-      "a6a01b2r15e48a47bc46af231d2b146e54a87db43f51c2a5"));
+      "a6a01b2015e48a47bc46af231d2b146e54a87db43f51c2a5"));
   const CipherText kEncrypted(HexDecode(
-      "441f907b71a14c2f482c4d1fef61f3d7ffc0f14953f4f57"
-      "5601803feed5d10a3387c273f9a92b2ceb4d9236167d707"));
+      "441f907b71a14c2f482c4d1fef61f3d7ffc0f14953f4f575"
+      "601803ffa6f13e9f3097a0d93c85f1dd10b815822b969644"));
   const AES256Key kBadKey(CorruptData(kKey.string()));
   const AES256InitialisationVector kBadIV(CorruptData(kIV.string()));
   const PlainText kBadUnencrypted(CorruptData(kUnencrypted.string()));

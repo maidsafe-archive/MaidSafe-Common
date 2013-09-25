@@ -130,9 +130,14 @@ std::string BytesToSiUnits(const uint64_t &num) {
 }
 
 const char kHexAlphabet[] = "0123456789abcdef";
+const char kHexLookup[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0,
+    10, 11, 12, 13, 14, 15 };
 
-const std::string kBase64Alphabet(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+const char kBase64Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 const char kPadCharacter('=');
 
@@ -241,48 +246,52 @@ std::string HexEncode(const std::string &non_hex_input) {
 }
 
 std::string HexDecode(const std::string &hex_input) {
-  std::string non_hex_output;
-  CryptoPP::StringSource(hex_input, true,
-      new CryptoPP::HexDecoder(new CryptoPP::StringSink(non_hex_output)));
+  auto size(hex_input.size());
+  if (size % 2)  // Sanity check
+    ThrowError(CommonErrors::invalid_conversion);
+
+  std::string non_hex_output(size / 2, 0);
+  for (size_t i(0), j(0); i != size / 2; ++i) {
+    non_hex_output[i] = (kHexLookup[static_cast<int>(hex_input[j++])] << 4);
+    non_hex_output[i] |= kHexLookup[static_cast<int>(hex_input[j++])];
+  }
   return non_hex_output;
 }
 
 std::string Base64Encode(const std::string &non_base64_input) {
-  std::basic_string<byte> input_buffer;
-  std::move(std::begin(non_base64_input), std::end(non_base64_input),
-            std::back_inserter(input_buffer));
-  std::basic_string<byte> encoded_string;
-  encoded_string.reserve(((input_buffer.size() / 3) + (input_buffer.size() % 3 > 0)) * 4);
+  std::basic_string<byte> encoded_string(
+      ((non_base64_input.size() / 3) + (non_base64_input.size() % 3 > 0)) * 4, 0);
   int32_t temp;
-  auto cursor = std::begin(input_buffer);
-  for (size_t i = 0; i < input_buffer.size() / 3; ++i) {
+  auto cursor = std::begin(reinterpret_cast<const std::basic_string<byte>&>(non_base64_input));
+  size_t i = 0;
+  size_t common_output_size((non_base64_input.size() / 3) * 4);
+  while (i < common_output_size) {
     temp = (*cursor++) << 16;  // Convert to big endian
     temp += (*cursor++) << 8;
     temp += (*cursor++);
-    encoded_string.append(1, kBase64Alphabet[(temp & 0x00FC0000) >> 18]);
-    encoded_string.append(1, kBase64Alphabet[(temp & 0x0003F000) >> 12]);
-    encoded_string.append(1, kBase64Alphabet[(temp & 0x00000FC0) >> 6]);
-    encoded_string.append(1, kBase64Alphabet[(temp & 0x0000003F)]);
+    encoded_string[i++] = kBase64Alphabet[(temp & 0x00FC0000) >> 18];
+    encoded_string[i++] = kBase64Alphabet[(temp & 0x0003F000) >> 12];
+    encoded_string[i++] = kBase64Alphabet[(temp & 0x00000FC0) >> 6];
+    encoded_string[i++] = kBase64Alphabet[(temp & 0x0000003F)];
   }
-  switch(input_buffer.size() % 3) {
+  switch(non_base64_input.size() % 3) {
     case 1:
-      temp  = (*cursor++) << 16;  // Convert to big endian
-      encoded_string.append(1, kBase64Alphabet[(temp & 0x00FC0000) >> 18]);
-      encoded_string.append(1, kBase64Alphabet[(temp & 0x0003F000) >> 12]);
-      encoded_string.append(2, kPadCharacter);
+      temp = (*cursor++) << 16;  // Convert to big endian
+      encoded_string[i++] = kBase64Alphabet[(temp & 0x00FC0000) >> 18];
+      encoded_string[i++] = kBase64Alphabet[(temp & 0x0003F000) >> 12];
+      encoded_string[i++] = kPadCharacter;
+      encoded_string[i++] = kPadCharacter;
       break;
     case 2:
       temp = (*cursor++) << 16;  // Convert to big endian
       temp += (*cursor++) << 8;
-      encoded_string.append(1, kBase64Alphabet[(temp & 0x00FC0000) >> 18]);
-      encoded_string.append(1, kBase64Alphabet[(temp & 0x0003F000) >> 12]);
-      encoded_string.append(1, kBase64Alphabet[(temp & 0x00000FC0) >> 6]);
-      encoded_string.append(1, kPadCharacter);
+      encoded_string[i++] = kBase64Alphabet[(temp & 0x00FC0000) >> 18];
+      encoded_string[i++] = kBase64Alphabet[(temp & 0x0003F000) >> 12];
+      encoded_string[i++] = kBase64Alphabet[(temp & 0x00000FC0) >> 6];
+      encoded_string[i++] = kPadCharacter;
       break;
   }
-  std::string result;
-  std::move(std::begin(encoded_string), std::end(encoded_string), std::back_inserter(result));
-  return result;
+  return *reinterpret_cast<std::string*>(&encoded_string);
 }
 
 std::string Base64Decode(const std::string& base64_input) {

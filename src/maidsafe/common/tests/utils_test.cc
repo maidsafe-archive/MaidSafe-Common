@@ -108,7 +108,6 @@ TEST(UtilsTest, BEH_ByteRatios) {
   EXPECT_EQ(KiloBytes(1).count(), 1);
 }
 
-
 TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
   EXPECT_EQ("0 B", BytesToDecimalSiUnits(0U));
   EXPECT_EQ("1 B", BytesToDecimalSiUnits(1U));
@@ -294,14 +293,17 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
   EXPECT_EQ(kKnownDecoded, HexDecode(kKnownEncoded));
   EXPECT_TRUE(HexEncode("").empty());
   EXPECT_TRUE(HexDecode("").empty());
-  EXPECT_TRUE(HexDecode("{").empty());
+  EXPECT_THROW(HexDecode("{"), common_error);
 }
 
 TEST(UtilsTest, BEH_Base64EncodeDecode) {
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
-      EXPECT_EQ(original,  Base64Decode(Base64Encode(original))) << "encoded -> decoded failed.";
+      std::string encoded = Base64Encode(original);
+      EXPECT_EQ(136U, encoded.size());
+      std::string decoded = Base64Decode(encoded);
+      EXPECT_EQ(original, decoded);
     }
   });
   // from wikipedia
@@ -341,6 +343,9 @@ TEST(UtilsTest, BEH_Base64EncodeDecode) {
   EXPECT_EQ("foob", Base64Decode("Zm9vYg=="));
   EXPECT_EQ("fooba", Base64Decode("Zm9vYmE="));
   EXPECT_EQ("foobar", Base64Decode("Zm9vYmFy"));
+  EXPECT_THROW(Base64Decode("Zg="), common_error);
+  EXPECT_THROW(Base64Decode("Zg"), common_error);
+  EXPECT_THROW(Base64Decode("Z"), common_error);
 }
 
 TEST(UtilsTest, BEH_HexSubstr) {
