@@ -26,6 +26,7 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <algorithm>
 
 #include "boost/current_function.hpp"
 

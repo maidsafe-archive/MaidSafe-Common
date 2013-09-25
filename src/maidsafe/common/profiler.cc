@@ -44,8 +44,8 @@ std::string LocationToString(const ProfileEntry::Location& location) {
 }
 
 std::string DurationToString(const std::chrono::high_resolution_clock::duration& duration) {
-  long long nanos(
-      std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());  // NOLINT
+  long long nanos(   // NOLINT
+      std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());
   std::vector<char> buffer(21, 0);
   std::sprintf(&buffer[0], "%8lli.%09lli s", nanos / 1000000000, nanos % 1000000000);  // NOLINT
   return std::string(&buffer[0]);
