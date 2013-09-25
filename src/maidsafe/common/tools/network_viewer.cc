@@ -32,7 +32,6 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/tools/network_viewer.pb.h"
 
-
 namespace bi = boost::interprocess;
 
 namespace maidsafe {
@@ -63,8 +62,8 @@ struct NodeInfo {
   explicit NodeInfo(const NodeId& id_in)
       : id(id_in),
         matrix(new MatrixMap([id_in](NodeSet::iterator lhs, NodeSet::iterator rhs) {
-                                 return NodeId::CloserToTarget(lhs->id, rhs->id, id_in);
-                             })) {}
+          return NodeId::CloserToTarget(lhs->id, rhs->id, id_in);
+        })) {}
   NodeInfo(const NodeInfo& other) : id(other.id), matrix(other.matrix) {}
   NodeInfo(NodeInfo&& other) : id(std::move(other.id)), matrix(std::move(other.matrix)) {}
   NodeInfo& operator=(NodeInfo other) {
@@ -108,11 +107,9 @@ void PrintDetails(const NodeInfo& node_info) {
 
 MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
   NodeId node_id(node_info.id);
-  return std::find_if(std::begin(matrix),
-                      std::end(matrix),
-                      [node_id](const MatrixMap::value_type& child) {
-                          return child.first->id == node_id;
-                      });
+  return std::find_if(
+      std::begin(matrix), std::end(matrix),
+      [node_id](const MatrixMap::value_type & child) { return child.first->id == node_id; });
 }
 
 void InsertNode(const MatrixRecord& matrix_record) {
@@ -129,7 +126,7 @@ void InsertNode(const MatrixRecord& matrix_record) {
     if (matrix_itr != std::end(*itr->matrix))
       continue;
     auto global_itr(g_nodes.insert(matrix_entry).first);
-//    global_itr->matrix.insert(itr);
+    //    global_itr->matrix.insert(itr);
     itr->matrix->insert(std::make_pair(global_itr, child.second));
   }
   PrintDetails(*itr);
@@ -138,16 +135,15 @@ void InsertNode(const MatrixRecord& matrix_record) {
 void TakeSnapshotAndNotify() {
   static std::chrono::steady_clock::time_point last_notified(std::chrono::steady_clock::now());
 
-  if (g_last_notified_state_current ||
-      !g_functor ||
+  if (g_last_notified_state_current || !g_functor ||
       std::chrono::steady_clock::now() - last_notified < g_notify_interval) {
     return;
   }
 
-  auto& snapshot(g_snapshots.insert(
-      std::make_pair(++g_state_id, NodeSet([](const NodeInfo& lhs, const NodeInfo& rhs) {
-                                               return lhs.id < rhs.id;
-                                           }))).first->second);
+  auto& snapshot(g_snapshots.insert(std::make_pair(++g_state_id, NodeSet([](const NodeInfo & lhs,
+                                                                            const NodeInfo & rhs) {
+                                                                   return lhs.id < rhs.id;
+                                                                 }))).first->second);
   // TODO(Fraser#5#): 2013-04-10 - Optimise this
   // Construct deep copy of g_nodes using NodeInfo with empty matrix.
   for (const auto& node : g_nodes)
@@ -158,11 +154,9 @@ void TakeSnapshotAndNotify() {
   while (main_itr != std::end(g_nodes)) {
     for (const auto& child : *main_itr->matrix) {
       // Find the child in the new NodeSet
-      auto g_itr(std::find_if(std::begin(snapshot),
-                              std::end(snapshot),
-                              [&child](const NodeInfo& node_info) {
-                                  return child.first->id == node_info.id;
-                              }));
+      auto g_itr(std::find_if(
+          std::begin(snapshot), std::end(snapshot),
+          [&child](const NodeInfo & node_info) { return child.first->id == node_info.id; }));
       snapshot_itr->matrix->insert(std::make_pair(g_itr, child.second));
     }
     ++main_itr;
@@ -191,26 +185,19 @@ void UpdateNodeInfo(const std::string& serialised_matrix_record) {
 
 }  // unnamed namespace
 
-
-
 ViewableNode::ViewableNode() : id(), distance(), type(static_cast<ChildType>(-1)) {}
 
-ViewableNode::ViewableNode(std::string id_in, std::string distance_in,
-                           ChildType type_in)
+ViewableNode::ViewableNode(std::string id_in, std::string distance_in, ChildType type_in)
     : id(std::move(id_in)), distance(std::move(distance_in)), type(type_in) {
   assert(id.size() == 2 * NodeId::kSize);
   assert(distance.size() == 2 * NodeId::kSize);
 }
 
 ViewableNode::ViewableNode(const ViewableNode& other)
-    : id(other.id),
-      distance(other.distance),
-      type(other.type) {}
+    : id(other.id), distance(other.distance), type(other.type) {}
 
 ViewableNode::ViewableNode(ViewableNode&& other)
-    : id(std::move(other.id)),
-      distance(std::move(other.distance)),
-      type(std::move(other.type)) {}
+    : id(std::move(other.id)), distance(std::move(other.distance)), type(std::move(other.type)) {}
 
 ViewableNode& ViewableNode::operator=(ViewableNode other) {
   using std::swap;
@@ -220,25 +207,22 @@ ViewableNode& ViewableNode::operator=(ViewableNode other) {
   return *this;
 }
 
-
-
 MatrixRecord::MatrixRecord()
     : owner_id_(),
       matrix_ids_([](const NodeId&, const NodeId&)->bool {
-                      // Ensure this is never actually invoked
-                      assert(false);
-                      return true;
-                  }) {}
+        // Ensure this is never actually invoked
+        assert(false);
+        return true;
+      }) {}
 
 MatrixRecord::MatrixRecord(const NodeId& owner_id)
     : owner_id_(owner_id),
-      matrix_ids_([owner_id](const NodeId& lhs, const NodeId& rhs) {
-                      return NodeId::CloserToTarget(lhs, rhs, owner_id);
-                  }) {}
+      matrix_ids_([owner_id](const NodeId & lhs, const NodeId & rhs) {
+        return NodeId::CloserToTarget(lhs, rhs, owner_id);
+      }) {}
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
-    : owner_id_(),
-      matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
+    : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
   protobuf::MatrixRecord proto_matrix_record;
   if (!proto_matrix_record.ParseFromString(serialised_matrix_record)) {
     LOG(kError) << "Failed to construct matrix_record.";
@@ -246,9 +230,9 @@ MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
   }
 
   owner_id_ = NodeId(proto_matrix_record.owner_id());
-  matrix_ids_ = MatrixIds([this](const NodeId& lhs, const NodeId& rhs) {
-                              return NodeId::CloserToTarget(lhs, rhs, owner_id_);
-                          });
+  matrix_ids_ = MatrixIds([this](const NodeId & lhs, const NodeId & rhs) {
+    return NodeId::CloserToTarget(lhs, rhs, owner_id_);
+  });
 
   for (int i(0); i != proto_matrix_record.matrix_ids_size(); ++i) {
     AddElement(NodeId(proto_matrix_record.matrix_ids(i).id()),
@@ -268,12 +252,10 @@ std::string MatrixRecord::Serialise() const {
 }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)
-    : owner_id_(other.owner_id_),
-      matrix_ids_(other.matrix_ids_) {}
+    : owner_id_(other.owner_id_), matrix_ids_(other.matrix_ids_) {}
 
 MatrixRecord::MatrixRecord(MatrixRecord&& other)
-    : owner_id_(std::move(other.owner_id_)),
-      matrix_ids_(std::move(other.matrix_ids_)) {}
+    : owner_id_(std::move(other.owner_id_)), matrix_ids_(std::move(other.matrix_ids_)) {}
 
 MatrixRecord& MatrixRecord::operator=(MatrixRecord other) {
   using std::swap;
@@ -286,15 +268,9 @@ void MatrixRecord::AddElement(const NodeId& element_id, ChildType child_type) {
   matrix_ids_[element_id] = child_type;
 }
 
-NodeId MatrixRecord::owner_id() const {
-  return owner_id_;
-}
+NodeId MatrixRecord::owner_id() const { return owner_id_; }
 
-MatrixRecord::MatrixIds MatrixRecord::matrix_ids() const {
-  return matrix_ids_;
-}
-
-
+MatrixRecord::MatrixIds MatrixRecord::matrix_ids() const { return matrix_ids_; }
 
 void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor) {
   std::lock_guard<std::mutex> lock(g_mutex);
@@ -321,7 +297,8 @@ std::vector<std::string> GetNodesInNetwork(int state_id) {
 
 std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_encoded_id) {
   LOG(kInfo) << "Handling GetCloseNodes request for "
-             << DebugId(NodeId(hex_encoded_id, NodeId::EncodingType::kHex)) << " at state " << state_id;
+             << DebugId(NodeId(hex_encoded_id, NodeId::EncodingType::kHex)) << " at state "
+             << state_id;
   std::vector<ViewableNode> children;
   std::lock_guard<std::mutex> lock(g_mutex);
   if (g_snapshots.empty())
@@ -332,11 +309,9 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
     --snapshot_itr;
 
   NodeId target_id(hex_encoded_id, NodeId::EncodingType::kHex);
-  auto itr(std::find_if(std::begin(snapshot_itr->second),
-                        std::end(snapshot_itr->second),
-                        [&target_id](const NodeInfo& node_info) {
-                            return target_id == node_info.id;
-                        }));
+  auto itr(
+      std::find_if(std::begin(snapshot_itr->second), std::end(snapshot_itr->second),
+                   [&target_id](const NodeInfo & node_info) { return target_id == node_info.id; }));
 
   if (itr == std::end(snapshot_itr->second)) {
     // Data / account request
@@ -348,27 +323,28 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
                               ChildType::kNotConnected);
         if (children.size() == 4)
           needs_sorted = true;
-      } else if (NodeId::CloserToTarget(node.id, NodeId(children[3].id, NodeId::EncodingType::kHex), target_id)) {
-        children[3] = ViewableNode(node.id.ToStringEncoded(NodeId::EncodingType::kHex),
-                                   (target_id ^ node.id).ToStringEncoded(NodeId::EncodingType::kHex),
-                                   ChildType::kNotConnected);
+      } else if (NodeId::CloserToTarget(node.id, NodeId(children[3].id, NodeId::EncodingType::kHex),
+                                        target_id)) {
+        children[3] =
+            ViewableNode(node.id.ToStringEncoded(NodeId::EncodingType::kHex),
+                         (target_id ^ node.id).ToStringEncoded(NodeId::EncodingType::kHex),
+                         ChildType::kNotConnected);
         needs_sorted = true;
       }
       if (needs_sorted) {
         std::sort(std::begin(children), std::end(children),
-                  [&target_id](const ViewableNode& lhs, const ViewableNode& rhs) {
-                      return NodeId::CloserToTarget(NodeId(lhs.id, NodeId::EncodingType::kHex),
-                                                    NodeId(rhs.id, NodeId::EncodingType::kHex),
-                                                    target_id);
-                  });
+                  [&target_id](const ViewableNode & lhs, const ViewableNode & rhs) {
+          return NodeId::CloserToTarget(NodeId(lhs.id, NodeId::EncodingType::kHex),
+                                        NodeId(rhs.id, NodeId::EncodingType::kHex), target_id);
+        });
       }
     }
   } else {
     // Node request
     for (const auto& child : *itr->matrix)
-      children.emplace_back((*child.first).id.ToStringEncoded(NodeId::EncodingType::kHex),
-                            (itr->id ^ (*child.first).id).ToStringEncoded(NodeId::EncodingType::kHex),
-                            child.second);
+      children.emplace_back(
+          (*child.first).id.ToStringEncoded(NodeId::EncodingType::kHex),
+          (itr->id ^ (*child.first).id).ToStringEncoded(NodeId::EncodingType::kHex), child.second);
   }
 
   TakeSnapshotAndNotify();
@@ -405,7 +381,7 @@ void Run(const std::chrono::milliseconds& notify_interval) {
         }
       }
     }
-    catch(bi::interprocess_exception &ex) {
+    catch (bi::interprocess_exception& ex) {
       LOG(kError) << ex.what();
     }
   }));

@@ -14,10 +14,9 @@ namespace maidsafe {
 struct on_scope_exit {
   typedef std::function<void()> ExitAction;
 
-  template<typename CleanupAction>
-  explicit on_scope_exit(CleanupAction action)
-  try : action_(action) {}
-  catch(...) {
+  template <typename CleanupAction>
+  explicit on_scope_exit(CleanupAction action) try : action_(action) {}
+  catch (...) {
     action();
   }
 
@@ -30,14 +29,18 @@ struct on_scope_exit {
 
   void SetAction(ExitAction action = nullptr) { action_ = action; }
 
-  template<typename T>
-  static void SetValue(T& t, T value) { t = value; }
+  template <typename T>
+  static void SetValue(T& t, T value) {
+    t = value;
+  }
 
   void Release() { SetAction(); }
 
-  template<typename T>
+  template <typename T>
 #ifdef __clang__
-  static ExitAction RevertValue(T& t) { return boost::bind(SetValue<T>, std::ref(t), t); }
+  static ExitAction RevertValue(T& t) {
+    return boost::bind(SetValue<T>, std::ref(t), t);
+  }
 #else
   static ExitAction RevertValue(T& t) { return std::bind(SetValue<T>, std::ref(t), t); }
 #endif
@@ -50,7 +53,6 @@ struct on_scope_exit {
   on_scope_exit& operator=(on_scope_exit&&);
   ExitAction action_;
 };
-
 
 }  // namespace maidsafe
 

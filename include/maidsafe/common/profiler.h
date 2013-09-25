@@ -31,9 +31,8 @@
 
 #include "maidsafe/common/active.h"
 
-
 #ifndef NDEBUG
-#  define USE_PROFILING
+#define USE_PROFILING
 #endif
 
 namespace maidsafe {
@@ -41,15 +40,15 @@ namespace maidsafe {
 namespace profile {
 
 #ifdef USE_PROFILING
-#  ifdef _MSC_VER
-#    define SCOPED_PROFILE maidsafe::profile::ProfileEntry \
-                           scoped_profile_entry(__FILE__, __LINE__, __FUNCTION__);
-#  else
-#    define SCOPED_PROFILE maidsafe::profile::ProfileEntry \
-                           scoped_profile_entry(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION);
-#  endif
+#ifdef _MSC_VER
+#define SCOPED_PROFILE \
+  maidsafe::profile::ProfileEntry scoped_profile_entry(__FILE__, __LINE__, __FUNCTION__);
 #else
-#  define SCOPED_PROFILE
+#define SCOPED_PROFILE \
+  maidsafe::profile::ProfileEntry scoped_profile_entry(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION);
+#endif
+#else
+#define SCOPED_PROFILE
 #endif
 
 struct ProfileEntry {
@@ -64,9 +63,8 @@ struct ProfileEntry {
     std::string function;
   };
 
-  ProfileEntry(const std::string &file, int line, const std::string &function)
-      : location(file, line, function),
-        start(std::chrono::high_resolution_clock::now()) {}
+  ProfileEntry(const std::string& file, int line, const std::string& function)
+      : location(file, line, function), start(std::chrono::high_resolution_clock::now()) {}
 
   ~ProfileEntry();
 
@@ -77,8 +75,6 @@ struct ProfileEntry {
 void swap(ProfileEntry::Location& lhs, ProfileEntry::Location& rhs);
 
 bool operator<(const ProfileEntry::Location& lhs, const ProfileEntry::Location& rhs);
-
-
 
 class Profiler {
  public:

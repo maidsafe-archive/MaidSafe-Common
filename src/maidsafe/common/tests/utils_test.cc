@@ -250,10 +250,10 @@ TEST(UtilsTest, BEH_RandomStringMultiThread) {
 }
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {
-  std::set<std::string>random_strings;
+  std::set<std::string> random_strings;
   const size_t kCount(100);
   const size_t kMaxDuplicates(1);
-  for (size_t j = 10; j< 100; ++j) {
+  for (size_t j = 10; j < 100; ++j) {
     for (size_t i = 0; i < kCount; ++i) {
       random_strings.insert(RandomString(j));
     }
@@ -269,8 +269,9 @@ TEST(UtilsTest, BEH_RandomStringSingleThread) {
   EXPECT_EQ(kStringSize, test1.size());
   EXPECT_EQ(kStringSize, test2.size());
   EXPECT_NE(test1, test2);
-  const std::string kAlphaNumeric("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh"
-                                  "ijklmnopqrstuvwxyz");
+  const std::string kAlphaNumeric(
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh"
+      "ijklmnopqrstuvwxyz");
   for (size_t i = 0; i < kStringSize; ++i) {
     EXPECT_NE(std::string::npos, kAlphaNumeric.find(test1.at(i)));
     EXPECT_NE(std::string::npos, kAlphaNumeric.find(test2.at(i)));
@@ -317,11 +318,11 @@ TEST(UtilsTest, BEH_Base64EncodeDecode) {
   encoded_man += "IHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2Yg";
   encoded_man += "dGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGlu";
   encoded_man += "dWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRo";
-  encoded_man +=  "ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
-  EXPECT_EQ(Base64Encode(man) , encoded_man);
+  encoded_man += "ZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=";
+  EXPECT_EQ(Base64Encode(man), encoded_man);
   EXPECT_EQ(man, Base64Decode(Base64Encode(man)));
   EXPECT_EQ(Base64Encode("pleasure."), "cGxlYXN1cmUu");
-  EXPECT_EQ("pleasure",  Base64Decode(Base64Encode("pleasure")));
+  EXPECT_EQ("pleasure", Base64Decode(Base64Encode("pleasure")));
   EXPECT_EQ(Base64Encode("leasure."), "bGVhc3VyZS4=");
   EXPECT_EQ("leasure.", Base64Decode(Base64Encode("leasure.")));
   EXPECT_EQ(Base64Encode("easure."), "ZWFzdXJlLg==");
@@ -379,8 +380,8 @@ TEST(UtilsTest, BEH_TimeFunctions) {
 
 TEST(UtilsTest, BEH_RandomNumberGen) {
   maidsafe::test::RunInParallel(10, [&] {
-    std::set<int32_t>random_ints;
-    std::set<uint32_t>random_uints;
+    std::set<int32_t> random_ints;
+    std::set<uint32_t> random_uints;
     const size_t kCount(10000);
     // look for less than 0.05% duplicates
     const size_t kMaxDuplicates(kCount / 2000);
@@ -464,20 +465,18 @@ TEST(UtilsTest, BEH_AppDir) {
   EXPECT_TRUE(system.find(home) == std::string::npos);
 }
 
-TEST(UtilsTest, BEH_Concurrency) {
-  EXPECT_GE(Concurrency(), 2U);
-}
+TEST(UtilsTest, BEH_Concurrency) { EXPECT_GE(Concurrency(), 2U); }
 
 namespace {
 
-void CleanupTest(fs::path *&test_path) {
+void CleanupTest(fs::path*& test_path) {
   if (!test_path->empty()) {
     boost::system::error_code error_code;
     if (fs::remove_all(*test_path, error_code) == 0)
       LOG(kWarning) << "Test directory " << *test_path << " already deleted.";
     if (error_code)
       LOG(kWarning) << "Failed to clean up test directory " << *test_path
-                   << "  (error message: " << error_code.message() << ")";
+                    << "  (error message: " << error_code.message() << ")";
   }
   delete test_path;
   test_path = nullptr;
@@ -497,7 +496,7 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   }
   EXPECT_FALSE(fs::exists(test_path, error_code));
   EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
-        << error_code.message();
+      << error_code.message();
   {
     TestPath test_path_ptr(CreateTestPath("Another"));
     test_path = *test_path_ptr;
@@ -507,12 +506,12 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   }
   EXPECT_FALSE(fs::exists(test_path, error_code));
   EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error_code.value())
-        << error_code.message();
+      << error_code.message();
   // Ensure we're able to cope with error cases
   auto empty_path(new fs::path);
   CleanupTest(empty_path);
   EXPECT_TRUE(nullptr == empty_path);
-  fs::path *non_existent(new fs::path(std::string(100, 'a')));
+  fs::path* non_existent(new fs::path(std::string(100, 'a')));
   CleanupTest(non_existent);
   EXPECT_TRUE(nullptr == non_existent);
 }

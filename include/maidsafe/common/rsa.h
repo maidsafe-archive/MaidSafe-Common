@@ -22,14 +22,14 @@
 #include <string>
 
 #ifdef __MSVC__
-#  pragma warning(push, 1)
-#  pragma warning(disable: 4702)
+#pragma warning(push, 1)
+#pragma warning(disable : 4702)
 #endif
 #include "cryptopp/channels.h"
 #include "cryptopp/ida.h"
 #include "cryptopp/rsa.h"
 #ifdef __MSVC__
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include "boost/filesystem/path.hpp"
@@ -39,7 +39,6 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
-
 
 namespace maidsafe {
 
@@ -51,7 +50,10 @@ struct Keys {
   // The signature will be the same size as the key size in bytes
   // http://stackoverflow.com/questions/5403808/private-key-length-bytes
   // http://stackoverflow.com/questions/6658728/rsa-signature-size
-  enum { kKeyBitSize = 2048, kSignatureByteSize = kKeyBitSize / 8 };
+  enum {
+    kKeyBitSize = 2048,
+    kSignatureByteSize = kKeyBitSize / 8
+  };
   Keys() : private_key(), public_key() {}
   PrivateKey private_key;
   PublicKey public_key;
@@ -63,7 +65,6 @@ typedef detail::BoundedString<3> EncodedPrivateKey;
 
 typedef NonEmptyString PlainText, CipherText;
 typedef detail::BoundedString<Keys::kSignatureByteSize> Signature;
-
 
 Keys GenerateKeyPair();
 
@@ -77,8 +78,7 @@ Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& pr
 
 bool CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
 
-bool CheckFileSignature(const boost::filesystem::path& filename,
-                        const Signature& signature,
+bool CheckFileSignature(const boost::filesystem::path& filename, const Signature& signature,
                         const PublicKey& public_key);
 
 EncodedPrivateKey EncodeKey(const PrivateKey& private_key);

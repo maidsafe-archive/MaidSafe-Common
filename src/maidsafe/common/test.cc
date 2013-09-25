@@ -25,7 +25,6 @@
 
 #include "maidsafe/common/utils.h"
 
-
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
@@ -36,31 +35,29 @@ TestPath CreateTestPath(std::string test_prefix) {
   if (test_prefix.empty())
     test_prefix = "MaidSafe_Test";
 
-  if (test_prefix.substr(0, 13) != "MaidSafe_Test" &&
-      test_prefix.substr(0, 12) != "Sigmoid_Test") {
+  if (test_prefix.substr(0, 13) != "MaidSafe_Test" && test_prefix.substr(0, 12) != "Sigmoid_Test") {
     LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional"
-                 << " test name>\" or \"Sigmoid_Test<optional test name>\".";
+                  << " test name>\" or \"Sigmoid_Test<optional test name>\".";
   }
 
   test_prefix += "_%%%%-%%%%-%%%%";
 
   boost::system::error_code error_code;
-  fs::path *test_path(new fs::path(fs::unique_path(
-      fs::temp_directory_path(error_code) / test_prefix)));
+  fs::path* test_path(
+      new fs::path(fs::unique_path(fs::temp_directory_path(error_code) / test_prefix)));
   std::string debug(test_path->string());
-  TestPath test_path_ptr(test_path, [debug](fs::path *delete_path) {
-        if (!delete_path->empty()) {
-          boost::system::error_code ec;
-          if (fs::remove_all(*delete_path, ec) == 0) {
-            LOG(kWarning) << "Failed to remove " << *delete_path;
-          }
-          if (ec.value() != 0) {
-            LOG(kWarning) << "Error removing " << *delete_path << "  "
-                          << ec.message();
-          }
-        }
-        delete delete_path;
-      });
+  TestPath test_path_ptr(test_path, [debug](fs::path * delete_path) {
+    if (!delete_path->empty()) {
+      boost::system::error_code ec;
+      if (fs::remove_all(*delete_path, ec) == 0) {
+        LOG(kWarning) << "Failed to remove " << *delete_path;
+      }
+      if (ec.value() != 0) {
+        LOG(kWarning) << "Error removing " << *delete_path << "  " << ec.message();
+      }
+    }
+    delete delete_path;
+  });
   if (error_code) {
     LOG(kWarning) << "Can't get a temp directory: " << error_code.message();
     return TestPath(new fs::path);
@@ -68,7 +65,7 @@ TestPath CreateTestPath(std::string test_prefix) {
 
   if (!fs::create_directories(*test_path, error_code) || error_code) {
     LOG(kWarning) << "Failed to create test directory " << *test_path
-                 << "  (error message: " << error_code.message() << ")";
+                  << "  (error message: " << error_code.message() << ")";
     return TestPath(new fs::path);
   }
 
@@ -99,7 +96,7 @@ uint16_t GetRandomPort() {
   return port;
 }
 
-int ExecuteMain(int argc, char **argv) {
+int ExecuteMain(int argc, char** argv) {
   log::Logging::Instance().Initialise(argc, argv);
 #if defined(__clang__) || defined(__GNUC__)
   // To allow Clang and GCC advanced diagnostics to work properly.

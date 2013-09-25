@@ -20,23 +20,17 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-
 namespace bptime = boost::posix_time;
 
 namespace maidsafe {
 
-AsioService::AsioService(const uint32_t &thread_count)
-    : service_(),
-      work_(),
-      threads_(thread_count),
-      mutex_() {
+AsioService::AsioService(const uint32_t& thread_count)
+    : service_(), work_(), threads_(thread_count), mutex_() {
   if (thread_count == 0)
     ThrowError(CommonErrors::invalid_parameter);
 }
 
-AsioService::~AsioService() {
-  Stop();
-}
+AsioService::~AsioService() { Stop(); }
 
 void AsioService::Start() {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -71,33 +65,31 @@ void AsioService::Stop() {
   std::vector<boost::thread> joining_workers(threads_.size());
   for (size_t i(0); i < threads_.size(); ++i) {
     joining_workers[i] = std::move(boost::thread([&, i] {
-        while (threads_[i].joinable()) {
-          try {
-            threads_[i].interrupt();
-            threads_[i].try_join_for(boost::chrono::milliseconds(20));
-          }
-          catch(const boost::thread_interrupted&) {
-            LOG(kError) << "Exception joining boost thread with ID " << threads_[i].get_id();
-            boost::this_thread::yield();
-          }
+      while (threads_[i].joinable()) {
+        try {
+          threads_[i].interrupt();
+          threads_[i].try_join_for(boost::chrono::milliseconds(20));
         }
+        catch (const boost::thread_interrupted&) {
+          LOG(kError) << "Exception joining boost thread with ID " << threads_[i].get_id();
+          boost::this_thread::yield();
+        }
+      }
     }));
   }
 
-  for (boost::thread &joining_worker : joining_workers) {
+  for (boost::thread& joining_worker : joining_workers) {
     while (joining_worker.joinable()) {
       try {
         joining_worker.join();
       }
-      catch(const boost::thread_interrupted&) {
+      catch (const boost::thread_interrupted&) {
         LOG(kError) << "Exception joining worker thread";
       }
     }
   }
 }
 
-boost::asio::io_service& AsioService::service() {
-  return service_;
-}
+boost::asio::io_service& AsioService::service() { return service_; }
 
 }  // namespace maidsafe

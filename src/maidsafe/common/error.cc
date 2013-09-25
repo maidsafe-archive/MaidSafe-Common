@@ -22,7 +22,6 @@
 
 #include "maidsafe/common/error_categories.h"
 
-
 namespace maidsafe {
 
 std::error_code make_error_code(CommonErrors code) {
@@ -38,11 +37,7 @@ const std::error_category& GetCommonCategory() {
   return instance;
 }
 
-common_error MakeError(CommonErrors code) {
-  return common_error(make_error_code(code));
-}
-
-
+common_error MakeError(CommonErrors code) { return common_error(make_error_code(code)); }
 
 std::error_code make_error_code(AsymmErrors code) {
   return std::error_code(static_cast<int>(code), GetAsymmCategory());
@@ -57,11 +52,7 @@ const std::error_category& GetAsymmCategory() {
   return instance;
 }
 
-asymm_error MakeError(AsymmErrors code) {
-  return asymm_error(make_error_code(code));
-}
-
-
+asymm_error MakeError(AsymmErrors code) { return asymm_error(make_error_code(code)); }
 
 std::error_code make_error_code(PassportErrors code) {
   return std::error_code(static_cast<int>(code), GetPassportCategory());
@@ -76,11 +67,7 @@ const std::error_category& GetPassportCategory() {
   return instance;
 }
 
-passport_error MakeError(PassportErrors code) {
-  return passport_error(make_error_code(code));
-}
-
-
+passport_error MakeError(PassportErrors code) { return passport_error(make_error_code(code)); }
 
 std::error_code make_error_code(EncryptErrors code) {
   return std::error_code(static_cast<int>(code), GetEncryptCategory());
@@ -95,11 +82,7 @@ const std::error_category& GetEncryptCategory() {
   return instance;
 }
 
-encrypt_error MakeError(EncryptErrors code) {
-  return encrypt_error(make_error_code(code));
-}
-
-
+encrypt_error MakeError(EncryptErrors code) { return encrypt_error(make_error_code(code)); }
 
 std::error_code make_error_code(RoutingErrors code) {
   return std::error_code(static_cast<int>(code), GetRoutingCategory());
@@ -114,11 +97,7 @@ const std::error_category& GetRoutingCategory() {
   return instance;
 }
 
-routing_error MakeError(RoutingErrors code) {
-  return routing_error(make_error_code(code));
-}
-
-
+routing_error MakeError(RoutingErrors code) { return routing_error(make_error_code(code)); }
 
 std::error_code make_error_code(NfsErrors code) {
   return std::error_code(static_cast<int>(code), GetNfsCategory());
@@ -133,11 +112,7 @@ const std::error_category& GetNfsCategory() {
   return instance;
 }
 
-nfs_error MakeError(NfsErrors code) {
-  return nfs_error(make_error_code(code));
-}
-
-
+nfs_error MakeError(NfsErrors code) { return nfs_error(make_error_code(code)); }
 
 std::error_code make_error_code(DriveErrors code) {
   return std::error_code(static_cast<int>(code), GetDriveCategory());
@@ -152,11 +127,7 @@ const std::error_category& GetDriveCategory() {
   return instance;
 }
 
-drive_error MakeError(DriveErrors code) {
-  return drive_error(make_error_code(code));
-}
-
-
+drive_error MakeError(DriveErrors code) { return drive_error(make_error_code(code)); }
 
 std::error_code make_error_code(VaultErrors code) {
   return std::error_code(static_cast<int>(code), GetVaultCategory());
@@ -171,11 +142,7 @@ const std::error_category& GetVaultCategory() {
   return instance;
 }
 
-vault_error MakeError(VaultErrors code) {
-  return vault_error(make_error_code(code));
-}
-
-
+vault_error MakeError(VaultErrors code) { return vault_error(make_error_code(code)); }
 
 std::error_code make_error_code(LifeStuffErrors code) {
   return std::error_code(static_cast<int>(code), GetLifeStuffCategory());
@@ -190,8 +157,6 @@ const std::error_category& GetLifeStuffCategory() {
   return instance;
 }
 
-lifestuff_error MakeError(LifeStuffErrors code) {
-  return lifestuff_error(make_error_code(code));
-}
+lifestuff_error MakeError(LifeStuffErrors code) { return lifestuff_error(make_error_code(code)); }
 
 }  // namespace maidsafe

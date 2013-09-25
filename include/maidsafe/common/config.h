@@ -23,11 +23,11 @@
 #include "boost/preprocessor/stringize.hpp"
 
 #ifdef MAIDSAFE_WIN32
-#  define MAIDSAFE_NOEXCEPT
-#  define MAIDSAFE_DELETE
+#define MAIDSAFE_NOEXCEPT
+#define MAIDSAFE_DELETE
 #else
-#  define MAIDSAFE_NOEXCEPT noexcept(true)
-#  define MAIDSAFE_DELETE = delete
+#define MAIDSAFE_NOEXCEPT noexcept(true)
+#define MAIDSAFE_DELETE = delete
 #endif
 
 namespace maidsafe {
@@ -35,18 +35,17 @@ namespace maidsafe {
 #ifdef COMPANY_NAME
 inline std::string kCompanyName() { return BOOST_PP_STRINGIZE(COMPANY_NAME); }
 #else
-#  error COMPANY_NAME must be defined.
+#error COMPANY_NAME must be defined.
 #endif
 
 #ifdef APPLICATION_NAME
 inline std::string kApplicationName() { return BOOST_PP_STRINGIZE(APPLICATION_NAME); }
 #else
-#  error APPLICATION_NAME must be defined.
+#error APPLICATION_NAME must be defined.
 #endif
 
-#if defined APPLICATION_VERSION_MAJOR && \
-    defined APPLICATION_VERSION_MINOR && \
-    defined APPLICATION_VERSION_PATCH
+#if defined APPLICATION_VERSION_MAJOR&& defined APPLICATION_VERSION_MINOR&& defined \
+    APPLICATION_VERSION_PATCH
 inline const std::string kApplicationVersion() {
   return BOOST_PP_STRINGIZE(APPLICATION_VERSION_MAJOR) + std::string(".") +
          BOOST_PP_STRINGIZE(APPLICATION_VERSION_MINOR) + std::string(".") +
@@ -54,20 +53,20 @@ inline const std::string kApplicationVersion() {
 }
 
 #else
-#  error APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR and APPLICATION_VERSION_PATCH \
+#error APPLICATION_VERSION_MAJOR, APPLICATION_VERSION_MINOR and APPLICATION_VERSION_PATCH \
          must be defined.
 #endif
 
 #ifdef TARGET_PLATFORM
 const std::string kTargetPlatform(BOOST_PP_STRINGIZE(TARGET_PLATFORM));
 #else
-#  error TARGET_PLATFORM must be defined.
+#error TARGET_PLATFORM must be defined.
 #endif
 
 #ifdef TARGET_ARCHITECTURE
 const std::string kTargetArchitecture(BOOST_PP_STRINGIZE(TARGET_ARCHITECTURE));
 #else
-#  error TARGET_ARCHITECTURE must be defined.
+#error TARGET_ARCHITECTURE must be defined.
 #endif
 
 }  // namespace maidsafe

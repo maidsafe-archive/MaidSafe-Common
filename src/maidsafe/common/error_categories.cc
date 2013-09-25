@@ -20,14 +20,11 @@
 
 #include "maidsafe/common/error.h"
 
-
 namespace maidsafe {
 
 namespace detail {
 
-const char* CommonCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Common";
-}
+const char* CommonCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Common"; }
 
 std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<CommonErrors>(error_value)) {
@@ -83,8 +80,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition CommonCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
+std::error_condition CommonCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<CommonErrors>(error_value)) {
     case CommonErrors::null_pointer:
     case CommonErrors::invalid_node_id:
@@ -107,11 +104,7 @@ std::error_condition CommonCategory::default_error_condition(
   }
 }
 
-
-
-const char* AsymmCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Asymmetric Crypto";
-}
+const char* AsymmCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Asymmetric Crypto"; }
 
 std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<AsymmErrors>(error_value)) {
@@ -144,8 +137,8 @@ std::string AsymmCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition AsymmCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
+std::error_condition AsymmCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<AsymmErrors>(error_value)) {
     case AsymmErrors::data_empty:
     case AsymmErrors::invalid_file:
@@ -158,11 +151,7 @@ std::error_condition AsymmCategory::default_error_condition(
   }
 }
 
-
-
-const char* PassportCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Identity Ring";
-}
+const char* PassportCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Identity Ring"; }
 
 std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<PassportErrors>(error_value)) {
@@ -189,19 +178,15 @@ std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition PassportCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<PassportErrors>(error_value)) {
-//    default:
-      return std::error_condition(error_value, *this);
-//  }
+std::error_condition PassportCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
+  //  switch (static_cast<PassportErrors>(error_value)) {
+  //    default:
+  return std::error_condition(error_value, *this);
+  //  }
 }
 
-
-
-const char* EncryptCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Encryption";
-}
+const char* EncryptCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Encryption"; }
 
 std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<EncryptErrors>(error_value)) {
@@ -214,19 +199,15 @@ std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition EncryptCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<EncryptErrors>(error_value)) {
-//    default:
-      return std::error_condition(error_value, *this);
-//  }
+std::error_condition EncryptCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
+  //  switch (static_cast<EncryptErrors>(error_value)) {
+  //    default:
+  return std::error_condition(error_value, *this);
+  //  }
 }
 
-
-
-const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Routing";
-}
+const char* RoutingCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Routing"; }
 
 std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<RoutingErrors>(error_value)) {
@@ -241,8 +222,8 @@ std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition RoutingCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
+std::error_condition RoutingCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<RoutingErrors>(error_value)) {
     case RoutingErrors::timed_out:
       return std::errc::timed_out;
@@ -251,11 +232,7 @@ std::error_condition RoutingCategory::default_error_condition(
   }
 }
 
-
-
-const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Network Filesystem";
-}
+const char* NfsCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Network Filesystem"; }
 
 std::string NfsCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<NfsErrors>(error_value)) {
@@ -277,11 +254,7 @@ std::error_condition NfsCategory::default_error_condition(int error_value) const
   }
 }
 
-
-
-const char* DriveCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Drive";
-}
+const char* DriveCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Drive"; }
 
 std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<DriveErrors>(error_value)) {
@@ -296,8 +269,8 @@ std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition DriveCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
+std::error_condition DriveCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<DriveErrors>(error_value)) {
     case DriveErrors::permission_denied:
       return std::errc::permission_denied;
@@ -306,11 +279,7 @@ std::error_condition DriveCategory::default_error_condition(
   }
 }
 
-
-
-const char* VaultCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "MaidSafe Vault";
-}
+const char* VaultCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Vault"; }
 
 std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
@@ -337,8 +306,8 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-std::error_condition VaultCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
+std::error_condition VaultCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultErrors>(error_value)) {
     case VaultErrors::operation_not_supported:
       return std::errc::operation_not_supported;
@@ -349,11 +318,7 @@ std::error_condition VaultCategory::default_error_condition(
   }
 }
 
-
-
-const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT {
-  return "LifeStuff";
-}
+const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT { return "LifeStuff"; }
 
 std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<LifeStuffErrors>(error_value)) {
@@ -364,12 +329,12 @@ std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT 
   }
 }
 
-std::error_condition LifeStuffCategory::default_error_condition(
-    int error_value) const MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<LifeStuffErrors>(error_value)) {
-//    default:
-      return std::error_condition(error_value, *this);
-//  }
+std::error_condition LifeStuffCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
+  //  switch (static_cast<LifeStuffErrors>(error_value)) {
+  //    default:
+  return std::error_condition(error_value, *this);
+  //  }
 }
 
 }  // namespace detail

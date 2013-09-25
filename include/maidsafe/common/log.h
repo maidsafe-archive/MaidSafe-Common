@@ -37,9 +37,8 @@
 
 #include "maidsafe/common/active.h"
 
-
 #ifndef NDEBUG
-#  define USE_LOGGING
+#define USE_LOGGING
 #endif
 
 namespace maidsafe {
@@ -48,14 +47,27 @@ namespace log {
 
 typedef std::map<std::string, int> FilterMap;
 
-enum class Colour { kDefaultColour, kRed, kGreen, kYellow, kCyan };
-enum class ColourMode { kNone, kPartialLine, kFullLine };
+enum class Colour {
+  kDefaultColour,
+  kRed,
+  kGreen,
+  kYellow,
+  kCyan
+};
+enum class ColourMode {
+  kNone,
+  kPartialLine,
+  kFullLine
+};
 
 #ifdef MAIDSAFE_WIN32
 class NullStream {
  public:
   NullStream() {}
-  template<typename T> NullStream& operator<<(T const&) { return *this; }
+  template <typename T>
+  NullStream& operator<<(T const&) {
+    return *this;
+  }
   operator bool() const { return false; }
 };
 #else
@@ -63,7 +75,10 @@ class NullStream {
 class NullStream {
  public:
   NullStream() {}
-  template<typename T> NullStream& operator<<(T const&) { return *this; }
+  template <typename T>
+  NullStream& operator<<(T const&) {
+    return *this;
+  }
   explicit operator bool() const { return false; }
 };
 #endif
@@ -75,16 +90,14 @@ struct Envoid {
   void operator&(NullStream&) {}
 };
 
-
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
 
 #ifdef USE_LOGGING
-#  define LOG(level) maidsafe::log::LogMessage(__FILE__, \
-                                               __LINE__, \
-                                               BOOST_CURRENT_FUNCTION, \
-                                               maidsafe::log::level).messageStream()
+#define LOG(level)                                                                            \
+  maidsafe::log::LogMessage(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION, maidsafe::log::level) \
+      .messageStream()
 #else
-#  define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
+#define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
 #define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
 
@@ -93,6 +106,7 @@ class LogMessage {
   LogMessage(std::string file, int line, std::string function, int level);
   ~LogMessage();
   std::ostringstream& messageStream() { return stream_; }
+
  private:
   std::string file_;
   const int kLine_;
@@ -106,6 +120,7 @@ class GtestLogMessage {
   explicit GtestLogMessage(Colour colour);
   ~GtestLogMessage();
   std::ostringstream& messageStream() { return stream_; }
+
  private:
   const Colour kColour_;
   std::ostringstream stream_;

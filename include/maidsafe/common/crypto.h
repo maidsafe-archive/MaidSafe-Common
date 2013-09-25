@@ -26,13 +26,13 @@
 #include <vector>
 
 #ifdef __MSVC__
-#  pragma warning(push, 1)
-#  pragma warning(disable: 4355 4702)
+#pragma warning(push, 1)
+#pragma warning(disable : 4355 4702)
 #endif
 
 #ifdef __MSVC__
-#  pragma warning(push, 1)
-#  pragma warning(disable: 4702)
+#pragma warning(push, 1)
+#pragma warning(disable : 4702)
 #endif
 
 #include "cryptopp/gzip.h"
@@ -43,7 +43,7 @@
 #include "cryptopp/cryptlib.h"
 
 #ifdef __MSVC__
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include "boost/filesystem/path.hpp"
@@ -59,14 +59,13 @@
 #include "cryptopp/osrng.h"
 
 #ifdef __MSVC__
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
-
 
 namespace CryptoPP {
 class SHA1;
@@ -87,8 +86,12 @@ typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Tiger Tiger;
 typedef CryptoPP::Integer BigInt;
 
-enum { AES256_KeySize = 32 };  // size in bytes.
-enum { AES256_IVSize = 16 };  // size in bytes.
+enum {
+  AES256_KeySize = 32
+};  // size in bytes.
+enum {
+  AES256_IVSize = 16
+};  // size in bytes.
 extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
@@ -100,13 +103,12 @@ typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash
 typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
 typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
 typedef detail::BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
-typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText,
-        CompressedText, UncompressedText;
-
+typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText, CompressedText,
+    UncompressedText;
 
 // Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
 // 0, an empty string is returned.
-template<size_t size>
+template <size_t size>
 detail::BoundedString<size, size> XOR(const detail::BoundedString<size, size>& first,
                                       const detail::BoundedString<size, size>& second) {
   std::string result(size, 0);
@@ -122,9 +124,8 @@ std::string XOR(const std::string& first, const std::string& second);
 // algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
 // provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
 // parameters are passed.
-template<typename PasswordType>
-SecurePassword CreateSecurePassword(const PasswordType& password,
-                                    const Salt& salt,
+template <typename PasswordType>
+SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt,
                                     const uint32_t& pin,
                                     const std::string& label = kMaidSafeVersionLabel) {
   if (!password.IsInitialised() || !salt.IsInitialised())
@@ -135,10 +136,10 @@ SecurePassword CreateSecurePassword(const PasswordType& password,
   byte purpose = 0;  // unused in this pbkdf implementation
   CryptoPP::SecByteBlock context(salt.string().size() + label.size());
   std::copy_n(salt.string().data(), salt.string().size(), &context[0]);
-  std::copy_n(label.data(),  label.size(), &context[salt.string().size()]);
+  std::copy_n(label.data(), label.size(), &context[salt.string().size()]);
   pbkdf.DeriveKey(derived, derived.size(), purpose,
-                  reinterpret_cast<const byte*>(password.string().data()),
-                  password.string().size(), context.data(), context.size(), iter);
+                  reinterpret_cast<const byte*>(password.string().data()), password.string().size(),
+                  context.data(), context.size(), iter);
   std::string derived_password;
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
@@ -152,9 +153,9 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std
   HashType hash;
   try {
     CryptoPP::StringSource(input, true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+                           new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
-  catch(const CryptoPP::Exception& e) {
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
@@ -170,19 +171,18 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
 
 // Hash function operating on an arbitrary string type.
 template <typename HashType, typename StringType>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType>
-      Hash(const StringType& input) {
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Hash(
+    const StringType& input) {
   typedef detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType>
-            BoundedString;
+      BoundedString;
   StringType result;
   HashType hash;
   try {
-      static_cast<void>(CryptoPP::StringSource(reinterpret_cast<const byte*>(input.data()),
-          input.length(),
-          true,
-          new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result))));
+    static_cast<void>(CryptoPP::StringSource(
+        reinterpret_cast<const byte*>(input.data()), input.length(), true,
+        new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result))));
   }
-  catch(const CryptoPP::Exception& e) {
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
@@ -197,9 +197,9 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
   HashType hash;
   try {
     CryptoPP::FileSource(file_path.c_str(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+                         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   }
-  catch(const CryptoPP::Exception& e) {
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
     ThrowError(CommonErrors::hashing_error);
   }
@@ -208,14 +208,12 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
 
 // Performs symmetric encrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-CipherText SymmEncrypt(const PlainText& input,
-                       const AES256Key& key,
+CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector);
 
 // Performs symmetric decrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-PlainText SymmDecrypt(const CipherText& input,
-                      const AES256Key& key,
+PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector);
 
 // Compress a string using gzip.  Compression level must be between 0 and 9
@@ -225,8 +223,7 @@ CompressedText Compress(const UncompressedText& input, const uint16_t& compressi
 // Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
 UncompressedText Uncompress(const CompressedText& input);
 
-std::vector<std::string> SecretShareData(const int32_t& threshold,
-                                         const int32_t& number_of_shares,
+std::vector<std::string> SecretShareData(const int32_t& threshold, const int32_t& number_of_shares,
                                          const std::string& data);
 
 std::string SecretRecoverData(const int32_t& threshold, const std::vector<std::string>& in_strings);

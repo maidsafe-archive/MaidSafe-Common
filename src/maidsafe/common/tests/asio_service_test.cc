@@ -28,7 +28,6 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-
 namespace bptime = boost::posix_time;
 
 namespace maidsafe {

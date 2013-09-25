@@ -19,47 +19,46 @@
 #ifndef MAIDSAFE_COMMON_TAGGED_VALUE_H_
 #define MAIDSAFE_COMMON_TAGGED_VALUE_H_
 
-
 namespace maidsafe {
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 struct TaggedValue {
   typedef T value_type;
   typedef Tag tag_type;
-  explicit TaggedValue(T const& data_): data(data_) {}
-  TaggedValue(): data() {}
+  explicit TaggedValue(T const& data_) : data(data_) {}
+  TaggedValue() : data() {}
   operator T() const { return data; }
   T const* operator->() const { return &data; }
   T* operator->() { return &data; }
   T data;
 };
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 inline bool operator==(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data == rhs.data;
 }
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 inline bool operator!=(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data != rhs.data;
 }
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 inline bool operator<(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data < rhs.data;
 }
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 inline bool operator>(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data > rhs.data;
 }
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 inline bool operator<=(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data <= rhs.data;
 }
 
-template<typename T, typename Tag>
+template <typename T, typename Tag>
 inline bool operator>=(const TaggedValue<T, Tag>& lhs, const TaggedValue<T, Tag>& rhs) {
   return lhs.data >= rhs.data;
 }

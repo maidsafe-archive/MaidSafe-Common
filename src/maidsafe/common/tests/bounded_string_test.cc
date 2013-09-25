@@ -23,7 +23,6 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-
 namespace maidsafe {
 
 namespace detail {

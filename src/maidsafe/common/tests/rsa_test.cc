@@ -25,7 +25,6 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-
 namespace maidsafe {
 
 namespace rsa {
@@ -36,6 +35,7 @@ class RSATest : public testing::Test {
  public:
   RSATest() : keys_() {}
   ~RSATest() {}
+
  protected:
   Keys keys_;
   void SetUp() {
@@ -108,8 +108,8 @@ TEST_F(RSATest, FUNC_SignFileValidate) {
     EXPECT_NO_THROW(SignFile(test_file, keys.private_key));
     Signature signature = SignFile(test_file, keys.private_key);
     EXPECT_THROW(SignFile(test_file.string(), empty_private_key), std::exception);
-    EXPECT_THROW(SignFile(boost::filesystem::path(RandomAlphaNumericString(9)),
-                       keys.private_key), std::exception);
+    EXPECT_THROW(SignFile(boost::filesystem::path(RandomAlphaNumericString(9)), keys.private_key),
+                 std::exception);
 
     PublicKey empty_public_key;
     EXPECT_TRUE(CheckFileSignature(test_file, signature, keys.public_key));

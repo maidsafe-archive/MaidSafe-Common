@@ -24,14 +24,11 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 
-
 namespace maidsafe {
 
 namespace test {
 
-void Increment(std::vector<int32_t>& data) {
-  data.push_back(static_cast<int32_t>(data.size()));
-}
+void Increment(std::vector<int32_t>& data) { data.push_back(static_cast<int32_t>(data.size())); }
 
 void IncrementAndThrow(std::vector<int32_t>& data) {
   Increment(data);
@@ -55,7 +52,7 @@ TEST(OnScopeExit, BEH_RevertValue) {
     on_scope_exit strong_guarantee(on_scope_exit::RevertValue(before));
     IncrementAndThrow(before);
   }
-  catch(const maidsafe_error&) {
+  catch (const maidsafe_error&) {
     EXPECT_EQ(before.size(), 101);
   }
   EXPECT_EQ(before.size(), 101);
@@ -78,7 +75,7 @@ TEST(OnScopeExit, BEH_SetAction) {
     on_scope_exit strong_guarantee([&before]() { before.clear(); });
     IncrementAndThrow(before);
   }
-  catch(const maidsafe_error&) {
+  catch (const maidsafe_error&) {
     EXPECT_TRUE(before.empty());
   }
   EXPECT_TRUE(before.empty());

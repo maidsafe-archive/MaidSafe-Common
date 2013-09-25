@@ -26,7 +26,6 @@
 
 #include "maidsafe/common/config.h"
 
-
 namespace maidsafe {
 
 class maidsafe_error : public std::system_error {
@@ -41,8 +40,6 @@ class maidsafe_error : public std::system_error {
       : std::system_error(ev, ecat, what_arg) {}
   maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
 };
-
-
 
 enum class CommonErrors {
   success = 0,
@@ -88,8 +85,6 @@ std::error_condition make_error_condition(CommonErrors code);
 const std::error_category& GetCommonCategory();
 common_error MakeError(CommonErrors code);
 
-
-
 enum class AsymmErrors {
   keys_generation_error = 1,
   keys_serialisation_error,
@@ -122,8 +117,6 @@ std::error_condition make_error_condition(AsymmErrors code);
 const std::error_category& GetAsymmCategory();
 asymm_error MakeError(AsymmErrors code);
 
-
-
 enum class PassportErrors {
   fob_serialisation_error = 1,
   fob_parsing_error,
@@ -138,8 +131,7 @@ enum class PassportErrors {
 
 class passport_error : public maidsafe_error {
  public:
-  passport_error(std::error_code ec, const std::string& what_arg)
-      : maidsafe_error(ec, what_arg) {}
+  passport_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   passport_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit passport_error(std::error_code ec) : maidsafe_error(ec) {}
   passport_error(int ev, const std::error_category& ecat, const std::string& what_arg)
@@ -153,8 +145,6 @@ std::error_code make_error_code(PassportErrors code);
 std::error_condition make_error_condition(PassportErrors code);
 const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
-
-
 
 enum class EncryptErrors {
   bad_sequence = 1,
@@ -178,8 +168,6 @@ std::error_condition make_error_condition(EncryptErrors code);
 const std::error_category& GetEncryptCategory();
 encrypt_error MakeError(EncryptErrors code);
 
-
-
 enum class RoutingErrors {
   timed_out = 1,
   not_in_range,
@@ -188,8 +176,7 @@ enum class RoutingErrors {
 
 class routing_error : public maidsafe_error {
  public:
-  routing_error(std::error_code ec, const std::string& what_arg)
-      : maidsafe_error(ec, what_arg) {}
+  routing_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   routing_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit routing_error(std::error_code ec) : maidsafe_error(ec) {}
   routing_error(int ev, const std::error_category& ecat, const std::string& what_arg)
@@ -203,8 +190,6 @@ std::error_code make_error_code(RoutingErrors code);
 std::error_condition make_error_condition(RoutingErrors code);
 const std::error_category& GetRoutingCategory();
 routing_error MakeError(RoutingErrors code);
-
-
 
 enum class NfsErrors {
   failed_to_get_data = 1,
@@ -227,8 +212,6 @@ std::error_code make_error_code(NfsErrors code);
 std::error_condition make_error_condition(NfsErrors code);
 const std::error_category& GetNfsCategory();
 nfs_error MakeError(NfsErrors code);
-
-
 
 enum class DriveErrors {
   no_drive_letter_available = 1,
@@ -253,8 +236,6 @@ std::error_condition make_error_condition(DriveErrors code);
 const std::error_category& GetDriveCategory();
 drive_error MakeError(DriveErrors code);
 
-
-
 enum class VaultErrors {
   failed_to_join_network = 1,
   failed_to_handle_request,
@@ -269,8 +250,7 @@ enum class VaultErrors {
 
 class vault_error : public maidsafe_error {
  public:
-  vault_error(std::error_code ec, const std::string& what_arg)
-      : maidsafe_error(ec, what_arg) {}
+  vault_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   vault_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit vault_error(std::error_code ec) : maidsafe_error(ec) {}
   vault_error(int ev, const std::error_category& ecat, const std::string& what_arg)
@@ -285,16 +265,13 @@ std::error_condition make_error_condition(VaultErrors code);
 const std::error_category& GetVaultCategory();
 vault_error MakeError(VaultErrors code);
 
-
-
 enum class LifeStuffErrors {
   kPasswordFailure = 1
 };
 
 class lifestuff_error : public maidsafe_error {
  public:
-  lifestuff_error(std::error_code ec, const std::string& what_arg)
-      : maidsafe_error(ec, what_arg) {}
+  lifestuff_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   lifestuff_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit lifestuff_error(std::error_code ec) : maidsafe_error(ec) {}
   lifestuff_error(int ev, const std::error_category& ecat, const std::string& what_arg)
@@ -309,9 +286,7 @@ std::error_condition make_error_condition(LifeStuffErrors code);
 const std::error_category& GetLifeStuffCategory();
 lifestuff_error MakeError(LifeStuffErrors code);
 
-
-
-template<typename MaidsafeErrorCode>
+template <typename MaidsafeErrorCode>
 inline void ThrowError(const MaidsafeErrorCode& code) {
   auto error(MakeError(code));
   if (error.code())
@@ -320,35 +295,33 @@ inline void ThrowError(const MaidsafeErrorCode& code) {
 
 }  // namespace maidsafe
 
-
-
 namespace std {
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::CommonErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::EncryptErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::RoutingErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::NfsErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::DriveErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
 
-template<>
+template <>
 struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};
 
 }  // namespace std

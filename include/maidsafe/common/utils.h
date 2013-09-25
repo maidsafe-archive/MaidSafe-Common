@@ -28,8 +28,8 @@
 #include <string>
 
 #ifdef __MSVC__
-#  pragma warning(push, 1)
-#  pragma warning(disable: 4127)
+#pragma warning(push, 1)
+#pragma warning(disable : 4127)
 #endif
 
 #include "boost/asio/ip/address.hpp"
@@ -42,12 +42,11 @@
 #include "boost/random/variate_generator.hpp"
 
 #ifdef __MSVC__
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
-
 
 namespace maidsafe {
 
@@ -77,17 +76,17 @@ typedef std::chrono::duration<uint64_t, std::exa> ExaBytes;
 // address.
 boost::asio::ip::address GetLocalIp(
     boost::asio::ip::udp::endpoint peer_endpoint =
-        boost::asio::ip::udp::endpoint(
-            boost::asio::ip::address_v4::from_string("203.0.113.0"), 80));
+        boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string("203.0.113.0"),
+                                       80));
 
 // Takes a version as a string and returns the int form, e.g. "0.09.01" returns 901
 int VersionToInt(const std::string& version);
 
 // Converts num bytes to nearest integral decimal SI value.
-std::string BytesToDecimalSiUnits(const uint64_t &num);
+std::string BytesToDecimalSiUnits(const uint64_t& num);
 
 // Converts num bytes to nearest integral binary SI value.
-std::string BytesToBinarySiUnits(const uint64_t &num);
+std::string BytesToBinarySiUnits(const uint64_t& num);
 
 // Generates a non-cryptographically-secure 32bit signed integer.
 int32_t RandomInt32();
@@ -96,11 +95,11 @@ int32_t RandomInt32();
 uint32_t RandomUint32();
 
 // Generates a non-cryptographically-secure random string.
-std::string RandomString(const size_t &size);
+std::string RandomString(const size_t& size);
 
 // Generates a non-cryptographically-secure random string.
-template<typename String>
-String GetRandomString(const size_t &size) {
+template <typename String>
+String GetRandomString(const size_t& size) {
   boost::uniform_int<> uniform_distribution(0, 255);
   String random_string(size, 0);
   {
@@ -116,7 +115,7 @@ String GetRandomString(const size_t &size) {
 // alphanumeric characters.
 std::string RandomAlphaNumericString(const size_t& size);
 
-template<typename String>
+template <typename String>
 String GetRandomAlphaNumericString(const size_t& size) {
   static const char alpha_numerics[] =
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -132,19 +131,19 @@ String GetRandomAlphaNumericString(const size_t& size) {
   return random_string;
 }
 
-std::string HexEncode(const std::string &non_hex_input);
+std::string HexEncode(const std::string& non_hex_input);
 
-template<size_t min, size_t max>
+template <size_t min, size_t max>
 std::string HexEncode(const detail::BoundedString<min, max>& non_hex_input) {
   return HexEncode(non_hex_input.string());
 }
 
-std::string HexDecode(const std::string &hex_input);
+std::string HexDecode(const std::string& hex_input);
 
 // hacked from https://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
-std::string Base64Encode(const std::string &non_base64_input);
+std::string Base64Encode(const std::string& non_base64_input);
 
-template<size_t min, size_t max>
+template <size_t min, size_t max>
 std::string Base64Encode(const detail::BoundedString<min, max>& non_base64_input) {
   return Base64Encode(non_base64_input.string());
 }
@@ -152,17 +151,17 @@ std::string Base64Encode(const detail::BoundedString<min, max>& non_base64_input
 std::string Base64Decode(const std::string& base64_input);
 
 // Returns an appreviated hex representation of a hash or other small data.
-std::string HexSubstr(const std::string &non_hex);
+std::string HexSubstr(const std::string& non_hex);
 
-template<size_t min, size_t max>
-std::string HexSubstr(const detail::BoundedString<min, max> &non_hex) {
+template <size_t min, size_t max>
+std::string HexSubstr(const detail::BoundedString<min, max>& non_hex) {
   return HexSubstr(non_hex.string());
 }
 
 // Returns an appreviated Base64 representation of a hash or other small data.
 std::string Base64Substr(const std::string& non_base64);
 
-template<size_t min, size_t max>
+template <size_t min, size_t max>
 std::string Base64Substr(detail::BoundedString<min, max> non_base64) {
   return Base64Substr(non_base64.string());
 }
@@ -177,18 +176,18 @@ boost::posix_time::time_duration GetDurationSinceEpoch();
 uint32_t GetTimeStamp();
 
 // Reads the given file and returns the contents as a string.
-bool ReadFile(const boost::filesystem::path &file_path, std::string *content);
-NonEmptyString ReadFile(const boost::filesystem::path &file_path);
+bool ReadFile(const boost::filesystem::path& file_path, std::string* content);
+NonEmptyString ReadFile(const boost::filesystem::path& file_path);
 
 // Writes the given content string to a file, overwriting if applicable.
-bool WriteFile(const boost::filesystem::path &file_path, const std::string &content);
+bool WriteFile(const boost::filesystem::path& file_path, const std::string& content);
 
 // Causes running thread to sleep for specified duration.  Returns true if sleep completes full
 // duration, returns false if the sleep is interrupted.
-bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration &duration);
+bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration& duration);
 
 // For use with std::chrono durations - provides a non-interruptible sleep.
-template<typename Rep, typename Period>
+template <typename Rep, typename Period>
 void Sleep(const std::chrono::duration<Rep, Period>& duration) {
   std::this_thread::sleep_for(duration);
 }
@@ -206,8 +205,7 @@ inline boost::filesystem::path GetUserAppDir() {
 #if defined(MAIDSAFE_WIN32)
   return boost::filesystem::path(getenv("APPDATA")) / kCompanyName() / kApplicationName();
 #elif defined(MAIDSAFE_APPLE)
-  return kHomeDir / "/Library/Application Support/" / kCompanyName() /
-         kApplicationName();
+  return kHomeDir / "/Library/Application Support/" / kCompanyName() / kApplicationName();
 #elif defined(MAIDSAFE_LINUX)
   return kHomeDir / ".config" / kCompanyName() / kApplicationName();
 #else
@@ -248,15 +246,13 @@ inline boost::filesystem::path GetAppInstallDir() {
 }
 
 boost::filesystem::path GetPathFromProgramOptions(
-    const std::string& option_name,
-    const boost::program_options::variables_map& variables_map,
-    bool is_dir,
-    bool create_new_if_absent);
+    const std::string& option_name, const boost::program_options::variables_map& variables_map,
+    bool is_dir, bool create_new_if_absent);
 
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
 
-template<typename T>
+template <typename T>
 bool IsReady(std::future<T>& future) {
   return future.wait_for(std::chrono::seconds::zero()) == std::future_status::ready;
 }

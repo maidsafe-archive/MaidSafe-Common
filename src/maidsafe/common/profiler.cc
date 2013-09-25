@@ -27,7 +27,6 @@
 
 #include "maidsafe/common/log.h"
 
-
 namespace maidsafe {
 
 namespace profile {
@@ -45,15 +44,16 @@ std::string LocationToString(const ProfileEntry::Location& location) {
 }
 
 std::string DurationToString(const std::chrono::high_resolution_clock::duration& duration) {
-  long long nanos(std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());  // NOLINT
+  long long nanos(
+      std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());  // NOLINT
   std::vector<char> buffer(21, 0);
   std::sprintf(&buffer[0], "%8lli.%09lli s", nanos / 1000000000, nanos % 1000000000);  // NOLINT
   return std::string(&buffer[0]);
 }
 
 void AppendInfo(
-    const std::pair<std::string,
-                    std::pair<uint64_t, std::chrono::high_resolution_clock::duration>>& entry,
+    const std::pair<std::string, std::pair<uint64_t, std::chrono::high_resolution_clock::duration>>&
+        entry,
     std::string& output) {
   const auto& count(entry.second.first);
   const auto& total_duration(entry.second.second);
@@ -64,16 +64,11 @@ void AppendInfo(
 
 }  // unnamed namespace
 
-ProfileEntry::Location::Location(std::string file_in, int line_in,
-                                 std::string function_in)
-    : file(std::move(file_in)),
-      line(line_in),
-      function(std::move(function_in)) {}
+ProfileEntry::Location::Location(std::string file_in, int line_in, std::string function_in)
+    : file(std::move(file_in)), line(line_in), function(std::move(function_in)) {}
 
 ProfileEntry::Location::Location(const Location& other)
-    : file(other.file),
-      line(other.line),
-      function(other.function) {}
+    : file(other.file), line(other.line), function(other.function) {}
 
 ProfileEntry::Location::Location(Location&& other)
     : file(std::move(other.file)),
@@ -96,8 +91,6 @@ bool operator<(const ProfileEntry::Location& lhs, const ProfileEntry::Location& 
   return std::tie(lhs.file, lhs.line, lhs.function) < std::tie(rhs.file, rhs.line, rhs.function);
 }
 
-
-
 ProfileEntry::~ProfileEntry() {
   Profiler::Instance().AddEntry(std::move(location),
                                 std::chrono::high_resolution_clock::now() - start);
@@ -110,9 +103,10 @@ Profiler& Profiler::Instance() {
 
 Profiler::~Profiler() {
   std::cout << "Preparing profiler output";
-  auto output_future(std::async(std::launch::async,
-                                std::bind(static_cast<void(std::shared_ptr<Active>::*)()>(
-                                          &std::shared_ptr<Active>::reset), background_)));
+  auto output_future(std::async(
+      std::launch::async,
+      std::bind(static_cast<void (std::shared_ptr<Active>::*)()>(&std::shared_ptr<Active>::reset),
+                background_)));
   background_.reset();
   while (output_future.wait_for(std::chrono::seconds(1)) != std::future_status::ready) {
     std::cout << '.';
@@ -127,31 +121,26 @@ Profiler::~Profiler() {
   entries_.clear();
 
   output.assign("\nSorted by call count\n====================\n\n");
-  std::sort(std::begin(entries),
-            std::end(entries),
-            [](const Entries::value_type& lhs, const Entries::value_type& rhs) {
-              return lhs.second.first > rhs.second.first;
-            });
+  std::sort(std::begin(entries), std::end(entries),
+            [](const Entries::value_type & lhs,
+               const Entries::value_type & rhs) { return lhs.second.first > rhs.second.first; });
   for (const auto& entry : entries)
     AppendInfo(entry, output);
   std::cout << output << "\n\n";
 
   output.assign("\nSorted by average duration\n==========================\n\n");
-  std::sort(std::begin(entries),
-            std::end(entries),
-            [](const Entries::value_type& lhs, const Entries::value_type& rhs) {
-              return lhs.second.second / lhs.second.first > rhs.second.second / rhs.second.first;
-            });
+  std::sort(std::begin(entries), std::end(entries),
+            [](const Entries::value_type & lhs, const Entries::value_type & rhs) {
+    return lhs.second.second / lhs.second.first > rhs.second.second / rhs.second.first;
+  });
   for (const auto& entry : entries)
     AppendInfo(entry, output);
   std::cout << output << "\n\n";
 
   output.assign("\nSorted by total duration\n========================\n\n");
-  std::sort(std::begin(entries),
-            std::end(entries),
-            [](const Entries::value_type& lhs, const Entries::value_type& rhs) {
-              return lhs.second.second > rhs.second.second;
-            });
+  std::sort(std::begin(entries), std::end(entries),
+            [](const Entries::value_type & lhs,
+               const Entries::value_type & rhs) { return lhs.second.second > rhs.second.second; });
   for (const auto& entry : entries)
     AppendInfo(entry, output);
   std::cout << output << "\n\n";
@@ -163,8 +152,8 @@ void Profiler::AddEntry(ProfileEntry::Location&& location,
     auto location_as_string(LocationToString(location));
     auto itr(entries_.find(location_as_string));
     if (itr == std::end(entries_)) {
-      entries_.insert(itr, std::make_pair(std::move(location_as_string),
-                                          std::make_pair(1, duration)));
+      entries_.insert(itr,
+                      std::make_pair(std::move(location_as_string), std::make_pair(1, duration)));
     } else {
       ++itr->second.first;
       itr->second.second += duration;

@@ -29,14 +29,18 @@
 
 #include "maidsafe/common/node_id.h"
 
-
 namespace maidsafe {
 
 namespace network_viewer {
 
 extern const std::string kMessageQueueName;
 
-enum class ChildType : int32_t { kGroup, kClosest, kMatrix, kNotConnected };
+enum class ChildType : int32_t {
+  kGroup,
+  kClosest,
+  kMatrix,
+  kNotConnected
+};
 
 struct ViewableNode {
   ViewableNode();

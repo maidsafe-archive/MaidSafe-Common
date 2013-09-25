@@ -23,7 +23,6 @@
 
 #include "maidsafe/common/utils.h"
 
-
 namespace maidsafe {
 
 namespace crypto {
@@ -36,7 +35,6 @@ CryptoPP::RandomNumberGenerator& rng() {
 }
 
 }  // unnamed namespace
-
 
 const uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
@@ -56,47 +54,44 @@ std::string XOR(const std::string& first, const std::string& second) {
   return result;
 }
 
-CipherText SymmEncrypt(const PlainText& input,
-                       const AES256Key& key,
+CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector) {
   if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
     ThrowError(CommonErrors::uninitialised);
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.string(), true,
-        new CryptoPP::ArraySink(byte_key, AES256_KeySize));
+    CryptoPP::StringSource(key.string(), true, new CryptoPP::ArraySink(byte_key, AES256_KeySize));
     CryptoPP::StringSource(initialisation_vector.string(), true,
-        new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
+                           new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(byte_key, AES256_KeySize, byte_iv);
-    CryptoPP::StringSource(input.string(), true,
-        new CryptoPP::StreamTransformationFilter(encryptor, new CryptoPP::StringSink(result)));
-  } catch(const CryptoPP::Exception& e) {
+    CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
+                                                     encryptor, new CryptoPP::StringSink(result)));
+  }
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     ThrowError(CommonErrors::symmetric_encryption_error);
   }
   return CipherText(result);
 }
 
-PlainText SymmDecrypt(const CipherText& input,
-                      const AES256Key& key,
+PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector) {
   if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
     ThrowError(CommonErrors::uninitialised);
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.string(), true,
-        new CryptoPP::ArraySink(byte_key, AES256_KeySize));
+    CryptoPP::StringSource(key.string(), true, new CryptoPP::ArraySink(byte_key, AES256_KeySize));
     CryptoPP::StringSource(initialisation_vector.string(), true,
-        new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
+                           new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, AES256_KeySize, byte_iv);
-    CryptoPP::StringSource(input.string(), true,
-        new CryptoPP::StreamTransformationFilter(decryptor, new CryptoPP::StringSink(result)));
+    CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
+                                                     decryptor, new CryptoPP::StringSink(result)));
   }
-  catch(const CryptoPP::Exception& e) {
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric decryption: " << e.what();
     ThrowError(CommonErrors::symmetric_decryption_error);
   }
@@ -114,10 +109,10 @@ CompressedText Compress(const UncompressedText& input, const uint16_t& compressi
 
   std::string result;
   try {
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::Gzip(
-        new CryptoPP::StringSink(result), compression_level));
+    CryptoPP::StringSource(input.string(), true,
+                           new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
   }
-  catch(const CryptoPP::Exception& e) {
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed compressing: " << e.what();
     ThrowError(CommonErrors::compression_error);
   }
@@ -129,22 +124,21 @@ UncompressedText Uncompress(const CompressedText& input) {
     ThrowError(CommonErrors::uninitialised);
   std::string result;
   try {
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::Gunzip(
-        new CryptoPP::StringSink(result)));
+    CryptoPP::StringSource(input.string(), true,
+                           new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
   }
-  catch(const CryptoPP::Exception& e) {
+  catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
     ThrowError(CommonErrors::uncompression_error);
   }
   return UncompressedText(result);
 }
 
-std::vector<std::string> SecretShareData(const int32_t& threshold,
-                                         const int32_t& number_of_shares,
+std::vector<std::string> SecretShareData(const int32_t& threshold, const int32_t& number_of_shares,
                                          const std::string& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
-  CryptoPP::StringSource source(data, false,
-      new CryptoPP::SecretSharing(rng(), threshold, number_of_shares, channel_switch));
+  CryptoPP::StringSource source(
+      data, false, new CryptoPP::SecretSharing(rng(), threshold, number_of_shares, channel_switch));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
   std::vector<std::string> out_strings(number_of_shares);
   std::string channel;
@@ -174,8 +168,8 @@ std::string SecretRecoverData(const int32_t& threshold,
     string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
-    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(recovery,
-                                  std::string(reinterpret_cast<char*>(channel.begin()), 4)));
+    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
+        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
   while (string_sources[0]->Pump(256)) {
     for (auto i = 1; i < num_to_check; ++i)

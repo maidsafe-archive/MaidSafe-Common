@@ -19,9 +19,9 @@
 #include "maidsafe/common/log.h"
 
 #ifdef MAIDSAFE_WIN32
-#  include <Windows.h>
+#include <Windows.h>
 #else
-#  include <unistd.h>
+#include <unistd.h>
 #endif
 #include <algorithm>
 #include <chrono>
@@ -39,7 +39,6 @@
 #include "boost/program_options/value_semantic.hpp"
 
 #include "maidsafe/common/utils.h"
-
 
 namespace fs = boost::filesystem;
 namespace po = boost::program_options;
@@ -66,17 +65,9 @@ std::mutex& g_console_mutex() {
   return mutex;
 }
 
-const std::array<std::string, 10> kProjects = { { "common",
-                                                  "drive",
-                                                  "encrypt",
-                                                  "lifestuff",
-                                                  "nfs",
-                                                  "passport",
-                                                  "private",
-                                                  "routing",
-                                                  "rudp",
-                                                  "vault"
-                                              } };
+const std::array<std::string, 10> kProjects = {{"common", "drive",    "encrypt", "lifestuff",
+                                                "nfs",    "passport", "private", "routing",
+                                                "rudp",   "vault"}};
 
 #ifdef MAIDSAFE_WIN32
 
@@ -95,7 +86,7 @@ WORD GetColourAttribute(Colour colour) {
   }
 }
 
-void ColouredPrint(Colour colour, const std::string &text) {
+void ColouredPrint(Colour colour, const std::string& text) {
   CONSOLE_SCREEN_BUFFER_INFO console_info_before;
   const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
   std::lock_guard<std::mutex> lock(g_console_mutex());
@@ -130,17 +121,14 @@ const char* GetAnsiColourCode(Colour colour) {
   }
 }
 
-void ColouredPrint(Colour colour, const std::string &text) {
+void ColouredPrint(Colour colour, const std::string& text) {
   // On non-Windows platforms, we rely on the TERM variable.
   std::lock_guard<std::mutex> lock(g_console_mutex());
   auto env_ptr = getenv("TERM");
   const std::string kTerm(env_ptr ? env_ptr : "");
-  const bool kTermSupportsColour(kTerm == "xterm" ||
-                                 kTerm == "xterm-color" ||
-                                 kTerm == "xterm-256color" ||
-                                 kTerm == "screen" ||
-                                 kTerm == "linux" ||
-                                 kTerm == "cygwin");
+  const bool kTermSupportsColour(kTerm == "xterm" || kTerm == "xterm-color" ||
+                                 kTerm == "xterm-256color" || kTerm == "screen" ||
+                                 kTerm == "linux" || kTerm == "cygwin");
   static const bool in_colour_mode = ((isatty(fileno(stdout)) != 0) && kTermSupportsColour);
   const bool kUseColour = in_colour_mode && (colour != Colour::kDefaultColour);
   if (kUseColour)
@@ -218,9 +206,8 @@ std::string GetLocalTime() {
   auto seconds_since_epoch(
       std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
 
-  std::time_t now_t(
-      std::chrono::system_clock::to_time_t(
-          std::chrono::system_clock::time_point(seconds_since_epoch)));
+  std::time_t now_t(std::chrono::system_clock::to_time_t(
+      std::chrono::system_clock::time_point(seconds_since_epoch)));
 
   char temp[10];
   if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
@@ -241,17 +228,15 @@ std::string GetColouredLogEntry(char log_level) {
   return oss.str();
 }
 
-std::string GetPlainLogEntry(const std::string &file, int line, const std::ostringstream& stream) {
+std::string GetPlainLogEntry(const std::string& file, int line, const std::ostringstream& stream) {
   std::ostringstream oss;
   oss << " " << file << ":" << line << "] ";
-//  oss << " Function: " << function_ << "] ";
+  //  oss << " Function: " << function_ << "] ";
   oss << stream.str() << '\n';
   return oss.str();
 }
 
-void SendToConsole(ColourMode colour_mode,
-                   Colour colour,
-                   const std::string& coloured_log_entry,
+void SendToConsole(ColourMode colour_mode, Colour colour, const std::string& coloured_log_entry,
                    const std::string& plain_log_entry) {
   if (!Logging::Instance().LogToConsole())
     return;
@@ -267,43 +252,38 @@ void SendToConsole(ColourMode colour_mode,
   fflush(stdout);
 }
 
-po::options_description SetProgramOptions(std::string& config_file,
-                                          bool& no_log_to_console,
-                                          std::string& log_folder,
-                                          bool& no_async,
+po::options_description SetProgramOptions(std::string& config_file, bool& no_log_to_console,
+                                          std::string& log_folder, bool& no_async,
                                           int& colour_mode) {
   fs::path inipath(fs::temp_directory_path() / "maidsafe_log.ini");
   fs::path logpath(fs::temp_directory_path() / "maidsafe_logs");
   po::options_description log_config("Logging Configuration");
-  log_config.add_options()
-      ("log_no_async", po::bool_switch(&no_async), "Disable asynchronous logging.")
-      ("log_colour_mode", po::value<int>(&colour_mode)->default_value(1),
-          "0 for no colour, 1 for partial, 2 for full.")
-      ("log_config", po::value<std::string>(&config_file)->default_value(inipath.string().c_str()),
-          "Path to the logging configuration file.")
-      ("log_folder", po::value<std::string>(&log_folder)->default_value(logpath.string().c_str()),
-          "Path to folder where log files will be written. If empty, no files will be written.")
-      ("log_no_console", po::bool_switch(&no_log_to_console), "Disable logging to console.")
-      ("help,h", "Show help message.");
+  log_config.add_options()("log_no_async", po::bool_switch(&no_async),
+                           "Disable asynchronous logging.")(
+      "log_colour_mode", po::value<int>(&colour_mode)->default_value(1),
+      "0 for no colour, 1 for partial, 2 for full.")(
+      "log_config", po::value<std::string>(&config_file)->default_value(inipath.string().c_str()),
+      "Path to the logging configuration file.")(
+      "log_folder", po::value<std::string>(&log_folder)->default_value(logpath.string().c_str()),
+      "Path to folder where log files will be written. If empty, no files will be written.")(
+      "log_no_console", po::bool_switch(&no_log_to_console), "Disable logging to console.")(
+      "help,h", "Show help message.");
   for (auto project : kProjects) {
     std::string description("Set log level for ");
     description += std::string(project) + " project.";
     std::string name("log_");
     name += project;
-    log_config.add(boost::make_shared<po::option_description>(name.c_str(),
-                                                              po::value<std::string>(),
-                                                              description.c_str()));
+    log_config.add(boost::make_shared<po::option_description>(
+        name.c_str(), po::value<std::string>(), description.c_str()));
   }
-  log_config.add_options()("log_*", po::value<std::string>(),
+  log_config.add_options()(
+      "log_*", po::value<std::string>(),
       "Set log level for all projects. Overrides any individual project levels.");
   return log_config;
 }
 
-void ParseProgramOptions(const po::options_description& log_config,
-                         const std::string& config_file,
-                         int argc,
-                         char** argv,
-                         po::variables_map& log_variables,
+void ParseProgramOptions(const po::options_description& log_config, const std::string& config_file,
+                         int argc, char** argv, po::variables_map& log_variables,
                          std::vector<std::string>& unused_options) {
   po::options_description cmdline_options;
   cmdline_options.add(log_config);
@@ -326,9 +306,7 @@ void ParseProgramOptions(const po::options_description& log_config,
     unused_options.push_back("--help");
 }
 
-void DoCasts(int col_mode,
-             const std::string& log_folder,
-             ColourMode& colour_mode,
+void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mode,
              fs::path& log_folder_path) {
   if (col_mode != -1) {
     if (col_mode < 0 || col_mode > 2) {
@@ -375,8 +353,7 @@ bool SetupLogFolder(const fs::path& log_folder) {
 
 }  // unnamed namespace
 
-LogMessage::LogMessage(std::string file, int line, std::string function,
-                       int level)
+LogMessage::LogMessage(std::string file, int line, std::string function, int level)
     : file_(std::move(file)),
       kLine_(line),
       kFunction_(std::move(function)),
@@ -411,12 +388,12 @@ GtestLogMessage::~GtestLogMessage() {
   std::string log_entry(stream_.str());
   FilterMap filter(Logging::Instance().Filter());
   auto print_functor([colour, log_entry, filter] {
-      if (Logging::Instance().LogToConsole())
-        ColouredPrint(colour, log_entry);
-      for (auto& entry : filter)
-        Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
-      if (filter.size() != 1)
-        Logging::Instance().WriteToCombinedLogfile(log_entry);
+    if (Logging::Instance().LogToConsole())
+      ColouredPrint(colour, log_entry);
+    for (auto& entry : filter)
+      Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
+    if (filter.size() != 1)
+      Logging::Instance().WriteToCombinedLogfile(log_entry);
   });
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
@@ -448,8 +425,8 @@ std::vector<std::string> Logging::Initialise(int argc, char** argv) {
     try {
       std::string config_file, log_folder;
       int colour_mode(-1);
-      po::options_description log_config(SetProgramOptions(config_file, no_log_to_console_,
-                                                           log_folder, no_async_, colour_mode));
+      po::options_description log_config(
+          SetProgramOptions(config_file, no_log_to_console_, log_folder, no_async_, colour_mode));
       ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
       if (IsHelpOption(log_config))
         return;
@@ -457,7 +434,7 @@ std::vector<std::string> Logging::Initialise(int argc, char** argv) {
       HandleFilterOptions();
       SetStreams();
     }
-    catch(const std::exception& e) {
+    catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << e.what() << "\n\n";
     }
   });
@@ -515,9 +492,7 @@ void Logging::SetStreams() {
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
 }
 
-void Logging::Send(std::function<void()> message_functor) {
-  background_.Send(message_functor);
-}
+void Logging::Send(std::function<void()> message_functor) { background_.Send(message_functor); }
 
 void Logging::WriteToCombinedLogfile(const std::string& message) {
   std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);

@@ -26,18 +26,17 @@
 #include "boost/filesystem/path.hpp"
 
 #ifdef __MSVC__
-#  pragma warning(push, 1)
+#pragma warning(push, 1)
 #endif
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
 #ifdef __MSVC__
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include "maidsafe/common/log.h"
-
 
 namespace maidsafe {
 
@@ -60,7 +59,7 @@ void RunInParallel(int thread_count, std::function<void()> functor);
 // Returns a random port in the range [1025, 65535].
 uint16_t GetRandomPort();
 
-int ExecuteMain(int argc, char **argv);
+int ExecuteMain(int argc, char** argv);
 
 }  // namespace test
 

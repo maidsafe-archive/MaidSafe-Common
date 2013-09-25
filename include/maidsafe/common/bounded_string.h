@@ -25,16 +25,15 @@
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/error.h"
 
-
 namespace maidsafe {
 
 namespace detail {
 
 #ifdef __clang__
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wc++11-narrowing"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++11-narrowing"
 #endif
-template<size_t min, size_t max = -1, typename StringType = std::string>
+template <size_t min, size_t max = -1, typename StringType = std::string>
 class BoundedString {
  public:
   BoundedString()
@@ -55,9 +54,8 @@ class BoundedString {
 
   BoundedString(const BoundedString& other) : string_(other.string_), valid_(other.valid_) {}
 
-  BoundedString(BoundedString&& other) MAIDSAFE_NOEXCEPT
-      : string_(std::move(other.string_)),
-        valid_(std::move(other.valid_)) {}
+  BoundedString(BoundedString&& other) MAIDSAFE_NOEXCEPT : string_(std::move(other.string_)),
+                                                           valid_(std::move(other.valid_)) {}
 
   BoundedString& operator=(BoundedString other) MAIDSAFE_NOEXCEPT {
     // No need for check for self-assignment since we're using the copy-and-swap idiom
@@ -68,21 +66,21 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);
-    if (SizeOutOfBounds(string_.size()+other.string_.size()))
+    if (SizeOutOfBounds(string_.size() + other.string_.size()))
       ThrowError(CommonErrors::invalid_string_size);
-    StringType temp(string_+other.string_);
+    StringType temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
   }
 
-  template<size_t other_min, size_t other_max, typename OtherStringType>
+  template <size_t other_min, size_t other_max, typename OtherStringType>
   explicit BoundedString(BoundedString<other_min, other_max, OtherStringType> other)
-    : string_(other.string_.begin(), other.string_.end()), valid_(std::move(other.valid_)) {
+      : string_(other.string_.begin(), other.string_.end()), valid_(std::move(other.valid_)) {
     static_assert((min <= other_min) && (max >= other_max),
                   "Bounds of copied BoundedString must be within bounds of this BoundedString");
   }
 
-  template<size_t other_min, size_t other_max, typename OtherStringType>
+  template <size_t other_min, size_t other_max, typename OtherStringType>
   BoundedString& operator=(BoundedString<other_min, other_max, OtherStringType> other) {
     static_assert((min <= other_min) && (max >= other_max),
                   "Bounds of copied BoundedString must be within bounds of this BoundedString");
@@ -92,13 +90,13 @@ class BoundedString {
     return *this;
   }
 
-  template<size_t other_min, size_t other_max, typename OtherStringType>
+  template <size_t other_min, size_t other_max, typename OtherStringType>
   BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
     if (!valid_ || !other.valid_)
       ThrowError(CommonErrors::uninitialised);
-    if (SizeOutOfBounds(string_.size()+other.string_.size()))
+    if (SizeOutOfBounds(string_.size() + other.string_.size()))
       ThrowError(CommonErrors::invalid_string_size);
-    StringType temp(string_+other.string_);
+    StringType temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
   }
@@ -111,7 +109,8 @@ class BoundedString {
 
   bool IsInitialised() const { return valid_; }
 
-  template<size_t other_min, size_t other_max, typename OtherStringType> friend class BoundedString;
+  template <size_t other_min, size_t other_max, typename OtherStringType>
+  friend class BoundedString;
 
  private:
   bool SizeOutOfBounds(std::string::size_type size) const {
@@ -121,17 +120,15 @@ class BoundedString {
     return (size < min) || (size > max);
   }
 
-  bool OutwithBounds() const {
-    return SizeOutOfBounds(string_.size());
-  }
+  bool OutwithBounds() const { return SizeOutOfBounds(string_.size()); }
   StringType string_;
   bool valid_;
 };
 #ifdef __clang__
-#  pragma clang diagnostic pop
+#pragma clang diagnostic pop
 #endif
 
-template<size_t min, size_t max, typename StringType>
+template <size_t min, size_t max, typename StringType>
 inline bool operator==(const BoundedString<min, max, StringType>& lhs,
                        const BoundedString<min, max, StringType>& rhs) {
   if (lhs.IsInitialised()) {
@@ -145,13 +142,13 @@ inline bool operator==(const BoundedString<min, max, StringType>& lhs,
   }
 }
 
-template<size_t min, size_t max, typename StringType>
+template <size_t min, size_t max, typename StringType>
 inline bool operator!=(const BoundedString<min, max, StringType>& lhs,
                        const BoundedString<min, max, StringType>& rhs) {
   return !operator==(lhs, rhs);
 }
 
-template<size_t min, size_t max, typename StringType>
+template <size_t min, size_t max, typename StringType>
 inline bool operator<(const BoundedString<min, max, StringType>& lhs,
                       const BoundedString<min, max, StringType>& rhs) {
   if (lhs.IsInitialised()) {
@@ -165,27 +162,28 @@ inline bool operator<(const BoundedString<min, max, StringType>& lhs,
   }
 }
 
-template<size_t min, size_t max, typename StringType>
+template <size_t min, size_t max, typename StringType>
 inline bool operator>(const BoundedString<min, max, StringType>& lhs,
                       const BoundedString<min, max, StringType>& rhs) {
   return operator<(rhs, lhs);
 }
 
-template<size_t min, size_t max, typename StringType>
+template <size_t min, size_t max, typename StringType>
 inline bool operator<=(const BoundedString<min, max, StringType>& lhs,
                        const BoundedString<min, max, StringType>& rhs) {
   return !operator>(lhs, rhs);
 }
 
-template<size_t min, size_t max, typename StringType>
+template <size_t min, size_t max, typename StringType>
 inline bool operator>=(const BoundedString<min, max, StringType>& lhs,
                        const BoundedString<min, max, StringType>& rhs) {
   return !operator<(lhs, rhs);
 }
 
-template<size_t lhs_min, size_t lhs_max, size_t rhs_min, size_t rhs_max, typename StringType>
-inline BoundedString<lhs_min, lhs_max> operator+(BoundedString<lhs_min, lhs_max, StringType> lhs,
-                                          const BoundedString<rhs_min, rhs_max, StringType>& rhs) {
+template <size_t lhs_min, size_t lhs_max, size_t rhs_min, size_t rhs_max, typename StringType>
+inline BoundedString<lhs_min, lhs_max> operator+(
+    BoundedString<lhs_min, lhs_max, StringType> lhs,
+    const BoundedString<rhs_min, rhs_max, StringType>& rhs) {
   lhs += rhs;
   return lhs;
 }

@@ -18,15 +18,15 @@
 
 #include "maidsafe/common/active.h"
 
-
 namespace maidsafe {
 
-Active::Active() : running_(true),
-                   functors_(),
-                   flags_mutex_(),
-                   mutex_(),
-                   condition_(),
-                   thread_([this] { Run(); }) {}
+Active::Active()
+    : running_(true),
+      functors_(),
+      flags_mutex_(),
+      mutex_(),
+      condition_(),
+      thread_([this] { Run(); }) {}
 
 Active::~Active() {
   Send([this] {
@@ -51,7 +51,8 @@ void Active::Run() {
   auto running = [this]()->bool {
     std::lock_guard<std::mutex> flags_lock(flags_mutex_);
     return running_;
-  };
+  }
+  ;
 
   while (running()) {
     Functor functor;

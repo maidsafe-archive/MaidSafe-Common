@@ -26,7 +26,6 @@
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/tagged_value.h"
 
-
 namespace maidsafe {
 
 typedef detail::BoundedString<1> NonEmptyString;
@@ -35,21 +34,20 @@ typedef detail::BoundedString<64, 64> Identity;
 typedef TaggedValue<uint64_t, struct MemoryUsageTag> MemoryUsage;
 typedef TaggedValue<uint64_t, struct DiskUsageTag> DiskUsage;
 
-template<typename T>
+template <typename T>
 struct is_long_term_cacheable : public std::false_type {};
 
-template<typename T>
+template <typename T>
 struct is_short_term_cacheable : public std::false_type {};
 
-template<typename T>
+template <typename T>
 struct is_cacheable : public std::integral_constant<
-    bool,
-    is_long_term_cacheable<T>::value || is_short_term_cacheable<T>::value> {};  // NOLINT
+    bool, is_long_term_cacheable<T>::value || is_short_term_cacheable<T>::value> {};  // NOLINT
 
-template<typename T>
+template <typename T>
 struct is_payable : public std::true_type {};
 
-template<typename T>
+template <typename T>
 struct is_unique_on_network : public std::true_type {};
 
 }  // namespace maidsafe

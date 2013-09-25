@@ -22,35 +22,28 @@
 #include <string>
 
 #ifdef WIN32
-#  include "breakpad/client/windows/handler/exception_handler.h"
+#include "breakpad/client/windows/handler/exception_handler.h"
 #else
-#  include "breakpad/client/linux/handler/exception_handler.h"
+#include "breakpad/client/linux/handler/exception_handler.h"
 #endif
 
 #include "maidsafe/common/version.h"
 
 #if MAIDSAFE_COMMON_VERSION != 1200
-#  error This API is not compatible with the installed library.\
+#error This API is not compatible with the installed library.\
     Please update the MaidSafe-Common library.
 #endif
-
 
 namespace maidsafe {
 
 namespace crash_report {
 
 #ifdef WIN32
-bool DumpCallback(const wchar_t* dump_path,
-                  const wchar_t* minidump_id,
-                  void* context,
-                  EXCEPTION_POINTERS* /*exinfo*/,
-                  MDRawAssertionInfo* /*assertion*/,
+bool DumpCallback(const wchar_t* dump_path, const wchar_t* minidump_id, void* context,
+                  EXCEPTION_POINTERS* /*exinfo*/, MDRawAssertionInfo* /*assertion*/,
                   bool succeeded);
 #else
-bool DumpCallback(const char* dump_path,
-                  const char* minidump_id,
-                  void* context,
-                  bool succeeded);
+bool DumpCallback(const char* dump_path, const char* minidump_id, void* context, bool succeeded);
 #endif
 
 struct ProjectInfo {

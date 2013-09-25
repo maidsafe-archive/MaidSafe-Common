@@ -24,7 +24,6 @@
 
 #include "maidsafe/common/config.h"
 
-
 namespace maidsafe {
 
 namespace detail {

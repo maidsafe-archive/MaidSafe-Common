@@ -28,7 +28,6 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
@@ -40,7 +39,7 @@ namespace test {
 typedef NonEmptyString UserPassword;
 
 TEST(CryptoTest, FUNC_Obfuscation) {
-  const size_t kStringSize(1024*256);
+  const size_t kStringSize(1024 * 256);
   detail::BoundedString<kStringSize, kStringSize> str1(RandomString(kStringSize));
   detail::BoundedString<kStringSize, kStringSize> str2(RandomString(kStringSize));
   detail::BoundedString<kStringSize, kStringSize> obfuscated(XOR(str1, str2));
@@ -64,7 +63,7 @@ TEST(CryptoTest, BEH_Xor) {
   EXPECT_TRUE(XOR("A", "").empty());
   EXPECT_TRUE(XOR("", "B").empty());
   EXPECT_TRUE(XOR("A", "BB").empty());
-  const size_t kStringSize(1024*256);
+  const size_t kStringSize(1024 * 256);
   std::string str1 = RandomString(kStringSize);
   std::string str2 = RandomString(kStringSize);
   std::string obfuscated = XOR(str1, str2);
@@ -96,7 +95,8 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 
   SecurePassword password(CreateSecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
   EXPECT_EQ(kKnownDerived1, password);
-  const UserPassword kKnownPassword2(HexDecode("416c6c206e2d656e746974696573206d75737420636f6"
+  const UserPassword kKnownPassword2(HexDecode(
+      "416c6c206e2d656e746974696573206d75737420636f6"
       "d6d756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656"
       "568656568656573"));
   const Salt kKnownSalt2(HexDecode("1234567878563412"));
@@ -109,11 +109,9 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 }
 
 struct HashTestData {
-  HashTestData(std::string input_data, const std::string &SHA1_hex_res,
-               const std::string &SHA256_hex_res,
-               const std::string &SHA384_hex_res,
-               const std::string &SHA512_hex_res,
-               const std::string &Tiger_hex_res)
+  HashTestData(std::string input_data, const std::string& SHA1_hex_res,
+               const std::string& SHA256_hex_res, const std::string& SHA384_hex_res,
+               const std::string& SHA512_hex_res, const std::string& Tiger_hex_res)
       : input(std::move(input_data)),
         SHA1_hex_result(SHA1_hex_res),
         SHA256_hex_result(SHA256_hex_res),
@@ -141,35 +139,31 @@ struct HashTestData {
 TEST(CryptoTest, BEH_Hash) {
   // Set up industry standard test data
   std::vector<HashTestData> test_data;
-  test_data.push_back(HashTestData("abc",
-      "a9993e364706816aba3e25717850c26c9cd0d89d",
-      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-      "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed"
-      "8086072ba1e7cc2358baeca134c825a7",
-      "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
-      "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
-      "2aab1484e8c158f2bfb8c5ff41b57a525129131c957b5f93"));
-  test_data.push_back(HashTestData(
-      "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
-      "84983e441c3bd26ebaae4aa1f95129e5e54670f1",
-      "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1",
-      "",
-      "",
-      "0f7bf9a19b9c58f2b7610df7e84f0ac3a71c631e7b53f78e"));
-  test_data.push_back(HashTestData(
-      std::string(64 * 15625, 'a'),
-      "34aa973cd4c4daa4f61eeb2bdbad27316534016f",
-      "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0",
-      "9d0e1809716474cb086e834e310a4a1ced149e9c00f248527972cec5704c2a5b"
-      "07b8b3dc38ecc4ebae97ddd87f3d8985",
-      "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"
-      "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b",
-      "6db0e2729cbead93d715c6a7d36302e9b3cee0d2bc314b41"));
+  test_data.push_back(
+      HashTestData("abc", "a9993e364706816aba3e25717850c26c9cd0d89d",
+                   "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                   "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed"
+                   "8086072ba1e7cc2358baeca134c825a7",
+                   "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
+                   "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f",
+                   "2aab1484e8c158f2bfb8c5ff41b57a525129131c957b5f93"));
+  test_data.push_back(
+      HashTestData("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",
+                   "84983e441c3bd26ebaae4aa1f95129e5e54670f1",
+                   "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1", "", "",
+                   "0f7bf9a19b9c58f2b7610df7e84f0ac3a71c631e7b53f78e"));
+  test_data.push_back(
+      HashTestData(std::string(64 * 15625, 'a'), "34aa973cd4c4daa4f61eeb2bdbad27316534016f",
+                   "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0",
+                   "9d0e1809716474cb086e834e310a4a1ced149e9c00f248527972cec5704c2a5b"
+                   "07b8b3dc38ecc4ebae97ddd87f3d8985",
+                   "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973eb"
+                   "de0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b",
+                   "6db0e2729cbead93d715c6a7d36302e9b3cee0d2bc314b41"));
   test_data.push_back(HashTestData(
       "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmno"
       "ijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu",
-      "",
-      "",
+      "", "",
       "09330c33f71147e83d192fc782cd1b4753111b173b3b05d22fa08086e3b0f712"
       "fcc7c71a557e2db966c3e9fa91746039",
       "8e959b75dae313da8cf4f72814fc143f8f7779c6eb9f7fa17299aeadb6889018"
@@ -202,32 +196,28 @@ TEST(CryptoTest, BEH_Hash) {
     if (!test_data.at(j).SHA256_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(Hash<SHA256>(input)));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<SHA256>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA256_hex_result,
-                HexEncode(HashFile<SHA256>(input_files.at(j))));
+      EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(HashFile<SHA256>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, HashFile<SHA256>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA384_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(Hash<SHA384>(input)));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<SHA384>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA384_hex_result,
-                HexEncode(HashFile<SHA384>(input_files.at(j))));
+      EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(HashFile<SHA384>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, HashFile<SHA384>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA512_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(Hash<SHA512>(input)));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<SHA512>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA512_hex_result,
-                HexEncode(HashFile<SHA512>(input_files.at(j))));
+      EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(HashFile<SHA512>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, HashFile<SHA512>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).Tiger_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).Tiger_hex_result, HexEncode(Hash<Tiger>(input)));
       EXPECT_EQ(test_data.at(j).Tiger_raw_result, Hash<Tiger>(input).string());
-      EXPECT_EQ(test_data.at(j).Tiger_hex_result,
-                HexEncode(HashFile<Tiger>(input_files.at(j))));
+      EXPECT_EQ(test_data.at(j).Tiger_hex_result, HexEncode(HashFile<Tiger>(input_files.at(j))));
       EXPECT_EQ(test_data.at(j).Tiger_raw_result, HashFile<Tiger>(input_files.at(j)).string());
     }
   }
@@ -246,7 +236,7 @@ TEST(CryptoTest, BEH_Hash) {
   EXPECT_THROW(HashFile<Tiger>(fs::path("NonExistent")), std::exception);
 }
 
-std::string CorruptData(const std::string &input) {
+std::string CorruptData(const std::string& input) {
   // Replace a single char of input to a different random char.
   std::string output(input);
   output.at(RandomUint32() % input.size()) += (RandomUint32() % 254) + 1;
@@ -340,7 +330,7 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
   // 23 Mb approx
-  std::string answer2 ="651d460d960d3329da36304f0e0bb3098112e4f0583f6e34d2fc";
+  std::string answer2 = "651d460d960d3329da36304f0e0bb3098112e4f0583f6e34d2fc";
   answer2 += "3ecdf7908c2a493c4defdce4109d9e715e767890cef558f6b7ae02";
   answer2 += "4f6e8561be2ef0d483872f";
   EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer2);
@@ -353,7 +343,7 @@ TEST(CryptoTest, BEH_AESTigerDeterministic) {
   EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer);
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
-  std::string answer2 ="f98bb1b55f14f3ec8612212919d47db91bb94c2e9329de2d";
+  std::string answer2 = "f98bb1b55f14f3ec8612212919d47db91bb94c2e9329de2d";
   EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer2);
 }
 

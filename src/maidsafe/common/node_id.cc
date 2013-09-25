@@ -24,7 +24,6 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-
 namespace maidsafe {
 
 NodeId::NodeId() : raw_id_(kSize, 0) {}
@@ -39,8 +38,8 @@ NodeId& NodeId::operator=(NodeId other) {
   return *this;
 }
 
-NodeId::NodeId(IdType type) : raw_id_(
-    [type]()->std::string {
+NodeId::NodeId(IdType type)
+    : raw_id_([type]()->std::string {
         switch (type) {
           case kMaxId:
             return std::string(kSize, -1);
@@ -50,7 +49,7 @@ NodeId::NodeId(IdType type) : raw_id_(
             ThrowError(CommonErrors::invalid_parameter);
         }
         return "";
-    }()) {}
+      }()) {}
 
 NodeId::NodeId(std::string id) : raw_id_(std::move(id)) {
   if (raw_id_.size() != kSize) {
@@ -64,24 +63,28 @@ NodeId::NodeId(const crypto::SHA512Hash& id) : raw_id_(id.string()) {}
 NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_id_() {
   try {
     switch (encoding_type) {
-      case EncodingType::kBinary: DecodeFromBinary(id);
+      case EncodingType::kBinary:
+        DecodeFromBinary(id);
         break;
-      case EncodingType::kHex: raw_id_ = HexDecode(id);
+      case EncodingType::kHex:
+        raw_id_ = HexDecode(id);
         break;
-      case EncodingType::kBase64: raw_id_ = Base64Decode(id);
+      case EncodingType::kBase64:
+        raw_id_ = Base64Decode(id);
         break;
-      default: raw_id_ = id;
+      default:
+        raw_id_ = id;
     }
   }
-  catch(const std::exception& e) {
+  catch (const std::exception& e) {
     LOG(kError) << "NodeId Ctor: " << e.what();
     raw_id_.clear();
   }
   if (encoding_type == EncodingType::kBase64) {
     Base64Decode(id);
   } else if (raw_id_.size() != kSize) {
-      raw_id_.clear();
-      ThrowError(CommonErrors::invalid_node_id);
+    raw_id_.clear();
+    ThrowError(CommonErrors::invalid_node_id);
   }
 }
 
@@ -115,9 +118,7 @@ bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& 
   return false;
 }
 
-const std::string NodeId::string() const {
-  return raw_id_;
-}
+const std::string NodeId::string() const { return raw_id_; }
 
 const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
   switch (encoding_type) {
@@ -146,8 +147,6 @@ NodeId& NodeId::operator^=(const NodeId& rhs) {
   return *this;
 }
 
-std::string DebugId(const NodeId& node_id) {
-  return HexSubstr(node_id.raw_id_);
-}
+std::string DebugId(const NodeId& node_id) { return HexSubstr(node_id.raw_id_); }
 
 }  // namespace maidsafe

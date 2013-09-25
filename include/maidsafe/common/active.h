@@ -27,7 +27,6 @@
 
 #include "boost/thread/thread.hpp"
 
-
 namespace maidsafe {
 
 class Active {

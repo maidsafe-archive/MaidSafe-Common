@@ -26,7 +26,7 @@
 // thread and exception safe queue
 // pop elements by reference to not throw :)
 
-template<typename T>
+template <typename T>
 class SafeQueue {
  public:
   SafeQueue() : queue_(), mutex_(), condition_() {}
@@ -49,7 +49,7 @@ class SafeQueue {
     condition_.notify_one();
   }
 
-  bool TryPop(T &element) {
+  bool TryPop(T& element) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (queue_.empty())
       return false;
@@ -58,7 +58,7 @@ class SafeQueue {
     return true;
   }
 
-  void WaitAndPop(T &element) {
+  void WaitAndPop(T& element) {
     std::unique_lock<std::mutex> lock(mutex_);
     while (queue_.empty())
       condition_.wait(lock);
