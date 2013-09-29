@@ -121,15 +121,18 @@ TEST_F(RSATest, FUNC_SignFileValidate) {
 
 TEST_F(RSATest, BEH_RsaKeysComparing) {
   maidsafe::test::RunInParallel(6, [&] {
-    Keys k1, k2;
+    Keys k1, k2, k3;
     EXPECT_TRUE(MatchingKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingKeys(k1.private_key, k2.private_key));
 
     EXPECT_NO_THROW(k1 = GenerateKeyPair());
+    EXPECT_NO_THROW(k3 = GenerateKeyPair());
     k2.public_key = k1.public_key;
     k2.private_key = k1.private_key;
     EXPECT_TRUE(MatchingKeys(k1.public_key, k2.public_key));
     EXPECT_TRUE(MatchingKeys(k1.private_key, k2.private_key));
+    EXPECT_FALSE(MatchingKeys(k1.public_key, k3.public_key));
+    EXPECT_FALSE(MatchingKeys(k1.private_key, k3.private_key));
   });
 }
 

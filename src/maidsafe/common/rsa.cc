@@ -301,7 +301,6 @@ PublicKey DecodeKey(const EncodedPublicKey& public_key) {
 
 bool ValidateKey(const PublicKey& public_key) { return public_key.Validate(rng(), 2); }
 
-// TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this
 bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2) {
   bool valid1(private_key1.Validate(rng(), 0));
   bool valid2(private_key2.Validate(rng(), 0));
@@ -311,16 +310,7 @@ bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2
       CryptoPP::ByteQueue queue1, queue2;
       private_key1.DEREncodePrivateKey(queue1);
       private_key2.DEREncodePrivateKey(queue2);
-      EncodeKey(queue1, encoded_key1);
-      EncodeKey(queue2, encoded_key2);
-      if (valid1)
-        return encoded_key1 == encoded_key2;
-      std::string encoded_default_key;
-      PrivateKey default_private_key;
-      CryptoPP::ByteQueue default_queue;
-      default_private_key.DEREncodePrivateKey(default_queue);
-      EncodeKey(default_queue, encoded_default_key);
-      return (encoded_default_key == encoded_key1) && (encoded_default_key == encoded_key2);
+      return(queue1 == queue2);
     }
   }
   catch (const CryptoPP::Exception& e) {
@@ -330,7 +320,6 @@ bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2
   return false;
 }
 
-// TODO(Fraser#5#): 2012-10-02 - Find more efficient way of achieving this
 bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
   bool valid1(public_key1.Validate(rng(), 0));
   bool valid2(public_key2.Validate(rng(), 0));
@@ -340,16 +329,7 @@ bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
       CryptoPP::ByteQueue queue1, queue2;
       public_key1.DEREncodePublicKey(queue1);
       public_key2.DEREncodePublicKey(queue2);
-      EncodeKey(queue1, encoded_key1);
-      EncodeKey(queue2, encoded_key2);
-      if (valid1)
-        return encoded_key1 == encoded_key2;
-      std::string encoded_default_key;
-      PublicKey default_public_key;
-      CryptoPP::ByteQueue default_queue;
-      default_public_key.DEREncodePublicKey(default_queue);
-      EncodeKey(default_queue, encoded_default_key);
-      return (encoded_default_key == encoded_key1) && (encoded_default_key == encoded_key2);
+      return(queue1 == queue2);
     }
   }
   catch (const CryptoPP::Exception& e) {
