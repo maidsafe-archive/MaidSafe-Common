@@ -302,41 +302,20 @@ PublicKey DecodeKey(const EncodedPublicKey& public_key) {
 bool ValidateKey(const PublicKey& public_key) { return public_key.Validate(rng(), 2); }
 
 bool MatchingKeys(const PrivateKey& private_key1, const PrivateKey& private_key2) {
-  bool valid1(private_key1.Validate(rng(), 0));
-  bool valid2(private_key2.Validate(rng(), 0));
-  try {
-    if ((valid1 && valid2) || (!valid1 && !valid2)) {
       std::string encoded_key1, encoded_key2;
       CryptoPP::ByteQueue queue1, queue2;
       private_key1.DEREncodePrivateKey(queue1);
       private_key2.DEREncodePrivateKey(queue2);
       return(queue1 == queue2);
-    }
-  }
-  catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Failed encoding private key: " << e.what();
-    ThrowError(AsymmErrors::invalid_private_key);
-  }
-  return false;
 }
 
 bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
-  bool valid1(public_key1.Validate(rng(), 0));
-  bool valid2(public_key2.Validate(rng(), 0));
-  try {
-    if ((valid1 && valid2) || (!valid1 && !valid2)) {
       std::string encoded_key1, encoded_key2;
       CryptoPP::ByteQueue queue1, queue2;
       public_key1.DEREncodePublicKey(queue1);
       public_key2.DEREncodePublicKey(queue2);
       return(queue1 == queue2);
-    }
-  }
-  catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Failed encoding public key: " << e.what();
-    ThrowError(AsymmErrors::invalid_public_key);
-  }
-  return false;
+
 }
 
 }  // namespace rsa

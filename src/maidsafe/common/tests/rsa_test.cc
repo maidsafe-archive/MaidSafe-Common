@@ -133,6 +133,8 @@ TEST_F(RSATest, BEH_RsaKeysComparing) {
     EXPECT_TRUE(MatchingKeys(k1.private_key, k2.private_key));
     EXPECT_FALSE(MatchingKeys(k1.public_key, k3.public_key));
     EXPECT_FALSE(MatchingKeys(k1.private_key, k3.private_key));
+    EXPECT_FALSE(MatchingKeys(k1.private_key, k3.public_key));
+    EXPECT_FALSE(MatchingKeys(k1.public_key, k3.private_key));
   });
 }
 
