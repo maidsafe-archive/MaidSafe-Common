@@ -163,10 +163,8 @@ std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error parsing MID or SMID from protocol buffer representation";
     case PassportErrors::tmid_parsing_error:
       return "Error parsing TMID from protocol buffer representation";
-    case PassportErrors::no_confirmed_fob:
-      return "No confirmed fob of requested type available";
-    case PassportErrors::no_pending_fob:
-      return "No pending fob of requested type available";
+    case PassportErrors::uninitialised_fob:
+      return "No fob of requested type available";
     case PassportErrors::passport_parsing_error:
       return "Error parsing passport";
     case PassportErrors::public_id_already_exists:
