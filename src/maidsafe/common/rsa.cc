@@ -315,7 +315,6 @@ bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2) {
       public_key1.DEREncodePublicKey(queue1);
       public_key2.DEREncodePublicKey(queue2);
       return(queue1 == queue2);
-
 }
 
 }  // namespace rsa
