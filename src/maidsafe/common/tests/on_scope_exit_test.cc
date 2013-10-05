@@ -35,7 +35,7 @@ void IncrementAndThrow(std::vector<int32_t>& data) {
   ThrowError(CommonErrors::invalid_parameter);
 }
 
-TEST_CASE("OnScopeExit revert value", "[Unit]") {
+TEST_CASE("OnScopeExit revert value", "[OnScopeExit][Unit]") {
   std::vector<int> before;
   for (int i(0); i != 100; ++i)
     before.push_back(i);
@@ -58,7 +58,7 @@ TEST_CASE("OnScopeExit revert value", "[Unit]") {
   CHECK(before.size() == 101);
 }
 
-TEST_CASE("OnScopeExit set action", "[Unit]") {
+TEST_CASE("OnScopeExit set action", "[OnScopeExit][Unit]") {
   std::vector<int32_t> before;
   for (int i(0); i != 100; ++i)
     before.push_back(i);

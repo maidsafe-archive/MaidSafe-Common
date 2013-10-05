@@ -38,14 +38,14 @@ typedef BoundedString<2, 3> TwoThree;
 typedef BoundedString<2, 4> TwoFour;
 typedef BoundedString<2> TwoMax;
 
-TEST_CASE("BoundedString default constructor", "[Unit]") {
+TEST_CASE("BoundedString default constructor", "[BoundedString][Unit]") {
   OneOne a;
   CHECK_FALSE(a.IsInitialised());
   OneMax b;
   CHECK_FALSE(b.IsInitialised());
 }
 
-TEST_CASE("BoundedString getters", "[Unit]") {
+TEST_CASE("BoundedString getters", "[BoundedString][Unit]") {
   TwoTwo a;
   CHECK_FALSE(a.IsInitialised());
   CHECK_THROWS_AS(a.string(), std::exception);
@@ -58,7 +58,7 @@ TEST_CASE("BoundedString getters", "[Unit]") {
   }
 }
 
-TEST_CASE("BoundedString string constructor", "[Unit]") {
+TEST_CASE("BoundedString string constructor", "[BoundedString][Unit]") {
   // Empty (invalid)
   CHECK_THROWS_AS(OneOne a(""), std::exception);
   // Valid
@@ -76,7 +76,7 @@ TEST_CASE("BoundedString string constructor", "[Unit]") {
   CHECK(random == e.string());
 }
 
-TEST_CASE("BoundedString swap", "[Unit]") {
+TEST_CASE("BoundedString swap", "[BoundedString][Unit]") {
   // Swap with initialised
   std::string random1(RandomString(1));
   std::string random2(RandomString(2));
@@ -93,7 +93,7 @@ TEST_CASE("BoundedString swap", "[Unit]") {
   CHECK(random2 == c.string());
 }
 
-TEST_CASE("BoundedString copy", "[Unit]") {
+TEST_CASE("BoundedString copy", "[BoundedString][Unit]") {
   // Copy from initialised
   std::string random(RandomString((RandomUint32() % 1024) + 1));
   OneMax a(random);
@@ -107,7 +107,7 @@ TEST_CASE("BoundedString copy", "[Unit]") {
   CHECK_FALSE(d.IsInitialised());
 }
 
-TEST_CASE("BoundedString move", "[Unit]") {
+TEST_CASE("BoundedString move", "[BoundedString][Unit]") {
   // Move from initialised
   std::string random(RandomString((RandomUint32() % 1024) + 1));
   OneMax a(std::move(OneMax(random)));
@@ -118,7 +118,7 @@ TEST_CASE("BoundedString move", "[Unit]") {
   CHECK_FALSE(b.IsInitialised());
 }
 
-TEST_CASE("BoundedString assignment", "[Unit]") {
+TEST_CASE("BoundedString assignment", "[BoundedString][Unit]") {
   // Assign from initialised
   std::string random(RandomString((RandomUint32() % 1024) + 1));
   OneMax a(random);
@@ -137,7 +137,7 @@ TEST_CASE("BoundedString assignment", "[Unit]") {
   CHECK_FALSE(b.IsInitialised());
 }
 
-TEST_CASE("BoundedString from other BoundedString constructor", "[Unit]") {
+TEST_CASE("BoundedString from other BoundedString constructor", "[BoundedString][Unit]") {
   // Valid copy
   std::string random(RandomString(2));
   TwoThree a(random);
@@ -154,7 +154,7 @@ TEST_CASE("BoundedString from other BoundedString constructor", "[Unit]") {
   CHECK_FALSE(f.IsInitialised());
 }
 
-TEST_CASE("BoundedString assignment from other BoundedString", "[Unit]") {
+TEST_CASE("BoundedString assignment from other BoundedString", "[BoundedString][Unit]") {
   // Valid assignment
   std::string random(RandomString(2));
   TwoThree a(random);
@@ -175,7 +175,7 @@ TEST_CASE("BoundedString assignment from other BoundedString", "[Unit]") {
   CHECK_FALSE(f.IsInitialised());
 }
 
-TEST_CASE("BoundedString concatenation operators", "[Unit]") {
+TEST_CASE("BoundedString concatenation operators", "[BoundedString][Unit]") {
   OneOne a(RandomString(1));
   std::string a_before_throw = a.string();
   OneTwo b(RandomString(1));

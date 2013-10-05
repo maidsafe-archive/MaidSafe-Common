@@ -34,7 +34,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("AsioService invalid start", "[Unit]") {
+TEST_CASE("AsioService invalid start", "[AsioService][Unit]") {
   bool done(false);
   std::mutex mutex;
   std::condition_variable cond_var;
@@ -62,7 +62,7 @@ TEST_CASE("AsioService invalid start", "[Unit]") {
   }
 }
 
-TEST_CASE("AsioService interrupt", "[Unit]") {  // Timeout 8
+TEST_CASE("AsioService interrupt", "[AsioService][Unit]") {  // Timeout 8
   // Stop while executing interruptible long-running tasks
   std::mutex mutex;
   int task_count(100);
