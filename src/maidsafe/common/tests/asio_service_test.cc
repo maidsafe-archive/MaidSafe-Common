@@ -34,7 +34,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(AsioServiceTest, BEH_InvalidStart) {
+TEST_CASE("AsioService invalid start", "[Unit]") {
   bool done(false);
   std::mutex mutex;
   std::condition_variable cond_var;
@@ -46,23 +46,23 @@ TEST(AsioServiceTest, BEH_InvalidStart) {
   });
 
   // Allocate no threads
-  EXPECT_THROW(AsioService asio_service(0), std::exception);
+  CHECK_THROWS_AS(AsioService asio_service(0), std::exception);
 
   {  // Start after posting tasks
     AsioService asio_service(2);
     asio_service.service().post(task);
     std::unique_lock<std::mutex> lock(mutex);
-    EXPECT_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
-    EXPECT_FALSE(done);
+    CHECK_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
+    CHECK_FALSE(done);
 
     asio_service.Start();
-    EXPECT_TRUE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
-    EXPECT_TRUE(done);
+    CHECK(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
+    CHECK(done);
     asio_service.Start();
   }
 }
 
-TEST(AsioServiceTest, BEH_Interrupt) {
+TEST_CASE("AsioService interrupt", "[Unit]") {  // Timeout 8
   // Stop while executing interruptible long-running tasks
   std::mutex mutex;
   int task_count(100);
@@ -81,9 +81,10 @@ TEST(AsioServiceTest, BEH_Interrupt) {
   for (int i(0); i != task_count; ++i)
     asio_service.service().post(interruptible_task);
   asio_service.Stop();
-  EXPECT_EQ(task_count, sleeps_interrupted);
-  EXPECT_EQ(0, sleeps_not_interrupted);
-  EXPECT_LT(boost::chrono::high_resolution_clock::now() - start_time, kTaskDuration * 2);
+  CHECK(task_count == sleeps_interrupted);
+  CHECK(0 == sleeps_not_interrupted);
+  auto duration(boost::chrono::high_resolution_clock::now() - start_time);
+  CHECK(duration < kTaskDuration * 2);
 
   // Stop while executing non-interruptible long-running tasks
   task_count = 4;
@@ -98,9 +99,10 @@ TEST(AsioServiceTest, BEH_Interrupt) {
   for (int i(0); i != task_count; ++i)
     asio_service.service().post(non_interruptible_task);
   asio_service.Stop();
-  EXPECT_EQ(task_count, sleeps_not_interrupted);
-  EXPECT_EQ(0, sleeps_interrupted);
-  EXPECT_GE(boost::chrono::high_resolution_clock::now() - start_time, kTaskDuration);
+  CHECK(task_count == sleeps_not_interrupted);
+  CHECK(0 == sleeps_interrupted);
+  duration = boost::chrono::high_resolution_clock::now() - start_time;
+  CHECK(duration >= kTaskDuration);
 }
 
 }  // namespace test

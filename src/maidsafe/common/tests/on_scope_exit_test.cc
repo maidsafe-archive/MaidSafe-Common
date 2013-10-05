@@ -35,50 +35,50 @@ void IncrementAndThrow(std::vector<int32_t>& data) {
   ThrowError(CommonErrors::invalid_parameter);
 }
 
-TEST(OnScopeExit, BEH_RevertValue) {
+TEST_CASE("OnScopeExit revert value", "[Unit]") {
   std::vector<int> before;
   for (int i(0); i != 100; ++i)
     before.push_back(i);
   {
     on_scope_exit strong_guarantee(on_scope_exit::RevertValue(before));
     Increment(before);
-    EXPECT_EQ(before.size(), 101);
+    CHECK(before.size() == 101);
     strong_guarantee.Release();
-    EXPECT_EQ(before.size(), 101);
+    CHECK(before.size() == 101);
   }
-  EXPECT_EQ(before.size(), 101);
+  CHECK(before.size() == 101);
 
   try {
     on_scope_exit strong_guarantee(on_scope_exit::RevertValue(before));
     IncrementAndThrow(before);
   }
   catch (const maidsafe_error&) {
-    EXPECT_EQ(before.size(), 101);
+    CHECK(before.size() == 101);
   }
-  EXPECT_EQ(before.size(), 101);
+  CHECK(before.size() == 101);
 }
 
-TEST(OnScopeExit, BEH_SetAction) {
+TEST_CASE("OnScopeExit set action", "[Unit]") {
   std::vector<int32_t> before;
   for (int i(0); i != 100; ++i)
     before.push_back(i);
   {
     on_scope_exit strong_guarantee([&before]() { before.clear(); });
     Increment(before);
-    EXPECT_EQ(before.size(), 101);
+    CHECK(before.size() == 101);
     strong_guarantee.Release();
-    EXPECT_EQ(before.size(), 101);
+    CHECK(before.size() == 101);
   }
-  EXPECT_EQ(before.size(), 101);
+  CHECK(before.size() == 101);
 
   try {
     on_scope_exit strong_guarantee([&before]() { before.clear(); });
     IncrementAndThrow(before);
   }
   catch (const maidsafe_error&) {
-    EXPECT_TRUE(before.empty());
+    CHECK(before.empty());
   }
-  EXPECT_TRUE(before.empty());
+  CHECK(before.empty());
 }
 
 }  // namespace test

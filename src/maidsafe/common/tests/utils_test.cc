@@ -16,6 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/common/utils.h"
+
 #include <thread>
 #include <algorithm>
 #include <cstdlib>
@@ -30,7 +32,6 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
 namespace bptime = boost::posix_time;

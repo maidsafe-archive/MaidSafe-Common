@@ -18,9 +18,9 @@
 
 #include "maidsafe/common/node_id.h"
 
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
-#include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {

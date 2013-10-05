@@ -35,16 +35,15 @@ include(../../cmake_modules/standard_setup.cmake)
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 glob_dir(Common ${CommonSourcesDir} Common)
 glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
-if(APPLE)
-  # Currently not supporting breakpad using OSX, so remove breakpad header and source
-  list(REMOVE_ITEM CommonAllFiles ${CommonSourcesDir}/breakpad.cc)
-  list(REMOVE_ITEM CommonAllFiles ${CommonSourcesDir}/breakpad.h)
-endif()
-set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
-list(REMOVE_ITEM CommonAllFiles ${TestsMain})
-
 glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
 glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
+set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
+set(CommonGTestsAllFiles ${CommonTestsAllFiles})
+set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
+                        ${CommonSourcesDir}/tests/bounded_string_test.cc
+                        ${CommonSourcesDir}/tests/on_scope_exit_test.cc)
+list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles})
+list(APPEND CommonTestsAllFiles ${TestsMain})
 
 
 #==================================================================================================#
@@ -52,12 +51,13 @@ glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 #==================================================================================================#
 ms_add_static_library(common ${CommonAllFiles})
 ms_add_static_library(network_viewer ${CommonToolsAllFiles})
-add_dependencies(maidsafe_common boost boost_process)
+add_dependencies(maidsafe_common boost boost_process catch)
 # target_include_directories(maidsafe_common INTERFACE ${PROJECT_SOURCE_DIR}/include)
 # target_include_directories(maidsafe_network_viewer INTERFACE ${PROJECT_SOURCE_DIR}/include)
 
 if(MaidsafeTesting)
-  ms_add_executable(TESTcommon "Tests/Common" ${TestsMain} ${CommonTestsAllFiles})
+  ms_add_executable(common_test "Tests/Common" ${CommonTestsAllFiles})
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
   # ms_add_executable(TESTboost "Tests/Common" ${TestsMain} ${BoostTestsAllFiles})
 endif()
 
@@ -78,6 +78,7 @@ target_link_libraries(maidsafe_common ${SYS_LIB})
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
 if(MaidsafeTesting)
+  target_link_libraries(common_test maidsafe_common)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 endif()
@@ -97,6 +98,7 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   add_style_test()
+  add_catch_tests(common_test)
   add_gtests(TESTcommon)
   # add_gtests(TESTboost)
   add_custom_command(TARGET TESTcommon

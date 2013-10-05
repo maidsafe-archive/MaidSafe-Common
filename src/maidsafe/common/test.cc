@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2011 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -22,6 +22,10 @@
 #include <vector>
 
 #include "boost/filesystem/operations.hpp"
+
+#define CATCH_CONFIG_RUNNER
+#include "catch.hpp"
+#include "gtest/gtest.h"
 
 #include "maidsafe/common/utils.h"
 
@@ -94,7 +98,9 @@ uint16_t GetRandomPort() {
   return port;
 }
 
-int ExecuteMain(int argc, char** argv) {
+namespace detail {
+
+int ExecuteGTestMain(int argc, char** argv) {
   log::Logging::Instance().Initialise(argc, argv);
 #if defined(__clang__) || defined(__GNUC__)
   // To allow Clang and GCC advanced diagnostics to work properly.
@@ -107,6 +113,18 @@ int ExecuteMain(int argc, char** argv) {
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
   return (test_count == 0) ? -1 : result;
 }
+
+int ExecuteCatchMain(int argc, char** argv) {
+  auto unused_options(log::Logging::Instance().Initialise(argc, argv));
+  Catch::Session session;
+  auto command_line_result(
+      session.applyCommandLine(argc, argv, Catch::Session::OnUnusedOptions::Ignore));
+  if (command_line_result != 0)
+    LOG(kWarning) << "Catch command line parsing error: " << command_line_result;
+  return session.run();
+}
+
+}  // namespace detail
 
 }  // namespace test
 

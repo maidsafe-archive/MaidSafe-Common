@@ -25,15 +25,15 @@
 
 #include "boost/filesystem/path.hpp"
 
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#endif
+#if defined USE_GTEST
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#ifdef __MSVC__
-#pragma warning(pop)
+#elif defined USE_CATCH
+
+#include "catch.hpp"
+
 #endif
 
 #include "maidsafe/common/log.h"
@@ -59,7 +59,26 @@ void RunInParallel(int thread_count, std::function<void()> functor);
 // Returns a random port in the range [1025, 65535].
 uint16_t GetRandomPort();
 
-int ExecuteMain(int argc, char** argv);
+namespace detail {
+
+int ExecuteGTestMain(int argc, char** argv);
+int ExecuteCatchMain(int argc, char** argv);
+
+}  // namespace detail
+
+#if defined USE_GTEST
+
+inline int ExecuteMain(int argc, char** argv) {
+  return detail::ExecuteGTestMain(argc, argv);
+}
+
+#elif defined USE_CATCH
+
+inline int ExecuteMain(int argc, char** argv) {
+  return detail::ExecuteCatchMain(argc, argv);
+}
+
+#endif
 
 }  // namespace test
 

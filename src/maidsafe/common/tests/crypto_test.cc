@@ -16,13 +16,14 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/common/crypto.h"
+
 #include <cstdlib>
 #include <string>
 
 #include "boost/filesystem/path.hpp"
 #include "boost/filesystem/fstream.hpp"
 
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
