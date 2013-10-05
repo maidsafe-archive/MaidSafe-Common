@@ -122,8 +122,7 @@ enum class PassportErrors {
   fob_parsing_error,
   mid_parsing_error,
   tmid_parsing_error,
-  no_confirmed_fob,
-  no_pending_fob,
+  uninitialised_fob,
   passport_parsing_error,
   public_id_already_exists,
   no_such_public_id
