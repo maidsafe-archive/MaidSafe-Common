@@ -299,6 +299,8 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Attempt to overwrite existing unique data";
     case VaultErrors::data_available_not_given:
       return "Data is held by the network, but was not provided";
+    case VaultErrors::account_already_exists:
+      return "Attempt to create an account which already rexist";
     default:
       return "Unknown error in Vault";
   }
