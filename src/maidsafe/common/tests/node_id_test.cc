@@ -27,7 +27,7 @@ namespace maidsafe {
 
 namespace test {
 
-size_t BitToByteCount(const size_t& bit_count) {
+size_t BitToByteCount(size_t bit_count) {
   return static_cast<size_t>(0.999999 + static_cast<double>(bit_count) / 8);
 }
 

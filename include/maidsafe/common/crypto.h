@@ -126,7 +126,7 @@ std::string XOR(const std::string& first, const std::string& second);
 // parameters are passed.
 template <typename PasswordType>
 SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt,
-                                    const uint32_t& pin,
+                                    uint32_t pin,
                                     const std::string& label = kMaidSafeVersionLabel) {
   if (!password.IsInitialised() || !salt.IsInitialised())
     ThrowError(CommonErrors::uninitialised);
@@ -218,15 +218,15 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
 
 // Compress a string using gzip.  Compression level must be between 0 and 9
 // inclusive or function throws a std::exception.
-CompressedText Compress(const UncompressedText& input, const uint16_t& compression_level);
+CompressedText Compress(const UncompressedText& input, uint16_t compression_level);
 
 // Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
 UncompressedText Uncompress(const CompressedText& input);
 
-std::vector<std::string> SecretShareData(const int32_t& threshold, const int32_t& number_of_shares,
+std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data);
 
-std::string SecretRecoverData(const int32_t& threshold, const std::vector<std::string>& in_strings);
+std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings);
 
 }  // namespace crypto
 

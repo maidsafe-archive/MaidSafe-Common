@@ -24,7 +24,7 @@ namespace bptime = boost::posix_time;
 
 namespace maidsafe {
 
-AsioService::AsioService(const uint32_t& thread_count)
+AsioService::AsioService(uint32_t thread_count)
     : service_(), work_(), threads_(thread_count), mutex_() {
   if (thread_count == 0)
     ThrowError(CommonErrors::invalid_parameter);

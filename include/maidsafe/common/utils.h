@@ -83,10 +83,10 @@ boost::asio::ip::address GetLocalIp(
 int VersionToInt(const std::string& version);
 
 // Converts num bytes to nearest integral decimal SI value.
-std::string BytesToDecimalSiUnits(const uint64_t& num);
+std::string BytesToDecimalSiUnits(uint64_t num);
 
 // Converts num bytes to nearest integral binary SI value.
-std::string BytesToBinarySiUnits(const uint64_t& num);
+std::string BytesToBinarySiUnits(uint64_t num);
 
 // Generates a non-cryptographically-secure 32bit signed integer.
 int32_t RandomInt32();
@@ -95,11 +95,11 @@ int32_t RandomInt32();
 uint32_t RandomUint32();
 
 // Generates a non-cryptographically-secure random string.
-std::string RandomString(const size_t& size);
+std::string RandomString(size_t size);
 
 // Generates a non-cryptographically-secure random string.
 template <typename String>
-String GetRandomString(const size_t& size) {
+String GetRandomString(size_t size) {
   boost::uniform_int<> uniform_distribution(0, 255);
   String random_string(size, 0);
   {
@@ -113,10 +113,10 @@ String GetRandomString(const size_t& size) {
 
 // Generates a non-cryptographically-secure random string containing only
 // alphanumeric characters.
-std::string RandomAlphaNumericString(const size_t& size);
+std::string RandomAlphaNumericString(size_t size);
 
 template <typename String>
-String GetRandomAlphaNumericString(const size_t& size) {
+String GetRandomAlphaNumericString(size_t size) {
   static const char alpha_numerics[] =
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   boost::uniform_int<> uniform_distribution(0, 61);

@@ -300,7 +300,7 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
     case VaultErrors::data_available_not_given:
       return "Data is held by the network, but was not provided";
     case VaultErrors::account_already_exists:
-      return "Attempt to create an account which already rexist";
+      return "Attempt to create an account which already exists";
     default:
       return "Unknown error in Vault";
   }

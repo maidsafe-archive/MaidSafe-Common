@@ -98,7 +98,7 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
   return PlainText(result);
 }
 
-CompressedText Compress(const UncompressedText& input, const uint16_t& compression_level) {
+CompressedText Compress(const UncompressedText& input, uint16_t compression_level) {
   if (compression_level > kMaxCompressionLevel) {
     LOG(kError) << "Requested compression level of " << compression_level << " is above the max of "
                 << kMaxCompressionLevel;
@@ -134,7 +134,7 @@ UncompressedText Uncompress(const CompressedText& input) {
   return UncompressedText(result);
 }
 
-std::vector<std::string> SecretShareData(const int32_t& threshold, const int32_t& number_of_shares,
+std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::StringSource source(
@@ -154,7 +154,7 @@ std::vector<std::string> SecretShareData(const int32_t& threshold, const int32_t
   return out_strings;
 }
 
-std::string SecretRecoverData(const int32_t& threshold,
+std::string SecretRecoverData(int32_t threshold,
                               const std::vector<std::string>& in_strings) {
   int32_t size(static_cast<int32_t>(in_strings.size()));
   int32_t num_to_check = std::min(size, threshold);

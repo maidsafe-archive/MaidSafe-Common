@@ -103,7 +103,7 @@ struct UnitType<DecimalUnit> {
 };
 
 template <typename Units>
-std::string BytesToSiUnits(const uint64_t& num) {
+std::string BytesToSiUnits(uint64_t num) {
   const uint64_t kKilo(UnitType<Units>::kKilo);
   std::array<std::string, 7> qualifier = UnitType<Units>::Qualifier();
 
@@ -198,9 +198,9 @@ int VersionToInt(const std::string& version) {
   return (major_version * 10000) + (minor_version * 1000) + patch_level;
 }
 
-std::string BytesToDecimalSiUnits(const uint64_t& num) { return BytesToSiUnits<DecimalUnit>(num); }
+std::string BytesToDecimalSiUnits(uint64_t num) { return BytesToSiUnits<DecimalUnit>(num); }
 
-std::string BytesToBinarySiUnits(const uint64_t& num) { return BytesToSiUnits<BinaryUnit>(num); }
+std::string BytesToBinarySiUnits(uint64_t num) { return BytesToSiUnits<BinaryUnit>(num); }
 
 int32_t RandomInt32() {
   boost::uniform_int<> uniform_distribution(0, boost::integer_traits<int32_t>::const_max);
@@ -212,9 +212,9 @@ int32_t RandomInt32() {
 
 uint32_t RandomUint32() { return static_cast<uint32_t>(RandomInt32()); }
 
-std::string RandomString(const size_t& size) { return GetRandomString<std::string>(size); }
+std::string RandomString(size_t size) { return GetRandomString<std::string>(size); }
 
-std::string RandomAlphaNumericString(const size_t& size) {
+std::string RandomAlphaNumericString(size_t size) {
   return GetRandomAlphaNumericString<std::string>(size);
 }
 
