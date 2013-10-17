@@ -23,9 +23,6 @@
 #include <mutex>
 #include <queue>
 
-// thread and exception safe queue
-// pop elements by reference to not throw :)
-
 template <typename T>
 class SafeQueue {
  public:
