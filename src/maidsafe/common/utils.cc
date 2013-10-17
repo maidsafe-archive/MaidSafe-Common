@@ -503,7 +503,7 @@ fs::path GetPathFromProgramOptions(const std::string& option_name,
     } else {  // Create new file
       if (option_path.has_filename()) {
         try {
-          std::ofstream ofs(option_path.c_str());
+          std::ofstream(option_path.c_str());
         }
         catch (const std::exception& e) {
           LOG(kError) << "Exception while creating new file: " << e.what();

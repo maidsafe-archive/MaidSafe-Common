@@ -99,7 +99,6 @@ std::string NodeId::EncodeToBinary() const {
 }
 
 void NodeId::DecodeFromBinary(const std::string& binary_id) {
-  std::bitset<8 * kSize> binary_bitset(binary_id);
   if (raw_id_.size() != kSize)
     raw_id_.assign(kSize, 0);
   for (size_t i = 0; i < kSize; ++i) {
