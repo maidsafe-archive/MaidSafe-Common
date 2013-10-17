@@ -105,79 +105,89 @@ const std::string ToBinary(const std::string& raw_id) {
   return result;
 }
 
-TEST(NodeIdTest, BEH_DefaultConstructor) {
+TEST_CASE("NodeId default constructor", "[NodeId][Unit]") {
   NodeId zero_id;
-  EXPECT_TRUE(zero_id.IsZero());
-  EXPECT_EQ(zero_id, NodeId(std::string(NodeId::kSize, 0)));
+  CHECK(zero_id.IsZero());
+  CHECK(zero_id == NodeId(std::string(NodeId::kSize, 0)));
 }
 
-TEST(NodeIdTest, BEH_DistanceCheck) {
+TEST_CASE("NodeId distance check", "[NodeId][Unit]") {  // Timeout 10
   for (size_t i(0); i < 10000; ++i) {
     NodeId one(NodeId::kRandomId);
     NodeId two(NodeId::kRandomId);
-    EXPECT_FALSE(one == two);
-    EXPECT_TRUE((one ^ two) == (two ^ one));
+    CHECK_FALSE(one == two);
+    CHECK((one ^ two) == (two ^ one));
   }
 }
 
-TEST(NodeIdTest, BEH_BitToByteCount) {
+TEST_CASE("NodeId BitToByteCount", "[NodeId][Unit]") {
   for (size_t i = 0; i < NodeId::kSize; ++i) {
-    ASSERT_EQ(i, BitToByteCount(8 * i));
-    for (size_t j = 1; j < 8; ++j) {
-      ASSERT_EQ(i + 1, BitToByteCount((8 * i) + j));
-    }
+    CHECK(i == BitToByteCount(8 * i));
+    for (size_t j = 1; j < 8; ++j)
+      REQUIRE((i + 1) == BitToByteCount((8 * i) + j));
   }
 }
 
-TEST(NodeIdTest, BEH_DefaultCtr) {
+TEST_CASE("NodeId other constructors", "[NodeId][Unit]") {
   NodeId node_id;
-  ASSERT_EQ(NodeId::kSize, node_id.string().size());
+  REQUIRE(NodeId::kSize == node_id.string().size());
   for (size_t i = 0; i < node_id.string().size(); ++i)
-    ASSERT_EQ('\0', node_id.string()[i]);
+    REQUIRE('\0' == node_id.string()[i]);
   std::string hex_id(NodeId::kSize * 2, '0');
-  ASSERT_EQ(hex_id, node_id.ToStringEncoded(NodeId::EncodingType::kHex));
+  REQUIRE(hex_id == node_id.ToStringEncoded(NodeId::EncodingType::kHex));
   std::string bin_id(NodeId::kSize * 8, '0');
-  ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::EncodingType::kBinary));
-  EXPECT_THROW(NodeId dave("not64long"), maidsafe_error);
+  REQUIRE(bin_id == node_id.ToStringEncoded(NodeId::EncodingType::kBinary));
+  CHECK_THROWS_AS(NodeId dave("not64long"), maidsafe_error);
 }
 
-TEST(NodeIdTest, BEH_CopyCtr) {
+TEST_CASE("NodeId copy constructor", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   NodeId kadid2(kadid1);
-  ASSERT_TRUE(kadid1 == kadid2);
+  REQUIRE(kadid1 == kadid2);
   for (size_t i = 0; i < kadid1.string().size(); ++i)
-    ASSERT_EQ(kadid1.string()[i], kadid2.string()[i]);
-  ASSERT_EQ(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary),
+    REQUIRE(kadid1.string()[i] == kadid2.string()[i]);
+  REQUIRE(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary) ==
             kadid2.ToStringEncoded(NodeId::EncodingType::kBinary));
-  ASSERT_EQ(kadid1.ToStringEncoded(NodeId::EncodingType::kHex),
+  REQUIRE(kadid1.ToStringEncoded(NodeId::EncodingType::kHex) ==
             kadid2.ToStringEncoded(NodeId::EncodingType::kHex));
-  ASSERT_EQ(kadid1.string(), kadid2.string());
+  REQUIRE(kadid1.string() == kadid2.string());
+  NodeId kadid3(std::move(kadid2));
+  REQUIRE(kadid1 == kadid3);
 }
 
-TEST(NodeIdTest, BEH_KadIdTypeCtr) {
+TEST_CASE("NodeId assignment", "[NodeId][Unit]") {
+  NodeId kadid1(NodeId::kRandomId), kadid2(NodeId::kRandomId);
+  kadid2 = kadid1;
+  REQUIRE(kadid1 == kadid2);
+  NodeId kadid3(NodeId::kRandomId);
+  kadid3 = std::move(kadid2);
+  REQUIRE(kadid1 == kadid3);
+}
+
+TEST_CASE("NodeId Kademlia Id type constructor", "[NodeId][Unit]") {
   std::string min_id(NodeId::kSize, 0);
-  ASSERT_EQ(NodeId::kSize, min_id.size());
+  REQUIRE(NodeId::kSize == min_id.size());
   for (int i = 0; i < NodeId::kSize; ++i)
-    ASSERT_EQ(min_id[i], '\0');
+    REQUIRE(min_id[i] == '\0');
   NodeId max_id(NodeId::kMaxId);
-  ASSERT_EQ(NodeId::kSize, max_id.string().size());
+  REQUIRE(NodeId::kSize == max_id.string().size());
   for (int i = 0; i < NodeId::kSize; ++i)
-    ASSERT_EQ(-1, max_id.string()[i]);
+    REQUIRE(char(-1) == max_id.string()[i]);
   NodeId rand_id(NodeId::kRandomId);
-  ASSERT_EQ(NodeId::kSize, rand_id.string().size());
+  REQUIRE(NodeId::kSize == rand_id.string().size());
   // TODO(Fraser#5#): 2010-06-06 - Test for randomness properly
-  ASSERT_NE(rand_id.string(), NodeId(NodeId::kRandomId).string());
-  EXPECT_THROW(NodeId(static_cast<NodeId::IdType>(-999)), maidsafe_error);
+  REQUIRE_FALSE(rand_id.string() == NodeId(NodeId::kRandomId).string());
+  CHECK_THROWS_AS(NodeId(static_cast<NodeId::IdType>(-999)), maidsafe_error);
 }
 
-TEST(NodeIdTest, BEH_StringCtr) {
+TEST_CASE("NodeId string constructor", "[NodeId][Unit]") {
   std::string rand_str(RandomString(NodeId::kSize));
   NodeId id1(rand_str);
-  ASSERT_TRUE(id1.string() == rand_str);
-  EXPECT_THROW(NodeId id2(rand_str.substr(0, NodeId::kSize - 1)), maidsafe_error);
+  REQUIRE(id1.string() == rand_str);
+  CHECK_THROWS_AS(NodeId id2(rand_str.substr(0, NodeId::kSize - 1)), maidsafe_error);
 }
 
-TEST(NodeIdTest, BEH_EncodingCtr) {
+TEST_CASE("NodeId encoding constructor", "[NodeId][Unit]") {
   std::string known_raw(NodeId::kSize, 0);
   for (char c = 0; c < NodeId::kSize; ++c)
     known_raw.at(static_cast<uint8_t>(c)) = c;
@@ -202,42 +212,36 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
         break;
     }
 
-    EXPECT_THROW(NodeId bad_id(bad_encoded, type), maidsafe_error);
-    //    ASSERT_TRUE(bad_id.string().empty());
-    //    ASSERT_FALSE(bad_id.IsValid());
-    //    ASSERT_TRUE(bad_id.ToStringEncoded(type).empty());
+    CHECK_THROWS_AS(NodeId bad_id(bad_encoded, type), maidsafe_error);
+    //    REQUIRE(bad_id.string().empty());
+    //    REQUIRE_FALSE(bad_id.IsValid());
+    //    REQUIRE(bad_id.ToStringEncoded(type).empty());
     NodeId rand_id(encoded, type);
-    ASSERT_EQ(rand_str, rand_id.string());
-    ASSERT_EQ(encoded, rand_id.ToStringEncoded(type));
+    REQUIRE(rand_str == rand_id.string());
+    REQUIRE(encoded == rand_id.ToStringEncoded(type));
     NodeId known_id(known_encoded, type);
-    ASSERT_EQ(known_raw, known_id.string());
-    ASSERT_EQ(known_encoded, known_id.ToStringEncoded(type));
+    REQUIRE(known_raw == known_id.string());
+    REQUIRE(known_encoded == known_id.ToStringEncoded(type));
     switch (i) {
       case static_cast<int>(NodeId::EncodingType::kBinary) :
-        ASSERT_EQ(
-            "000000000000000100000010000000110000010000000101000001100000"
-            "011100001000000010010000101000001011000011000000110100001110"
-            "000011110001000000010001000100100001001100010100000101010001"
-            "011000010111000110000001100100011010000110110001110000011101"
-            "000111100001111100100000001000010010001000100011001001000010"
-            "010100100110001001110010100000101001001010100010101100101100"
-            "001011010010111000101111001100000011000100110010001100110011"
-            "010000110101001101100011011100111000001110010011101000111011"
-            "00111100001111010011111000111111",
-            known_encoded);
+        REQUIRE("000000000000000100000010000000110000010000000101000001100000"
+                "011100001000000010010000101000001011000011000000110100001110"
+                "000011110001000000010001000100100001001100010100000101010001"
+                "011000010111000110000001100100011010000110110001110000011101"
+                "000111100001111100100000001000010010001000100011001001000010"
+                "010100100110001001110010100000101001001010100010101100101100"
+                "001011010010111000101111001100000011000100110010001100110011"
+                "010000110101001101100011011100111000001110010011101000111011"
+                "00111100001111010011111000111111" == known_encoded);
         break;
       case static_cast<int>(NodeId::EncodingType::kHex) :
-        ASSERT_EQ(
-            "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d"
-            "1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b"
-            "3c3d3e3f",
-            known_encoded);
+        REQUIRE("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d"
+                "1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b"
+                "3c3d3e3f" == known_encoded);
         break;
       case static_cast<int>(NodeId::EncodingType::kBase64) :
-        ASSERT_EQ(
-            "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss"
-            "LS4vMDEyMzQ1Njc4OTo7PD0+Pw==",
-            known_encoded);
+        REQUIRE("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss"
+                "LS4vMDEyMzQ1Njc4OTo7PD0+Pw==" == known_encoded);
         break;
       default:
         break;
@@ -245,130 +249,74 @@ TEST(NodeIdTest, BEH_EncodingCtr) {
   }
 }
 
-TEST(NodeIdTest, BEH_OperatorEqual) {
+TEST_CASE("NodeId operator equal", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   std::string id(kadid1.string());
   NodeId kadid2(id);
-  ASSERT_TRUE(kadid1 == kadid2) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid2 = "
-                                << kadid2.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid1 == kadid2);
   std::string id1;
   for (size_t i = 0; i < BitToByteCount(NodeId::kSize * 8) * 2; ++i) {
     id1 += "f";
   }
   NodeId kadid3(id1, NodeId::EncodingType::kHex);
-  ASSERT_FALSE(kadid1 == kadid3) << "kadid1 = "
-                                 << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                 << std::endl << "kadid3 = "
-                                 << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                 << std::endl;
+  REQUIRE_FALSE(kadid1 == kadid3);
 }
 
-TEST(NodeIdTest, BEH_OperatorDifferent) {
+TEST_CASE("NodeId operator different", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   std::string id(kadid1.string());
   NodeId kadid2(id);
-  ASSERT_FALSE(kadid1 != kadid2) << "kadid1 = "
-                                 << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                 << std::endl << "kadid2 = "
-                                 << kadid2.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                 << std::endl;
+  REQUIRE_FALSE(kadid1 != kadid2);
   std::string id1;
   for (size_t i = 0; i < BitToByteCount(NodeId::kSize * 8) * 2; ++i)
     id1 += "f";
   NodeId kadid3(id1, NodeId::EncodingType::kHex);
-  ASSERT_TRUE(kadid1 != kadid3) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid3 = "
-                                << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid1 != kadid3);
 }
 
-TEST(NodeIdTest, BEH_OperatorGreaterThan) {
+TEST_CASE("NodeId operator greater than", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   while (kadid1 == NodeId(NodeId::kMaxId))
     kadid1 = NodeId(NodeId::kRandomId);
   NodeId kadid2(kadid1);
-  ASSERT_FALSE(kadid1 > kadid2) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid2 = "
-                                << kadid2.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE_FALSE(kadid1 > kadid2);
   NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid3 > kadid1) << "kadid3 = "
-                               << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary) << std::endl
-                               << "kadid1 = "
-                               << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                               << std::endl;
-  ASSERT_FALSE(kadid1 > kadid3) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid3 = "
-                                << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid3 > kadid1);
+  REQUIRE_FALSE(kadid1 > kadid3);
 }
 
-TEST(NodeIdTest, BEH_OperatorLessThan) {
+TEST_CASE("NodeId operator less than", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   while (kadid1 == NodeId(NodeId::kMaxId))
     kadid1 = NodeId(NodeId::kRandomId);
   NodeId kadid2(kadid1);
-  ASSERT_FALSE(kadid1 < kadid2) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid2 = "
-                                << kadid2.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE_FALSE(kadid1 < kadid2);
   NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid1 < kadid3) << "kadid1 = "
-                               << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary) << std::endl
-                               << "kadid3 = "
-                               << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                               << std::endl;
-  ASSERT_FALSE(kadid3 < kadid1) << "kadid3 = "
-                                << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid1 < kadid3);
+  REQUIRE_FALSE(kadid3 < kadid1);
 }
 
-TEST(NodeIdTest, BEH_OperatorGreaterEqual) {
+TEST_CASE("NodeId operator greater than or equal to", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   while (kadid1 == NodeId(NodeId::kMaxId))
     kadid1 = NodeId(NodeId::kRandomId);
   NodeId kadid2(kadid1);
-  ASSERT_TRUE(kadid1 >= kadid2) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid2 = "
-                                << kadid2.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid1 >= kadid2);
   NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid3 >= kadid1) << "kadid3 = "
-                                << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid3 >= kadid1);
 }
 
-TEST(NodeIdTest, BEH_OperatorLessEqual) {
+TEST_CASE("NodeId operator less than or equal to", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId);
   while (kadid1 == NodeId(NodeId::kMaxId))
     kadid1 = NodeId(NodeId::kRandomId);
   NodeId kadid2(kadid1);
-  ASSERT_TRUE(kadid1 <= kadid2) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid2 = "
-                                << kadid2.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid1 <= kadid2);
   NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid1 <= kadid3) << "kadid1 = "
-                                << kadid1.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl << "kadid3 = "
-                                << kadid3.ToStringEncoded(NodeId::EncodingType::kBinary)
-                                << std::endl;
+  REQUIRE(kadid1 <= kadid3);
 }
 
-TEST(NodeIdTest, BEH_OperatorXOR) {
+TEST_CASE("NodeId operator XOR", "[NodeId][Unit]") {
   NodeId kadid1(NodeId::kRandomId), kadid2(NodeId::kRandomId);
   NodeId kadid3(kadid1 ^ kadid2);
   std::string binid1(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary));
@@ -384,30 +332,17 @@ TEST(NodeIdTest, BEH_OperatorXOR) {
   std::string binzero;
   while (binzero.size() < binid1.size())
     binzero += "0";
-  ASSERT_NE(binzero, kadid3.ToStringEncoded(NodeId::EncodingType::kBinary));
-  ASSERT_EQ(binresult, kadid3.ToStringEncoded(NodeId::EncodingType::kBinary));
+  REQUIRE(binzero != kadid3.ToStringEncoded(NodeId::EncodingType::kBinary));
+  REQUIRE(binresult == kadid3.ToStringEncoded(NodeId::EncodingType::kBinary));
   NodeId kadid4(kadid2 ^ kadid1);
-  ASSERT_EQ(binresult, kadid4.ToStringEncoded(NodeId::EncodingType::kBinary));
+  REQUIRE(binresult == kadid4.ToStringEncoded(NodeId::EncodingType::kBinary));
   NodeId kadid5(kadid1.string());
   NodeId kadid6(kadid1 ^ kadid5);
-  ASSERT_EQ(binzero, kadid6.ToStringEncoded(NodeId::EncodingType::kBinary));
+  REQUIRE(binzero == kadid6.ToStringEncoded(NodeId::EncodingType::kBinary));
   std::string zero(kadid6.string());
-  ASSERT_EQ(BitToByteCount(NodeId::kSize * 8), zero.size());
+  REQUIRE(BitToByteCount(NodeId::kSize * 8) == zero.size());
   for (size_t i = 0; i < zero.size(); ++i)
-    ASSERT_EQ('\0', zero[i]);
-}
-
-TEST(NodeIdTest, BEH_OperatorEql) {
-  NodeId kadid1(NodeId::kRandomId), kadid2;
-  kadid2 = kadid1;
-  ASSERT_TRUE(kadid1 == kadid2);
-  for (size_t i = 0; i < kadid1.string().size(); ++i)
-    ASSERT_EQ(kadid1.string()[i], kadid2.string()[i]);
-  ASSERT_EQ(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary),
-            kadid2.ToStringEncoded(NodeId::EncodingType::kBinary));
-  ASSERT_EQ(kadid1.ToStringEncoded(NodeId::EncodingType::kHex),
-            kadid2.ToStringEncoded(NodeId::EncodingType::kHex));
-  ASSERT_EQ(kadid1.string(), kadid2.string());
+    REQUIRE('\0' == zero[i]);
 }
 
 }  // namespace test
