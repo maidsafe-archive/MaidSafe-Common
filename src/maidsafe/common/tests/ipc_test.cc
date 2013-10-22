@@ -1,4 +1,4 @@
-/*  Copyright 2009 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -25,7 +25,10 @@
 
 namespace maidsafe {
 
+namespace ipc {
+
 namespace test {
+
 namespace bi = boost::interprocess;
 // when run in ctest these tests will be seperate processes. We must run them in sequence
 
@@ -40,9 +43,9 @@ TEST_CASE("ipc create", "[ipc][Unit]") {
   simple.a = 1;
   simple.str = "a test string";
 
-  CHECK_NOTHROW(ipc::CreateSharedMem<Simple>("struct_test", simple));
-  CHECK_NOTHROW(ipc::CreateSharedMem<int>("int_test", int_val));
-  CHECK_NOTHROW(ipc::CreateSharedMem<bi::string>("str_test", str));
+  CHECK_NOTHROW(CreateSharedMem<Simple>("struct_test", simple));
+  CHECK_NOTHROW(CreateSharedMem<int>("int_test", int_val));
+  CHECK_NOTHROW(CreateSharedMem<bi::string>("str_test", str));
 }
 
 TEST_CASE("ipc read", "[ipc][Unit]") {
@@ -56,18 +59,20 @@ TEST_CASE("ipc read", "[ipc][Unit]") {
   simple_orig.a = 1;
   simple_orig.str = "a test string";
 
-  CHECK(simple_orig.a == ipc::ReadSharedMem<Simple>("struct_test").a);
-  CHECK(simple_orig.str == ipc::ReadSharedMem<Simple>(std::string("struct_test")).str);
-  CHECK(int_val_orig == ipc::ReadSharedMem<int>("int_test"));
-  CHECK(str_orig == ipc::ReadSharedMem<bi::string>("str_test"));
+  CHECK(simple_orig.a == ReadSharedMem<Simple>("struct_test").a);
+  CHECK(simple_orig.str == ReadSharedMem<Simple>(std::string("struct_test")).str);
+  CHECK(int_val_orig == ReadSharedMem<int>("int_test"));
+  CHECK(str_orig == ReadSharedMem<bi::string>("str_test"));
 }
 
 TEST_CASE("ipc delete", "[ipc][Unit]") {
   // always passes, even if SHM noexists
-  CHECK_NOTHROW(ipc::RemoveSharedMem("vec_test"));
-  CHECK_NOTHROW(ipc::RemoveSharedMem("str_test"));
+  CHECK_NOTHROW(RemoveSharedMem("vec_test"));
+  CHECK_NOTHROW(RemoveSharedMem("str_test"));
 }
 
 }  // namespace test
+
+}  // namespace ipc
 
 }  // namespace maidsafe

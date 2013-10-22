@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -20,22 +20,19 @@
 #define MAIDSAFE_COMMON_IPC_H_
 
 #include <string>
-#include <memory>
 
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <boost/interprocess/containers/string.hpp>
-
+#include "boost/interprocess/managed_shared_memory.hpp"
+#include "boost/interprocess/containers/string.hpp"
 
 namespace maidsafe {
-namespace ipc {
 
-namespace bi = boost::interprocess;
+namespace ipc {
 
 // NOTE!, dereferencing pointers in containers is not allowed in these functions as is
 // therefor no stl containers or types that require dereferencing will work
-// unless bi::offset_ptr is used to create the pointer types in containers
+// unless boost::interprocess::offset_ptr is used to create the pointer types in containers
 // or classes. No VECTORS, MAP or SETS etc. please roll your own in that case from
-// http://www.boost.org/doc/libs/Release/doc/html/index.html
+// http://www.boost.org/doc/libs/release/doc/html/interprocess.html
 
 // This is an extreme simplification of boost::ipc to allow simple types can be passed.
 // there is no mem trimming at all, we always use the full 65536 bytes
@@ -46,9 +43,10 @@ namespace bi = boost::interprocess;
 
 template <typename Type>
 void CreateSharedMem(std::string name, Type type) {
-  bi::shared_memory_object::remove(name.c_str());
+  boost::interprocess::shared_memory_object::remove(name.c_str());
   // Create a managed shared memory segment of large arbitary size !
-  bi::managed_shared_memory segment(bi::create_only, name.c_str(), 65536);
+  boost::interprocess::managed_shared_memory segment(boost::interprocess::create_only, name.c_str(),
+                                                     65536);
   // Create an object of Type initialized to type
   segment.construct<Type>("a") (type);
 }
@@ -56,13 +54,14 @@ void CreateSharedMem(std::string name, Type type) {
 template <typename Type>
 auto ReadSharedMem(std::string name)->Type {
   // Open managed segment
-  bi::managed_shared_memory segment(bi::open_only, name.c_str());
-  return *bi::offset_ptr<Type>(segment.find<Type>("a").first);
+  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
+  return *boost::interprocess::offset_ptr<Type>(segment.find<Type>("a").first);
 }
 
 void RemoveSharedMem(std::string name);
 
 }  // namespace ipc
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_IPC_H_

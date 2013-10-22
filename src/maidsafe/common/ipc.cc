@@ -1,4 +1,4 @@
-/*  Copyright 2009 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -15,17 +15,15 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
-#include "maidsafe/common/ipc.h"
 
-#include <boost/interprocess/managed_shared_memory.hpp>
-#include <string>
+#include "maidsafe/common/ipc.h"
 
 namespace maidsafe {
 
 namespace ipc {
 
 void RemoveSharedMem(std::string name) {
-  bi::shared_memory_object::remove(name.c_str());
+  boost::interprocess::shared_memory_object::remove(name.c_str());
 }
 
 }  // namespace ipc
