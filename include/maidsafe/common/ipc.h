@@ -45,9 +45,9 @@ namespace bi = boost::interprocess;
 template <typename Type>
 void CreateSharedMem(std::string name, Type type) {
   bi::shared_memory_object::remove(name.c_str());
-    //Create a managed shared memory segment of large arbitary size !
+  // Create a managed shared memory segment of large arbitary size !
   bi::managed_shared_memory segment(bi::create_only, name.c_str(), 65536);
-    //Create an object of Type initialized to type
+  // Create an object of Type initialized to type
   segment.construct<Type>("a") (type);
 }
 
