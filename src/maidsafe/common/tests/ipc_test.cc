@@ -33,9 +33,13 @@ TEST_CASE("ipc create", "[ipc][Unit]") {
   int int_val(123);
   bi::string str("test ipc");
   struct Simple {
-    int a = 1;
-    bi::string str = "a test string";
+    int a;
+    bi::string str;
   } simple;
+
+  simple.a = 1;
+  simple.str = "a test string";
+
   CHECK_NOTHROW(ipc::CreateSharedMem<Simple>("struct_test", simple));
   CHECK_NOTHROW(ipc::CreateSharedMem<int>("int_test", int_val));
   CHECK_NOTHROW(ipc::CreateSharedMem<bi::string>("str_test", str));
@@ -45,9 +49,13 @@ TEST_CASE("ipc read", "[ipc][Unit]") {
   int int_val_orig(123);
   bi::string str_orig("test ipc");
   struct Simple {
-    int a = 1;
-    bi::string str = "a test string";
+    int a;
+    bi::string str;
   } simple_orig;
+
+  simple_orig.a = 1;
+  simple_orig.str = "a test string";
+
   CHECK(simple_orig.a == ipc::ReadSharedMem<Simple>("struct_test").a);
   CHECK(simple_orig.str == ipc::ReadSharedMem<Simple>(std::string("struct_test")).str);
   CHECK(int_val_orig == ipc::ReadSharedMem<int>("int_test"));

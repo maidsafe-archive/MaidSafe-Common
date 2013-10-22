@@ -24,7 +24,7 @@ namespace maidsafe {
 
 namespace ipc {
 
-void RemoveSharedMem(std::string name){
+void RemoveSharedMem(std::string name) {
   bi::shared_memory_object::remove(name.c_str());
 }
 
