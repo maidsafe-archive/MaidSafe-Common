@@ -20,6 +20,7 @@
 #define MAIDSAFE_COMMON_IPC_H_
 
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/containers/string.hpp>
 #include <string>
 
 namespace maidsafe {
@@ -39,6 +40,10 @@ namespace bi = boost::interprocess;
 // increasing number of items is trivial if required and is done by naming
 // each instance (where now we have "a" declared) and adding several
 // items to the SHM. "a" is used here to make mem surfing a little harder
+
+// these must be used as string types std::string WILL FAIL
+typedef bi::allocator<char, boost::interprocess::managed_shared_memory::segment_manager> CharAllocator;
+typedef bi::basic_string<char, std::char_traits<char>, CharAllocator> string;
 
 template <typename Type>
 void CreateSharedMem(std::string name, Type type) {

@@ -26,32 +26,32 @@
 namespace maidsafe {
 
 namespace test {
-
+namespace bi = boost::interprocess;
 // when run in ctest these tests will be seperate processes. We must run them in sequence
 
 TEST_CASE("ipc create", "[ipc][Unit]") {
   int int_val(123);
-  std::string str("test ipc");
+  bi::string str("test ipc");
   struct Simple {
     int a = 1;
-    std::string str = "a long test string";
+    bi::string str = "a test string";
   } simple;
   CHECK_NOTHROW(ipc::CreateSharedMem<Simple>("struct_test", simple));
   CHECK_NOTHROW(ipc::CreateSharedMem<int>("int_test", int_val));
-  CHECK_NOTHROW(ipc::CreateSharedMem<std::string>("str_test", str));
+  CHECK_NOTHROW(ipc::CreateSharedMem<bi::string>("str_test", str));
 }
 
 TEST_CASE("ipc read", "[ipc][Unit]") {
   int int_val_orig(123);
-  std::string str_orig("test ipc");
+  bi::string str_orig("test ipc");
   struct Simple {
-    int a{1};
-    std::string str{"a long test string"};
+    int a = 1;
+    bi::string str = "a test string";
   } simple_orig;
-  CHECK(simple_orig.a == ipc::ReadSharedMem<Simple>(std::string("struct_test")).a);
+  CHECK(simple_orig.a == ipc::ReadSharedMem<Simple>("struct_test").a);
   CHECK(simple_orig.str == ipc::ReadSharedMem<Simple>(std::string("struct_test")).str);
-  CHECK(int_val_orig == ipc::ReadSharedMem<int>(std::string("int_test")));
-  CHECK(str_orig == ipc::ReadSharedMem<std::string>(std::string("str_test")));
+  CHECK(int_val_orig == ipc::ReadSharedMem<int>("int_test"));
+  CHECK(str_orig == ipc::ReadSharedMem<bi::string>("str_test"));
 }
 
 TEST_CASE("ipc delete", "[ipc][Unit]") {
