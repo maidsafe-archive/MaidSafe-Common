@@ -57,7 +57,7 @@ template <typename Type>
 auto ReadSharedMemory(std::string name)->Type {
   // Open managed segment
   boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
-  return *boost::interprocess::offset_ptr<Type>(segment.find<Type>("a").first);
+  return *segment.find<Type>("a").first;
 }
 
 
