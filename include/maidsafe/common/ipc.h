@@ -41,6 +41,8 @@ namespace ipc {
 // each instance (where now we have "a" declared) and adding several
 // items to the SHM. "a" is used here to make mem surfing a little harder
 
+void RemoveSharedMemory(std::string name);
+
 template <typename Type>
 void CreateSharedMemory(std::string name, Type type) {
   RemoveSharedMemory(name);
@@ -58,7 +60,7 @@ auto ReadSharedMemory(std::string name)->Type {
   return *boost::interprocess::offset_ptr<Type>(segment.find<Type>("a").first);
 }
 
-void RemoveSharedMemory(std::string name);
+
 
 }  // namespace ipc
 

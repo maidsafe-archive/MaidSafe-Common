@@ -53,19 +53,22 @@ TEST_CASE("IPC functions", "[ipc][Unit]") {
     bi::string str;
   } simple;
   simple.a = RandomInt32();
-  simple.str.assign(RandomString(100).c_str(), 100);
+  auto rand_string(RandomString(100));
+  bi::string tmp(rand_string.c_str(), rand_string.size());
+  simple.str = tmp;
   const Simple kSimpleOriginal(simple);
 
-  int int_val(RandomInt32());
-  const int kIntOriginal(int_val);
+  int32_t int_val(RandomInt32());
+  const int32_t kIntOriginal(int_val);
 
-  bi::string str(RandomString(200).c_str(), 200);
+  auto rand_string2(RandomString(200));
+  bi::string str(rand_string2.c_str(), rand_string.size());
   const bi::string kStrOriginal(str);
 
   // Check reading shared memory that hasn't been created yet throws.
   auto all_should_throw([=] {
-    CHECK_THROWS_AS(ReadSharedMemory<Simple>(kStructName), bi::interprocess_exception);
-    CHECK_THROWS_AS(ReadSharedMemory<int>(kIntName), bi::interprocess_exception);
+    CHECK_THROWS_AS(ReadSharedMemory<Simple>(kStructName), std::exception);
+    CHECK_THROWS_AS(ReadSharedMemory<int32_t>(kIntName), bi::interprocess_exception);
     CHECK_THROWS_AS(ReadSharedMemory<bi::string>(kStringName), bi::interprocess_exception);
   });
   std::thread reader_before_creation(all_should_throw);
@@ -73,14 +76,14 @@ TEST_CASE("IPC functions", "[ipc][Unit]") {
 
   // Create the shared memory segments.
   CHECK_NOTHROW(CreateSharedMemory<Simple>(kStructName, simple));
-  CHECK_NOTHROW(CreateSharedMemory<int>(kIntName, int_val));
+  CHECK_NOTHROW(CreateSharedMemory<int32_t>(kIntName, int_val));
   CHECK_NOTHROW(CreateSharedMemory<bi::string>(kStringName, str));
 
   // Check reading works.
   auto all_should_match([=] {
     CHECK(kSimpleOriginal.a == ReadSharedMemory<Simple>(kStructName).a);
     CHECK(kSimpleOriginal.str == ReadSharedMemory<Simple>(std::string(kStructName)).str);
-    CHECK(kIntOriginal == ReadSharedMemory<int>(kIntName));
+    CHECK(kIntOriginal == ReadSharedMemory<int32_t>(kIntName));
     CHECK(kStrOriginal == ReadSharedMemory<bi::string>(kStringName));
   });
   std::thread reader(all_should_match);
