@@ -22,7 +22,7 @@ namespace maidsafe {
 
 namespace ipc {
 
-void RemoveSharedMem(std::string name) {
+void RemoveSharedMemory(std::string name) {
   boost::interprocess::shared_memory_object::remove(name.c_str());
 }
 

@@ -18,10 +18,13 @@
 
 #include "maidsafe/common/ipc.h"
 
+#include <functional>
 #include <string>
-#include <vector>
+#include <thread>
 
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
@@ -30,45 +33,72 @@ namespace ipc {
 namespace test {
 
 namespace bi = boost::interprocess;
-// when run in ctest these tests will be seperate processes. We must run them in sequence
 
-TEST_CASE("ipc create", "[ipc][Unit]") {
-  int int_val(123);
-  bi::string str("test ipc");
+TEST_CASE("IPC functions", "[ipc][Unit]") {
+  const std::string kStructName("struct_test");
+  const std::string kIntName("int_test");
+  const std::string kStringName("str_test");
+
+  // Add scoped cleanup mechanism.
+  std::function<void()> remove_shared_memory([=] {
+    RemoveSharedMemory(kStructName);
+    RemoveSharedMemory(kIntName);
+    RemoveSharedMemory(kStringName);
+  });
+  on_scope_exit cleanup(remove_shared_memory);
+
+  // Set up objects for sharing via IPC.
   struct Simple {
     int a;
     bi::string str;
   } simple;
+  simple.a = RandomInt32();
+  simple.str.assign(RandomString(100).c_str(), 100);
+  const Simple kSimpleOriginal(simple);
 
-  simple.a = 1;
-  simple.str = "a test string";
+  int int_val(RandomInt32());
+  const int kIntOriginal(int_val);
 
-  CHECK_NOTHROW(CreateSharedMem<Simple>("struct_test", simple));
-  CHECK_NOTHROW(CreateSharedMem<int>("int_test", int_val));
-  CHECK_NOTHROW(CreateSharedMem<bi::string>("str_test", str));
-}
+  bi::string str(RandomString(200).c_str(), 200);
+  const bi::string kStrOriginal(str);
 
-TEST_CASE("ipc read", "[ipc][Unit]") {
-  int int_val_orig(123);
-  bi::string str_orig("test ipc");
-  struct Simple {
-    int a;
-    bi::string str;
-  } simple_orig;
+  // Check reading shared memory that hasn't been created yet throws.
+  auto all_should_throw([=] {
+    CHECK_THROWS_AS(ReadSharedMemory<Simple>(kStructName), bi::interprocess_exception);
+    CHECK_THROWS_AS(ReadSharedMemory<int>(kIntName), bi::interprocess_exception);
+    CHECK_THROWS_AS(ReadSharedMemory<bi::string>(kStringName), bi::interprocess_exception);
+  });
+  std::thread reader_before_creation(all_should_throw);
+  reader_before_creation.join();
 
-  simple_orig.a = 1;
-  simple_orig.str = "a test string";
+  // Create the shared memory segments.
+  CHECK_NOTHROW(CreateSharedMemory<Simple>(kStructName, simple));
+  CHECK_NOTHROW(CreateSharedMemory<int>(kIntName, int_val));
+  CHECK_NOTHROW(CreateSharedMemory<bi::string>(kStringName, str));
 
-  CHECK(simple_orig.a == ReadSharedMem<Simple>("struct_test").a);
-  CHECK(simple_orig.str == ReadSharedMem<Simple>(std::string("struct_test")).str);
-  CHECK(int_val_orig == ReadSharedMem<int>("int_test"));
-  CHECK(str_orig == ReadSharedMem<bi::string>("str_test"));
-}
+  // Check reading works.
+  auto all_should_match([=] {
+    CHECK(kSimpleOriginal.a == ReadSharedMemory<Simple>(kStructName).a);
+    CHECK(kSimpleOriginal.str == ReadSharedMemory<Simple>(std::string(kStructName)).str);
+    CHECK(kIntOriginal == ReadSharedMemory<int>(kIntName));
+    CHECK(kStrOriginal == ReadSharedMemory<bi::string>(kStringName));
+  });
+  std::thread reader(all_should_match);
+  reader.join();
 
-TEST_CASE("ipc delete", "[ipc][Unit]") {
-  // always passes, even if SHM noexists
-  CHECK_NOTHROW(RemoveSharedMem("vec_test"));
-  CHECK_NOTHROW(RemoveSharedMem("str_test"));
+  // Check modifying the original objects doesn't affect reading from shared memory
+  ++simple.a;
+  simple.str.clear();
+  ++int_val;
+  str.clear();
+  std::thread another_reader(all_should_match);
+  another_reader.join();
+
+  // Check deleting works.  Always passes, even if named shared memory doesn't exist.
+  CHECK_NOTHROW(remove_shared_memory());
+  CHECK_NOTHROW(RemoveSharedMemory("vec_test"));
+  std::thread reader_after_deletion(all_should_throw);
+  reader_after_deletion.join();
 }
 
 }  // namespace test

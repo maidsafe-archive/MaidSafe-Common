@@ -34,7 +34,7 @@ namespace ipc {
 // or classes. No VECTORS, MAP or SETS etc. please roll your own in that case from
 // http://www.boost.org/doc/libs/release/doc/html/interprocess.html
 
-// This is an extreme simplification of boost::ipc to allow simple types can be passed.
+// This is an extreme simplification of boost::ipc to allow simple types to be passed.
 // there is no mem trimming at all, we always use the full 65536 bytes
 // there is also only the ability to have one item in the SHM
 // increasing number of items is trivial if required and is done by naming
@@ -42,23 +42,23 @@ namespace ipc {
 // items to the SHM. "a" is used here to make mem surfing a little harder
 
 template <typename Type>
-void CreateSharedMem(std::string name, Type type) {
-  boost::interprocess::shared_memory_object::remove(name.c_str());
+void CreateSharedMemory(std::string name, Type type) {
+  RemoveSharedMemory(name);
   // Create a managed shared memory segment of large arbitary size !
   boost::interprocess::managed_shared_memory segment(boost::interprocess::create_only, name.c_str(),
                                                      65536);
   // Create an object of Type initialized to type
-  segment.construct<Type>("a") (type);
+  segment.construct<Type>("a")(type);
 }
 
 template <typename Type>
-auto ReadSharedMem(std::string name)->Type {
+auto ReadSharedMemory(std::string name)->Type {
   // Open managed segment
   boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
   return *boost::interprocess::offset_ptr<Type>(segment.find<Type>("a").first);
 }
 
-void RemoveSharedMem(std::string name);
+void RemoveSharedMemory(std::string name);
 
 }  // namespace ipc
 
