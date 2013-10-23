@@ -70,6 +70,45 @@ std::string ConstructCommandLine(std::vector<std::string> process_args) {
 
 }  // unnamed namespace
 
+TEST_CASE("ipc create", "[ipc][Unit]") {
+  int int_val(123);
+  bi::string str("test ipc");
+  struct Simple {
+    int a;
+    bi::string str;
+  } simple;
+
+  simple.a = 1;
+  simple.str = "a test string";
+
+  CHECK_NOTHROW(CreateSharedMemory<Simple>("struct_test", simple));
+  CHECK_NOTHROW(CreateSharedMemory<int>("int_test", int_val));
+  CHECK_NOTHROW(CreateSharedMemory<bi::string>("str_test", str));
+}
+
+TEST_CASE("ipc read", "[ipc][Unit]") {
+  int int_val_orig(123);
+  bi::string str_orig("test ipc");
+  struct Simple {
+    int a;
+    bi::string str;
+  } simple_orig;
+
+  simple_orig.a = 1;
+  simple_orig.str = "a test string";
+
+  CHECK(simple_orig.a == ReadSharedMemory<Simple>("struct_test").a);
+  CHECK(simple_orig.str == ReadSharedMemory<Simple>(std::string("struct_test")).str);
+  CHECK(int_val_orig == ReadSharedMemory<int>("int_test"));
+  CHECK(str_orig == ReadSharedMemory<bi::string>("str_test"));
+}
+
+TEST_CASE("ipc delete", "[ipc][Unit]") {
+  // always passes, even if SHM noexists
+  CHECK_NOTHROW(RemoveSharedMemory("vec_test"));
+  CHECK_NOTHROW(RemoveSharedMemory("str_test"));
+}
+
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
   const std::string kStructName("threaded_struct_test");
   const std::string kIntName("threaded_int_test");
