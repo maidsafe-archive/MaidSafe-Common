@@ -108,12 +108,12 @@ TEST_CASE("ipc delete", "[ipc][Unit]") {
 }
 
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
-
+  const std::string kTestName(RandomString(8));
   // Add scoped cleanup mechanism.
-  struct Clean {
-    Clean() { RemoveSharedMemory("thread_test"); }
-    ~Clean() { RemoveSharedMemory("thread_test"); }
-  } cleanup;
+  // struct Clean {
+  //   Clean() { RemoveSharedMemory(kTestName); }
+  //   ~Clean() { RemoveSharedMemory(kTestName); }
+  // } cleanup;
 
   // Set up object for sharing via IPC.
   std::vector<std::string> test1_vec;
@@ -122,18 +122,18 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
 
   // Check reading shared memory that hasn't been created yet throws.
   auto all_should_throw([=] {
-    CHECK_THROWS_AS(ReadSharedMemory("thread_test", 1), bi::interprocess_exception);
+    CHECK_THROWS_AS(ReadSharedMemory(kTestName, 1), bi::interprocess_exception);
   });
   std::thread reader_before_creation(all_should_throw);
   reader_before_creation.join();
 
   // Create the shared memory segments.
-  CHECK_NOTHROW(CreateSharedMemory("thread_test", test1_vec));
+  CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
 
 
   // Check reading works.
   auto all_should_match([=] {
-    CHECK((test1_vec) == (ReadSharedMemory("thread_test", test1_vec.size())));
+    CHECK((test1_vec) == (ReadSharedMemory(kTestName, test1_vec.size())));
   });
   std::thread reader(all_should_match);
   reader.join();
@@ -145,18 +145,14 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
   another_reader.join();
 
   // Check deleting works.  Always passes, even if named shared memory doesn't exist.
-  CHECK_NOTHROW(RemoveSharedMemory("thread_test"));
+  CHECK_NOTHROW(RemoveSharedMemory(kTestName));
   std::thread reader_after_deletion(all_should_throw);
   reader_after_deletion.join();
+  RemoveSharedMemory(kTestName);
 }
 
 TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
-  const std::string kTestName("bptest");
-  // Add scoped cleanup mechanism.
-  struct Clean {
-    Clean() { RemoveSharedMemory("bptest"); }
-    ~Clean() { RemoveSharedMemory("bptest"); }
-  } cleanup;
+  const std::string kTestName(RandomAlphaNumericString(8));
 
   // Set up objects for sharing via IPC.
   std::vector<std::string> test1_vec;
@@ -199,7 +195,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
   CHECK(exit_code == 0);
-  RemoveSharedMemory("bptest"); 
+  RemoveSharedMemory(kTestName); 
 }
 
 }  // namespace test
