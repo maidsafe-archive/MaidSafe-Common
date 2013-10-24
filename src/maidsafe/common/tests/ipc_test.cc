@@ -118,7 +118,7 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
   // Set up object for sharing via IPC.
   std::vector<std::string> test1_vec;
   for (auto i(0); i < 5; ++i)
-    test1_vec.push_back(RandomString(10 * i));
+    test1_vec.push_back(RandomAlphaNumericString(10 * i));
 
   // Check reading shared memory that hasn't been created yet throws.
   auto all_should_throw([=] {
@@ -162,7 +162,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   std::vector<std::string> test1_vec;
   std::string total;
   for (auto i(0); i < 5; ++i) {
-    std::string test_string(RandomString(10 * (i + 1)));
+    std::string test_string(RandomAlphaNumericString(10 * (i + 1)));
     test1_vec.push_back(test_string);
     total += test_string;
   }
