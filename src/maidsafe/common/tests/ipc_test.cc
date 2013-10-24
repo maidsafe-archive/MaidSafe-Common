@@ -131,7 +131,7 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
 
   // Check reading works.
   auto all_should_match([=] {
-    CHECK((test1_vec) == (ReadSharedMemory("thread_test", test1_vec.size())));
+    CHECK((test1_vec) == (ReadSharedMemory("thread_test", static_cast<int>(test1_vec.size()))));
   });
   std::thread reader(all_should_match);
   reader.join();

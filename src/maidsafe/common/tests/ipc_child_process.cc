@@ -26,7 +26,7 @@
 namespace bi = boost::interprocess;
 
 int main(int argc, char* argv[]) {
-  if (argc != 5) {
+  if (argc != 4) {
     std::cout << "Invalid args." << argc << "  Returning 1.\n";
     return -1;
   }
