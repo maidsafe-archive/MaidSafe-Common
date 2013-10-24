@@ -21,80 +21,35 @@
 #include <vector>
 
 #include "maidsafe/common/ipc.h"
-
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/utils.h"
 namespace bi = boost::interprocess;
 
 int main(int argc, char* argv[]) {
-  if (argc != 8) {
-    std::cout << "Invalid args.  Returning 1.\n";
-    return 1;
+  if (argc != 5) {
+    std::cout << "Invalid args." << argc << "  Returning 1.\n";
+    return -1;
   }
 
-  const std::string kStructName(argv[1]);
-  const std::string kIntName(argv[2]);
-  const std::string kStringName(argv[3]);
-  struct Simple {
-    int a;
-    bi::string str;
-  } simple;
-  simple.a = std::stoi(std::string(argv[4]));
-  simple.str = argv[5];
-  const Simple kSimpleOriginal(simple);
-  const int32_t kIntOriginal(static_cast<int32_t>(std::stoi(std::string(argv[6]))));
-  const bi::string kStrOriginal(argv[7]);
+  const std::string TestName(argv[1]);
+  const std::string TestAnswer(argv[3]);
+  const int TestNumber(std::stoi(std::string(argv[2])));
 
   try {
-    if (kSimpleOriginal.a != maidsafe::ipc::ReadSharedMemory<Simple>(kStructName).a) {
-      std::cout << "kSimpleOriginal.a [" << kSimpleOriginal.a
-                << "] != ReadSharedMemory<Simple>(kStructName).a ["
-                << maidsafe::ipc::ReadSharedMemory<Simple>(kStructName).a << "].  Returning 2.\n";
-      return 2;
-    }
-  }
-  catch (const std::exception& e) {
-    std::cout << e.what() << "  Returning 3.\n";
-    return 3;
-  }
+    auto vec_strings = maidsafe::ipc::ReadSharedMemory(TestName, TestNumber);
+    std::string answer;
+    for (auto& vec_string: vec_strings)
+      answer += vec_string;
 
-  try {
-    if (kSimpleOriginal.str !=
-        maidsafe::ipc::ReadSharedMemory<Simple>(std::string(kStructName)).str) {
-      std::cout << "kSimpleOriginal.str [" << kSimpleOriginal.str
-                << "] != ReadSharedMemory<Simple>(std::string(kStructName)).str ["
-                << maidsafe::ipc::ReadSharedMemory<Simple>(std::string(kStructName)).str
-                << "].  Returning 4.\n";
-      return 4;
+    if (TestAnswer !=
+        maidsafe::Base64Encode(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(answer).string())) {
+      std::cout << "Failed  Returning 2.\n";
+      return -2;
     }
   }
-  catch (const std::exception& e) {
-    std::cout << e.what() << "  Returning 5.\n";
-    return 5;
-  }
-
-  try {
-    if (kIntOriginal != maidsafe::ipc::ReadSharedMemory<int32_t>(kIntName)) {
-      std::cout << "kIntOriginal [" << kIntOriginal
-                << "] != ReadSharedMemory<int32_t>(kIntName) ["
-                << maidsafe::ipc::ReadSharedMemory<int32_t>(kIntName) << "].  Returning 6.\n";
-      return 6;
-    }
-  }
-  catch (const std::exception& e) {
-    std::cout << e.what() << "  Returning 7.\n";
-    return 7;
-  }
-
-  try {
-    if (kStrOriginal != maidsafe::ipc::ReadSharedMemory<bi::string>(kStringName)) {
-      std::cout << "kStrOriginal [" << kStrOriginal
-                << "] != ReadSharedMemory<bi::string>(kStringName) ["
-                << maidsafe::ipc::ReadSharedMemory<bi::string>(kStringName) << "].  Returning 8.\n";
-      return 8;
-    }
-  }
-  catch (const std::exception& e) {
-    std::cout << e.what() << "  Returning 9.\n";
-    return 9;
+  catch (...) {
+    std::cout << "exeption  Returning 3.\n";
+    return -3;
   }
 
   return 0;

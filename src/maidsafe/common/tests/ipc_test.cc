@@ -32,6 +32,7 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/crypto.h"
 
 #include "ipc_child_process_location.h"  // NOLINT
 
@@ -71,205 +72,126 @@ std::string ConstructCommandLine(std::vector<std::string> process_args) {
 }  // unnamed namespace
 
 TEST_CASE("ipc create", "[ipc][Unit]") {
-  int int_val(123);
-  bi::string str("test ipc");
-  struct Simple {
-    int a;
-    bi::string str;
-  } simple;
 
-  simple.a = 1;
-  simple.str = "a test string";
+  std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  std::string d = "test string 4xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-  CHECK_NOTHROW(CreateSharedMemory<Simple>("struct_test", simple));
-  CHECK_NOTHROW(CreateSharedMemory<int>("int_test", int_val));
-  CHECK_NOTHROW(CreateSharedMemory<bi::string>("str_test", str));
-}
+  std::vector<std::string> test_vec;
+  test_vec.push_back(a);
+  test_vec.push_back(b);
+  test_vec.push_back(c);
+  test_vec.push_back(a);
+  CHECK_NOTHROW(CreateSharedMemory("test", test_vec));
+ }
 
 TEST_CASE("ipc read", "[ipc][Unit]") {
-  int int_val_orig(123);
-  bi::string str_orig("test ipc");
-  struct Simple {
-    int a;
-    bi::string str;
-  } simple_orig;
+  std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+  std::string d = "test string 4xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-  simple_orig.a = 1;
-  simple_orig.str = "a test string";
-
-  CHECK(simple_orig.a == ReadSharedMemory<Simple>("struct_test").a);
-  CHECK(simple_orig.str == ReadSharedMemory<Simple>(std::string("struct_test")).str);
-  CHECK(int_val_orig == ReadSharedMemory<int>("int_test"));
-  CHECK(str_orig == ReadSharedMemory<bi::string>("str_test"));
-}
+  std::vector<std::string> test_vec;
+  test_vec.push_back(a);
+  test_vec.push_back(b);
+  test_vec.push_back(c);
+  test_vec.push_back(a);
+  REQUIRE_NOTHROW(ReadSharedMemory("test", 4));
+  CHECK(test_vec == ReadSharedMemory("test", 4));
+  }
 
 TEST_CASE("ipc delete", "[ipc][Unit]") {
   // always passes, even if SHM noexists
-  CHECK_NOTHROW(RemoveSharedMemory("vec_test"));
-  CHECK_NOTHROW(RemoveSharedMemory("str_test"));
+  CHECK_NOTHROW(RemoveSharedMemory("test"));
+  CHECK_NOTHROW(RemoveSharedMemory("test"));
 }
 
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
-  const std::string kStructName("threaded_struct_test");
-  const std::string kIntName("threaded_int_test");
-  const std::string kStringName("threaded_str_test");
 
   // Add scoped cleanup mechanism.
-  std::function<void()> remove_shared_memory([=] {
-    RemoveSharedMemory(kStructName);
-    RemoveSharedMemory(kIntName);
-    RemoveSharedMemory(kStringName);
-  });
-  on_scope_exit cleanup(remove_shared_memory);
-  remove_shared_memory();
+  struct Clean {
+    Clean() { RemoveSharedMemory("thread_test"); }
+    ~Clean() { RemoveSharedMemory("thread_test"); }
+  } cleanup;
 
-  // Set up objects for sharing via IPC.
-  struct Simple {
-    int a;
-    bi::string str;
-  } simple;
-  simple.a = RandomInt32();
-  auto rand_string(RandomString(100));
-  bi::string tmp(rand_string.c_str(), rand_string.size());
-  simple.str = tmp;
-  const Simple kSimpleOriginal(simple);
-
-  int32_t int_val(RandomInt32());
-  const int32_t kIntOriginal(int_val);
-
-  auto rand_string2(RandomString(200));
-  bi::string str(rand_string2.c_str(), rand_string.size());
-  const bi::string kStrOriginal(str);
+  // Set up object for sharing via IPC.
+  std::vector<std::string> test1_vec;
+  for (auto i(0); i < 5; ++i)
+    test1_vec.push_back(RandomString(10 * i));
 
   // Check reading shared memory that hasn't been created yet throws.
   auto all_should_throw([=] {
-    CHECK_THROWS_AS(ReadSharedMemory<Simple>(kStructName), std::exception);
-    CHECK_THROWS_AS(ReadSharedMemory<int32_t>(kIntName), bi::interprocess_exception);
-    CHECK_THROWS_AS(ReadSharedMemory<bi::string>(kStringName), bi::interprocess_exception);
+    CHECK_THROWS_AS(ReadSharedMemory("thread_test", 1), bi::interprocess_exception);
   });
   std::thread reader_before_creation(all_should_throw);
   reader_before_creation.join();
 
   // Create the shared memory segments.
-  CHECK_NOTHROW(CreateSharedMemory<Simple>(kStructName, simple));
-  CHECK_NOTHROW(CreateSharedMemory<int32_t>(kIntName, int_val));
-  CHECK_NOTHROW(CreateSharedMemory<bi::string>(kStringName, str));
+  CHECK_NOTHROW(CreateSharedMemory("thread_test", test1_vec));
+
 
   // Check reading works.
   auto all_should_match([=] {
-    CHECK(kSimpleOriginal.a == ReadSharedMemory<Simple>(kStructName).a);
-    CHECK(kSimpleOriginal.str == ReadSharedMemory<Simple>(std::string(kStructName)).str);
-    CHECK(kIntOriginal == ReadSharedMemory<int32_t>(kIntName));
-    CHECK(kStrOriginal == ReadSharedMemory<bi::string>(kStringName));
+    CHECK((test1_vec) == (ReadSharedMemory("thread_test", test1_vec.size())));
   });
   std::thread reader(all_should_match);
   reader.join();
 
   // Check modifying the original objects doesn't affect reading from shared memory
-  ++simple.a;
-  simple.str.clear();
-  ++int_val;
-  str.clear();
+  test1_vec.clear();
+  CHECK(test1_vec.empty());
   std::thread another_reader(all_should_match);
   another_reader.join();
 
   // Check deleting works.  Always passes, even if named shared memory doesn't exist.
-  CHECK_NOTHROW(remove_shared_memory());
-  CHECK_NOTHROW(RemoveSharedMemory("vec_test"));
+  CHECK_NOTHROW(RemoveSharedMemory("thread_test"));
   std::thread reader_after_deletion(all_should_throw);
   reader_after_deletion.join();
 }
 
 TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
-  const std::string kStructName("struct_test");
-  const std::string kIntName("int_test");
-  const std::string kStringName("str_test");
-
+  const std::string kTestName("bptest");
   // Add scoped cleanup mechanism.
-  std::function<void()> remove_shared_memory([=] {
-    RemoveSharedMemory(kStructName);
-    RemoveSharedMemory(kIntName);
-    RemoveSharedMemory(kStringName);
-  });
-  on_scope_exit cleanup(remove_shared_memory);
-  remove_shared_memory();
+  struct Clean {
+    Clean() { RemoveSharedMemory("bptest"); }
+    ~Clean() { RemoveSharedMemory("bptest"); }
+  } cleanup;
 
   // Set up objects for sharing via IPC.
-  struct Simple {
-    int a;
-    bi::string str;
-  } simple;
-  simple.a = RandomInt32();
-  auto rand_string(RandomAlphaNumericString(100));
-  bi::string tmp(rand_string.c_str(), rand_string.size());
-  simple.str = tmp;
-  const Simple kSimpleOriginal(simple);
-
-  int32_t int_val(RandomInt32());
-  const int32_t kIntOriginal(int_val);
-
-  auto rand_string2(RandomAlphaNumericString(200));
-  bi::string str(rand_string2.c_str(), rand_string.size());
-  const bi::string kStrOriginal(str);
-
+  std::vector<std::string> test1_vec;
+  std::string total;
+  for (auto i(0); i < 5; ++i) {
+    std::string test_string(RandomString(10 * (i + 1)));
+    test1_vec.push_back(test_string);
+    total += test_string;
+  }
+  std::string kAnswer(maidsafe::Base64Encode(
+                                crypto::Hash<crypto::SHA512>(total).string()));
   // Set up boost::process args for passing to 'ipc_child_process' executable
   const auto kExePath(GetIpcChildProcessLocation());
   std::vector<std::string> process_args;
   process_args.push_back(kExePath);
-  process_args.push_back(kStructName);
-  process_args.push_back(kIntName);
-  process_args.push_back(kStringName);
-  process_args.push_back(std::to_string(kSimpleOriginal.a));
-  process_args.push_back(kSimpleOriginal.str.c_str());
-  process_args.push_back(std::to_string(kIntOriginal));
-  process_args.push_back(kStrOriginal.c_str());
+  process_args.push_back(kTestName);
+  process_args.push_back(std::to_string(test1_vec.size()));
+  process_args.push_back(kAnswer);
   const auto kCommandLine(ConstructCommandLine(process_args));
   boost::system::error_code error_code;
 
-  // Check reading shared memory that hasn't been created yet throws.
-  bp::child child(bp::execute(bp::initializers::run_exe(kExePath),
-                              bp::initializers::set_cmd_line(kCommandLine),
-                              bp::initializers::set_on_error(error_code)));
-  REQUIRE_FALSE(error_code);
-  auto exit_code(wait_for_exit(child, error_code));
-  REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 3UL);  // kStructName unavailable
+  int exit_code(99);
 
   // Create kStructName, leave others unavailable
-  CHECK_NOTHROW(CreateSharedMemory<Simple>(kStructName, simple));
-  child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
+  CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
+  bp::child child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
                                 bp::initializers::set_cmd_line(kCommandLine),
                                 bp::initializers::set_on_error(error_code)));
   REQUIRE_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 7UL);  // kIntName unavailable
-
-  // Create kIntName, leave kStringName unavailable
-  CHECK_NOTHROW(CreateSharedMemory<int32_t>(kIntName, int_val));
-  child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
-                                bp::initializers::set_cmd_line(kCommandLine),
-                                bp::initializers::set_on_error(error_code)));
-  REQUIRE_FALSE(error_code);
-  exit_code = wait_for_exit(child, error_code);
-  REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 9UL);  // kStringName unavailable
-
-  // Create kStringName and check for success
-  CHECK_NOTHROW(CreateSharedMemory<bi::string>(kStringName, str));
-  child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
-                                bp::initializers::set_cmd_line(kCommandLine),
-                                bp::initializers::set_on_error(error_code)));
-  REQUIRE_FALSE(error_code);
-  exit_code = wait_for_exit(child, error_code);
-  REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 0UL);
-
-  // Check modifying the original objects doesn't affect reading from shared memory
-  ++simple.a;
-  simple.str.clear();
-  ++int_val;
-  str.clear();
+  CHECK(exit_code == 0);  // kIntName unavailable
+  exit_code = 99;
+    // Check modifying the original objects doesn't affect reading from shared memory
+  test1_vec.clear();
   child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
                                 bp::initializers::set_cmd_line(kCommandLine),
                                 bp::initializers::set_on_error(error_code)));
@@ -277,16 +199,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
   CHECK(exit_code == 0);
-
-  // Check deleting works.
-  CHECK_NOTHROW(remove_shared_memory());
-  child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
-                                bp::initializers::set_cmd_line(kCommandLine),
-                                bp::initializers::set_on_error(error_code)));
-  REQUIRE_FALSE(error_code);
-  exit_code = wait_for_exit(child, error_code);
-  REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 3);  // kStructName unavailable
+  RemoveSharedMemory("bptest"); 
 }
 
 }  // namespace test

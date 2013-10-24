@@ -20,6 +20,7 @@
 #define MAIDSAFE_COMMON_IPC_H_
 
 #include <string>
+#include <vector>
 
 #include "boost/interprocess/managed_shared_memory.hpp"
 #include "boost/interprocess/containers/string.hpp"
@@ -40,25 +41,14 @@ namespace ipc {
 // increasing number of items is trivial if required and is done by naming
 // each instance (where now we have "a" declared) and adding several
 // items to the SHM. "a" is used here to make mem surfing a little harder
+namespace bi = boost::interprocess;
+typedef bi::allocator<char, bi::managed_shared_memory::segment_manager> CharAllocator;
+typedef bi::basic_string<char, std::char_traits<char>, CharAllocator> bi_string;
+
 
 void RemoveSharedMemory(std::string name);
-
-template <typename Type>
-void CreateSharedMemory(std::string name, Type type) {
-  RemoveSharedMemory(name);
-  // Create a managed shared memory segment of large arbitary size !
-  boost::interprocess::managed_shared_memory segment(boost::interprocess::create_only, name.c_str(),
-                                                     65536);
-  // Create an object of Type initialized to type
-  segment.construct<Type>("a")(type);
-}
-
-template <typename Type>
-auto ReadSharedMemory(std::string name)->Type {
-  // Open managed segment
-  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
-  return *segment.find<Type>("a").first;
-}
+void CreateSharedMemory(std::string name, std::vector<std::string> items);
+std::vector<std::string> ReadSharedMemory(std::string name, int number);
 
 
 

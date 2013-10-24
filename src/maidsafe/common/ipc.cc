@@ -26,6 +26,34 @@ void RemoveSharedMemory(std::string name) {
   boost::interprocess::shared_memory_object::remove(name.c_str());
 }
 
+void CreateSharedMemory(std::string name, std::vector<std::string> items) {
+  RemoveSharedMemory(name);
+  // Create a managed shared memory segment of large arbitary size !
+  bi::managed_shared_memory segment(bi::create_only, name.c_str(),
+                                                     65536);
+  // Create an object of Type initialized to type
+  CharAllocator charallocator(segment.get_segment_manager());
+  for (size_t i(0); i < items.size(); ++i) {
+    bi_string str(charallocator);
+    str = items.at(i).c_str();
+    segment.construct<bi_string>(std::to_string(i).c_str())(str);
+  }
+}
+
+std::vector<std::string> ReadSharedMemory(std::string name, int number) {
+  // Open managed segment
+  boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
+  CharAllocator charallocator(segment.get_segment_manager());
+  bi_string str(charallocator);
+  std::vector<std::string> ret_vec;
+  for (int i(0); i < number; ++i) {
+    auto res = segment.find<bi_string>(std::to_string(i).c_str());
+    ret_vec.push_back(std::string(res.first->c_str(), res.first->size()));
+  }
+  return ret_vec;
+}
+
+
 }  // namespace ipc
 
 }  // namespace maidsafe
