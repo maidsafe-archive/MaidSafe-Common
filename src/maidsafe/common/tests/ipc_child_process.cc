@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   try {
     auto vec_strings = maidsafe::ipc::ReadSharedMemory(TestName, TestNumber);
     std::string answer;
-    for (auto& vec_string: vec_strings)
+    for (auto& vec_string : vec_strings)
       answer += vec_string;
 
     if (TestAnswer !=

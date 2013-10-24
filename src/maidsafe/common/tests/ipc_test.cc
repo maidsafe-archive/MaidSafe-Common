@@ -72,7 +72,6 @@ std::string ConstructCommandLine(std::vector<std::string> process_args) {
 }  // unnamed namespace
 
 TEST_CASE("ipc create", "[ipc][Unit]") {
-
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -84,7 +83,7 @@ TEST_CASE("ipc create", "[ipc][Unit]") {
   test_vec.push_back(c);
   test_vec.push_back(a);
   CHECK_NOTHROW(CreateSharedMemory("test", test_vec));
- }
+}
 
 TEST_CASE("ipc read", "[ipc][Unit]") {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -99,7 +98,7 @@ TEST_CASE("ipc read", "[ipc][Unit]") {
   test_vec.push_back(a);
   REQUIRE_NOTHROW(ReadSharedMemory("test", 4));
   CHECK(test_vec == ReadSharedMemory("test", 4));
-  }
+}
 
 TEST_CASE("ipc delete", "[ipc][Unit]") {
   // always passes, even if SHM noexists
@@ -108,7 +107,6 @@ TEST_CASE("ipc delete", "[ipc][Unit]") {
 }
 
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
-
   // Add scoped cleanup mechanism.
   struct Clean {
     Clean() { RemoveSharedMemory("thread_test"); }
@@ -199,7 +197,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
   CHECK(exit_code == 0);
-  RemoveSharedMemory("bptest"); 
+  RemoveSharedMemory("bptest");
 }
 
 }  // namespace test
