@@ -178,15 +178,14 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
 
   int exit_code(99);
 
-  // Create kStructName, leave others unavailable
-  CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
+   CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
   bp::child child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
                                 bp::initializers::set_cmd_line(kCommandLine),
                                 bp::initializers::set_on_error(error_code)));
   REQUIRE_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 0);  // kIntName unavailable
+  CHECK(exit_code == 0);
   exit_code = 99;
     // Check modifying the original objects doesn't affect reading from shared memory
   test1_vec.clear();
