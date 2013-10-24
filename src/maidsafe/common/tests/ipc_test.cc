@@ -109,11 +109,11 @@ TEST_CASE("ipc delete", "[ipc][Unit]") {
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
   const std::string kTestName(RandomString(8));
   // Add scoped cleanup mechanism.
-   struct Clean {
-     Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
-     ~Clean() { RemoveSharedMemory(kTestName); }
-     std::string kTestName;
-   } cleanup(kTestName);
+  struct Clean {
+    explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
+    ~Clean() { RemoveSharedMemory(kTestName); }
+    const std::string kTestName;
+  } cleanup(kTestName);
 
   // Set up object for sharing via IPC.
   std::vector<std::string> test1_vec;
@@ -133,7 +133,7 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
 
   // Check reading works.
   auto all_should_match([=] {
-    CHECK((test1_vec) == (ReadSharedMemory(kTestName, test1_vec.size())));
+    CHECK((test1_vec) == (ReadSharedMemory(kTestName, static_cast<int>(test1_vec.size()))));
   });
   std::thread reader(all_should_match);
   reader.join();
@@ -154,9 +154,9 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
 TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   const std::string kTestName(RandomAlphaNumericString(8));
   struct Clean {
-    Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
+    explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
     ~Clean() { RemoveSharedMemory(kTestName); }
-    std::string kTestName;
+    const std::string kTestName;
   } cleanup(kTestName);
   // Set up objects for sharing via IPC.
   std::vector<std::string> test1_vec;
@@ -180,10 +180,10 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
 
   int exit_code(99);
 
-   CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
+  CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
   bp::child child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
-                                bp::initializers::set_cmd_line(kCommandLine),
-                                bp::initializers::set_on_error(error_code)));
+                              bp::initializers::set_cmd_line(kCommandLine),
+                              bp::initializers::set_on_error(error_code)));
   REQUIRE_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
@@ -198,7 +198,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   exit_code = wait_for_exit(child, error_code);
   REQUIRE_FALSE(error_code);
   CHECK(exit_code == 0);
-  RemoveSharedMemory(kTestName); 
+  RemoveSharedMemory(kTestName);
 }
 
 }  // namespace test
