@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/ipc.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
@@ -35,7 +36,7 @@ void CreateSharedMemory(std::string name, std::vector<std::string> items) {
   CharAllocator charallocator(segment.get_segment_manager());
   for (size_t i(0); i < items.size(); ++i) {
     bi_string str(charallocator);
-    str = items.at(i).c_str();
+    str = Base64Encode(items.at(i)).c_str();
     segment.construct<bi_string>(std::to_string(i).c_str())(str);
   }
 }
@@ -48,7 +49,7 @@ std::vector<std::string> ReadSharedMemory(std::string name, int number) {
   std::vector<std::string> ret_vec;
   for (int i(0); i < number; ++i) {
     auto res = segment.find<bi_string>(std::to_string(i).c_str());
-    ret_vec.push_back(std::string(res.first->c_str(), res.first->size()));
+    ret_vec.push_back(Base64Decode(std::string(res.first->c_str(), res.first->size())));
   }
   return ret_vec;
 }
