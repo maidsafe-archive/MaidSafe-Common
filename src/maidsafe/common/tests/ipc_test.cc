@@ -107,7 +107,7 @@ TEST_CASE("ipc delete", "[ipc][Unit]") {
 }
 
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
-  const std::string kTestName(RandomAlphaNumericString(8));
+  const std::string kTestName(RandomString(8));
   // Add scoped cleanup mechanism.
   struct Clean {
     explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
@@ -152,7 +152,7 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
 }
 
 TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
-  const std::string kTestName(RandomAlphaNumericString(8));
+  const std::string kTestName(RandomString(8));
   struct Clean {
     explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
     ~Clean() { RemoveSharedMemory(kTestName); }
@@ -166,13 +166,13 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
     test1_vec.push_back(test_string);
     total += test_string;
   }
-  std::string kAnswer(maidsafe::Base64Encode(
+  std::string kAnswer(maidsafe::HexEncode(
                                 crypto::Hash<crypto::SHA512>(total).string()));
   // Set up boost::process args for passing to 'ipc_child_process' executable
   const auto kExePath(GetIpcChildProcessLocation());
   std::vector<std::string> process_args;
   process_args.push_back(kExePath);
-  process_args.push_back(kTestName);
+  process_args.push_back(HexEncode(kTestName));
   process_args.push_back(std::to_string(test1_vec.size()));
   process_args.push_back(kAnswer);
   const auto kCommandLine(ConstructCommandLine(process_args));

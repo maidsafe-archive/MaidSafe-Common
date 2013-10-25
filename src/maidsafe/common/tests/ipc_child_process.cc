@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  const std::string TestName(argv[1]);
+  const std::string TestName(maidsafe::HexDecode(argv[1]));
   const std::string TestAnswer(argv[3]);
   const int TestNumber(std::stoi(std::string(argv[2])));
 
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
       answer += vec_string;
 
     if (TestAnswer !=
-        maidsafe::Base64Encode(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(answer).string())) {
+        maidsafe::HexEncode(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(answer).string())) {
       std::cout << "Failed  Returning 2.\n";
       return -2;
     }
