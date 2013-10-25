@@ -23,11 +23,13 @@ namespace maidsafe {
 
 namespace ipc {
 
-void RemoveSharedMemory(std::string name) {
+void RemoveSharedMemory(std::string name_in) {
+  std::string name(HexEncode(name_in));
   boost::interprocess::shared_memory_object::remove(name.c_str());
 }
 
-void CreateSharedMemory(std::string name, std::vector<std::string> items) {
+void CreateSharedMemory(std::string name_in, std::vector<std::string> items) {
+  std::string name(HexEncode(name_in));
   RemoveSharedMemory(name);
   // Create a managed shared memory segment of large arbitary size !
   bi::managed_shared_memory segment(bi::create_only , name.c_str(),
@@ -41,7 +43,8 @@ void CreateSharedMemory(std::string name, std::vector<std::string> items) {
   }
 }
 
-std::vector<std::string> ReadSharedMemory(std::string name, int number) {
+std::vector<std::string> ReadSharedMemory(std::string name_in, int number) {
+  std::string name(HexEncode(name_in));
   // Open managed segment
   boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
   CharAllocator charallocator(segment.get_segment_manager());

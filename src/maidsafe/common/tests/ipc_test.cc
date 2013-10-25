@@ -107,7 +107,7 @@ TEST_CASE("ipc delete", "[ipc][Unit]") {
 }
 
 TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
-  const std::string kTestName(RandomString(8));
+  const std::string kTestName(RandomAlphaNumericString(8));
   // Add scoped cleanup mechanism.
   struct Clean {
     explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
