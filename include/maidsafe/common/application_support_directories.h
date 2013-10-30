@@ -19,6 +19,10 @@
 #ifndef MAIDSAFE_COMMON_APPLICATION_SUPPORT_DIRECTORIES_H_
 #define MAIDSAFE_COMMON_APPLICATION_SUPPORT_DIRECTORIES_H_
 
+#ifndef MAIDSAFE_WIN32
+#include <pwd.h>
+#endif
+
 #include <cstdlib>
 #include <string>
 
