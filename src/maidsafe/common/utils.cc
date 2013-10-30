@@ -458,25 +458,6 @@ bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration& du
   return true;
 }
 
-fs::path GetHomeDir() {
-#if defined(MAIDSAFE_WIN32)
-  std::string env_home2(getenv("HOMEPATH"));
-  std::string env_home_drive(getenv("HOMEDRIVE"));
-  if ((!env_home2.empty()) && (!env_home_drive.empty()))
-    return fs::path(env_home_drive + env_home2);
-#elif defined(MAIDSAFE_APPLE) || defined(MAIDSAFE_LINUX)
-  struct passwd* p = getpwuid(getuid());  // NOLINT (dirvine)
-  std::string home(p->pw_dir);
-  if (!home.empty())
-    return fs::path(home);
-  std::string env_home(getenv("HOME"));
-  if (!env_home.empty())
-    return fs::path(env_home);
-#endif
-  LOG(kError) << "Cannot deduce home directory path";
-  return fs::path();
-}
-
 fs::path GetPathFromProgramOptions(const std::string& option_name,
                                    const po::variables_map& variables_map, bool is_dir,
                                    bool create_new_if_absent) {

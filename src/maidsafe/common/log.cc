@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <iterator>
 #include <mutex>
 #include <thread>
@@ -124,7 +125,7 @@ const char* GetAnsiColourCode(Colour colour) {
 void ColouredPrint(Colour colour, const std::string& text) {
   // On non-Windows platforms, we rely on the TERM variable.
   std::lock_guard<std::mutex> lock(g_console_mutex());
-  auto env_ptr = getenv("TERM");
+  auto env_ptr = std::getenv("TERM");
   const std::string kTerm(env_ptr ? env_ptr : "");
   const bool kTermSupportsColour(kTerm == "xterm" || kTerm == "xterm-color" ||
                                  kTerm == "xterm-256color" || kTerm == "screen" ||

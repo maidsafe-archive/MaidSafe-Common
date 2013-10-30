@@ -1,4 +1,4 @@
-/*  Copyright 2011 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,44 +16,22 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_BREAKPAD_H_
-#define MAIDSAFE_COMMON_BREAKPAD_H_
+#include "maidsafe/common/config.h"
 
-#include <string>
-
-#ifdef WIN32
-#include "breakpad/client/windows/handler/exception_handler.h"
-#else
-#include "breakpad/client/linux/handler/exception_handler.h"
-#endif
-
-#include "maidsafe/common/version.h"
-
-#if MAIDSAFE_COMMON_VERSION != 1200
-#error This API is not compatible with the installed library.\
-    Please update the MaidSafe-Common library.
+#if !defined TARGET_PLATFORM || !defined TARGET_ARCHITECTURE
+#error TARGET_PLATFORM and TARGET_ARCHITECTURE must be defined.
 #endif
 
 namespace maidsafe {
 
-namespace crash_report {
+std::string kTargetPlatform() {
+  static const std::string target_platform(BOOST_PP_STRINGIZE(TARGET_PLATFORM));
+  return target_platform;
+}
 
-#ifdef WIN32
-bool DumpCallback(const wchar_t* dump_path, const wchar_t* minidump_id, void* context,
-                  EXCEPTION_POINTERS* /*exinfo*/, MDRawAssertionInfo* /*assertion*/,
-                  bool succeeded);
-#else
-bool DumpCallback(const char* dump_path, const char* minidump_id, void* context, bool succeeded);
-#endif
-
-struct ProjectInfo {
-  ProjectInfo(std::string project_name, std::string project_version);
-  std::string version;
-  std::string name;
-};
-
-}  // namespace crash_report
+std::string kTargetArchitecture() {
+  static const std::string target_architecture(BOOST_PP_STRINGIZE(TARGET_ARCHITECTURE));
+  return target_architecture;
+}
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_BREAKPAD_H_
