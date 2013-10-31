@@ -41,6 +41,7 @@ set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(CommonGTestsAllFiles ${CommonTestsAllFiles})
 set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/bounded_string_test.cc
+                        ${CommonSourcesDir}/tests/errors_test.cc
                         ${CommonSourcesDir}/tests/ipc_test.cc
                         ${CommonSourcesDir}/tests/node_id_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc)
