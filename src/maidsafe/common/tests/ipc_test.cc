@@ -169,7 +169,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   std::string kAnswer(maidsafe::HexEncode(
                                 crypto::Hash<crypto::SHA512>(total).string()));
   // Set up boost::process args for passing to 'ipc_child_process' executable
-  const auto kExePath(GetIpcChildProcessLocation());
+  const auto kExePath(process::GetIpcChildProcessLocation());
   std::vector<std::string> process_args;
   process_args.push_back(kExePath);
   process_args.push_back(HexEncode(kTestName));

@@ -47,7 +47,6 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(LocationFile ${CMAKE_CURRENT_BINARY_DIR}/ipc_test/ipc_child_process_location.h)
-set_source_files_properties(${LocationFile} PROPERTIES GENERATED TRUE)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess})
 list(APPEND CommonTestsAllFiles ${TestsMain})
 
@@ -87,13 +86,8 @@ target_link_libraries(maidsafe_network_viewer maidsafe_common)
 if(MaidsafeTesting)
   target_link_libraries(test_common maidsafe_common)
   target_link_libraries(ipc_child_process maidsafe_common)
+  add_process_location(ipc_child_process "${LocationFile}")
   add_dependencies(test_common ipc_child_process)
-  add_custom_command(OUTPUT ${LocationFile}
-                     COMMAND ${CMAKE_COMMAND} -DInputFile="${CommonSourcesDir}/tests/ipc_child_process_location.h.in"
-                                              -DOutputFile="${LocationFile}"
-                                              -DIpcChildProcessLocation="$<TARGET_FILE:ipc_child_process>"
-                                              -P "${CommonSourcesDir}/tests/ipc_child_process_location.cmake"
-                     COMMENT "Generating ${LocationFile}")
   get_target_property(IncDirs test_common INCLUDE_DIRECTORIES)
   set_target_properties(test_common PROPERTIES INCLUDE_DIRECTORIES "${IncDirs};${CMAKE_CURRENT_BINARY_DIR}/ipc_test")
   target_link_libraries(TESTcommon maidsafe_common)
