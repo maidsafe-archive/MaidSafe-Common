@@ -29,10 +29,11 @@
 #include "boost/process/terminate.hpp"
 #include "boost/system/error_code.hpp"
 
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/on_scope_exit.h"
+#include "maidsafe/common/process.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/crypto.h"
 
 #include "ipc_child_process_location.h"  // NOLINT
 
@@ -44,32 +45,6 @@ namespace test {
 
 namespace bi = boost::interprocess;
 namespace bp = boost::process;
-
-namespace {
-
-#ifdef MAIDSAFE_WIN32
-std::wstring StringToWstring(const std::string& input) {
-  std::unique_ptr<wchar_t[]> buffer(new wchar_t[input.size()]);
-  size_t num_chars = mbstowcs(buffer.get(), input.c_str(), input.size());
-  return std::wstring(buffer.get(), num_chars);
-}
-
-std::wstring ConstructCommandLine(std::vector<std::string> process_args) {
-  std::string args;
-  for (auto arg : process_args)
-    args += (arg + " ");
-  return StringToWstring(args);
-}
-#else
-std::string ConstructCommandLine(std::vector<std::string> process_args) {
-  std::string args;
-  for (auto arg : process_args)
-    args += (arg + " ");
-  return args;
-}
-#endif
-
-}  // unnamed namespace
 
 TEST_CASE("ipc create", "[ipc][Unit]") {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -175,7 +150,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   process_args.push_back(HexEncode(kTestName));
   process_args.push_back(std::to_string(test1_vec.size()));
   process_args.push_back(kAnswer);
-  const auto kCommandLine(ConstructCommandLine(process_args));
+  const auto kCommandLine(process::ConstructCommandLine(process_args));
   boost::system::error_code error_code;
 
   int exit_code(99);

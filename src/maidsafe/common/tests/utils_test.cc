@@ -250,6 +250,7 @@ TEST_CASE("RandomStringMultiThread", "[Utils][Unit]") {  // Timeout 60
     })));
   for (std::thread& thread : threads)
     thread.join();
+  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
 TEST_CASE("RandomStringGenerator", "[Utils][Unit]") {
