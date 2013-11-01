@@ -44,7 +44,8 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/errors_test.cc
                         ${CommonSourcesDir}/tests/ipc_test.cc
                         ${CommonSourcesDir}/tests/node_id_test.cc
-                        ${CommonSourcesDir}/tests/on_scope_exit_test.cc)
+                        ${CommonSourcesDir}/tests/on_scope_exit_test.cc
+                        ${CommonSourcesDir}/tests/utils_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(LocationFile ${CMAKE_CURRENT_BINARY_DIR}/ipc_test/ipc_child_process_location.h)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess})

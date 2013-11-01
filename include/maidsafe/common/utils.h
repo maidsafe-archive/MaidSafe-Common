@@ -166,6 +166,12 @@ std::string Base64Substr(detail::BoundedString<min, max> non_base64) {
   return Base64Substr(non_base64.string());
 }
 
+// Throws if any char of 'input' can't be converted.
+std::string WstringToString(const std::wstring& input);
+
+// Throws if any char of 'input' can't be converted.
+std::wstring StringToWstring(const std::string& input);
+
 // Returns an abbreviated hex representation of id.
 std::string DebugId(const Identity& id);
 

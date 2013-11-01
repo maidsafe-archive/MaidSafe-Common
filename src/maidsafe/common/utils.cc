@@ -22,8 +22,10 @@
 #include <algorithm>
 #include <array>
 #include <ctime>
+#include <cwchar>
 #include <fstream>
 #include <limits>
+#include <locale>  // NOLINT
 #include <set>
 #include <thread>
 #include <vector>
@@ -133,6 +135,25 @@ const char kHexLookup[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,
 const char kBase64Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 const char kPadCharacter('=');
+
+template <typename CharIn, typename CharOut>
+std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input) {
+  // TODO(Fraser#5#): 2013-11-01 - Use C++11's std::wstring_convert once available.
+  const std::locale kLocale("");
+  typedef std::codecvt<CharIn, CharOut, std::mbstate_t> Converter;
+  const Converter& converter = std::use_facet<Converter>(kLocale);
+  std::basic_string<CharOut> output(input.size() * converter.max_length(), 0);
+  std::mbstate_t state;
+  const CharIn* from_next;
+  CharOut* to_next;
+  const auto result(converter.out(state, &input[0], &input[input.size()], from_next,
+                                  &output[0], &output[output.size()], to_next));
+  if (result != Converter::ok && result != Converter::noconv)
+    ThrowError(CommonErrors::invalid_conversion);
+
+  output.resize(to_next - &output[0]);
+  return output;
+}
 
 }  // unnamed namespace
 
@@ -359,6 +380,14 @@ std::string Base64Substr(const std::string& non_base64) {
     return (base64.substr(0, 7) + ".." + base64.substr(base64.size() - 7));
   else
     return base64;
+}
+
+std::string WstringToString(const std::wstring &input) {
+  return StringToString<wchar_t, char>(input);
+}
+
+std::wstring StringToWstring(const std::string& input) {
+  return StringToString<char, wchar_t>(input);
 }
 
 std::string DebugId(const Identity& id) {
