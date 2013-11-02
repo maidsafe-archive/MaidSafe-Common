@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/utils.h"
 
+#include <codecvt>
 #include <ctype.h>
 #include <algorithm>
 #include <array>
@@ -386,9 +387,11 @@ std::string WstringToString(const std::wstring &input) {
   return StringToString<wchar_t, char>(input);
 }
 
+#ifdef MAIDSAFE_WIN32
 std::wstring StringToWstring(const std::string& input) {
   return StringToString<char, wchar_t>(input);
 }
+#endif
 
 std::string DebugId(const Identity& id) {
   return id.IsInitialised() ? "Uninitialised Identity" : HexSubstr(id.string());

@@ -404,6 +404,7 @@ std::wstring StringToWstringOldMethod(const std::string& input) {
 }
 
 TEST_CASE("StringToWstring", "[Utils][Unit]") {
+#ifdef MAIDSAFE_WIN32
   std::string input("Test string");
   std::wstring converted(StringToWstring(input));
   CHECK(converted == L"Test string");
@@ -420,6 +421,9 @@ TEST_CASE("StringToWstring", "[Utils][Unit]") {
     }
     catch(const common_error&) {}
   }
+#else
+  CHECK(true);
+#endif
 }
 
 TEST_CASE("TimeFunctions", "[Utils][Unit]") {
