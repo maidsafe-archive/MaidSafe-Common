@@ -46,7 +46,7 @@ namespace test {
 namespace bi = boost::interprocess;
 namespace bp = boost::process;
 
-TEST_CASE("ipc create", "[ipc][Unit]") {
+TEST_CASE("IPC create", "[ipc][Unit]") {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -60,7 +60,7 @@ TEST_CASE("ipc create", "[ipc][Unit]") {
   CHECK_NOTHROW(CreateSharedMemory("test", test_vec));
 }
 
-TEST_CASE("ipc read", "[ipc][Unit]") {
+TEST_CASE("IPC read", "[ipc][Unit]") {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -75,7 +75,7 @@ TEST_CASE("ipc read", "[ipc][Unit]") {
   CHECK(test_vec == ReadSharedMemory("test", 4));
 }
 
-TEST_CASE("ipc delete", "[ipc][Unit]") {
+TEST_CASE("IPC delete", "[ipc][Unit]") {
   // always passes, even if SHM noexists
   CHECK_NOTHROW(RemoveSharedMemory("test"));
   CHECK_NOTHROW(RemoveSharedMemory("test"));

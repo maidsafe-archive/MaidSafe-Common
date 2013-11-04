@@ -31,7 +31,9 @@ namespace {
 
 std::string ConcatenateArgs(const std::vector<std::string>& args) {
   return std::accumulate(std::begin(args), std::end(args), std::string(""),
-      [](const std::string& lhs, const std::string& rhs) { return lhs + " " + rhs; });
+      [](const std::string& lhs, const std::string& rhs) {
+        return lhs.empty() ? (rhs.empty() ? "" : rhs) : (rhs.empty() ? lhs : lhs + " " + rhs);
+      });
 }
 
 }  // unnamed namespace

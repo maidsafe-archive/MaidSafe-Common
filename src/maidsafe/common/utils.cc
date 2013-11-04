@@ -18,7 +18,6 @@
 
 #include "maidsafe/common/utils.h"
 
-#include <codecvt>
 #include <ctype.h>
 #include <algorithm>
 #include <array>
