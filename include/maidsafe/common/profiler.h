@@ -32,10 +32,6 @@
 
 #include "maidsafe/common/active.h"
 
-#ifndef NDEBUG
-#define USE_PROFILING
-#endif
-
 namespace maidsafe {
 
 namespace profile {
