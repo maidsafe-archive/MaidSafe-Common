@@ -138,6 +138,7 @@ class Logging {
   bool Async() const { return !no_async_; }
   bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
+  void Flush();
 
  private:
   struct LogFile {

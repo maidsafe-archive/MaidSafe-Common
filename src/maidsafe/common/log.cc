@@ -510,6 +510,15 @@ void Logging::WriteToProjectLogfile(const std::string& project, const std::strin
   }
 }
 
+void Logging::Flush() {
+  for (auto& stream : project_logfile_streams_) {
+    std::lock_guard<std::mutex> lock(stream.second->mutex);
+    stream.second->stream.flush();
+  }
+  std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
+  combined_logfile_stream_.stream.flush();
+}
+
 }  // namespace log
 
 }  // namespace maidsafe
