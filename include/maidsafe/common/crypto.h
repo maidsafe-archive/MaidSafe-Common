@@ -62,7 +62,6 @@
 #include "cryptopp/modes.h"
 #include "cryptopp/osrng.h"
 #include "cryptopp/pssr.h"
-#include "cryptopp/pwdbased.h"
 #include "cryptopp/sha.h"
 #include "cryptopp/tiger.h"
 
