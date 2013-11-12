@@ -95,7 +95,7 @@ TEST_CASE("VersionToInt", "[Utils][Unit]") {
 
 TEST_CASE("Names", "[Utils][Unit]") {
   CHECK(kCompanyName() == "MaidSafe");
-  CHECK(kApplicationName() == "LifeStuff");
+  CHECK(kApplicationName() == "TestCommon");
 }
 
 TEST_CASE("ByteRatios", "[Utils][Unit]") {
