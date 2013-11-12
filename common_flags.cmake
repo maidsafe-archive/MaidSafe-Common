@@ -58,7 +58,6 @@ target_compile_definitions(maidsafe_common
     >
     $<$<BOOL:${UNIX}>:
         _FILE_OFFSET_BITS=64
-        FUSE_USE_VERSION=30
         HAVE_PTHREAD
         $<$<BOOL:${APPLE}>:MAIDSAFE_APPLE>
         $<$<NOT:$<BOOL:${APPLE}>>:MAIDSAFE_LINUX>
