@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/crypto.h"
+
 #include <memory>
 #include <algorithm>
 #include <vector>

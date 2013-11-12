@@ -59,8 +59,20 @@ list(APPEND CommonTestsAllFiles ${TestsMain})
 ms_add_static_library(common ${CommonAllFiles})
 ms_add_static_library(network_viewer ${CommonToolsAllFiles})
 add_dependencies(maidsafe_common boost boost_process catch)
-# target_include_directories(maidsafe_common INTERFACE ${PROJECT_SOURCE_DIR}/include)
-# target_include_directories(maidsafe_network_viewer INTERFACE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(maidsafe_common
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+)
+target_include_directories(maidsafe_common SYSTEM
+  PUBLIC
+    ${BoostSourceDir}
+    ${CatchSourceDir}
+    $<$<BOOL:${JustThread_FOUND}>:${JustThread_INCLUDE_DIR}>
+)
+target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(MaidsafeTesting)
   ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${LocationFile})
@@ -72,7 +84,6 @@ endif()
 target_link_libraries(maidsafe_common
                         cryptopp
                         protobuf
-                        gmock
                         gtest
                         ${BoostChronoLibs}
                         ${BoostDateTimeLibs}
@@ -80,9 +91,9 @@ target_link_libraries(maidsafe_common
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
                         ${BoostProgramOptionsLibs}
-                        ${JustThread_LIBRARIES})
+                        ${JustThread_LIBRARIES}
+                        ${SYS_LIB})
 
-target_link_libraries(maidsafe_common ${SYS_LIB})
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
 if(MaidsafeTesting)
@@ -90,19 +101,17 @@ if(MaidsafeTesting)
   target_link_libraries(ipc_child_process maidsafe_common)
   add_process_location(ipc_child_process "${LocationFile}")
   add_dependencies(test_common ipc_child_process)
-  get_target_property(IncDirs test_common INCLUDE_DIRECTORIES)
-  set_target_properties(test_common PROPERTIES INCLUDE_DIRECTORIES "${IncDirs};${CMAKE_CURRENT_BINARY_DIR}/ipc_test")
+  target_include_directories(test_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipc_test)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 endif()
 rename_outdated_built_exes()
 
-set(AllExesForCurrentProject ${AllExesForCurrentProject} cryptest)
-
 
 #==================================================================================================#
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
+include(${CMAKE_CURRENT_SOURCE_DIR}/common_flags.cmake)
 include(standard_flags)
 
 
@@ -151,17 +160,6 @@ add_coverage_exclude(third_party_libs/)
 add_coverage_exclude(utils\\\\.h)
 
 # Remove third-party tests from MemCheck runs.
-add_memcheck_ignore(boost.BEH_BOOST_bind_function_simple)
-add_memcheck_ignore(boost.BEH_BOOST_bind_function_object1)
-add_memcheck_ignore(boost.BEH_BOOST_bind_function_object2)
-add_memcheck_ignore(boost.BEH_BOOST_bind_member_function_non_void)
-add_memcheck_ignore(boost.BEH_BOOST_bind_member_function_void)
-add_memcheck_ignore(boost.BEH_BOOST_nested_bind)
-add_memcheck_ignore(boost.BEH_BOOST_smart_ptr_AtomicCount1)
-add_memcheck_ignore(boost.BEH_BOOST_smart_ptr_AtomicCount2)
-add_memcheck_ignore(boost.BEH_BOOST_smart_ptr_make_shared)
-add_memcheck_ignore(boost.BEH_BOOST_formattest1)
-add_memcheck_ignore(boost.BEH_BOOST_formattest2)
 add_memcheck_ignore(CrypoppTest.BEH_FULL)
 add_memcheck_ignore(CrypoppTest.BEH_AES)
 add_memcheck_ignore(CrypoppTest.BEH_SHA)

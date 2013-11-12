@@ -22,7 +22,7 @@
 #include <string>
 #include "boost/preprocessor/stringize.hpp"
 
-#ifdef MAIDSAFE_WIN32
+#ifdef _MSC_VER
 #define MAIDSAFE_NOEXCEPT
 #define MAIDSAFE_DELETE
 #else
