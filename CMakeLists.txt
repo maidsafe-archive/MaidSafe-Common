@@ -62,12 +62,15 @@ target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
     ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
-    ${BoostSourceDir}
-    ${CatchSourceDir}
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-target_include_directories(maidsafe_common SYSTEM PUBLIC $<$<BOOL:${JustThread_FOUND}>:${JustThread_INCLUDE_DIR}>)
+target_include_directories(maidsafe_common SYSTEM
+  PUBLIC
+    ${BoostSourceDir}
+    ${CatchSourceDir}
+    $<$<BOOL:${JustThread_FOUND}>:${JustThread_INCLUDE_DIR}>
+)
 target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(MaidsafeTesting)
