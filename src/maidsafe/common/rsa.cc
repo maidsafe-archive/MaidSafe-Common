@@ -20,18 +20,10 @@
 
 #include <memory>
 
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#pragma warning(disable : 4702)
-#endif
 #include "cryptopp/modes.h"
 #include "cryptopp/osrng.h"
 #include "cryptopp/pssr.h"
 #include "cryptopp/cryptlib.h"
-#include "boost/assert.hpp"
-#ifdef __MSVC__
-#pragma warning(pop)
-#endif
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"

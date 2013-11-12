@@ -21,21 +21,16 @@
 
 #include <string>
 
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#pragma warning(disable : 4702)
-#endif
+// Include this first to avoid having to wrap the cryptopp includes in a pragma to disable warnings
+#include "maidsafe/common/crypto.h"  // NOLINT
+
 #include "cryptopp/channels.h"
 #include "cryptopp/ida.h"
 #include "cryptopp/rsa.h"
-#ifdef __MSVC__
-#pragma warning(pop)
-#endif
 
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/bounded_string.h"
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"

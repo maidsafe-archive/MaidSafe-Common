@@ -38,13 +38,8 @@
 #include "sys/param.h"
 #endif
 
-#ifdef __MSVC__
+#ifdef _MSC_VER
 #include "windows.h"  // NOLINT - Viv
-#endif
-
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#pragma warning(disable : 4127)
 #endif
 
 #include "boost/config.hpp"
@@ -58,12 +53,7 @@
 #include "cryptopp/base64.h"
 #include "cryptopp/hex.h"
 
-#ifdef __MSVC__
-#pragma warning(pop)
-#endif
-
 #include "maidsafe/common/config.h"
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 
 namespace fs = boost::filesystem;

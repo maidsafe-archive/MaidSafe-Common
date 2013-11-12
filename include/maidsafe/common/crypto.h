@@ -25,42 +25,46 @@
 #include <string>
 #include <vector>
 
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#pragma warning(disable : 4355 4702)
-#endif
-
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#pragma warning(disable : 4702)
-#endif
-
-#include "cryptopp/gzip.h"
-#include "cryptopp/hex.h"
-#include "cryptopp/modes.h"
-#include "cryptopp/pssr.h"
-#include "cryptopp/pwdbased.h"
-#include "cryptopp/cryptlib.h"
-
-#ifdef __MSVC__
-#pragma warning(pop)
-#endif
-
 #include "boost/filesystem/path.hpp"
 
-#include "cryptopp/channels.h"
-#include "cryptopp/files.h"
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4100 4127 4189 4244)
+#endif
+#include "cryptopp/algparam.h"
+#include "cryptopp/asn.h"
+#include "cryptopp/base32.h"
+#include "cryptopp/base64.h"
+#include "cryptopp/cryptlib.h"
+#include "cryptopp/default.h"
+#include "cryptopp/emsa2.h"
 #include "cryptopp/filters.h"
 #include "cryptopp/ida.h"
-#include "cryptopp/integer.h"
-#include "cryptopp/sha.h"
-#include "cryptopp/tiger.h"
-#include "cryptopp/aes.h"
-#include "cryptopp/osrng.h"
-
-#ifdef __MSVC__
+#include "cryptopp/misc.h"
+#include "cryptopp/modarith.h"
+#include "cryptopp/mqueue.h"
+#include "cryptopp/pwdbased.h"
+#include "cryptopp/pubkey.h"
+#include "cryptopp/secblock.h"
+#include "cryptopp/simple.h"
+#include "cryptopp/strciphr.h"
+#include "cryptopp/zdeflate.h"
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+#include "cryptopp/aes.h"
+#include "cryptopp/channels.h"
+#include "cryptopp/files.h"
+#include "cryptopp/gzip.h"
+#include "cryptopp/hex.h"
+#include "cryptopp/integer.h"
+#include "cryptopp/modes.h"
+#include "cryptopp/osrng.h"
+#include "cryptopp/pssr.h"
+#include "cryptopp/pwdbased.h"
+#include "cryptopp/sha.h"
+#include "cryptopp/tiger.h"
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"

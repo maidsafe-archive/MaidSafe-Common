@@ -50,7 +50,7 @@ namespace log {
 
 namespace {
 
-#ifdef __MSVC__
+#ifdef _MSC_VER
 // This function is needed to avoid use of po::bool_switch causing MSVC warning C4505:
 // 'boost::program_options::typed_value<bool>::name' : unreferenced local function has been removed.
 void UseUnreferenced() {

@@ -27,11 +27,6 @@
 #include <ratio>
 #include <string>
 
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#pragma warning(disable : 4127)
-#endif
-
 #include "boost/asio/ip/address.hpp"
 #include "boost/asio/ip/udp.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
@@ -40,10 +35,6 @@
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
-
-#ifdef __MSVC__
-#pragma warning(pop)
-#endif
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
