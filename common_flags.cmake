@@ -145,7 +145,7 @@ target_compile_options(maidsafe_common
         >
         $<$<CONFIG:Release>:-O2>
         $<$<CXX_COMPILER_ID:Clang>:
-            ${LibCpp}
+            ${LibCXX}
             $<$<CONFIG:Debug>:
                 -fdiagnostics-format=clang
                 -fdiagnostics-show-option

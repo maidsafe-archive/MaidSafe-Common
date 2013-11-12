@@ -29,7 +29,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable : 4100 4127 4189 4244)
+#pragma warning(disable : 4100 4127 4189 4244 4702 4800)
 #endif
 #include "cryptopp/algparam.h"
 #include "cryptopp/asn.h"
