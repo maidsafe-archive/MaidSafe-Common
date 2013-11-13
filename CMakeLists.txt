@@ -57,7 +57,7 @@ list(APPEND CommonTestsAllFiles ${TestsMain})
 #==================================================================================================#
 ms_add_static_library(common ${CommonAllFiles})
 ms_add_static_library(network_viewer ${CommonToolsAllFiles})
-add_dependencies(maidsafe_common boost boost_process catch)
+add_dependencies(maidsafe_common catch)
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
