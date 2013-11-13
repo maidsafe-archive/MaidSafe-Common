@@ -79,6 +79,7 @@ class NodeId {
   friend bool operator==(const NodeId& lhs, const NodeId& rhs);
   friend bool operator<(const NodeId& lhs, const NodeId& rhs);
   friend std::string DebugId(const NodeId& node_id);
+  friend void swap(NodeId& lhs, NodeId& rhs) MAIDSAFE_NOEXCEPT;
 
  private:
   std::string EncodeToBinary() const;
