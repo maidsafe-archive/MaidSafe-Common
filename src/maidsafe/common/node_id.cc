@@ -33,8 +33,7 @@ NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) {}
 NodeId::NodeId(NodeId&& other) : raw_id_(std::move(other.raw_id_)) {}
 
 NodeId& NodeId::operator=(NodeId other) {
-  using std::swap;
-  swap(raw_id_, other.raw_id_);
+  swap(*this, other);
   return *this;
 }
 
@@ -147,5 +146,10 @@ NodeId& NodeId::operator^=(const NodeId& rhs) {
 }
 
 std::string DebugId(const NodeId& node_id) { return HexSubstr(node_id.raw_id_); }
+
+void swap(NodeId& lhs, NodeId& rhs) MAIDSAFE_NOEXCEPT {
+  using std::swap;
+  swap(lhs.raw_id_, rhs.raw_id_);
+}
 
 }  // namespace maidsafe
