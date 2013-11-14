@@ -113,7 +113,6 @@ rename_outdated_built_exes()
 include(${CMAKE_CURRENT_SOURCE_DIR}/common_flags.cmake)
 include(standard_flags)
 
-
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
@@ -151,7 +150,6 @@ if(MaidsafeTesting)
   add_project_experimental()
   test_summary_output()
 endif()
-
 
 # Remove files from coverage stats
 add_coverage_exclude(cryptopp/)
