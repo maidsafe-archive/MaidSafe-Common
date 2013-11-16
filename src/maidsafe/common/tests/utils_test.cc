@@ -283,7 +283,7 @@ TEST_CASE("RandomStringSingleThread", "[Utils][Unit]") {  // Timeout 10
 }
 
 TEST_CASE("HexEncodeDecode", "[Utils][Unit]") {
-  maidsafe::test::RunInParallel(100, [&] {
+  // maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
       std::string encoded = HexEncode(original);
@@ -291,7 +291,7 @@ TEST_CASE("HexEncodeDecode", "[Utils][Unit]") {
       std::string decoded = HexDecode(encoded);
       CHECK(original == decoded);
     }
-  });
+  // });
   const std::string kKnownEncoded("0123456789abcdef");
   const std::string kKnownDecoded("\x1\x23\x45\x67\x89\xab\xcd\xef");
   CHECK(kKnownEncoded == HexEncode(kKnownDecoded));
@@ -302,7 +302,7 @@ TEST_CASE("HexEncodeDecode", "[Utils][Unit]") {
 }
 
 TEST_CASE("Base64EncodeDecode", "[Utils][Unit]") {  // Timeout 10
-  maidsafe::test::RunInParallel(100, [&] {
+  // maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
       std::string encoded = Base64Encode(original);
@@ -310,7 +310,7 @@ TEST_CASE("Base64EncodeDecode", "[Utils][Unit]") {  // Timeout 10
       std::string decoded = Base64Decode(encoded);
       CHECK(original == decoded);
     }
-  });
+  // });
   // from wikipedia
   std::string man;
   man += "Man is distinguished, not only by his reason, but by this singular ";

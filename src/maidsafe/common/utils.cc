@@ -285,7 +285,6 @@ std::string Base64Encode(const std::string& non_base64_input) {
       encoded_string[i++] = kPadCharacter;
       break;
   }
-
   return std::string(std::begin(encoded_string), std::end(encoded_string));
 }
 
