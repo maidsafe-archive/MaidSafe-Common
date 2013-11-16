@@ -381,6 +381,7 @@ std::string WstringToStringOldMethod(const std::wstring& input) {
 }
 
 TEST_CASE("WstringToString", "[Utils][Unit]") {
+#ifdef MAIDSAFE_WIN32
   std::wstring input(L"Test wstring");
   std::string converted(WstringToString(input));
   CHECK(converted == "Test wstring");
@@ -394,6 +395,9 @@ TEST_CASE("WstringToString", "[Utils][Unit]") {
     }
     catch(const common_error&) {}
   }
+#else
+  CHECK(true);
+#endif
 }
 
 std::wstring StringToWstringOldMethod(const std::string& input) {

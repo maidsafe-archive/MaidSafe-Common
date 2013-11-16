@@ -157,10 +157,10 @@ std::string Base64Substr(detail::BoundedString<min, max> non_base64) {
   return Base64Substr(non_base64.string());
 }
 
+#ifdef MAIDSAFE_WIN32
 // Throws if any char of 'input' can't be converted.
 std::string WstringToString(const std::wstring& input);
 
-#ifdef MAIDSAFE_WIN32
 // Throws if any char of 'input' can't be converted.
 std::wstring StringToWstring(const std::string& input);
 #endif
