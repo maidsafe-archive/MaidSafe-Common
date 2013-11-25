@@ -24,6 +24,7 @@
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 
 namespace maidsafe {
 
@@ -64,10 +65,14 @@ class BoundedString {
   }
 
   BoundedString& operator+=(const BoundedString& other) {
-    if (!valid_ || !other.valid_)
+    if (!valid_ || !other.valid_) {
+      LOG(kError) << "BoundedString one of class uninitialised in operator+=";
       ThrowError(CommonErrors::uninitialised);
-    if (SizeOutOfBounds(string_.size() + other.string_.size()))
+    }
+    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
+      LOG(kError) << "BoundedString invalid_string_size in operator+=";
       ThrowError(CommonErrors::invalid_string_size);
+    }
     StringType temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
@@ -92,18 +97,24 @@ class BoundedString {
 
   template <size_t other_min, size_t other_max, typename OtherStringType>
   BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
-    if (!valid_ || !other.valid_)
+    if (!valid_ || !other.valid_) {
+      LOG(kError) << "BoundedString one of class uninitialised in operator+=";
       ThrowError(CommonErrors::uninitialised);
-    if (SizeOutOfBounds(string_.size() + other.string_.size()))
+    }
+    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
+      LOG(kError) << "BoundedString invalid_string_size in operator+=";
       ThrowError(CommonErrors::invalid_string_size);
+    }
     StringType temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
   }
 
   const StringType& string() const {
-    if (!valid_)
+    if (!valid_) {
+      LOG(kError) << "class uninitialised";
       ThrowError(CommonErrors::uninitialised);
+    }
     return string_;
   }
 

@@ -57,8 +57,10 @@ std::string XOR(const std::string& first, const std::string& second) {
 
 CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
+  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+    LOG(kError) << "SymmEncrypt one of class uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -79,8 +81,10 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
 
 PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
+  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+    LOG(kError) << "SymmEncrypt one of class uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -105,8 +109,10 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
                 << kMaxCompressionLevel;
     ThrowError(CommonErrors::invalid_parameter);
   }
-  if (!input.IsInitialised())
+  if (!input.IsInitialised()) {
+    LOG(kError) << "Compress input uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
 
   std::string result;
   try {
@@ -121,8 +127,10 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
 }
 
 UncompressedText Uncompress(const CompressedText& input) {
-  if (!input.IsInitialised())
+  if (!input.IsInitialised()) {
+    LOG(kError) << "Uncompress input uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
   std::string result;
   try {
     CryptoPP::StringSource(input.string(), true,

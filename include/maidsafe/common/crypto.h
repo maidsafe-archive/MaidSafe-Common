@@ -131,8 +131,10 @@ template <typename PasswordType>
 SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt,
                                     uint32_t pin,
                                     const std::string& label = kMaidSafeVersionLabel) {
-  if (!password.IsInitialised() || !salt.IsInitialised())
+  if (!password.IsInitialised() || !salt.IsInitialised()) {
+    LOG(kError) << "CreateSecurePassword password or salt uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
