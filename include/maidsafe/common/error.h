@@ -245,7 +245,8 @@ enum class VaultErrors {
   not_enough_space,
   unique_data_clash,
   data_available_not_given,
-  account_already_exists
+  account_already_exists,
+  data_already_exists
 };
 
 class vault_error : public maidsafe_error {
