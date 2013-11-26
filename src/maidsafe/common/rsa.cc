@@ -136,10 +136,14 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
 }
 
 Signature Sign(const PlainText& data, const PrivateKey& private_key) {
-  if (!data.IsInitialised())
+  if (!data.IsInitialised()) {
+    LOG(kError) << "Sign data uninitialised";
     ThrowError(CommonErrors::uninitialised);
-  if (!private_key.Validate(rng(), 0))
+  }
+  if (!private_key.Validate(rng(), 0)) {
+    LOG(kError) << "Sign invalid private_key";
     ThrowError(AsymmErrors::invalid_private_key);
+  }
 
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
@@ -177,10 +181,14 @@ Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& pr
 
 bool CheckSignature(const PlainText& data, const Signature& signature,
                     const PublicKey& public_key) {
-  if (!data.IsInitialised() || !signature.IsInitialised())
+  if (!data.IsInitialised() || !signature.IsInitialised()) {
+    LOG(kError) << "CheckSignature data or signature uninitialised";
     ThrowError(CommonErrors::uninitialised);
-  if (!public_key.Validate(rng(), 0))
+  }
+  if (!public_key.Validate(rng(), 0)) {
+    LOG(kError) << "CheckSignature invalide public_key";
     ThrowError(AsymmErrors::invalid_public_key);
+  }
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
@@ -197,10 +205,14 @@ bool CheckSignature(const PlainText& data, const Signature& signature,
 
 bool CheckFileSignature(const boost::filesystem::path& filename, const Signature& signature,
                         const PublicKey& public_key) {
-  if (!signature.IsInitialised())
+  if (!signature.IsInitialised()) {
+    LOG(kError) << "CheckFileSignature signature uninitialised";
     ThrowError(CommonErrors::uninitialised);
-  if (!public_key.Validate(rng(), 0))
+  }
+  if (!public_key.Validate(rng(), 0)) {
+    LOG(kError) << "CheckFileSignature invalid public_key";
     ThrowError(AsymmErrors::invalid_public_key);
+  }
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
@@ -256,8 +268,10 @@ EncodedPublicKey EncodeKey(const PublicKey& public_key) {
 }
 
 PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
-  if (!private_key.IsInitialised())
+  if (!private_key.IsInitialised()) {
+    LOG(kError) << "DecodeKey private_key uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
 
   PrivateKey key;
   try {
@@ -274,8 +288,10 @@ PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
 }
 
 PublicKey DecodeKey(const EncodedPublicKey& public_key) {
-  if (!public_key.IsInitialised())
+  if (!public_key.IsInitialised()) {
+    LOG(kError) << "DecodeKey public_key uninitialised";
     ThrowError(CommonErrors::uninitialised);
+  }
 
   PublicKey key;
   try {
