@@ -84,6 +84,7 @@ target_link_libraries(maidsafe_common
                         ${BoostChronoLibs}
                         ${BoostDateTimeLibs}
                         ${BoostFilesystemLibs}
+                        ${BoostLocaleLibs}
                         ${BoostSystemLibs}
                         ${BoostThreadLibs}
                         ${BoostProgramOptionsLibs}
