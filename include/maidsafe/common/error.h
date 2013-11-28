@@ -215,7 +215,9 @@ nfs_error MakeError(NfsErrors code);
 enum class DriveErrors {
   no_drive_letter_available = 1,
   failed_to_mount,
-  permission_denied
+  permission_denied,
+  no_such_file,
+  file_exists
 };
 
 class drive_error : public maidsafe_error {

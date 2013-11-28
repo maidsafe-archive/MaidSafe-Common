@@ -262,6 +262,10 @@ std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Failed to mount the drive";
     case DriveErrors::permission_denied:
       return "Permission denied for given action";
+    case DriveErrors::no_such_file:
+      return "No such file";
+    case DriveErrors::file_exists:
+      return "File already exists";
     default:
       return "Unknown error in Drive";
   }
@@ -272,6 +276,8 @@ std::error_condition DriveCategory::default_error_condition(int error_value) con
   switch (static_cast<DriveErrors>(error_value)) {
     case DriveErrors::permission_denied:
       return std::errc::permission_denied;
+    case DriveErrors::file_exists:
+      return std::errc::file_exists;
     default:
       return std::error_condition(error_value, *this);
   }
