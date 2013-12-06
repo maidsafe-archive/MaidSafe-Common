@@ -326,20 +326,20 @@ std::error_condition VaultCategory::default_error_condition(int error_value) con
   }
 }
 
-const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT { return "LifeStuff"; }
+const char* ClientCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
 
-std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<LifeStuffErrors>(error_value)) {
-    case LifeStuffErrors::kPasswordFailure:
+std::string ClientCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<ClientErrors>(error_value)) {
+    case ClientErrors::kPasswordFailure:
       return "Failed to validate password";
     default:
-      return "Unknown error in LifeStuff";
+      return "Unknown error in Client";
   }
 }
 
-std::error_condition LifeStuffCategory::default_error_condition(int error_value) const
+std::error_condition ClientCategory::default_error_condition(int error_value) const
     MAIDSAFE_NOEXCEPT {
-  //  switch (static_cast<LifeStuffErrors>(error_value)) {
+  //  switch (static_cast<ClientErrors>(error_value)) {
   //    default:
   return std::error_condition(error_value, *this);
   //  }

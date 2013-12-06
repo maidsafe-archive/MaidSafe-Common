@@ -66,7 +66,7 @@ std::mutex& g_console_mutex() {
   return mutex;
 }
 
-const std::array<std::string, 10> kProjects = {{"common", "drive",    "encrypt", "lifestuff",
+const std::array<std::string, 10> kProjects = {{"common", "drive",    "encrypt", "client",
                                                 "nfs",    "passport", "private", "routing",
                                                 "rudp",   "vault"}};
 

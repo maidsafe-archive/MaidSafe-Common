@@ -268,26 +268,26 @@ std::error_condition make_error_condition(VaultErrors code);
 const std::error_category& GetVaultCategory();
 vault_error MakeError(VaultErrors code);
 
-enum class LifeStuffErrors {
+enum class ClientErrors {
   kPasswordFailure = 1
 };
 
-class lifestuff_error : public maidsafe_error {
+class client_error : public maidsafe_error {
  public:
-  lifestuff_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  lifestuff_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit lifestuff_error(std::error_code ec) : maidsafe_error(ec) {}
-  lifestuff_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+  client_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  client_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit client_error(std::error_code ec) : maidsafe_error(ec) {}
+  client_error(int ev, const std::error_category& ecat, const std::string& what_arg)
       : maidsafe_error(ev, ecat, what_arg) {}
-  lifestuff_error(int ev, const std::error_category& ecat, const char* what_arg)
+  client_error(int ev, const std::error_category& ecat, const char* what_arg)
       : maidsafe_error(ev, ecat, what_arg) {}
-  lifestuff_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+  client_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
-std::error_code make_error_code(LifeStuffErrors code);
-std::error_condition make_error_condition(LifeStuffErrors code);
-const std::error_category& GetLifeStuffCategory();
-lifestuff_error MakeError(LifeStuffErrors code);
+std::error_code make_error_code(ClientErrors code);
+std::error_condition make_error_condition(ClientErrors code);
+const std::error_category& GetClientCategory();
+client_error MakeError(ClientErrors code);
 
 template <typename MaidsafeErrorCode>
 inline void ThrowError(const MaidsafeErrorCode& code) {
@@ -325,7 +325,7 @@ template <>
 struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};
+struct is_error_code_enum<maidsafe::ClientErrors> : public true_type {};
 
 }  // namespace std
 
