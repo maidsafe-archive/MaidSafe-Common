@@ -146,6 +146,7 @@ target_compile_options(maidsafe_common
         $<$<CONFIG:Release>:-O2>
         $<$<CXX_COMPILER_ID:Clang>:
             ${LibCXX}
+            -Wno-empty-body
             $<$<CONFIG:Debug>:
                 -fdiagnostics-format=clang
                 -fdiagnostics-show-option
