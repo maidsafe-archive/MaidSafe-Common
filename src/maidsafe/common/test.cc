@@ -105,7 +105,7 @@ uint16_t GetRandomPort() {
 
 namespace detail {
 
-int ExecuteGTestMain(int argc, char** argv) {
+int ExecuteGTestMain(int argc, char* argv[]) {
   log::Logging::Instance().Initialise(argc, argv);
 #if defined(__clang__) || defined(__GNUC__)
   // To allow Clang and GCC advanced diagnostics to work properly.
@@ -119,11 +119,18 @@ int ExecuteGTestMain(int argc, char** argv) {
   return (test_count == 0) ? -1 : result;
 }
 
-int ExecuteCatchMain(int argc, char** argv) {
+int ExecuteCatchMain(int argc, char* argv[]) {
   auto unused_options(log::Logging::Instance().Initialise(argc, argv));
+  argc = static_cast<int>(unused_options.size());
+
+  std::vector<char*> unused_chars;
+  for (auto& unused_option : unused_options)
+    unused_chars.push_back(&unused_option[0]);
+
   Catch::Session session;
   auto command_line_result(
-      session.applyCommandLine(argc, argv, Catch::Session::OnUnusedOptions::Ignore));
+      session.applyCommandLine(static_cast<int>(unused_options.size()), &unused_chars[0],
+                               Catch::Session::OnUnusedOptions::Ignore));
   if (command_line_result != 0)
     LOG(kWarning) << "Catch command line parsing error: " << command_line_result;
   return session.run();

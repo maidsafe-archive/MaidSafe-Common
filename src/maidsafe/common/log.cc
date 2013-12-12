@@ -286,7 +286,7 @@ po::options_description SetProgramOptions(std::string& config_file, bool& no_log
 
 void ParseProgramOptions(const po::options_description& log_config, const std::string& config_file,
                          int argc, char** argv, po::variables_map& log_variables,
-                         std::vector<std::string>& unused_options) {
+                         std::vector<std::vector<char>>& unused_options) {
   po::options_description cmdline_options;
   cmdline_options.add(log_config);
   po::parsed_options parsed(
@@ -303,9 +303,14 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
     po::notify(log_variables);
   }
 
-  unused_options = po::collect_unrecognized(parsed.options, po::include_positional);
+  auto this_exe_path(ThisExecutablePath().string());
+  unused_options.emplace_back(this_exe_path.c_str(),
+                              this_exe_path.c_str() + this_exe_path.size() + 1u);
+  auto unuseds(po::collect_unrecognized(parsed.options, po::include_positional));
   if (log_variables.count("help"))
-    unused_options.push_back("--help");
+    unuseds.push_back("--help");
+  for (const auto& unused : unuseds)
+    unused_options.emplace_back(unused.c_str(), unused.c_str() + unused.size() + 1u);
 }
 
 void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mode,
@@ -421,9 +426,9 @@ Logging& Logging::Instance() {
   return logging;
 }
 
-std::vector<std::string> Logging::Initialise(int argc, char** argv) {
+std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
   SetThisExecutablePath(argv);
-  std::vector<std::string> unused_options;
+  std::vector<std::vector<char>> unused_options;
   std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
     try {
       std::string config_file, log_folder;

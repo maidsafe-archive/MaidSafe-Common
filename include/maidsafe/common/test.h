@@ -61,20 +61,20 @@ uint16_t GetRandomPort();
 
 namespace detail {
 
-int ExecuteGTestMain(int argc, char** argv);
-int ExecuteCatchMain(int argc, char** argv);
+int ExecuteGTestMain(int argc, char* argv[]);
+int ExecuteCatchMain(int argc, char* argv[]);
 
 }  // namespace detail
 
 #if defined USE_GTEST
 
-inline int ExecuteMain(int argc, char** argv) {
+inline int ExecuteMain(int argc, char* argv[]) {
   return detail::ExecuteGTestMain(argc, argv);
 }
 
 #elif defined USE_CATCH
 
-inline int ExecuteMain(int argc, char** argv) {
+inline int ExecuteMain(int argc, char* argv[]) {
   return detail::ExecuteCatchMain(argc, argv);
 }
 
