@@ -20,7 +20,9 @@
 #define MAIDSAFE_COMMON_CONFIG_H_
 
 #include <string>
+
 #include "boost/preprocessor/stringize.hpp"
+#include "boost/filesystem/path.hpp"
 
 #ifdef _MSC_VER
 #define MAIDSAFE_NOEXCEPT
@@ -48,6 +50,16 @@ inline const std::string kApplicationVersion() {
 std::string kTargetPlatform();
 
 std::string kTargetArchitecture();
+
+// Should be called first thing inside main()
+void SetThisExecutablePath(const char* const argv[]);
+
+// Full path to currently-running executable.  Throws if SetThisExecutablePath has not been called.
+boost::filesystem::path ThisExecutablePath();
+
+// Full path to directory of currently-running executable.  Throws if SetThisExecutablePath has not
+// been called.
+boost::filesystem::path ThisExecutableDir();
 
 }  // namespace maidsafe
 

@@ -39,6 +39,7 @@
 #include "boost/program_options/parsers.hpp"
 #include "boost/program_options/value_semantic.hpp"
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -421,6 +422,7 @@ Logging& Logging::Instance() {
 }
 
 std::vector<std::string> Logging::Initialise(int argc, char** argv) {
+  SetThisExecutablePath(argv);
   std::vector<std::string> unused_options;
   std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
     try {

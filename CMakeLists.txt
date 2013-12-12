@@ -27,6 +27,7 @@ project(common)
 
 include(../../cmake_modules/standard_setup.cmake)
 
+
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
@@ -45,9 +46,10 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc
                         ${CommonSourcesDir}/tests/utils_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
-set(LocationFile ${CMAKE_CURRENT_BINARY_DIR}/ipc_test/ipc_child_process_location.h)
-list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess})
+set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
+list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
 list(APPEND CommonTestsAllFiles ${TestsMain})
+
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -71,8 +73,9 @@ target_include_directories(maidsafe_common SYSTEM
 target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(MaidsafeTesting)
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${LocationFile})
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
+  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
   ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
   # ms_add_executable(TESTboost "Tests/Common" ${TestsMain} ${BoostTestsAllFiles})
 endif()
@@ -96,13 +99,12 @@ target_link_libraries(maidsafe_network_viewer maidsafe_common)
 if(MaidsafeTesting)
   target_link_libraries(test_common maidsafe_common)
   target_link_libraries(ipc_child_process maidsafe_common)
-  add_process_location(ipc_child_process "${LocationFile}")
-  add_dependencies(test_common ipc_child_process ipc_child_process_location_helper)
-  target_include_directories(test_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipc_test)
+  target_link_libraries(test_config maidsafe_common)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 endif()
 rename_outdated_built_exes()
+
 
 #==================================================================================================#
 # Set compiler and linker flags                                                                    #
@@ -110,12 +112,14 @@ rename_outdated_built_exes()
 include(${CMAKE_CURRENT_SOURCE_DIR}/common_flags.cmake)
 include(standard_flags)
 
+
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
   add_style_test()
   add_catch_tests(test_common)
+  add_catch_tests(test_config)
   add_gtests(TESTcommon)
   # add_gtests(TESTboost)
   add_custom_command(TARGET TESTcommon

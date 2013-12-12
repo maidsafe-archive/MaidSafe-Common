@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "boost/filesystem/path.hpp"
+
 #include "maidsafe/common/config.h"
 
 namespace maidsafe {
@@ -38,6 +40,9 @@ std::string ConstructCommandLine(const std::vector<std::string>& process_args);
 
 #endif
 
+// Returns the full path to an exe which is in the same dir as the currently-running exe.
+boost::filesystem::path GetOtherExecutablePath(
+    const boost::filesystem::path& name_without_extension);
 
 }  // namespace process
 

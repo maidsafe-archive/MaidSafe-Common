@@ -21,6 +21,9 @@
 #include <iterator>
 #include <numeric>
 
+#include "boost/filesystem/operations.hpp"
+
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -51,6 +54,12 @@ std::string ConstructCommandLine(const std::vector<std::string>& process_args) {
 }
 
 #endif
+
+boost::filesystem::path GetOtherExecutablePath(
+    const boost::filesystem::path& name_without_extension) {
+  return (ThisExecutableDir() /
+          name_without_extension).replace_extension(ThisExecutablePath().extension());
+}
 
 }  // namespace process
 
