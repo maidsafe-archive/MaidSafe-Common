@@ -32,10 +32,10 @@ include(../../cmake_modules/standard_setup.cmake)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
-glob_dir(Common ${CommonSourcesDir} Common)
-glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
-glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
-glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
+ms_glob_dir(Common ${CommonSourcesDir} Common)
+ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
+ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
+ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(CommonGTestsAllFiles ${CommonTestsAllFiles})
 set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
@@ -54,8 +54,8 @@ list(APPEND CommonTestsAllFiles ${TestsMain})
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(common ${CommonAllFiles})
-ms_add_static_library(network_viewer ${CommonToolsAllFiles})
+ms_add_static_library(maidsafe_common ${CommonAllFiles})
+ms_add_static_library(maidsafe_network_viewer ${CommonToolsAllFiles})
 add_dependencies(maidsafe_common boost_process catch)
 target_include_directories(maidsafe_common
   PUBLIC
@@ -103,7 +103,7 @@ if(MaidsafeTesting)
   target_link_libraries(TESTcommon maidsafe_common)
   # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
 endif()
-rename_outdated_built_exes()
+ms_rename_outdated_built_exes()
 
 
 #==================================================================================================#
@@ -117,11 +117,11 @@ include(standard_flags)
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
-  add_style_test()
-  add_catch_tests(test_common)
-  add_catch_tests(test_config)
-  add_gtests(TESTcommon)
-  # add_gtests(TESTboost)
+  ms_add_style_test()
+  ms_add_catch_tests(test_common)
+  ms_add_catch_tests(test_config)
+  ms_add_gtests(TESTcommon)
+  # ms_add_gtests(TESTboost)
   add_custom_command(TARGET TESTcommon
                        POST_BUILD
                        COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory $<TARGET_FILE_DIR:cryptest>/TestData ${CMAKE_CURRENT_BINARY_DIR}/TestData)
@@ -148,19 +148,19 @@ if(MaidsafeTesting)
   set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
   set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY TIMEOUT 60)
 
-  add_project_experimental()
-  test_summary_output()
+  ms_add_project_experimental()
+  ms_test_summary_output()
 endif()
 
 # Remove files from coverage stats
-add_coverage_exclude(cryptopp/)
-add_coverage_exclude(third_party_libs/)
-add_coverage_exclude(utils\\\\.h)
+ms_add_coverage_exclude(cryptopp/)
+ms_add_coverage_exclude(third_party_libs/)
+ms_add_coverage_exclude(utils\\\\.h)
 
 # Remove third-party tests from MemCheck runs.
-add_memcheck_ignore(CrypoppTest.BEH_FULL)
-add_memcheck_ignore(CrypoppTest.BEH_AES)
-add_memcheck_ignore(CrypoppTest.BEH_SHA)
-add_memcheck_ignore(CrypoppTest.BEH_RSA_PSS)
-add_memcheck_ignore(CrypoppTest.BEH_RSA_OAEP)
-add_memcheck_ignore(CrypoppTest.BEH_RSA_PKCS1_1_5)
+ms_add_memcheck_ignore(CrypoppTest.BEH_FULL)
+ms_add_memcheck_ignore(CrypoppTest.BEH_AES)
+ms_add_memcheck_ignore(CrypoppTest.BEH_SHA)
+ms_add_memcheck_ignore(CrypoppTest.BEH_RSA_PSS)
+ms_add_memcheck_ignore(CrypoppTest.BEH_RSA_OAEP)
+ms_add_memcheck_ignore(CrypoppTest.BEH_RSA_PKCS1_1_5)
