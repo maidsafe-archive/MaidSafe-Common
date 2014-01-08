@@ -76,12 +76,13 @@ std::string ConstructCommandLine(const std::vector<std::string>& process_args) {
 }
 
 bool IsRunning(const ProcessInfo& process_info) {
-  if (kill(process_info, 0) == 0)
+  if (kill(process_info, 0) == 0) {
     return true;
-  else if (errno == ESRCH)
-    return false;
-  LOG(kError) << "Failed to get status of process.  errno: " << errno;
-  ThrowError(CommonErrors::invalid_parameter);
+  } else if (errno != ESRCH) {
+    LOG(kError) << "Failed to get status of process.  errno: " << errno;
+    ThrowError(CommonErrors::invalid_parameter);
+  }
+  return false;
 }
 
 #endif
