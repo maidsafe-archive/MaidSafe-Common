@@ -18,7 +18,7 @@
 
 #include "maidsafe/common/tools/network_viewer.h"
 
-#include <signal.h>
+#include <csignal>
 
 #include <condition_variable>
 #include <mutex>

@@ -19,6 +19,12 @@
 #ifndef MAIDSAFE_COMMON_PROCESS_H_
 #define MAIDSAFE_COMMON_PROCESS_H_
 
+#ifdef MAIDSAFE_WIN32
+#include <Windows.h>
+#else
+#include <sys/types.h>
+#endif
+
 #include <string>
 #include <vector>
 
@@ -34,11 +40,23 @@ namespace process {
 
 std::wstring ConstructCommandLine(const std::vector<std::string>& process_args);
 
+struct ManagedHandle {
+  explicit ManagedHandle(HANDLE handle_in);
+  ~ManagedHandle();
+  HANDLE handle;
+};
+
+typedef ManagedHandle ProcessInfo;
+
 #else
+
+typedef pid_t ProcessInfo;
 
 std::string ConstructCommandLine(const std::vector<std::string>& process_args);
 
 #endif
+
+bool IsRunning(const ProcessInfo& process_info);
 
 // Returns the full path to an exe which is in the same dir as the currently-running exe.
 boost::filesystem::path GetOtherExecutablePath(
