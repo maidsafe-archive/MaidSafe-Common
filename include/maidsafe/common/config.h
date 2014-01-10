@@ -52,7 +52,8 @@ std::string kTargetPlatform();
 std::string kTargetArchitecture();
 
 // Should be called first thing inside main()
-void SetThisExecutablePath(const char* const argv[]);
+template <typename Char>
+void SetThisExecutablePath(const Char* const argv[]);
 
 // Full path to currently-running executable.  Throws if SetThisExecutablePath has not been called.
 boost::filesystem::path ThisExecutablePath();

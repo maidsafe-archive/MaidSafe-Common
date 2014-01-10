@@ -43,7 +43,14 @@ std::string kTargetArchitecture() {
   return target_architecture;
 }
 
+template <>
 void SetThisExecutablePath(const char* const argv[]) {
+  static std::once_flag flag;
+  std::call_once(flag, [argv] { g_this_executable_path = boost::filesystem::path(argv[0]); });
+}
+
+template <>
+void SetThisExecutablePath(const wchar_t* const argv[]) {
   static std::once_flag flag;
   std::call_once(flag, [argv] { g_this_executable_path = boost::filesystem::path(argv[0]); });
 }

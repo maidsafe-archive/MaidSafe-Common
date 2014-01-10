@@ -130,7 +130,8 @@ class Logging {
  public:
   static Logging& Instance();
   // Returns unused options
-  std::vector<std::vector<char>> Initialise(int argc, char** argv);
+  template <typename Char>
+  std::vector<std::vector<Char>> Initialise(int argc, Char** argv);
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);

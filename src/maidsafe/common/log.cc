@@ -284,13 +284,14 @@ po::options_description SetProgramOptions(std::string& config_file, bool& no_log
   return log_config;
 }
 
+template <typename Char>
 void ParseProgramOptions(const po::options_description& log_config, const std::string& config_file,
-                         int argc, char** argv, po::variables_map& log_variables,
-                         std::vector<std::vector<char>>& unused_options) {
+                         int argc, Char** argv, po::variables_map& log_variables,
+                         std::vector<std::vector<Char>>& unused_options) {
   po::options_description cmdline_options;
   cmdline_options.add(log_config);
-  po::parsed_options parsed(
-      po::command_line_parser(argc, argv).options(cmdline_options).allow_unregistered().run());
+  po::basic_parsed_options<Char> parsed(po::basic_command_line_parser<Char>(argc, argv)
+                                          .options(cmdline_options).allow_unregistered().run());
 
   po::store(parsed, log_variables);
   po::notify(log_variables);
@@ -307,8 +308,10 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
   unused_options.emplace_back(this_exe_path.c_str(),
                               this_exe_path.c_str() + this_exe_path.size() + 1u);
   auto unuseds(po::collect_unrecognized(parsed.options, po::include_positional));
-  if (log_variables.count("help"))
-    unuseds.push_back("--help");
+  if (log_variables.count("help")) {
+    const Char help[] = {'-', '-', 'h', 'e', 'l', 'p'};
+    unuseds.push_back(help);
+  }
   for (const auto& unused : unuseds)
     unused_options.emplace_back(unused.c_str(), unused.c_str() + unused.size() + 1u);
 }
@@ -426,9 +429,34 @@ Logging& Logging::Instance() {
   return logging;
 }
 
+template <>
 std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
   SetThisExecutablePath(argv);
   std::vector<std::vector<char>> unused_options;
+  std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
+    try {
+      std::string config_file, log_folder;
+      int colour_mode(-1);
+      po::options_description log_config(
+          SetProgramOptions(config_file, no_log_to_console_, log_folder, no_async_, colour_mode));
+      ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
+      if (IsHelpOption(log_config))
+        return;
+      DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
+      HandleFilterOptions();
+      SetStreams();
+    }
+    catch (const std::exception& e) {
+      std::cout << "Exception initialising logging: " << e.what() << "\n\n";
+    }
+  });
+  return unused_options;
+}
+
+template <>
+std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) {
+  SetThisExecutablePath(argv);
+  std::vector<std::vector<wchar_t>> unused_options;
   std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
     try {
       std::string config_file, log_folder;
