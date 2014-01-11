@@ -121,7 +121,6 @@ int ExecuteGTestMain(int argc, char* argv[]) {
 
 int ExecuteCatchMain(int argc, char* argv[]) {
   auto unused_options(log::Logging::Instance().Initialise(argc, argv));
-  argc = static_cast<int>(unused_options.size());
 
   std::vector<char*> unused_chars;
   for (auto& unused_option : unused_options)

@@ -64,7 +64,7 @@ target_include_directories(maidsafe_common
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-target_include_directories(maidsafe_common SYSTEM
+ms_target_include_system_dirs(maidsafe_common
   PUBLIC
     ${BoostSourceDir}
     ${CatchSourceDir}
@@ -75,6 +75,7 @@ target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/
 if(MaidsafeTesting)
   ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
+  add_dependencies(test_common ipc_child_process)
   ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
   ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
   # ms_add_executable(TESTboost "Tests/Common" ${TestsMain} ${BoostTestsAllFiles})

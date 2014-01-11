@@ -107,8 +107,8 @@ TEST_CASE("ByteRatios", "[Utils][Unit]") {
   CHECK(Bytes(2) != KiloBytes(4) / 2000);  // this is a narrowing call rhs == 0
   CHECK((Bytes(1) + Bytes(1)) == Bytes(2));
   CHECK((Bytes(2) - Bytes(1)) == Bytes(1));
-  CHECK(Bytes(1).count() == 1);
-  CHECK(KiloBytes(1).count() == 1);
+  CHECK(Bytes(1).count() == 1ULL);
+  CHECK(KiloBytes(1).count() == 1ULL);
 }
 
 TEST_CASE("BytesToDecimalSiUnits", "[Utils][Unit]") {
