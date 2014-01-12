@@ -324,28 +324,26 @@ TEST(CryptoTest, BEH_Compress) {
 TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
   // if the algorithm changes this test will start failing as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
-  std::string answer = "d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b";
-  answer += "8dd4c44e6d01a88526647df8c7555330f3d347e1ac37";
-  answer += "35e1a73c79c258e9fa7094f9ab07e33";
-  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer);
+  std::string answer = "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e"
+                       "131e5fd06603db357b03752cad7080def2eed1854267bf42328d1";
+  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 6))), answer);
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
   // 23 Mb approx
-  std::string answer2 = "651d460d960d3329da36304f0e0bb3098112e4f0583f6e34d2fc";
-  answer2 += "3ecdf7908c2a493c4defdce4109d9e715e767890cef558f6b7ae02";
-  answer2 += "4f6e8561be2ef0d483872f";
-  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 9))), answer2);
+  std::string answer2 = "e155ff72e8db0a9db00051afca9b3abeadda361c0c31d28aa6ab945e22883c78eb0cb4bc88"
+                        "493e0f6f5e7aebcbe7e5e9531088f077705a9a2d094d633472e9c6";
+  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 6))), answer2);
 }
 
 TEST(CryptoTest, BEH_AESTigerDeterministic) {
   // if the algorithm changes this test will start failing as it is a bit of a sledgehammer approach
   std::string test_data = "11111111111111122222222222222222222333333333333";
-  std::string answer = "43ecf84f0b07b3f6df2b2910dbdc5022fd6c6124c89647c9";
-  EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer);
+  std::string answer = "3af1480248cc787a969000a2d0b9c794c8ba44ffabc210fa";
+  EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 6))), answer);
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
-  std::string answer2 = "f98bb1b55f14f3ec8612212919d47db91bb94c2e9329de2d";
-  EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 9))), answer2);
+  std::string answer2 = "9c9efc1a7fcce4ffee1669b7361ea1b720775c7b321047ad";
+  EXPECT_EQ(HexEncode(Hash<Tiger>(Compress(UncompressedText(test_data), 6))), answer2);
 }
 
 TEST(CryptoTest, BEH_SecretSharing) {
