@@ -181,10 +181,6 @@ NonEmptyString ReadFile(const boost::filesystem::path& file_path);
 // Writes the given content string to a file, overwriting if applicable.
 bool WriteFile(const boost::filesystem::path& file_path, const std::string& content);
 
-// Causes running thread to sleep for specified duration.  Returns true if sleep completes full
-// duration, returns false if the sleep is interrupted.
-bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration& duration);
-
 // For use with std::chrono durations - provides a non-interruptible sleep.
 template <typename Rep, typename Period>
 void Sleep(const std::chrono::duration<Rep, Period>& duration) {

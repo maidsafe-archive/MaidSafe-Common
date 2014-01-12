@@ -23,10 +23,10 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "boost/asio/io_service.hpp"
-#include "boost/thread/thread.hpp"
 
 namespace maidsafe {
 
@@ -41,7 +41,7 @@ class AsioService {
  private:
   boost::asio::io_service service_;
   std::shared_ptr<boost::asio::io_service::work> work_;
-  std::vector<boost::thread> threads_;
+  std::vector<std::thread> threads_;
   std::mutex mutex_;
 };
 

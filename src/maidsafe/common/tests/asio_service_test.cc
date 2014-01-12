@@ -62,49 +62,6 @@ TEST_CASE("AsioService invalid start", "[AsioService][Unit]") {
   }
 }
 
-TEST_CASE("AsioService interrupt", "[AsioService][Unit]") {  // Timeout 8
-  // Stop while executing interruptible long-running tasks
-  std::mutex mutex;
-  int task_count(100);
-  const boost::chrono::seconds kTaskDuration(2);
-  int sleeps_interrupted(0), sleeps_not_interrupted(0);
-
-  auto interruptible_task([&] {
-    bool sleep_completed(InterruptibleSleep(kTaskDuration));
-    std::lock_guard<std::mutex> lock(mutex);
-    sleep_completed ? ++sleeps_not_interrupted : ++sleeps_interrupted;
-  });
-
-  AsioService asio_service(5);
-  asio_service.Start();
-  auto start_time(boost::chrono::high_resolution_clock::now());
-  for (int i(0); i != task_count; ++i)
-    asio_service.service().post(interruptible_task);
-  asio_service.Stop();
-  CHECK(task_count == sleeps_interrupted);
-  CHECK(0 == sleeps_not_interrupted);
-  auto duration(boost::chrono::high_resolution_clock::now() - start_time);
-  CHECK(duration < kTaskDuration * 2);
-
-  // Stop while executing non-interruptible long-running tasks
-  task_count = 4;
-  sleeps_interrupted = sleeps_not_interrupted = 0;
-  auto non_interruptible_task([interruptible_task] {
-    boost::this_thread::disable_interruption disable_interruption;
-    interruptible_task();
-  });
-
-  asio_service.Start();
-  start_time = boost::chrono::high_resolution_clock::now();
-  for (int i(0); i != task_count; ++i)
-    asio_service.service().post(non_interruptible_task);
-  asio_service.Stop();
-  CHECK(task_count == sleeps_not_interrupted);
-  CHECK(0 == sleeps_interrupted);
-  duration = boost::chrono::high_resolution_clock::now() - start_time;
-  CHECK(duration >= kTaskDuration);
-}
-
 }  // namespace test
 
 }  // namespace maidsafe

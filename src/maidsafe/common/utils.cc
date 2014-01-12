@@ -465,19 +465,6 @@ bool WriteFile(const fs::path& file_path, const std::string& content) {
   return true;
 }
 
-bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration& duration) {
-  try {
-    boost::this_thread::sleep_for(duration);
-  }
-  catch (const boost::thread_interrupted&) {
-    LOG(kWarning) << "Thread was interrupted while sleeping for "
-                  << boost::chrono::duration_cast<boost::chrono::microseconds>(duration).count()
-                  << " microseconds.";
-    return false;
-  }
-  return true;
-}
-
 fs::path GetPathFromProgramOptions(const std::string& option_name,
                                    const po::variables_map& variables_map, bool is_dir,
                                    bool create_new_if_absent) {
