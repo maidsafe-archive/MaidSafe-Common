@@ -45,7 +45,7 @@ std::string XOR(const std::string& first, const std::string& second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
     LOG(kWarning) << "Size mismatch or zero.";
-    return "";
+    ThrowError(CommonErrors::unable_to_handle_request);
   }
 
   std::string result(common_size, 0);

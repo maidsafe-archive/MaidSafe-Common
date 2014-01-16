@@ -75,7 +75,6 @@ class SHA1;
 class SHA256;
 class SHA384;
 class SHA512;
-class Tiger;
 }  // namespace CryptoPP
 
 namespace maidsafe {
@@ -86,7 +85,6 @@ typedef CryptoPP::SHA1 SHA1;
 typedef CryptoPP::SHA256 SHA256;
 typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
-typedef CryptoPP::Tiger Tiger;
 typedef CryptoPP::Integer BigInt;
 
 enum {
@@ -105,7 +103,6 @@ typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
 typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
 typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
 typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
-typedef detail::BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
 typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText, CompressedText,
     UncompressedText;
 
