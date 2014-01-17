@@ -191,23 +191,6 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Ha
   return BoundedString(result);
 }
 
-// Hash function operating on a file.
-template <typename HashType>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
-    const boost::filesystem::path& file_path) {
-  std::string result;
-  HashType hash;
-  try {
-    CryptoPP::FileSource(file_path.c_str(), true,
-                         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
-    ThrowError(CommonErrors::hashing_error);
-  }
-  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
-}
-
 // Performs symmetric encrytion using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
 CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,

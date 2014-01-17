@@ -477,7 +477,6 @@ TEST_CASE("ReadFile and WriteFile", "[Utils][Unit]") {
   file_content = RandomString(3000 + RandomUint32() % 1000);
   CHECK(WriteFile(file_path, file_content));
   CHECK_NOTHROW(ReadFile(file_path));
-  CHECK(crypto::Hash<crypto::SHA512>(file_content) == crypto::HashFile<crypto::SHA512>(file_path));
   std::string file_content_in;
   CHECK(ReadFile(file_path, &file_content_in));
   CHECK(file_content == file_content_in);

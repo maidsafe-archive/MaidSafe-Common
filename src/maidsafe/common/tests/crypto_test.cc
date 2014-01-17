@@ -60,9 +60,9 @@ TEST(CryptoTest, FUNC_Obfuscation) {
 }
 
 TEST(CryptoTest, BEH_Xor) {
-  EXPECT_TRUE(XOR("A", "").empty());
-  EXPECT_TRUE(XOR("", "B").empty());
-  EXPECT_TRUE(XOR("A", "BB").empty());
+  EXPECT_THROW(XOR("A", ""), std::exception);
+  EXPECT_THROW(XOR("", "B"), std::exception);
+  EXPECT_THROW(XOR("A", "BB"), std::exception);
   const size_t kStringSize(1024 * 256);
   std::string str1 = RandomString(kStringSize);
   std::string str2 = RandomString(kStringSize);
@@ -166,14 +166,6 @@ TEST(CryptoTest, BEH_Hash) {
   std::shared_ptr<fs::path> test_dir(maidsafe::test::CreateTestPath("MaidSafe_TestCrypto"));
   EXPECT_FALSE(test_dir->empty());
   std::vector<fs::path> input_files;
-  for (size_t i = 0; i < test_data.size(); ++i) {
-    fs::path input_path(*test_dir);
-    input_path /= "Input" + std::to_string(i) + ".txt";
-    input_files.push_back(input_path);
-    std::fstream input_file(input_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
-    input_file << test_data.at(i).input;
-    input_file.close();
-  }
 
   // Run tests
   for (size_t j = 0; j < test_data.size(); ++j) {
@@ -181,29 +173,21 @@ TEST(CryptoTest, BEH_Hash) {
     if (!test_data.at(j).SHA1_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA1_hex_result, HexEncode(Hash<SHA1>(input)));
       EXPECT_EQ(test_data.at(j).SHA1_raw_result, Hash<SHA1>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA1_hex_result, HexEncode(HashFile<SHA1>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA1_raw_result, HashFile<SHA1>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA256_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(Hash<SHA256>(input)));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<SHA256>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(HashFile<SHA256>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA256_raw_result, HashFile<SHA256>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA384_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(Hash<SHA384>(input)));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<SHA384>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(HashFile<SHA384>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA384_raw_result, HashFile<SHA384>(input_files.at(j)).string());
     }
 
     if (!test_data.at(j).SHA512_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(Hash<SHA512>(input)));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<SHA512>(input).string());
-      EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(HashFile<SHA512>(input_files.at(j))));
-      EXPECT_EQ(test_data.at(j).SHA512_raw_result, HashFile<SHA512>(input_files.at(j)).string());
     }
   }
 
@@ -212,11 +196,6 @@ TEST(CryptoTest, BEH_Hash) {
   EXPECT_THROW(Hash<SHA256>(Identity()), std::exception);
   EXPECT_THROW(Hash<SHA512>(UserPassword()), std::exception);
 
-  // Check using invalid filename
-  EXPECT_THROW(HashFile<SHA1>(fs::path("NonExistent")), std::exception);
-  EXPECT_THROW(HashFile<SHA256>(fs::path("NonExistent")), std::exception);
-  EXPECT_THROW(HashFile<SHA384>(fs::path("NonExistent")), std::exception);
-  EXPECT_THROW(HashFile<SHA512>(fs::path("NonExistent")), std::exception);
 }
 
 std::string CorruptData(const std::string& input) {
