@@ -56,7 +56,6 @@ TEST(CryptoTest, FUNC_Obfuscation) {
   const detail::BoundedString<2, 2> kKnown1("\xa5\x5a");
   const detail::BoundedString<2, 2> kKnown2("\x5a\xa5");
   EXPECT_EQ(std::string("\xff\xff"), XOR(kKnown1, kKnown2).string());
-
 }
 
 TEST(CryptoTest, BEH_Xor) {
@@ -195,7 +194,6 @@ TEST(CryptoTest, BEH_Hash) {
   EXPECT_THROW(Hash<SHA1>(NonEmptyString()), std::exception);
   EXPECT_THROW(Hash<SHA256>(Identity()), std::exception);
   EXPECT_THROW(Hash<SHA512>(UserPassword()), std::exception);
-
 }
 
 std::string CorruptData(const std::string& input) {
