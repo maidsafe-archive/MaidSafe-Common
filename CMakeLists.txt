@@ -64,12 +64,10 @@ target_include_directories(maidsafe_common
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-ms_target_include_system_dirs(maidsafe_common
-  PUBLIC
-    ${BoostSourceDir}
-    ${CatchSourceDir}
-    $<$<BOOL:${JustThread_FOUND}>:${JustThread_INCLUDE_DIR}>
-)
+ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSourceDir})
+if(JustThread_FOUND)
+  ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
+endif()
 target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 
 if(MaidsafeTesting)
