@@ -34,7 +34,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("AsioService invalid start", "[AsioService][Unit]") {
+TEST_CASE("AsioService start and stop", "[AsioService][Unit]") {
   bool done(false);
   std::mutex mutex;
   std::condition_variable cond_var;
@@ -45,20 +45,29 @@ TEST_CASE("AsioService invalid start", "[AsioService][Unit]") {
     cond_var.notify_one();
   });
 
-  // Allocate no threads
-  CHECK_THROWS_AS(AsioService asio_service(0), std::exception);
+  SECTION("Allocate no threads") {
+    CHECK_THROWS_AS(AsioService(0), std::exception);
+  }
 
-  {  // Start after posting tasks
+  SECTION("Normal usage") {
     AsioService asio_service(2);
     asio_service.service().post(task);
     std::unique_lock<std::mutex> lock(mutex);
-    CHECK_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
-    CHECK_FALSE(done);
-
-    asio_service.Start();
     CHECK(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
     CHECK(done);
-    asio_service.Start();
+
+    SECTION("Explicit Stop before destruction") {
+      CHECK_NOTHROW(asio_service.Stop());
+      CHECK_NOTHROW(asio_service.Stop());
+    }
+
+    SECTION("Stop, then post more tasks") {
+      done = false;
+      asio_service.Stop();
+      asio_service.service().post(task);
+      CHECK_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
+      CHECK_FALSE(done);
+    }
   }
 }
 
