@@ -60,28 +60,22 @@ enum class ColourMode {
   kFullLine
 };
 
-#ifdef MAIDSAFE_WIN32
-class NullStream {
- public:
-  NullStream() {}
-  template <typename T>
-  NullStream& operator<<(T const&) {
-    return *this;
-  }
-  operator bool() const { return false; }
-};
-#else
 // compile away DLOG and LOG statements
 class NullStream {
  public:
   NullStream() {}
   template <typename T>
-  NullStream& operator<<(T const&) {
-    return *this;
-  }
+  NullStream& operator<<(const T&) { return *this; }
+  typedef std::basic_ostream<char, std::char_traits<char>> CoutType;
+  typedef CoutType& (*StandardEndLine)(CoutType&);
+  // define an operator<< to take in std::endl
+  NullStream& operator<<(StandardEndLine) { return *this; }
+#ifdef MAIDSAFE_WIN32
+  operator bool() const { return false; }
+#else
   explicit operator bool() const { return false; }
-};
 #endif
+};
 
 struct Envoid {
  public:
