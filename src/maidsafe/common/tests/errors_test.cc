@@ -57,6 +57,7 @@ TEST_CASE("Error codes and conditions", "[ErrorCode][ErrorCondition][Unit]") {
 }
 
 TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
+  // Catch as specific error type
   try {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
   }
@@ -65,6 +66,7 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
+  // Catch as maidsafe_error
   try {
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
   }
@@ -73,6 +75,7 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
+  // Catch as std::exception
   try {
     BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
   }
@@ -81,6 +84,7 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
+  // Catch as boost::exception
   try {
     BOOST_THROW_EXCEPTION(MakeError(EncryptErrors::bad_sequence));
   }
@@ -88,6 +92,15 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
+  // Catch as any type
+  try {
+    BOOST_THROW_EXCEPTION(MakeError(DriveErrors::failed_to_mount));
+  }
+  catch (...) {
+    LOG(kError) << boost::current_exception_diagnostic_information();
+  }
+
+  // Throw using ThrowError
   try {
     ThrowError(RoutingErrors::not_connected);
   }
@@ -96,7 +109,16 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
-  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
+  // Use plain throw
+  try {
+    throw MakeError(NfsErrors::failed_to_get_data);
+  }
+  catch (const nfs_error& e) {
+    LOG(kWarning) << e.what();
+    LOG(kError) << boost::diagnostic_information(e);
+  }
+
+  CHECK_NOTHROW(ThrowError(CommonErrors::success));
 }
 
 }  // namespace test
