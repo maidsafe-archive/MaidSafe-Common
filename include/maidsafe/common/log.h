@@ -84,7 +84,8 @@ struct Envoid {
   void operator&(NullStream&) {}
 };
 
-const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
+const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2,
+          kError = 3, kFatal = 4, kGraph = 5;
 
 #ifdef USE_LOGGING
 #define LOG(level)                                                                            \

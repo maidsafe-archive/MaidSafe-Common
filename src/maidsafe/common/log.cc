@@ -198,6 +198,10 @@ void GetColourAndLevel(char& log_level, Colour& colour, int level) {
       log_level = 'F';
       colour = Colour::kRed;
       break;
+    case kGraph:
+      log_level = 'G';
+      colour = Colour::kDefaultColour;
+      break;
     default:
       log_level = ' ';
   }
@@ -342,6 +346,8 @@ int GetLogLevel(std::string level) {
     return 3;
   if ((level == "f") || (level == "fatal") || (level == "kfatal") || (level == "4"))
     return 4;
+  if ((level == "g") || (level == "graph") || (level == "kgraph") || (level == "5"))
+    return 5;
   return std::numeric_limits<int>::min();
 }
 
@@ -481,7 +487,7 @@ bool Logging::IsHelpOption(const po::options_description& log_config) const {
 #ifdef USE_LOGGING
   if (log_variables_.count("help")) {
     std::cout << log_config << "Logging levels are as follows:\n"
-              << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Fatal(F)\n\n\n";
+              << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Fatal(F), Graph(G)\n\n\n";
     return true;
   }
   return false;
