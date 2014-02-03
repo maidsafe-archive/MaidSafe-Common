@@ -213,7 +213,7 @@ std::string GetLocalTime() {
 
   char temp[10];
   if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
-    ThrowError(CommonErrors::unknown);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
 
   return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
 }
@@ -321,7 +321,7 @@ void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mod
   if (col_mode != -1) {
     if (col_mode < 0 || col_mode > 2) {
       std::cout << "colour_mode must be 0, 1, or 2\n";
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
     colour_mode = static_cast<ColourMode>(col_mode);
   }

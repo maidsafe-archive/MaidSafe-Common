@@ -130,7 +130,7 @@ SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& sa
                                     const std::string& label = kMaidSafeVersionLabel) {
   if (!password.IsInitialised() || !salt.IsInitialised()) {
     LOG(kError) << "CreateSecurePassword password or salt uninitialised";
-    ThrowError(CommonErrors::uninitialised);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
@@ -159,7 +159,7 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
-    ThrowError(CommonErrors::hashing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
   return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
@@ -186,7 +186,7 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Ha
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
-    ThrowError(CommonErrors::hashing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
   return BoundedString(result);
 }

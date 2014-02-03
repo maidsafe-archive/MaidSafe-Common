@@ -139,7 +139,7 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
   const auto result(converter.out(state, &input[0], &input[input.size()], from_next,
                                   &output[0], &output[output.size()], to_next));
   if (result != Converter::ok && result != Converter::noconv)
-    ThrowError(CommonErrors::invalid_conversion);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
   output.resize(to_next - &output[0]);
   return output;
@@ -242,7 +242,7 @@ std::string HexEncode(const std::string& non_hex_input) {
 std::string HexDecode(const std::string& hex_input) {
   auto size(hex_input.size());
   if (size % 2)  // Sanity check
-    ThrowError(CommonErrors::invalid_conversion);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
   std::string non_hex_output(size / 2, 0);
   for (size_t i(0), j(0); i != size / 2; ++i) {
@@ -290,7 +290,7 @@ std::string Base64Encode(const std::string& non_base64_input) {
 
 std::string Base64Decode(const std::string& base64_input) {
   if (base64_input.size() % 4)  // Sanity check
-    ThrowError(CommonErrors::invalid_conversion);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
   size_t padding = 0;
   if (base64_input.size()) {
@@ -328,10 +328,10 @@ std::string Base64Decode(const std::string& base64_input) {
             decoded_bytes.push_back((temp >> 10) & 0x000000FF);
             return decoded_bytes;
           default:
-            ThrowError(CommonErrors::invalid_conversion);
+            BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
         }
       } else {
-        ThrowError(CommonErrors::invalid_conversion);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
       }
       ++cursor;
     }
@@ -434,7 +434,7 @@ bool ReadFile(const fs::path& file_path, std::string* content) {
 NonEmptyString ReadFile(const fs::path& file_path) {
   uintmax_t file_size(fs::file_size(file_path));
   if (file_size > std::numeric_limits<size_t>::max())
-    ThrowError(CommonErrors::file_too_large);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
 
   std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
 

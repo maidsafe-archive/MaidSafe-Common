@@ -226,7 +226,7 @@ MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
   protobuf::MatrixRecord proto_matrix_record;
   if (!proto_matrix_record.ParseFromString(serialised_matrix_record)) {
     LOG(kError) << "Failed to construct matrix_record.";
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 
   owner_id_ = NodeId(proto_matrix_record.owner_id());

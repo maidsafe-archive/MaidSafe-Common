@@ -100,15 +100,6 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::current_exception_diagnostic_information();
   }
 
-  // Throw using ThrowError
-  try {
-    ThrowError(RoutingErrors::not_connected);
-  }
-  catch (const routing_error& e) {
-    LOG(kWarning) << e.what();
-    LOG(kError) << boost::diagnostic_information(e);
-  }
-
   // Use plain throw
   try {
     throw MakeError(NfsErrors::failed_to_get_data);
@@ -118,7 +109,7 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
-  CHECK_NOTHROW(ThrowError(CommonErrors::success));
+  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
 }  // namespace test

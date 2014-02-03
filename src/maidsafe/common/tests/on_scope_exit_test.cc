@@ -32,7 +32,7 @@ void Increment(std::vector<int32_t>& data) { data.push_back(static_cast<int32_t>
 
 void IncrementAndThrow(std::vector<int32_t>& data) {
   Increment(data);
-  ThrowError(CommonErrors::invalid_parameter);
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 }
 
 TEST_CASE("OnScopeExit revert value", "[OnScopeExit][Unit]") {
