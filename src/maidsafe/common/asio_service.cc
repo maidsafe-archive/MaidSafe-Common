@@ -28,7 +28,17 @@ AsioService::AsioService(uint32_t thread_count)
   if (thread_count == 0)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   for (uint32_t i(0); i != thread_count; ++i)
-    threads_.emplace_back([&] { service_.run(); });
+    threads_.emplace_back([&] {
+      try {
+        service_.run();
+      }
+      catch (...) {
+        LOG(kError) << boost::current_exception_diagnostic_information();
+        // Rethrowing here will cause the application to terminate - so flush the log message first.
+        log::Logging::Instance().Flush();
+        throw;
+      }
+  });
 }
 
 AsioService::~AsioService() { Stop(); }
