@@ -26,9 +26,19 @@ AsioService::AsioService(uint32_t thread_count)
     : service_(), work_(new boost::asio::io_service::work(service_)), threads_(),
       mutex_() {
   if (thread_count == 0)
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   for (uint32_t i(0); i != thread_count; ++i)
-    threads_.emplace_back([&] { service_.run(); });
+    threads_.emplace_back([&] {
+      try {
+        service_.run();
+      }
+      catch (...) {
+        LOG(kError) << boost::current_exception_diagnostic_information();
+        // Rethrowing here will cause the application to terminate - so flush the log message first.
+        log::Logging::Instance().Flush();
+        throw;
+      }
+  });
 }
 
 AsioService::~AsioService() { Stop(); }
@@ -41,7 +51,7 @@ void AsioService::Stop() {
   }
   for (const auto& asio_thread : threads_) {
     if (std::this_thread::get_id() == asio_thread.get_id())
-      ThrowError(CommonErrors::cannot_invoke_from_this_thread);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::cannot_invoke_from_this_thread));
   }
 
   work_.reset();

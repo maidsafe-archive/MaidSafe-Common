@@ -44,7 +44,7 @@ class BoundedString {
 
   explicit BoundedString(StringType string) : string_(std::move(string)), valid_(true) {
     if (OutwithBounds())
-      ThrowError(CommonErrors::invalid_string_size);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
   }
 
   friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
@@ -67,11 +67,11 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString& other) {
     if (!valid_ || !other.valid_) {
       LOG(kError) << "BoundedString one of class uninitialised in operator+=";
-      ThrowError(CommonErrors::uninitialised);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     }
     if (SizeOutOfBounds(string_.size() + other.string_.size())) {
       LOG(kError) << "BoundedString invalid_string_size in operator+=";
-      ThrowError(CommonErrors::invalid_string_size);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
     }
     StringType temp(string_ + other.string_);
     string_.swap(temp);
@@ -99,11 +99,11 @@ class BoundedString {
   BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
     if (!valid_ || !other.valid_) {
       LOG(kError) << "BoundedString one of class uninitialised in operator+=";
-      ThrowError(CommonErrors::uninitialised);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     }
     if (SizeOutOfBounds(string_.size() + other.string_.size())) {
       LOG(kError) << "BoundedString invalid_string_size in operator+=";
-      ThrowError(CommonErrors::invalid_string_size);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
     }
     StringType temp(string_ + other.string_);
     string_.swap(temp);
@@ -113,7 +113,7 @@ class BoundedString {
   const StringType& string() const {
     if (!valid_) {
       LOG(kError) << "class uninitialised";
-      ThrowError(CommonErrors::uninitialised);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     }
     return string_;
   }

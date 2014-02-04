@@ -290,10 +290,9 @@ const std::error_category& GetClientCategory();
 client_error MakeError(ClientErrors code);
 
 template <typename MaidsafeErrorCode>
-inline void ThrowError(const MaidsafeErrorCode& code) {
-  auto error(MakeError(code));
-  if (error.code())
-    boost::throw_exception(error);
+auto MakeBoostException(const MaidsafeErrorCode& code)->
+    decltype(boost::enable_error_info(MakeError(code))) {
+  return boost::enable_error_info(MakeError(code));
 }
 
 }  // namespace maidsafe

@@ -64,7 +64,7 @@ bool IsRunning(const ProcessInfo& process_info) {
   DWORD exit_code;
   if (GetExitCodeProcess(process_info.handle, &exit_code) == FALSE) {
     LOG(kError) << "Failed to get status of process.  Windows error: " << GetLastError();
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   return exit_code == STILL_ACTIVE;
 }
@@ -80,7 +80,7 @@ bool IsRunning(const ProcessInfo& process_info) {
     return true;
   } else if (errno != ESRCH) {
     LOG(kError) << "Failed to get status of process.  errno: " << errno;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   return false;
 }

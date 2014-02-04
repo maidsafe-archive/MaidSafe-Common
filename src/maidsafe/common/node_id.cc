@@ -45,15 +45,14 @@ NodeId::NodeId(IdType type)
           case kRandomId:
             return RandomString(kSize);
           default:
-            ThrowError(CommonErrors::invalid_parameter);
+            BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
         }
-        return "";
       }()) {}
 
 NodeId::NodeId(std::string id) : raw_id_(std::move(id)) {
   if (raw_id_.size() != kSize) {
     raw_id_.clear();
-    ThrowError(CommonErrors::invalid_node_id);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
   }
 }
 
@@ -83,7 +82,7 @@ NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_
     Base64Decode(id);
   } else if (raw_id_.size() != kSize) {
     raw_id_.clear();
-    ThrowError(CommonErrors::invalid_node_id);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
   }
 }
 

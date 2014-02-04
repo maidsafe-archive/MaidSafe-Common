@@ -57,7 +57,7 @@ void SetThisExecutablePath(const wchar_t* const argv[]) {
 
 boost::filesystem::path ThisExecutablePath() {
   if (g_this_executable_path.empty())
-    ThrowError(CommonErrors::uninitialised);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   return g_this_executable_path;
 }
 
