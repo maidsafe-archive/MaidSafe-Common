@@ -73,6 +73,9 @@ boost::asio::ip::address GetLocalIp(
 // Takes a version as a string and returns the int form, e.g. "0.09.01" returns 901
 int VersionToInt(const std::string& version);
 
+// Hash a string to 64bit unsigned integer
+uint64_t HashStringToInt(const std::string& input);
+
 // Converts num bytes to nearest integral decimal SI value.
 std::string BytesToDecimalSiUnits(uint64_t num);
 

@@ -209,6 +209,11 @@ int VersionToInt(const std::string& version) {
   return (major_version * 10000) + (minor_version * 1000) + patch_level;
 }
 
+uint64_t HashStringToInt(const std::string& input) {
+  std::hash<std::string> hash_fn;
+  return hash_fn(input);
+}
+
 std::string BytesToDecimalSiUnits(uint64_t num) { return BytesToSiUnits<DecimalUnit>(num); }
 
 std::string BytesToBinarySiUnits(uint64_t num) { return BytesToSiUnits<BinaryUnit>(num); }
