@@ -84,8 +84,7 @@ struct Envoid {
   void operator&(NullStream&) {}
 };
 
-const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2,
-          kError = 3, kFatal = 4, kGraph = 5;
+const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
 
 #ifdef USE_LOGGING
 #define LOG(level)                                                                            \
@@ -95,6 +94,7 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2,
 #define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
 #define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
+#define GLOG() maidsafe::log::GraphLogMessage().messageStream()
 
 class LogMessage {
  public:
@@ -118,6 +118,16 @@ class GtestLogMessage {
 
  private:
   const Colour kColour_;
+  std::ostringstream stream_;
+};
+
+class GraphLogMessage {
+ public:
+  GraphLogMessage();
+  ~GraphLogMessage();
+  std::ostringstream& messageStream() { return stream_; }
+
+ private:
   std::ostringstream stream_;
 };
 

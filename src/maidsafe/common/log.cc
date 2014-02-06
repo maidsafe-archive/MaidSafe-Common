@@ -198,10 +198,6 @@ void GetColourAndLevel(char& log_level, Colour& colour, int level) {
       log_level = 'F';
       colour = Colour::kRed;
       break;
-    case kGraph:
-      log_level = 'G';
-      colour = Colour::kDefaultColour;
-      break;
     default:
       log_level = ' ';
   }
@@ -346,8 +342,6 @@ int GetLogLevel(std::string level) {
     return 3;
   if ((level == "f") || (level == "fatal") || (level == "kfatal") || (level == "4"))
     return 4;
-  if ((level == "g") || (level == "graph") || (level == "kgraph") || (level == "5"))
-    return 5;
   return std::numeric_limits<int>::min();
 }
 
@@ -406,6 +400,25 @@ GtestLogMessage::~GtestLogMessage() {
   auto print_functor([colour, log_entry, filter] {
     if (Logging::Instance().LogToConsole())
       ColouredPrint(colour, log_entry);
+    for (auto& entry : filter)
+      Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
+    if (filter.size() != 1)
+      Logging::Instance().WriteToCombinedLogfile(log_entry);
+  });
+  Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
+}
+
+GraphLogMessage::GraphLogMessage() : stream_() {
+  stream_ << "[" << GetLocalTime() << "] ";
+}
+
+GraphLogMessage::~GraphLogMessage() {
+  stream_ << "\n";
+  std::string log_entry(stream_.str());
+  FilterMap filter(Logging::Instance().Filter());
+  auto print_functor([log_entry, filter] {
+    if (Logging::Instance().LogToConsole())
+      ColouredPrint(Colour::kDefaultColour, log_entry);
     for (auto& entry : filter)
       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
     if (filter.size() != 1)
