@@ -40,8 +40,10 @@ TEST_CASE("AsioService start and stop", "[AsioService][Unit]") {
   std::condition_variable cond_var;
 
   auto task([&] {
-    std::lock_guard<std::mutex> lock(mutex);
-    done = true;
+    {
+      std::lock_guard<std::mutex> lock(mutex);
+      done = true;
+    }
     cond_var.notify_one();
   });
 
