@@ -159,8 +159,8 @@ const uint16_t kLivePort(5483);
 
 boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
   boost::asio::io_service io_service;
-  boost::asio::ip::udp::socket socket(io_service);
   try {
+    boost::asio::ip::udp::socket socket(io_service);
     socket.connect(peer_endpoint);
     if (socket.local_endpoint().address().is_unspecified() ||
         socket.local_endpoint().address().is_loopback())
