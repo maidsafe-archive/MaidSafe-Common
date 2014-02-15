@@ -192,6 +192,8 @@ std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Bad sequence";
     case EncryptErrors::no_data:
       return "No data";
+    case EncryptErrors::invalid_encryption_version:
+      return "Invalid version of encryption algorithm";
     default:
       return "Unknown error in Encrypt";
   }
