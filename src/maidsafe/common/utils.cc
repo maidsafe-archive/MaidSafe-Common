@@ -156,6 +156,7 @@ std::mutex& random_number_generator_mutex() { return g_random_number_generator_m
 
 const int kInvalidVersion(-1);
 const uint16_t kLivePort(5483);
+const bptime::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));  // 01 Jan 2000
 
 boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
   boost::asio::io_service io_service;
@@ -390,15 +391,12 @@ std::string DebugId(const Identity& id) {
   return id.IsInitialised() ? "Uninitialised Identity" : HexSubstr(id.string());
 }
 
-bptime::time_duration GetDurationSinceEpoch() {
-  // 01 Jan 2000
-  static const boost::posix_time::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));
-  return bptime::microsec_clock::universal_time() - kMaidSafeEpoch;
+uint64_t GetTimeStamp() {
+  return (bptime::microsec_clock::universal_time() - kMaidSafeEpoch).total_milliseconds();
 }
 
-uint32_t GetTimeStamp() {
-  bptime::time_duration since_epoch(GetDurationSinceEpoch());
-  return since_epoch.total_seconds();
+boost::posix_time::ptime TimeStampToPtime(uint64_t timestamp) {
+  return kMaidSafeEpoch + bptime::milliseconds(timestamp);
 }
 
 bool ReadFile(const fs::path& file_path, std::string* content) {

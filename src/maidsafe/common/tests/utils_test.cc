@@ -431,14 +431,10 @@ TEST_CASE("StringToWstring", "[Utils][Unit]") {
 }
 
 TEST_CASE("TimeFunctions", "[Utils][Unit]") {
-  uint64_t s, ms, ns;
-  bptime::time_duration since_epoch(GetDurationSinceEpoch());
-  ms = since_epoch.total_milliseconds();
-  ns = since_epoch.total_nanoseconds();
-  s = since_epoch.total_seconds();
-  CHECK(s == ms / 1000);
-  CHECK(s == ns / 1000000000);
-  CHECK(ms == ns / 1000000);
+  uint64_t ms_since_epoch(GetTimeStamp());
+  auto now(bptime::microsec_clock::universal_time());
+  auto from_timestamp(TimeStampToPtime(ms_since_epoch));
+  CHECK((now - from_timestamp) <= bptime::milliseconds(1));
 }
 
 TEST_CASE("RandomNumberGen", "[Utils][Unit]") {  // Timeout 20

@@ -50,6 +50,7 @@ std::mutex& random_number_generator_mutex();
 
 extern const int kInvalidVersion;
 extern const uint16_t kLivePort;
+extern const boost::posix_time::ptime kMaidSafeEpoch;
 
 // SI units.  (note MS windows will report on the 'old' system, for drive space)
 // this is (cheekily) using chrono::duration
@@ -171,11 +172,11 @@ std::wstring StringToWstring(const std::string& input);
 // Returns an abbreviated hex representation of id.
 std::string DebugId(const Identity& id);
 
-// Returns the duration since kMaidsafeEpoch (1st January 2000).
-boost::posix_time::time_duration GetDurationSinceEpoch();
+// Returns the number of milliseconds since kMaidsafeEpoch (1st January 2000).
+uint64_t GetTimeStamp();
 
-// Returns the number of seconds since kMaidsafeEpoch (1st January 2000).
-uint32_t GetTimeStamp();
+// Converts 'timestamp' to ptime where 'timestamp' is the result of a call to 'GetTimeStamp()'.
+boost::posix_time::ptime TimeStampToPtime(uint64_t timestamp);
 
 // Reads the given file and returns the contents as a string.
 bool ReadFile(const boost::filesystem::path& file_path, std::string* content);
