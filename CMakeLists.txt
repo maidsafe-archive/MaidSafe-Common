@@ -40,9 +40,18 @@ include(../../cmake_modules/standard_setup.cmake)
 #==================================================================================================#
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 ms_glob_dir(Common ${CommonSourcesDir} Common)
-ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
+
+ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
+ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
+
+ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
+ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
+
+ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
+ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
+
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(CommonGTestsAllFiles ${CommonTestsAllFiles})
 set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
@@ -61,8 +70,11 @@ list(APPEND CommonTestsAllFiles ${TestsMain})
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(maidsafe_common ${CommonAllFiles})
-ms_add_static_library(maidsafe_network_viewer ${CommonToolsAllFiles})
+# Common library
+ms_add_static_library(maidsafe_common
+    ${CommonAllFiles}
+    ${CommonDataStoresAllFiles}
+    ${CommonDataTypesAllFiles})
 add_dependencies(maidsafe_common boost_process catch)
 target_include_directories(maidsafe_common
   PUBLIC
@@ -75,38 +87,74 @@ ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSo
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
-target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
-if(MaidsafeTesting)
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
-  ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
-  add_dependencies(test_common ipc_child_process)
-  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
-endif()
-
 target_link_libraries(maidsafe_common
-                        cryptopp
-                        protobuf
-                        gtest
-                        ${BoostChronoLibs}
-                        ${BoostDateTimeLibs}
-                        ${BoostFilesystemLibs}
-                        ${BoostLocaleLibs}
-                        ${BoostSystemLibs}
-                        ${BoostThreadLibs}
-                        ${BoostProgramOptionsLibs}
-                        ${JustThread_LIBRARIES}
-                        ${SYS_LIB})
+    maidsafe_passport
+    cryptopp
+    protobuf
+    gtest
+    ${BoostChronoLibs}
+    ${BoostDateTimeLibs}
+    ${BoostFilesystemLibs}
+    ${BoostLocaleLibs}
+    ${BoostSystemLibs}
+    ${BoostThreadLibs}
+    ${BoostProgramOptionsLibs}
+    ${JustThread_LIBRARIES}
+    ${SYS_LIB})
 
+# Network Viewer library
+ms_add_static_library(maidsafe_network_viewer
+    "${CommonSourcesDir}/tools/network_viewer.cc"
+    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.cc"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.h"
+    "${CommonSourcesDir}/tools/network_viewer.proto")
+target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
+# Signing tool
+ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing_tool.cc")
+target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
+
+# Bootstrap file tool
+ms_add_executable(bootstrap_file_tool "Tools/Common"
+    "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.cc"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
+target_link_libraries(bootstrap_file_tool maidsafe_common)
+
+# Tests
 if(MaidsafeTesting)
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
   target_link_libraries(test_common maidsafe_common)
+
+  ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
+  add_dependencies(test_common ipc_child_process)
+
+  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
   target_link_libraries(test_config maidsafe_common)
+
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_common)
+
+  macro(CommonTests Group)
+    foreach(TestSource ${ARGN})
+      get_filename_component(Exe ${TestSource} NAME_WE)
+      string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
+      set(TestSources ${TestSource} ${TestsMain})
+      ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
+      target_link_libraries(${Exe} maidsafe_common)
+      # TODO - Investigate why boost variant requires this warning to be disabled in RelWithDebInfo only.
+# target_compile_options(${Exe} PRIVATE $<$<BOOL:${MSVC}>:/bigobj $<$<CONFIG:RelWithDebInfo>:/wd4702>>)
+      ms_add_catch_tests(${Exe})
+    endforeach()
+  endmacro()
+
+  CommonTests("Data Store Tests" ${CommonDataStoresTestsAllFiles})
+  CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
 endif()
+
 ms_rename_outdated_built_exes()
 
 
