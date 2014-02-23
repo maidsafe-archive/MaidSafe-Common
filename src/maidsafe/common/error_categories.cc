@@ -328,20 +328,19 @@ std::error_condition VaultCategory::default_error_condition(int error_value) con
   }
 }
 
-const char* ClientCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
+const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
 
-std::string ClientCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<ClientErrors>(error_value)) {
-    case ClientErrors::kPasswordFailure:
+std::string ApiCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<ApiErrors>(error_value)) {
+    case ApiErrors::kPasswordFailure:
       return "Failed to validate password";
     default:
       return "Unknown error in Client";
   }
 }
 
-std::error_condition ClientCategory::default_error_condition(int error_value) const
-    MAIDSAFE_NOEXCEPT {
-  //  switch (static_cast<ClientErrors>(error_value)) {
+std::error_condition ApiCategory::default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT {
+  //  switch (static_cast<ApiErrors>(error_value)) {
   //    default:
   return std::error_condition(error_value, *this);
   //  }

@@ -144,19 +144,19 @@ const std::error_category& GetVaultCategory() {
 
 vault_error MakeError(VaultErrors code) { return vault_error(make_error_code(code)); }
 
-std::error_code make_error_code(ClientErrors code) {
-  return std::error_code(static_cast<int>(code), GetClientCategory());
+std::error_code make_error_code(ApiErrors code) {
+  return std::error_code(static_cast<int>(code), GetApiCategory());
 }
 
-std::error_condition make_error_condition(ClientErrors code) {
-  return std::error_condition(static_cast<int>(code), GetClientCategory());
+std::error_condition make_error_condition(ApiErrors code) {
+  return std::error_condition(static_cast<int>(code), GetApiCategory());
 }
 
-const std::error_category& GetClientCategory() {
-  static detail::ClientCategory instance;
+const std::error_category& GetApiCategory() {
+  static detail::ApiCategory instance;
   return instance;
 }
 
-client_error MakeError(ClientErrors code) { return client_error(make_error_code(code)); }
+api_error MakeError(ApiErrors code) { return api_error(make_error_code(code)); }
 
 }  // namespace maidsafe
