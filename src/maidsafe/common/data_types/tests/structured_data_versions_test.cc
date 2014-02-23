@@ -169,7 +169,7 @@ bool Equivalent(const StructuredDataVersions& lhs, const StructuredDataVersions&
 
 }  // unnamed namespace
 
-TEST_CASE("StructuredDataVersionsPut", "[Private][Behavioural]") {
+TEST_CASE("StructuredDataVersionsPut", "[Behavioural]") {
   StructuredDataVersions versions(100, 10);
   VersionName old_version, new_version;
   for (uint32_t i(0); i != 100; ++i) {
@@ -183,7 +183,7 @@ TEST_CASE("StructuredDataVersionsPut", "[Private][Behavioural]") {
   }
 }
 
-TEST_CASE("StructuredDataVersionsPutOrphans", "[Private][Behavioural]") {
+TEST_CASE("StructuredDataVersionsPutOrphans", "[Behavioural]") {
   StructuredDataVersions versions(1000, 100);
   VersionName old_version, new_version;
   std::vector<std::pair<VersionName, VersionName>> missing_names;
@@ -208,7 +208,7 @@ TEST_CASE("StructuredDataVersionsPutOrphans", "[Private][Behavioural]") {
   }
 }
 
-TEST_CASE("StructuredDataVersionsSerialise", "[Private][Behavioural]") {
+TEST_CASE("StructuredDataVersionsSerialise", "[Behavioural]") {
   StructuredDataVersions versions1(100, 20), versions2(100, 20);
   ConstructAsDiagram(versions1);
   ConstructAsDiagram(versions2);
@@ -234,7 +234,7 @@ TEST_CASE("StructuredDataVersionsSerialise", "[Private][Behavioural]") {
   REQUIRE(reserialised1 == reserialised2);
 }
 
-TEST_CASE("StructuredDataVersionsApplySerialised", "[Private][Behavioural]") {
+TEST_CASE("StructuredDataVersionsApplySerialised", "[Behavioural]") {
   StructuredDataVersions versions1(100, 20);
   REQUIRE_NOTHROW(ConstructAsDiagram(versions1));
   auto serialised1(versions1.Serialise());

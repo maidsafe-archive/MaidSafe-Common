@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("DataTypesOutputOperator", "[Private][Behavioural]") {
+TEST_CASE("DataTypesOutputOperator", "[Behavioural]") {
   LOG(kInfo) << DataTagValue::kAnmidValue;
   LOG(kInfo) << DataTagValue::kAnsmidValue;
   LOG(kInfo) << DataTagValue::kAntmidValue;
@@ -44,14 +44,14 @@ TEST_CASE("DataTypesOutputOperator", "[Private][Behavioural]") {
   CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
-TEST_CASE("DataTypesConstructType", "[Private][Behavioural]") {
+TEST_CASE("DataTypesConstructType", "[Behavioural]") {
   REQUIRE(is_short_term_cacheable<MutableData>::value);
   REQUIRE(!is_long_term_cacheable<MutableData>::value);
   REQUIRE(!is_short_term_cacheable<ImmutableData>::value);
   REQUIRE(is_long_term_cacheable<ImmutableData>::value);
 }
 
-TEST_CASE("DataTypesRetrieveType", "[Private][Behavioural]") {
+TEST_CASE("DataTypesRetrieveType", "[Behavioural]") {
   REQUIRE((std::is_same<passport::PublicAnmid, passport::PublicAnmid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicAnsmid, passport::PublicAnsmid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicAntmid, passport::PublicAntmid::Name::data_type>::value));

@@ -275,7 +275,7 @@ class DataStoreTest {
   DataStorePtr data_store_;
 };
 
-TEST_CASE_METHOD(DataStoreTest, "Constructor", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "Constructor", "[Behavioural]") {
   REQUIRE_NOTHROW(DataStoreType(MemoryUsage(0), DiskUsage(0), pop_functor_));
   REQUIRE_NOTHROW(DataStoreType(MemoryUsage(1), DiskUsage(1), pop_functor_));
   REQUIRE_THROWS_AS(DataStoreType(MemoryUsage(1), DiskUsage(0), pop_functor_), std::exception);
@@ -306,7 +306,7 @@ TEST_CASE_METHOD(DataStoreTest, "Constructor", "[Private][Behavioural]") {
   REQUIRE_FALSE(fs::exists(data_store_path));
 }
 
-TEST_CASE_METHOD(DataStoreTest, "SetMaxDiskMemoryUsage", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "SetMaxDiskMemoryUsage", "[Behavioural]") {
   REQUIRE_NOTHROW(data_store_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ - 1)));
   REQUIRE_NOTHROW(data_store_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_)));
   REQUIRE_THROWS_AS(data_store_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ + 1)),
@@ -331,7 +331,7 @@ TEST_CASE_METHOD(DataStoreTest, "SetMaxDiskMemoryUsage", "[Private][Behavioural]
   REQUIRE_NOTHROW(data_store_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
 
-TEST_CASE_METHOD(DataStoreTest, "RemoveDiskStore", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "RemoveDiskStore", "[Behavioural]") {
   boost::system::error_code error_code;
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
   fs::path data_store_path(*test_path / "data_store");
@@ -367,7 +367,7 @@ TEST_CASE_METHOD(DataStoreTest, "RemoveDiskStore", "[Private][Behavioural]") {
   REQUIRE_THROWS_AS(data_store_->Delete(key), std::exception);
 }
 
-TEST_CASE_METHOD(DataStoreTest, "SuccessfulStore", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "SuccessfulStore", "[Behavioural]") {
   KeyType key1(GetRandomKey()), key2(GetRandomKey());
   NonEmptyString value1 = GenerateKeyValueData(
                      key1, static_cast<uint32_t>(max_memory_usage_)),
@@ -382,13 +382,13 @@ TEST_CASE_METHOD(DataStoreTest, "SuccessfulStore", "[Private][Behavioural]") {
   REQUIRE(recovered == value2);
 }
 
-TEST_CASE_METHOD(DataStoreTest, "UnsuccessfulStore", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "UnsuccessfulStore", "[Behavioural]") {
   KeyType key(GetRandomKey());
   NonEmptyString value = GenerateKeyValueData(key, static_cast<uint32_t>(max_disk_usage_) + 1);
   REQUIRE_THROWS_AS(data_store_->Store(key, value), std::exception);
 }
 
-TEST_CASE_METHOD(DataStoreTest, "DeleteOnDiskStoreOverfill", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "DeleteOnDiskStoreOverfill", "[Behavioural]") {
   const size_t num_entries(4), num_memory_entries(1), num_disk_entries(4);
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
   KeyValueContainer key_value_pairs(PopulateDataStore(
@@ -407,7 +407,7 @@ TEST_CASE_METHOD(DataStoreTest, "DeleteOnDiskStoreOverfill", "[Private][Behaviou
   REQUIRE(DeleteDirectory(data_store_path_));
 }
 
-TEST_CASE_METHOD(DataStoreTest, "PopOnDiskStoreOverfill", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "PopOnDiskStoreOverfill", "[Behavioural]") {
   size_t index(0);
   std::mutex mutex;
   std::condition_variable condition_variable;
@@ -452,7 +452,7 @@ TEST_CASE_METHOD(DataStoreTest, "PopOnDiskStoreOverfill", "[Private][Behavioural
   REQUIRE(DeleteDirectory(data_store_path_));
 }
 
-TEST_CASE_METHOD(DataStoreTest, "AsyncDeleteOnDiskStoreOverfill", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "AsyncDeleteOnDiskStoreOverfill", "[Behavioural]") {
   KeyValueContainer old_key_value_pairs, new_key_value_pairs;
   const size_t num_entries(6), num_memory_entries(0), num_disk_entries(6);
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
@@ -504,7 +504,7 @@ TEST_CASE_METHOD(DataStoreTest, "AsyncDeleteOnDiskStoreOverfill", "[Private][Beh
   REQUIRE_THROWS_AS(async_gets.back().get(), std::exception);
 }
 
-TEST_CASE_METHOD(DataStoreTest, "AsyncPopOnDiskStoreOverfill", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "AsyncPopOnDiskStoreOverfill", "[Behavioural]") {
   size_t index(0);
   std::mutex mutex;
   std::condition_variable condition_variable;
@@ -543,7 +543,7 @@ TEST_CASE_METHOD(DataStoreTest, "AsyncPopOnDiskStoreOverfill", "[Private][Behavi
   REQUIRE(num_entries == index);
 }
 
-TEST_CASE_METHOD(DataStoreTest, "RepeatedlyStoreUsingSameKey", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
   data_store_path_ = fs::path(*test_path / "data_store");
   PopFunctor pop_functor([this](const KeyType & key, const NonEmptyString & value) {
@@ -574,7 +574,7 @@ TEST_CASE_METHOD(DataStoreTest, "RepeatedlyStoreUsingSameKey", "[Private][Behavi
   REQUIRE(DeleteDirectory(data_store_path_));
 }
 
-TEST_CASE_METHOD(DataStoreTest, "RandomAsync", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "RandomAsync", "[Behavioural]") {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
   data_store_path_ = fs::path(*test_path / "data_store");
   PopFunctor pop_functor([this](const KeyType & key, const NonEmptyString & value) {
@@ -671,7 +671,7 @@ MaxDataStoreUsage max_data_store_usage[] = {{1, 2}, {1, 1024}, {8, 1024}, {1024,
                                             {10000, 1000000}};
 }  // unnamed namespace
 
-TEST_CASE_METHOD(DataStoreTest, "Store", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "Store", "[Behavioural]") {
   MaxDataStoreUsage* resource_usage = Catch::Generators::GENERATE(between(max_data_store_usage,
       &max_data_store_usage[sizeof(max_data_store_usage)/sizeof(MaxDataStoreUsage)-1]));
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
@@ -700,7 +700,7 @@ TEST_CASE_METHOD(DataStoreTest, "Store", "[Private][Behavioural]") {
   REQUIRE(DeleteDirectory(data_store_path));
 }
 
-TEST_CASE_METHOD(DataStoreTest, "Delete", "[Private][Behavioural]") {
+TEST_CASE_METHOD(DataStoreTest, "Delete", "[Behavioural]") {
   MaxDataStoreUsage* resource_usage = Catch::Generators::GENERATE(between(max_data_store_usage,
       &max_data_store_usage[sizeof(max_data_store_usage)/sizeof(MaxDataStoreUsage)-1]));
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));

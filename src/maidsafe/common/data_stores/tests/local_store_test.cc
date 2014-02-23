@@ -41,7 +41,7 @@ class LocalStoreTest {
   LocalStore local_store_;
 };
 
-TEST_CASE_METHOD(LocalStoreTest, "SuccessfulStore", "[Private][Behavioural]") {
+TEST_CASE_METHOD(LocalStoreTest, "SuccessfulStore", "[Behavioural]") {
   const size_t kDataSize(100);
   ImmutableData data(NonEmptyString(RandomString(kDataSize)));
   local_store_.Put(data);
