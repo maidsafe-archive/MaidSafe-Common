@@ -145,8 +145,6 @@ if(MaidsafeTesting)
       set(TestSources ${TestSource} ${TestsMain})
       ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
       target_link_libraries(${Exe} maidsafe_common)
-      # TODO - Investigate why boost variant requires this warning to be disabled in RelWithDebInfo only.
-# target_compile_options(${Exe} PRIVATE $<$<BOOL:${MSVC}>:/bigobj $<$<CONFIG:RelWithDebInfo>:/wd4702>>)
       ms_add_catch_tests(${Exe})
     endforeach()
   endmacro()
@@ -176,8 +174,3 @@ if(MaidsafeTesting)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
-
-# Remove files from coverage stats
-ms_add_coverage_exclude(cryptopp/)
-ms_add_coverage_exclude(third_party_libs/)
-ms_add_coverage_exclude(utils\\\\.h)
