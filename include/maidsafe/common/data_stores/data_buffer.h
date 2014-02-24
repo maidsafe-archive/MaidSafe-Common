@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_STORE_DATA_BUFFER_H_
-#define MAIDSAFE_DATA_STORE_DATA_BUFFER_H_
+#ifndef MAIDSAFE_COMMON_DATA_STORES_DATA_BUFFER_H_
+#define MAIDSAFE_COMMON_DATA_STORES_DATA_BUFFER_H_
 
 #include <atomic>
 #include <condition_variable>
@@ -54,7 +54,7 @@ inline std::string HexSubstr(const std::pair<std::string, std::string>& input) {
   return HexSubstr(input.first + input.second);
 }
 
-namespace data_store {
+namespace data_stores {
 
 namespace test {
 
@@ -694,8 +694,8 @@ std::string DataBuffer<Key>::DebugKeyName(const KeyType& key) {
 template <>
 std::string DataBuffer<DataNameVariant>::DebugKeyName(const DataNameVariant& key);
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_STORE_DATA_BUFFER_H_
+#endif  // MAIDSAFE_COMMON_DATA_STORES_DATA_BUFFER_H_

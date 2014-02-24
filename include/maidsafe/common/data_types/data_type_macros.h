@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_TYPES_DATA_TYPE_MACROS_H_
-#define MAIDSAFE_DATA_TYPES_DATA_TYPE_MACROS_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_DATA_TYPE_MACROS_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_DATA_TYPE_MACROS_H_
 
 #include <string>
 
@@ -128,4 +128,4 @@
 #define DEFINE_DATA_NAME_VARIANT DEFINE_DATA_NAME_VARIANT_WITH_PARENS(                             \
     MAIDSAFE_DATA_TYPES_WRAP_PAIRS_IN_PARENS(MAIDSAFE_DATA_TYPES))
 
-#endif  // MAIDSAFE_DATA_TYPES_DATA_TYPE_MACROS_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_DATA_TYPE_MACROS_H_

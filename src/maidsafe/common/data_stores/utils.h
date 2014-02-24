@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_STORE_UTILS_H_
-#define MAIDSAFE_DATA_STORE_UTILS_H_
+#ifndef MAIDSAFE_COMMON_DATA_STORES_UTILS_H_
+#define MAIDSAFE_COMMON_DATA_STORES_UTILS_H_
 
 #include "boost/filesystem/path.hpp"
 
@@ -25,7 +25,7 @@
 
 namespace maidsafe {
 
-namespace data_store {
+namespace data_stores {
 
 namespace detail {
 
@@ -35,8 +35,8 @@ DataNameVariant GetDataNameVariant(const boost::filesystem::path& file_name);
 
 }  // namespace detail
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_STORE_UTILS_H_
+#endif  // MAIDSAFE_COMMON_DATA_STORES_UTILS_H_

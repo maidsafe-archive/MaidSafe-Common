@@ -29,7 +29,7 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-namespace data_store {
+namespace data_stores {
 
 namespace detail {
 
@@ -48,6 +48,6 @@ DataNameVariant GetDataNameVariant(const fs::path& file_name) {
 
 }  // namespace detail
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe

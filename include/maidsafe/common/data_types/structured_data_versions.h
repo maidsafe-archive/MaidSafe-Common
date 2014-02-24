@@ -50,8 +50,8 @@ orphan will be chosen.
 The "tips of trees" are '8-zzz', '4-iii', '5-nnn', '4-lll' and '4-mmm'.
 */
 
-#ifndef MAIDSAFE_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
-#define MAIDSAFE_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
 
 #include <algorithm>
 #include <cstdint>
@@ -268,4 +268,4 @@ bool operator>=(const StructuredDataVersions::VersionName& lhs,
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_

@@ -36,7 +36,8 @@ namespace pt = boost::posix_time;
 namespace args = std::placeholders;
 
 namespace maidsafe {
-namespace data_store {
+
+namespace data_stores {
 
 namespace test {
 
@@ -365,5 +366,6 @@ TEST_CASE_METHOD(PermanentStoreTest, "Restart", "[Functional]") {
 
 }  // namespace test
 
-}  // namespace data_store
+}  // namespace data_stores
+
 }  // namespace maidsafe

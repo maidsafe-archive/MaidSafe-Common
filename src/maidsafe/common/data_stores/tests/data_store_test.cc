@@ -34,7 +34,8 @@ namespace fs = boost::filesystem;
 namespace args = std::placeholders;
 
 namespace maidsafe {
-namespace data_store {
+
+namespace data_stores {
 
 namespace test {
 
@@ -744,5 +745,6 @@ TEST_CASE_METHOD(DataStoreTest, "Delete", "[Behavioural]") {
 
 }  // namespace test
 
-}  // namespace data_store
+}  // namespace data_stores
+
 }  // namespace maidsafe

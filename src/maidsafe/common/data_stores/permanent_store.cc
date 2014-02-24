@@ -32,7 +32,7 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-namespace data_store {
+namespace data_stores {
 
 namespace {
 
@@ -240,6 +240,6 @@ fs::path PermanentStore::KeyToFilePath(const KeyType& key) const {
   return fs::path(disk_path / file_name.string().substr(directory_depth));
 }
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe

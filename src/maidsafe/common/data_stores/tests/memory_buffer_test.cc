@@ -27,7 +27,9 @@
 #include "boost/mpl/size.hpp"
 
 namespace maidsafe {
-namespace data_store {
+
+namespace data_stores {
+
 namespace test {
 
 const uint64_t kDefaultMaxMemoryUsage(10);  // elements
@@ -301,5 +303,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "RandomAsync", "[Behavioural]") {
 }
 
 }  // namespace test
-}  // namespace data_store
+
+}  // namespace data_stores
+
 }  // namespace maidsafe

@@ -30,7 +30,7 @@ namespace mpl = boost::mpl;
 
 namespace maidsafe {
 
-namespace data_store {
+namespace data_stores {
 
 namespace test {
 
@@ -85,6 +85,6 @@ TEST_CASE("Disk only insert and delete range", "[DataBuffer][Unit]") {
 
 }  // namespace test
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe

@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_TYPES_MUTABLE_DATA_H_
-#define MAIDSAFE_DATA_TYPES_MUTABLE_DATA_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
 
 #include <cstdint>
 #include <algorithm>
@@ -58,4 +58,4 @@ struct is_short_term_cacheable<MutableData> : public std::true_type {};
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_TYPES_MUTABLE_DATA_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_

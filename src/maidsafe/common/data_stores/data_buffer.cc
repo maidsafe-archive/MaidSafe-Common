@@ -21,7 +21,7 @@
 
 namespace maidsafe {
 
-namespace data_store {
+namespace data_stores {
 
 template <>
 boost::filesystem::path DataBuffer<DataNameVariant>::GetFilename(const DataNameVariant& key) const {
@@ -34,6 +34,6 @@ std::string DataBuffer<DataNameVariant>::DebugKeyName(const DataNameVariant& key
   return HexEncode(boost::apply_visitor(get_identity_visitor, key).string());
 }
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe

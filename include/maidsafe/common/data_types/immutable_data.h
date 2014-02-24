@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_TYPES_IMMUTABLE_DATA_H_
-#define MAIDSAFE_DATA_TYPES_IMMUTABLE_DATA_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
 
 #include <algorithm>
 
@@ -60,4 +60,4 @@ struct is_unique_on_network<ImmutableData> : public std::false_type {};
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_TYPES_IMMUTABLE_DATA_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_

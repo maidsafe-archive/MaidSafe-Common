@@ -25,7 +25,8 @@
 #include "maidsafe/common/data_types/mutable_data.h"
 
 namespace maidsafe {
-namespace data_store {
+
+namespace data_stores {
 
 namespace test {
 
@@ -97,5 +98,6 @@ TEST_CASE_METHOD(LocalStoreTest, "SuccessfulStore", "[Behavioural]") {
 
 }  // namespace test
 
-}  // namespace data_store
+}  // namespace data_stores
+
 }  // namespace maidsafe

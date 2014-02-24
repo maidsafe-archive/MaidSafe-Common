@@ -33,7 +33,8 @@ namespace fs = boost::filesystem;
 namespace mpl = boost::mpl;
 
 namespace maidsafe {
-namespace data_store {
+
+namespace data_stores {
 
 namespace test {
 
@@ -689,5 +690,6 @@ TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behav
 
 }  // namespace test
 
-}  // namespace data_store
+}  // namespace data_stores
+
 }  // namespace maidsafe

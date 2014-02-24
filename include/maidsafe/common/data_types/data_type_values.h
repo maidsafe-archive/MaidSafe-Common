@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_TYPES_DATA_TYPE_VALUES_H_
-#define MAIDSAFE_DATA_TYPES_DATA_TYPE_VALUES_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_DATA_TYPE_VALUES_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_DATA_TYPE_VALUES_H_
 
 #include <algorithm>
 #include <cstdint>
@@ -122,4 +122,4 @@ const DataTagValue Tag<Value>::kValue;
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_TYPES_DATA_TYPE_VALUES_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_DATA_TYPE_VALUES_H_

@@ -30,7 +30,8 @@
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-namespace data_store {
+
+namespace data_stores {
 
 namespace {
 
@@ -363,6 +364,6 @@ void LocalStore::WriteVersions(const KeyType& key, const StructuredDataVersions&
   current_disk_usage_.data += value_size;
 }
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe

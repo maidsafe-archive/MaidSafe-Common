@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_DATA_TYPES_DATA_NAME_VARIANT_H_
-#define MAIDSAFE_DATA_TYPES_DATA_NAME_VARIANT_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_DATA_NAME_VARIANT_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_DATA_NAME_VARIANT_H_
 
 #include <utility>
 
@@ -67,4 +67,4 @@ struct GetTagValueAndIdentityVisitor
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_DATA_TYPES_DATA_NAME_VARIANT_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_DATA_NAME_VARIANT_H_

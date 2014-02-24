@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_CLIENT_MANAGER_DOWNLOAD_MANAGER_H_
-#define MAIDSAFE_CLIENT_MANAGER_DOWNLOAD_MANAGER_H_
+#ifndef MAIDSAFE_COMMON_TOOLS_DOWNLOAD_MANAGER_H_
+#define MAIDSAFE_COMMON_TOOLS_DOWNLOAD_MANAGER_H_
 
 #include <string>
 #include <vector>
@@ -81,4 +81,4 @@ class DownloadManager {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_CLIENT_MANAGER_DOWNLOAD_MANAGER_H_
+#endif  // MAIDSAFE_COMMON_TOOLS_DOWNLOAD_MANAGER_H_

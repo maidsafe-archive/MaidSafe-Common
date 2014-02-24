@@ -20,7 +20,7 @@
 
 namespace maidsafe {
 
-namespace data_store {
+namespace data_stores {
 
 MemoryBuffer::MemoryBuffer(MemoryUsage max_memory_usage)
     : memory_buffer_(static_cast<uint32_t>(max_memory_usage.data)), mutex_() {}
@@ -57,6 +57,6 @@ MemoryBuffer::MemoryBufferType::iterator MemoryBuffer::Find(const KeyType& key) 
       [&key](const MemoryBufferType::value_type & key_value) { return key_value.first == key; });
 }
 
-}  // namespace data_store
+}  // namespace data_stores
 
 }  // namespace maidsafe
