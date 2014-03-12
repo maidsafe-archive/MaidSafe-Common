@@ -23,8 +23,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "boost/mpl/size.hpp"
+#include "maidsafe/common/data_stores/tests/test_utils.h"
 
 namespace maidsafe {
 
@@ -42,44 +41,6 @@ class MemoryBufferTest {
 
  protected:
   MemoryBufferTest() : memory_buffer_(new MemoryBuffer(MemoryUsage(kDefaultMaxMemoryUsage))) {}
-
-  KeyType GetRandomKey() {
-    // Currently 13 types are defined, but...
-    uint32_t number_of_types = boost::mpl::size<typename KeyType::types>::type::value, type_number;
-    type_number = RandomUint32() % number_of_types;
-    switch (type_number) {
-      case 0:
-        return passport::PublicAnmid::Name();
-      case 1:
-        return passport::PublicAnsmid::Name();
-      case 2:
-        return passport::PublicAntmid::Name();
-      case 3:
-        return passport::PublicAnmaid::Name();
-      case 4:
-        return passport::PublicMaid::Name();
-      case 5:
-        return passport::PublicPmid::Name();
-      case 6:
-        return passport::Mid::Name();
-      case 7:
-        return passport::Smid::Name();
-      case 8:
-        return passport::Tmid::Name();
-      case 9:
-        return passport::PublicAnmpid::Name();
-      case 10:
-        return passport::PublicMpid::Name();
-      case 11:
-        return ImmutableData::Name();
-      case 12:
-        return MutableData::Name();
-        // default:
-        // Throw something!
-        //  ;
-    }
-    return KeyType();
-  }
 
   struct GenerateKeyValuePair : public boost::static_visitor<NonEmptyString> {
     GenerateKeyValuePair() : size_(OneKB) {}
@@ -104,7 +65,7 @@ class MemoryBufferTest {
 };
 
 TEST_CASE_METHOD(MemoryBufferTest, "Store", "[Behavioural]") {
-  KeyType key(GetRandomKey()), temp_key;
+  KeyType key(GetRandomDataNameType()), temp_key;
   NonEmptyString value = GenerateKeyValueData(key, OneKB), temp_value, recovered;
 
   REQUIRE_NOTHROW(memory_buffer_->Store(key, value));
@@ -113,7 +74,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "Store", "[Behavioural]") {
   REQUIRE(recovered == value);
 
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage - 1; ++i) {
-    temp_key = GetRandomKey();
+    temp_key = GetRandomDataNameType();
     temp_value = GenerateKeyValueData(temp_key, OneKB);
     REQUIRE_NOTHROW(memory_buffer_->Store(temp_key, temp_value));
     REQUIRE_NOTHROW(recovered = memory_buffer_->Get(temp_key));
@@ -125,7 +86,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "Store", "[Behavioural]") {
   REQUIRE(recovered == value);
 
   // Store another value to replace first.
-  temp_key = GetRandomKey();
+  temp_key = GetRandomDataNameType();
   temp_value = GenerateKeyValueData(temp_key, OneKB);
   REQUIRE_NOTHROW(memory_buffer_->Store(temp_key, temp_value));
   REQUIRE_NOTHROW(recovered = memory_buffer_->Get(temp_key));
@@ -145,7 +106,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
 
   // Store some key, value pairs.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    key = GetRandomKey();
+    key = GetRandomDataNameType();
     value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
     REQUIRE_NOTHROW(memory_buffer_->Store(key, value));
@@ -173,7 +134,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
 
   // Store some additional key, value pairs.
   for (uint32_t i = 0; i != kDefaultMaxMemoryUsage; ++i) {
-    key = GetRandomKey();
+    key = GetRandomDataNameType();
     value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
     REQUIRE_NOTHROW(memory_buffer_->Store(key, value));
@@ -199,7 +160,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "Delete", "[Behavioural]") {
 
 TEST_CASE_METHOD(MemoryBufferTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") {
   const uint32_t size(50);
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % size) + 1), recovered,
                  last_value;
   auto async =
@@ -234,7 +195,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "RandomAsync", "[Behavioural]") {
   std::vector<std::future<NonEmptyString>> future_gets;
 
   for (uint32_t i = 0; i != events; ++i) {
-    KeyType key(GetRandomKey());
+    KeyType key(GetRandomDataNameType());
     NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
 

@@ -31,23 +31,19 @@
 namespace maidsafe {
 
 #define MAIDSAFE_DATA_TYPES           \
-    (Anmid, passport::PublicAnmid)    \
-    (Ansmid, passport::PublicAnsmid)  \
-    (Antmid, passport::PublicAntmid)  \
     (Anmaid, passport::PublicAnmaid)  \
     (Maid, passport::PublicMaid)      \
+    (Anpmid, passport::PublicAnpmid)  \
     (Pmid, passport::PublicPmid)      \
-    (Mid, passport::Mid)              \
-    (Smid, passport::Smid)            \
-    (Tmid, passport::Tmid)            \
     (Anmpid, passport::PublicAnmpid)  \
     (Mpid, passport::PublicMpid)      \
     (ImmutableData, ImmutableData)    \
     (MutableData, MutableData)
 
 // Defines:
-//     enum class DataTagValue : uint32_t { kAnmid, kAnsmid, ... };
+//     enum class DataTagValue : uint32_t { kAnmaid, kMaid, ... };
 // Also defines a std::ostream operator<< for the DataTagValue.
+// Also defines MAIDSAFE_DATA_TYPES_SIZE which is the number of different data types defined.
 DEFINE_MAIDSAFE_DATA_TYPES_ENUM_VALUES(DataTagValue, uint32_t)
 
 namespace detail {

@@ -45,6 +45,10 @@ ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
 ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
 ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
+set(CommonDataStoresTestsUtilsFiles
+    ${CommonSourcesDir}/data_stores/tests/test_utils.cc
+    ${CommonSourcesDir}/data_stores/tests/test_utils.h)
+list(REMOVE_ITEM CommonDataStoresTestsAllFiles ${CommonDataStoresTestsUtilsFiles})
 
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
@@ -144,12 +148,20 @@ if(MaidsafeTesting)
       string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
       set(TestSources ${TestSource} ${TestsMain})
       ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
-      target_link_libraries(${Exe} maidsafe_common)
+      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_common)
       ms_add_catch_tests(${Exe})
     endforeach()
   endmacro()
 
+  ms_add_static_library(maidsafe_data_stores_test_utils ${CommonDataStoresTestsUtilsFiles})
+  set_target_properties(maidsafe_data_stores_test_utils PROPERTIES FOLDER "MaidSafe/Executables/Tests/Common/Data Store Tests")
+  target_include_directories(maidsafe_data_stores_test_utils PUBLIC ${PROJECT_SOURCE_DIR}/src)
+  target_link_libraries(maidsafe_data_stores_test_utils maidsafe_common)
+  foreach(TestExe test_data_store test_memory_buffer test_permanent_store)
+    set(${TestExe}AdditionalLibs maidsafe_data_stores_test_utils)
+  endforeach()
   CommonTests("Data Store Tests" ${CommonDataStoresTestsAllFiles})
+
   CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
 endif()
 
