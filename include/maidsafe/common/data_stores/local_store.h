@@ -40,6 +40,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/common/data_types/structured_data_versions.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
