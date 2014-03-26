@@ -40,7 +40,7 @@ namespace {
 // Keep outside the function to avoid lazy static init races on MSVC
 static boost::thread_specific_ptr<CryptoPP::AutoSeededRandomPool> __random_number_generator;
 CryptoPP::RandomNumberGenerator& rng() {
-  if(!__random_number_generator.get())
+  if (!__random_number_generator.get())
     __random_number_generator.reset(new CryptoPP::AutoSeededRandomPool);
   return *__random_number_generator;
 }
