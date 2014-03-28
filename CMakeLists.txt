@@ -105,6 +105,9 @@ target_link_libraries(maidsafe_common
     ${BoostProgramOptionsLibs}
     ${JustThread_LIBRARIES}
     ${SYS_LIB})
+if(TARGET check_sanitizer_blacklist)
+  add_dependencies(maidsafe_common check_sanitizer_blacklist)
+endif()
 
 # Network Viewer library
 ms_add_static_library(maidsafe_network_viewer
