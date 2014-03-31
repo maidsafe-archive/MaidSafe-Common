@@ -27,15 +27,10 @@ namespace maidsafe {
 namespace test {
 
 TEST_CASE("DataTypesOutputOperator", "[Behavioural]") {
-  LOG(kInfo) << DataTagValue::kAnmidValue;
-  LOG(kInfo) << DataTagValue::kAnsmidValue;
-  LOG(kInfo) << DataTagValue::kAntmidValue;
   LOG(kInfo) << DataTagValue::kAnmaidValue;
   LOG(kInfo) << DataTagValue::kMaidValue;
+  LOG(kInfo) << DataTagValue::kAnpmidValue;
   LOG(kInfo) << DataTagValue::kPmidValue;
-  LOG(kInfo) << DataTagValue::kMidValue;
-  LOG(kInfo) << DataTagValue::kSmidValue;
-  LOG(kInfo) << DataTagValue::kTmidValue;
   LOG(kInfo) << DataTagValue::kAnmpidValue;
   LOG(kInfo) << DataTagValue::kMpidValue;
   LOG(kInfo) << DataTagValue::kImmutableDataValue;
@@ -52,15 +47,10 @@ TEST_CASE("DataTypesConstructType", "[Behavioural]") {
 }
 
 TEST_CASE("DataTypesRetrieveType", "[Behavioural]") {
-  REQUIRE((std::is_same<passport::PublicAnmid, passport::PublicAnmid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicAnsmid, passport::PublicAnsmid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicAntmid, passport::PublicAntmid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicAnmaid, passport::PublicAnmaid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicMaid, passport::PublicMaid::Name::data_type>::value));
+  REQUIRE((std::is_same<passport::PublicAnpmid, passport::PublicAnpmid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicPmid, passport::PublicPmid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::Mid, passport::Mid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::Smid, passport::Smid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::Tmid, passport::Tmid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicAnmpid, passport::PublicAnmpid::Name::data_type>::value));
   REQUIRE((std::is_same<passport::PublicMpid, passport::PublicMpid::Name::data_type>::value));
   REQUIRE((std::is_same<ImmutableData, ImmutableData::Name::data_type>::value));

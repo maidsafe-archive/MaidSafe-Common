@@ -22,7 +22,6 @@
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include "boost/mpl/size.hpp"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"

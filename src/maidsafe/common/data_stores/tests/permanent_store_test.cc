@@ -28,8 +28,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "boost/mpl/size.hpp"
+#include "maidsafe/common/data_stores/tests/test_utils.h"
 
 namespace fs = boost::filesystem;
 namespace pt = boost::posix_time;
@@ -120,121 +119,6 @@ class PermanentStoreTest {
     return key_value_pairs;
   }
 
-  void AddRandomKeyValuePairs(KeyValueContainer& container, uint32_t number, uint32_t size) {
-    // Currently there is 13 types defined, but do the calculation anyway...
-    uint32_t number_of_types = boost::mpl::size<typename KeyType::types>::value, type_number;
-    NonEmptyString value;
-    for (uint32_t i = 0; i != number; ++i) {
-      type_number = RandomUint32() % number_of_types;
-      value = NonEmptyString(RandomAlphaNumericString(size));
-      switch (type_number) {
-        case 0: {
-          passport::PublicAnmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 1: {
-          passport::PublicAnsmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 2: {
-          passport::PublicAntmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 3: {
-          passport::PublicAnmaid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 4: {
-          passport::PublicMaid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 5: {
-          passport::PublicPmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 6: {
-          passport::Mid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 7: {
-          passport::Smid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 8: {
-          passport::Tmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 9: {
-          passport::PublicAnmpid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 10: {
-          passport::PublicMpid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 11: {
-          ImmutableData::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 12: {
-          MutableData::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-      }
-    }
-  }
-
-  KeyType GetRandomKey() {
-    // Currently 13 types are defined, but...
-    uint32_t number_of_types = boost::mpl::size<typename KeyType::types>::value, type_number;
-    type_number = RandomUint32() % number_of_types;
-    switch (type_number) {
-      case 0:
-        return passport::PublicAnmid::Name();
-      case 1:
-        return passport::PublicAnsmid::Name();
-      case 2:
-        return passport::PublicAntmid::Name();
-      case 3:
-        return passport::PublicAnmaid::Name();
-      case 4:
-        return passport::PublicMaid::Name();
-      case 5:
-        return passport::PublicPmid::Name();
-      case 6:
-        return passport::Mid::Name();
-      case 7:
-        return passport::Smid::Name();
-      case 8:
-        return passport::Tmid::Name();
-      case 9:
-        return passport::PublicAnmpid::Name();
-      case 10:
-        return passport::PublicMpid::Name();
-      case 11:
-        return ImmutableData::Name();
-      case 12:
-        return MutableData::Name();
-        // default:
-        // Throw something!
-        //  ;
-    }
-    return KeyType();
-  }
-
   NonEmptyString GenerateKeyValueData(KeyType& key, uint32_t size) {
     GenerateKeyValuePair generate_key_value_pair_(size);
     return boost::apply_visitor(generate_key_value_pair_, key);
@@ -277,13 +161,13 @@ TEST_CASE_METHOD(PermanentStoreTest, "RemoveDiskStore", "[Behavioural]") {
   fs::path permanent_store_path(*test_path / "new_permanent_store");
   const uintmax_t kSize(1), kDiskSize(2);
   permanent_store_.reset(new PermanentStore(permanent_store_path, DiskUsage(kDiskSize)));
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString small_value = GenerateKeyValueData(key, kSize);
   REQUIRE_NOTHROW(permanent_store_->Put(key, small_value));
   REQUIRE_NOTHROW(permanent_store_->Delete(key));
   REQUIRE(6 == fs::remove_all(permanent_store_path, error_code));
   REQUIRE_FALSE(fs::exists(permanent_store_path, error_code));
-  KeyType key1(GetRandomKey());
+  KeyType key1(GetRandomDataNameType());
   NonEmptyString large_value = GenerateKeyValueData(key1, kDiskSize);
   REQUIRE_THROWS_AS(permanent_store_->Put(key, small_value), std::exception);
   REQUIRE_THROWS_AS(permanent_store_->Get(key), std::exception);
@@ -299,7 +183,7 @@ TEST_CASE_METHOD(PermanentStoreTest, "RemoveDiskStore", "[Behavioural]") {
 }
 
 TEST_CASE_METHOD(PermanentStoreTest, "SuccessfulStore", "[Behavioural]") {
-  KeyType key1(GetRandomKey()), key2(GetRandomKey());
+  KeyType key1(GetRandomDataNameType()), key2(GetRandomDataNameType());
   NonEmptyString value1 = GenerateKeyValueData(key1, static_cast<uint32_t>(2 * OneKB)),
                  value2 = GenerateKeyValueData(key2, static_cast<uint32_t>(2 * OneKB)), recovered;
   REQUIRE_NOTHROW(permanent_store_->Put(key1, value1));
@@ -311,7 +195,7 @@ TEST_CASE_METHOD(PermanentStoreTest, "SuccessfulStore", "[Behavioural]") {
 }
 
 TEST_CASE_METHOD(PermanentStoreTest, "UnsuccessfulStore", "[Behavioural]") {
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, static_cast<uint32_t>(kDefaultMaxDiskUsage) + 1);
   REQUIRE_THROWS_AS(permanent_store_->Put(key, value), std::exception);
 }
@@ -320,7 +204,7 @@ TEST_CASE_METHOD(PermanentStoreTest, "DeleteOnDiskStoreOverfill", "[Behavioural]
   const size_t num_entries(4), num_disk_entries(4);
   KeyValueContainer key_value_pairs(
       PopulatePermanentStore(num_entries, num_disk_entries, permanent_store_path_));
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, 2 * OneKB), recovered;
   KeyType first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   REQUIRE_THROWS_AS(permanent_store_->Put(key, value), std::exception);
@@ -333,7 +217,7 @@ TEST_CASE_METHOD(PermanentStoreTest, "DeleteOnDiskStoreOverfill", "[Behavioural]
 }
 
 TEST_CASE_METHOD(PermanentStoreTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") {
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % 30) + 1), recovered,
                  last_value;
   REQUIRE_NOTHROW(permanent_store_->Put(key, value));

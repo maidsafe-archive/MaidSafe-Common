@@ -383,7 +383,7 @@ std::wstring StringToWstring(const std::string& input) {
 #endif
 
 std::string DebugId(const Identity& id) {
-  return id.IsInitialised() ? "Uninitialised Identity" : HexSubstr(id.string());
+  return HexSubstr(id.string());
 }
 
 uint64_t GetTimeStamp() {

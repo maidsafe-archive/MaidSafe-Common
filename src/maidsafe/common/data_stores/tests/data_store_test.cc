@@ -27,8 +27,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "boost/mpl/size.hpp"
+#include "maidsafe/common/data_stores/tests/test_utils.h"
 
 namespace fs = boost::filesystem;
 namespace args = std::placeholders;
@@ -148,122 +147,6 @@ class DataStoreTest {
     return data_store.kDiskBuffer_;
   }
 
-  void AddRandomKeyValuePairs(KeyValueContainer& container, uint32_t number, uint32_t size) {
-    // Currently there is 13 types defined, but do the calculation anyway...
-    uint32_t number_of_types = boost::mpl::size<typename KeyType::types>::value, type_number;
-    NonEmptyString value;
-    for (uint32_t i = 0; i != number; ++i) {
-      type_number = RandomUint32() % number_of_types;
-      value = NonEmptyString(RandomAlphaNumericString(size));
-      switch (type_number) {
-        case 0: {
-          passport::PublicAnmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 1: {
-          passport::PublicAnsmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 2: {
-          passport::PublicAntmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 3: {
-          passport::PublicAnmaid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 4: {
-          passport::PublicMaid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 5: {
-          passport::PublicPmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 6: {
-          passport::Mid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 7: {
-          passport::Smid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 8: {
-          passport::Tmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 9: {
-          passport::PublicAnmpid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 10: {
-          passport::PublicMpid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 11: {
-          ImmutableData::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-        case 12: {
-          MutableData::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-          container.push_back(std::make_pair(key, value));
-          break;
-        }
-      }
-    }
-    return;
-  }
-
-  KeyType GetRandomKey() {
-    // Currently 13 types are defined, but...
-    uint32_t number_of_types = boost::mpl::size<typename KeyType::types>::value, type_number;
-    type_number = RandomUint32() % number_of_types;
-    switch (type_number) {
-      case 0:
-        return passport::PublicAnmid::Name();
-      case 1:
-        return passport::PublicAnsmid::Name();
-      case 2:
-        return passport::PublicAntmid::Name();
-      case 3:
-        return passport::PublicAnmaid::Name();
-      case 4:
-        return passport::PublicMaid::Name();
-      case 5:
-        return passport::PublicPmid::Name();
-      case 6:
-        return passport::Mid::Name();
-      case 7:
-        return passport::Smid::Name();
-      case 8:
-        return passport::Tmid::Name();
-      case 9:
-        return passport::PublicAnmpid::Name();
-      case 10:
-        return passport::PublicMpid::Name();
-      case 11:
-        return ImmutableData::Name();
-      case 12:
-        return MutableData::Name();
-        // default:
-        // Throw something!
-        //  ;
-    }
-    return KeyType();
-  }
-
   NonEmptyString GenerateKeyValueData(KeyType& key, uint32_t size) {
     GenerateKeyValuePair generate_key_value_pair_(size);
     return boost::apply_visitor(generate_key_value_pair_, key);
@@ -339,7 +222,7 @@ TEST_CASE_METHOD(DataStoreTest, "RemoveDiskStore", "[Behavioural]") {
   const uintmax_t kMemorySize(1), kDiskSize(2);
   data_store_.reset(new DataStoreType(MemoryUsage(kMemorySize), DiskUsage(kDiskSize), pop_functor_,
                                       data_store_path));
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString small_value = GenerateKeyValueData(key, kMemorySize);
   REQUIRE_NOTHROW(data_store_->Store(key, small_value));
   REQUIRE_NOTHROW(data_store_->Delete(key));
@@ -369,7 +252,7 @@ TEST_CASE_METHOD(DataStoreTest, "RemoveDiskStore", "[Behavioural]") {
 }
 
 TEST_CASE_METHOD(DataStoreTest, "SuccessfulStore", "[Behavioural]") {
-  KeyType key1(GetRandomKey()), key2(GetRandomKey());
+  KeyType key1(GetRandomDataNameType()), key2(GetRandomDataNameType());
   NonEmptyString value1 = GenerateKeyValueData(
                      key1, static_cast<uint32_t>(max_memory_usage_)),
                  value2 = GenerateKeyValueData(
@@ -384,7 +267,7 @@ TEST_CASE_METHOD(DataStoreTest, "SuccessfulStore", "[Behavioural]") {
 }
 
 TEST_CASE_METHOD(DataStoreTest, "UnsuccessfulStore", "[Behavioural]") {
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, static_cast<uint32_t>(max_disk_usage_) + 1);
   REQUIRE_THROWS_AS(data_store_->Store(key, value), std::exception);
 }
@@ -394,7 +277,7 @@ TEST_CASE_METHOD(DataStoreTest, "DeleteOnDiskStoreOverfill", "[Behavioural]") {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataStore"));
   KeyValueContainer key_value_pairs(PopulateDataStore(
       num_entries, num_memory_entries, num_disk_entries, test_path, pop_functor_));
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, 2 * OneKB), recovered;
   KeyType first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   auto async =
@@ -423,7 +306,7 @@ TEST_CASE_METHOD(DataStoreTest, "PopOnDiskStoreOverfill", "[Behavioural]") {
                                             test_path, pop_functor);
   REQUIRE(0 == index);
 
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, OneKB), recovered;
   // Trigger pop...
   REQUIRE_NOTHROW(data_store_->Store(key, value));
@@ -556,7 +439,7 @@ TEST_CASE_METHOD(DataStoreTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]") 
   data_store_.reset(new DataStoreType(MemoryUsage(kDefaultMaxMemoryUsage),
                                       DiskUsage(kDefaultMaxDiskUsage), pop_functor,
                                       data_store_path_));
-  KeyType key(GetRandomKey());
+  KeyType key(GetRandomDataNameType());
   NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % 30) + 1), recovered,
                  last_value;
   REQUIRE_NOTHROW(data_store_->Store(key, value));
@@ -593,7 +476,7 @@ TEST_CASE_METHOD(DataStoreTest, "RandomAsync", "[Behavioural]") {
   std::vector<std::future<NonEmptyString>> future_gets;
 
   for (uint32_t i = 0; i != events; ++i) {
-    KeyType key(GetRandomKey());
+    KeyType key(GetRandomDataNameType());
     NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % 300) + 1);
     key_value_pairs.push_back(std::make_pair(key, value));
 
@@ -684,7 +567,7 @@ TEST_CASE_METHOD(DataStoreTest, "Store", "[Behavioural]") {
   uint64_t disk_usage(resource_usage->disk_usage), memory_usage(resource_usage->memory_usage),
            total_usage(disk_usage + memory_usage);
   while (total_usage != 0) {
-    KeyType key(GetRandomKey());
+    KeyType key(GetRandomDataNameType());
     NonEmptyString value = GenerateKeyValueData(key, static_cast<uint32_t>(memory_usage)),
                    recovered;
     REQUIRE_NOTHROW(data_store_->Store(key, value));
@@ -714,7 +597,7 @@ TEST_CASE_METHOD(DataStoreTest, "Delete", "[Behavioural]") {
            total_usage(disk_usage + memory_usage);
   std::map<KeyType, NonEmptyString> key_value_pairs;
   while (total_usage != 0) {
-    KeyType key(GetRandomKey());
+    KeyType key(GetRandomDataNameType());
     NonEmptyString value = GenerateKeyValueData(key, static_cast<uint32_t>(memory_usage));
 #if defined(__GNUC__) && !defined(__clang__)
     auto ret_val = key_value_pairs.insert(std::make_pair(key, value));  // Fails on clang
