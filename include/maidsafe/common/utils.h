@@ -166,7 +166,7 @@ std::string WstringToString(const std::wstring& input);
 std::wstring StringToWstring(const std::string& input);
 #endif
 
-// Returns an abbreviated hex representation of id.
+// Returns an abbreviated hex representation of id.  Throws if 'id' is uninitialised.
 std::string DebugId(const Identity& id);
 
 // Returns the number of milliseconds since kMaidsafeEpoch (1st January 2000).
