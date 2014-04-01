@@ -75,7 +75,7 @@ NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_
     }
   }
   catch (const std::exception& e) {
-    LOG(kError) << "NodeId Ctor: " << e.what();
+    LOG(kError) << "NodeId Ctor: " << boost::diagnostic_information(e);
     raw_id_.clear();
   }
   if (encoding_type == EncodingType::kBase64) {

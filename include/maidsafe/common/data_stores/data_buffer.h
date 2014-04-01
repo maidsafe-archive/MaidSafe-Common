@@ -273,7 +273,7 @@ DataBuffer<Key>::~DataBuffer() {
         worker_.get();
       }
       catch (const std::exception& e) {
-        LOG(kError) << e.what();
+        LOG(kError) << boost::diagnostic_information(e);
       }
     }
   }

@@ -61,7 +61,7 @@ void AsioService::Stop() {
       asio_thread.join();
     }
     catch (const std::exception& e) {
-      LOG(kError) << "Exception joining asio thread: " << e.what();
+      LOG(kError) << "Exception joining asio thread: " << boost::diagnostic_information(e);
     }
   }
 }

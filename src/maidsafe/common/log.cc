@@ -465,7 +465,7 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
       SetStreams();
     }
     catch (const std::exception& e) {
-      std::cout << "Exception initialising logging: " << e.what() << "\n\n";
+      std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
     }
   });
   return unused_options;
@@ -489,7 +489,7 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
       SetStreams();
     }
     catch (const std::exception& e) {
-      std::cout << "Exception initialising logging: " << e.what() << "\n\n";
+      std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
     }
   });
   return unused_options;

@@ -169,7 +169,8 @@ boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint
     return socket.local_endpoint().address();
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed trying to connect to " << peer_endpoint << " - " << e.what();
+    LOG(kError) << "Failed trying to connect to " << peer_endpoint << " - "
+                << boost::diagnostic_information(e);
     return boost::asio::ip::address();
   }
 }
@@ -198,7 +199,7 @@ int VersionToInt(const std::string& version) {
     }
   }
   catch (const std::logic_error& e) {
-    LOG(kWarning) << "Invalid version " << version << ": " << e.what();
+    LOG(kWarning) << "Invalid version " << version << ": " << boost::diagnostic_information(e);
     return kInvalidVersion;
   }
 
@@ -423,7 +424,7 @@ bool ReadFile(const fs::path& file_path, std::string* content) {
     file_in.close();
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed to read file " << file_path << ": " << e.what();
+    LOG(kError) << "Failed to read file " << file_path << ": " << boost::diagnostic_information(e);
     return false;
   }
   return true;
@@ -457,7 +458,7 @@ bool WriteFile(const fs::path& file_path, const std::string& content) {
     file_out.close();
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed to write file " << file_path << ": " << e.what();
+    LOG(kError) << "Failed to write file " << file_path << ": " << boost::diagnostic_information(e);
     return false;
   }
   return true;
@@ -492,7 +493,7 @@ fs::path GetPathFromProgramOptions(const std::string& option_name,
           std::ofstream(option_path.c_str());
         }
         catch (const std::exception& e) {
-          LOG(kError) << "Exception while creating new file: " << e.what();
+          LOG(kError) << "Exception while creating new file: " << boost::diagnostic_information(e);
           return fs::path();
         }
       }
