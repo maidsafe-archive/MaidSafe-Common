@@ -209,29 +209,37 @@ TEST_CASE("StructuredDataVersionsPutOrphans", "[Behavioural]") {
 }
 
 TEST_CASE("StructuredDataVersionsSerialise", "[Behavioural]") {
-  StructuredDataVersions versions1(100, 20), versions2(100, 20);
+  StructuredDataVersions versions1(100, 20), versions2(100, 20), versions3(1, 1);
   ConstructAsDiagram(versions1);
   ConstructAsDiagram(versions2);
+  ImmutableData::Name single_id(Identity(RandomString(64)));
+  versions3.Put(StructuredDataVersions::VersionName(),
+                StructuredDataVersions::VersionName(0, single_id));
 
   REQUIRE(Equivalent(versions1, versions2));
 
   auto serialised1(versions1.Serialise());
   auto serialised2(versions2.Serialise());
+  auto serialised3(versions3.Serialise());
 
   REQUIRE(serialised1 == serialised2);
 
   StructuredDataVersions parsed1(serialised1);
   StructuredDataVersions parsed2(serialised2);
+  StructuredDataVersions parsed3(serialised3);
 
   REQUIRE(Equivalent(versions1, parsed1));
   REQUIRE(Equivalent(versions2, parsed2));
   REQUIRE(Equivalent(parsed1, parsed2));
+  REQUIRE(Equivalent(versions3, parsed3));
 
   auto reserialised1(parsed1.Serialise());
   auto reserialised2(parsed2.Serialise());
+  auto reserialised3(parsed3.Serialise());
   REQUIRE(serialised1 == reserialised1);
   REQUIRE(serialised2 == reserialised2);
   REQUIRE(reserialised1 == reserialised2);
+  REQUIRE(serialised3 == reserialised3);
 }
 
 TEST_CASE("StructuredDataVersionsApplySerialised", "[Behavioural]") {

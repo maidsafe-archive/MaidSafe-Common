@@ -158,7 +158,7 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
   while (proto_branch_index < proto_versions.branch_size())
     BranchFromProtobuf(std::end(versions_), proto_versions, proto_branch_index);
 
-  if (versions_.size() > max_versions_ || tips_of_trees_.size() == max_branches_)
+  if (versions_.size() > max_versions_ || tips_of_trees_.size() > max_branches_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 }
 
