@@ -18,6 +18,8 @@
 
 #include "maidsafe/common/node_id.h"
 
+#include <algorithm>
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
@@ -343,6 +345,23 @@ TEST_CASE("NodeId operator XOR", "[NodeId][Unit]") {
   REQUIRE(BitToByteCount(NodeId::kSize * 8) == zero.size());
   for (size_t i = 0; i < zero.size(); ++i)
     REQUIRE('\0' == zero[i]);
+}
+
+TEST_CASE("NodeId Collision", "[NodeId][Unit]") {  // Timeout 10
+  const int kCount = 10000;
+  std::vector<NodeId> node_ids;
+  for (int i(0); i < kCount; ++i)
+    node_ids.push_back(NodeId(NodeId::kRandomId));
+
+  bool collision(false);
+  for (int i(0); i < kCount; ++i) {
+    if ((std::count(node_ids.begin(), node_ids.end(), node_ids.at(i))) != 1) {
+      collision = true;
+      LOG(kInfo) << "Collision for : " << DebugId(node_ids.at(i));
+      break;
+    }
+  }
+  REQUIRE(!collision);
 }
 
 }  // namespace test
