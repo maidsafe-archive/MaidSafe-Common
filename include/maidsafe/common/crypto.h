@@ -106,6 +106,10 @@ typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash
 typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText, CompressedText,
     UncompressedText;
 
+// Returns a reference to a static CryptoPP::RandomNumberGenerator held in a
+// thread-specific pointer (i.e. it's thread-safe).
+CryptoPP::RandomNumberGenerator& random_number_generator();
+
 // Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
 // 0, an empty string is returned.
 template <size_t size>

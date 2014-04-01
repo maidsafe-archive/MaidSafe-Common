@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "boost/thread/tss.hpp"
+
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -30,16 +32,20 @@ namespace crypto {
 
 namespace {
 
-CryptoPP::RandomNumberGenerator& rng() {
-  static CryptoPP::AutoSeededRandomPool random_number_generator;
-  return random_number_generator;
-}
+// Keep outside the function to avoid lazy static init races on MSVC
+static boost::thread_specific_ptr<CryptoPP::AutoSeededRandomPool> g_random_number_generator;
 
 }  // unnamed namespace
 
 const uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
+
+CryptoPP::RandomNumberGenerator& random_number_generator() {
+  if (!g_random_number_generator.get())
+    g_random_number_generator.reset(new CryptoPP::AutoSeededRandomPool);
+  return *g_random_number_generator;
+}
 
 std::string XOR(const std::string& first, const std::string& second) {
   size_t common_size(first.size());
@@ -147,7 +153,8 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
                                          const std::string& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::StringSource source(
-      data, false, new CryptoPP::SecretSharing(rng(), threshold, number_of_shares, channel_switch));
+      data, false, new CryptoPP::SecretSharing(random_number_generator(), threshold,
+      number_of_shares, channel_switch));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
   std::vector<std::string> out_strings(number_of_shares);
   std::string channel;
