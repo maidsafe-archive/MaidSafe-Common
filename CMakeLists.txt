@@ -91,6 +91,10 @@ ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSo
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
+if(MSVC12 AND CMAKE_CL_64)
+  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved.")
+  set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
+endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
