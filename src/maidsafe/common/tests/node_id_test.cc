@@ -348,20 +348,12 @@ TEST_CASE("NodeId operator XOR", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId Collision", "[NodeId][Unit]") {  // Timeout 10
-  const int kCount = 10000;
-  std::vector<NodeId> node_ids;
-  for (int i(0); i < kCount; ++i)
-    node_ids.push_back(NodeId(NodeId::kRandomId));
-
-  bool collision(false);
-  for (int i(0); i < kCount; ++i) {
-    if ((std::count(node_ids.begin(), node_ids.end(), node_ids.at(i))) != 1) {
-      collision = true;
-      LOG(kInfo) << "Collision for : " << DebugId(node_ids.at(i));
-      break;
-    }
-  }
-  REQUIRE(!collision);
+  // Ensure we don't get a duplicate random ID.
+  std::set<NodeId> node_ids;
+  bool success(true);
+  for (int i(0); i < 100000; ++i)
+    success &= node_ids.emplace(NodeId::kRandomId).second;
+  REQUIRE(success);
 }
 
 }  // namespace test
