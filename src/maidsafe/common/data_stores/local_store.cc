@@ -24,6 +24,7 @@
 #include "boost/filesystem/convenience.hpp"
 
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/data_stores/utils.h"
 
@@ -338,13 +339,10 @@ std::unique_ptr<StructuredDataVersions> LocalStore::ReadVersions(const KeyType& 
   fs::path file_path(KeyToFilePath(key, false));
   file_path.replace_extension(".ver");
   boost::system::error_code ec;
-  if (fs::exists(file_path, ec)) {
-    std::unique_ptr<StructuredDataVersions> versions(
-        new StructuredDataVersions(StructuredDataVersions::serialised_type(ReadFile(file_path))));
-    return std::move(versions);
-  } else {
-    return std::move(std::unique_ptr<StructuredDataVersions>());
-  }
+  return fs::exists(file_path, ec) ?
+      std::move(maidsafe::make_unique<StructuredDataVersions>(
+          StructuredDataVersions::serialised_type(ReadFile(file_path)))) :
+      std::move(std::unique_ptr<StructuredDataVersions>());
 }
 
 void LocalStore::WriteVersions(const KeyType& key, const StructuredDataVersions& versions) {

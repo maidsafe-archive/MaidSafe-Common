@@ -40,6 +40,7 @@
 #include "boost/program_options/value_semantic.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -537,7 +538,7 @@ void Logging::SetStreams() {
     return;
 
   for (auto& entry : filter_) {
-    std::unique_ptr<LogFile> log_file(new LogFile);
+    auto log_file(make_unique<LogFile>());
     log_file->stream.open(GetLogfileName(entry.first).c_str(), std::ios_base::trunc);
     project_logfile_streams_.insert(std::make_pair(entry.first, std::move(log_file)));
   }
