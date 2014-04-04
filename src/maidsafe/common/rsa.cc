@@ -185,7 +185,7 @@ bool CheckSignature(const PlainText& data, const Signature& signature,
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   if (!public_key.Validate(crypto::random_number_generator(), 0)) {
-    LOG(kError) << "CheckSignature invalide public_key";
+    LOG(kError) << "CheckSignature invalid public_key";
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_public_key));
   }
 
