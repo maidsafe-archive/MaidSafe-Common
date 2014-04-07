@@ -135,6 +135,10 @@ ms_add_executable(bootstrap_file_tool "Tools/Common"
     "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
+# Address space tool
+ms_add_executable(address_space_tool "Tools/Common" "${CommonSourcesDir}/tools/address_space_tool.cc")
+target_link_libraries(address_space_tool maidsafe_common)
+
 # Tests
 if(MaidsafeTesting)
   ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
