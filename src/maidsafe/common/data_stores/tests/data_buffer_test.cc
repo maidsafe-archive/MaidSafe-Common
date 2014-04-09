@@ -99,9 +99,9 @@ class DataBufferTest {
       KeyType popped_key(key_value_pairs[index].first);
       NonEmptyString popped_value(key_value_pairs[index].second);
       GetIdentityVisitor get_identity;
-      REQUIRE(boost::apply_visitor(get_identity, popped_key) ==
-              boost::apply_visitor(get_identity, key));
-      REQUIRE(popped_value == value);
+      CHECK(boost::apply_visitor(get_identity, popped_key) ==
+            boost::apply_visitor(get_identity, key));
+      CHECK(popped_value == value);
       ++index;
     }
     cond_var.notify_one();
@@ -147,9 +147,9 @@ class DataBufferTest {
                                           DiskUsage(num_disk_entries * OneKB), pop_functor,
                                           data_buffer_path_));
     for (auto key_value : key_value_pairs) {
-      REQUIRE_NOTHROW(data_buffer_->Store(key_value.first, key_value.second));
-      REQUIRE_NOTHROW(recovered = data_buffer_->Get(key_value.first));
-      REQUIRE(key_value.second == recovered);
+      CHECK_NOTHROW(data_buffer_->Store(key_value.first, key_value.second));
+      CHECK_NOTHROW(recovered = data_buffer_->Get(key_value.first));
+      CHECK(key_value.second == recovered);
     }
     return key_value_pairs;
   }
@@ -168,28 +168,28 @@ class DataBufferTest {
 };
 
 TEST_CASE_METHOD(DataBufferTest, "Constructor", "[DataBuffer][Behavioural]") {
-  REQUIRE_NOTHROW(DataBufferType(MemoryUsage(0), DiskUsage(0), pop_functor_));
-  REQUIRE_NOTHROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_));
-  REQUIRE_THROWS_AS(DataBufferType(MemoryUsage(1), DiskUsage(0), pop_functor_), std::exception);
-  REQUIRE_THROWS_AS(DataBufferType(MemoryUsage(2), DiskUsage(1), pop_functor_), std::exception);
-  REQUIRE_THROWS_AS(DataBufferType(MemoryUsage(200001), DiskUsage(200000), pop_functor_),
-                    std::exception);
-  REQUIRE_NOTHROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_));
+  CHECK_NOTHROW(DataBufferType(MemoryUsage(0), DiskUsage(0), pop_functor_));
+  CHECK_NOTHROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_));
+  CHECK_THROWS_AS(DataBufferType(MemoryUsage(1), DiskUsage(0), pop_functor_), common_error);
+  CHECK_THROWS_AS(DataBufferType(MemoryUsage(2), DiskUsage(1), pop_functor_), common_error);
+  CHECK_THROWS_AS(DataBufferType(MemoryUsage(200001), DiskUsage(200000), pop_functor_),
+                  common_error);
+  CHECK_NOTHROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_));
 
   // Create a path to a file, and check that it can't be used as the disk buffer path.
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   REQUIRE(!test_path->empty());
   boost::filesystem::path file_path(*test_path / "File");
   REQUIRE(WriteFile(file_path, " "));
-  REQUIRE_THROWS_AS(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_, file_path),
-                    std::exception);
-  REQUIRE_THROWS_AS(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
-                                   file_path / "Directory"), std::exception);
+  CHECK_THROWS_AS(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_, file_path),
+                  common_error);
+  CHECK_THROWS_AS(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
+                                 file_path / "Directory"), common_error);
 
   // Create a path to a directory, and check that it can be used as the disk buffer path.
   boost::filesystem::path directory_path(*test_path / "Directory");
-  REQUIRE_NOTHROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_, directory_path));
-  REQUIRE(fs::exists(directory_path));
+  CHECK_NOTHROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_, directory_path));
+  CHECK(fs::exists(directory_path));
 }
 
 TEST_CASE_METHOD(DataBufferTest, "Destructor", "[DataBuffer][Behavioural]") {
@@ -217,16 +217,16 @@ TEST_CASE_METHOD(DataBufferTest, "SetMaxDiskMemoryUsage", "[DataBuffer][Behaviou
   REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ - 1)));
   REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_)));
   REQUIRE_THROWS_AS(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ + 1)),
-                    std::exception);
+                    common_error);
   REQUIRE_THROWS_AS(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ - 1)),
-                    std::exception);
+                    common_error);
   REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_)));
   REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
   REQUIRE_THROWS_AS(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
-                    std::exception);
+                    common_error);
   REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(1))));
   REQUIRE_THROWS_AS(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
-                    std::exception);
+                    common_error);
   REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(1))));
   REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(0))));
   REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))));
@@ -234,7 +234,7 @@ TEST_CASE_METHOD(DataBufferTest, "SetMaxDiskMemoryUsage", "[DataBuffer][Behaviou
   MemoryUsage memory_usage(std::numeric_limits<uint64_t>().max());
   REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(memory_usage)));
   REQUIRE_THROWS_AS(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
-                    std::exception);
+                    common_error);
   REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
   REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
@@ -257,9 +257,9 @@ TEST_CASE_METHOD(DataBufferTest, "RemoveDiskBuffer", "[DataBuffer][Behavioural]"
   // API functions to throw on next execution.
   REQUIRE_NOTHROW(data_buffer_->Store(key, small_value));
   Sleep(std::chrono::seconds(1));
-  REQUIRE_THROWS_AS(data_buffer_->Store(key, small_value), std::exception);
-  REQUIRE_THROWS_AS(data_buffer_->Get(key), std::exception);
-  REQUIRE_THROWS_AS(data_buffer_->Delete(key), std::exception);
+  REQUIRE_THROWS_AS(data_buffer_->Store(key, small_value), common_error);
+  REQUIRE_THROWS_AS(data_buffer_->Get(key), common_error);
+  REQUIRE_THROWS_AS(data_buffer_->Delete(key), common_error);
 
   data_buffer_.reset(new DataBufferType(MemoryUsage(kMemorySize), DiskUsage(kDiskSize),
                                         pop_functor_, data_buffer_path));
@@ -270,9 +270,9 @@ TEST_CASE_METHOD(DataBufferTest, "RemoveDiskBuffer", "[DataBuffer][Behavioural]"
   REQUIRE_FALSE(fs::exists(data_buffer_path, error_code));
   // Skips memory buffer and goes straight to disk, causing exception.  Background thread in future
   // should finish, causing other API functions to throw on next execution.
-  REQUIRE_THROWS_AS(data_buffer_->Store(key, large_value), std::exception);
-  REQUIRE_THROWS_AS(data_buffer_->Get(key), std::exception);
-  REQUIRE_THROWS_AS(data_buffer_->Delete(key), std::exception);
+  REQUIRE_THROWS_AS(data_buffer_->Store(key, large_value), common_error);
+  REQUIRE_THROWS_AS(data_buffer_->Get(key), common_error);
+  REQUIRE_THROWS_AS(data_buffer_->Delete(key), common_error);
 }
 
 TEST_CASE_METHOD(DataBufferTest, "SuccessfulStore", "[DataBuffer][Behavioural]") {
@@ -293,7 +293,7 @@ TEST_CASE_METHOD(DataBufferTest, "SuccessfulStore", "[DataBuffer][Behavioural]")
 TEST_CASE_METHOD(DataBufferTest, "UnsuccessfulStore", "[DataBuffer][Behavioural]") {
   NonEmptyString value(std::string(static_cast<uint32_t>(max_disk_usage_ + 1), 'a'));
   auto key(GenerateKeyFromValue<KeyType>(value));
-  REQUIRE_THROWS_AS(data_buffer_->Store(key, value), std::exception);
+  REQUIRE_THROWS_AS(data_buffer_->Store(key, value), common_error);
 }
 
 TEST_CASE_METHOD(DataBufferTest, "DeleteOnDiskBufferOverfill", "[DataBuffer][Behavioural]") {
@@ -306,9 +306,15 @@ TEST_CASE_METHOD(DataBufferTest, "DeleteOnDiskBufferOverfill", "[DataBuffer][Beh
   KeyType first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB)));
   auto key(GenerateKeyFromValue<KeyType>(value));
-  auto async =
-    std::async(std::launch::async, [this, key, value] { data_buffer_->Store(key, value); });
-  REQUIRE_THROWS_AS(recovered = data_buffer_->Get(key), std::exception);
+  auto async = std::async(std::launch::async,
+                          [this, key, value] {
+                            Sleep(std::chrono::milliseconds(100));
+                            data_buffer_->Store(key, value);
+                          });
+  REQUIRE_THROWS_AS(recovered = data_buffer_->Get(key), common_error);
+  Sleep(std::chrono::milliseconds(200));
+  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
+  REQUIRE(recovered == value);
   REQUIRE_NOTHROW(data_buffer_->Delete(first_key));
   REQUIRE_NOTHROW(data_buffer_->Delete(second_key));
   REQUIRE_NOTHROW(async.wait());
@@ -388,7 +394,7 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncDeleteOnDiskBufferOverfill", "[DataBuffer
   // Check the new Store attempts all block pending some Deletes
   for (auto& async_store : async_stores) {
     auto status(async_store.wait_for(std::chrono::milliseconds(250)));
-    REQUIRE(std::future_status::timeout == status);
+    CHECK(std::future_status::timeout == status);
   }
 
   std::vector<std::future<NonEmptyString>> async_gets;
@@ -398,30 +404,29 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncDeleteOnDiskBufferOverfill", "[DataBuffer
     }));
   }
 
-  // Check Get attempts for the new Store values all block pending the Store attempts completing
+  // Check Get attempts for the new Store values don't block pending the Store attempts completing
   for (auto& async_get : async_gets) {
     auto status(async_get.wait_for(std::chrono::milliseconds(100)));
-    REQUIRE(std::future_status::timeout == status);
+    CHECK(std::future_status::ready == status);
   }
 
   // Delete the last new Store attempt before it has completed
-  REQUIRE_NOTHROW(data_buffer_->Delete(new_key_value_pairs.back().first));
+  CHECK_NOTHROW(data_buffer_->Delete(new_key_value_pairs.back().first));
   // Delete the old values to allow the new Store attempts to complete
   for (auto key_value : old_key_value_pairs) {
-    REQUIRE_NOTHROW(data_buffer_->Delete(key_value.first));
+    CHECK_NOTHROW(data_buffer_->Delete(key_value.first));
   }
 
-  for (size_t i(0); i != num_entries - 1; ++i) {
+  for (size_t i(0); i != num_entries; ++i) {
     auto status(async_gets[i].wait_for(std::chrono::milliseconds(200)));
-    REQUIRE(std::future_status::ready == status);
-    REQUIRE_NOTHROW(recovered = async_gets[i].get());
-    REQUIRE(new_key_value_pairs[i].second == recovered);
+    CHECK(std::future_status::ready == status);
+    CHECK_NOTHROW(recovered = async_gets[i].get());
+    CHECK(new_key_value_pairs[i].second == recovered);
   }
 
-  auto status(async_gets.back().wait_for(std::chrono::milliseconds(100)));
-  REQUIRE(std::future_status::ready == status);
-  REQUIRE_THROWS_AS(async_gets.back().get(), std::exception);
-  REQUIRE(DeleteDirectory(this->data_buffer_path_));
+  // Check the last store value which was cancelled is now unavailable
+  CHECK_THROWS_AS(data_buffer_->Get(new_key_value_pairs.back().first), common_error);
+  CHECK(DeleteDirectory(this->data_buffer_path_));
 }
 
 TEST_CASE_METHOD(DataBufferTest, "AsyncPopOnDiskBufferOverfill", "[DataBuffer][Behavioural]") {
@@ -436,7 +441,7 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncPopOnDiskBufferOverfill", "[DataBuffer][B
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   old_key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
                                            test_path, pop_functor);
-  REQUIRE(0 == index);
+  CHECK(0 == index);
 
   NonEmptyString value, recovered;
   KeyType key;
@@ -457,14 +462,14 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncPopOnDiskBufferOverfill", "[DataBuffer][B
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(
         lock, std::chrono::seconds(2), [&]()->bool { return index == num_entries; }));
-    REQUIRE(result);
+    CHECK(result);
   }
   for (auto key_value : new_key_value_pairs) {
-    REQUIRE_NOTHROW(recovered = this->data_buffer_->Get(key_value.first));
-    REQUIRE(key_value.second == recovered);
+    CHECK_NOTHROW(recovered = this->data_buffer_->Get(key_value.first));
+    CHECK(key_value.second == recovered);
   }
-  REQUIRE(num_entries == index);
-  REQUIRE(DeleteDirectory(data_buffer_path_));
+  CHECK(num_entries == index);
+  CHECK(DeleteDirectory(data_buffer_path_));
 }
 
 TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Behavioural]") {
@@ -481,11 +486,11 @@ TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Be
   auto key(GenerateKeyFromValue<KeyType>(value));
   auto async = std::async(std::launch::async,
                           [this, key, value] { data_buffer_->Store(key, value); });
-  REQUIRE_NOTHROW(async.wait());
-  REQUIRE(true == async.valid());
-  REQUIRE_NOTHROW(async.get());
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-  REQUIRE(recovered == value);
+  CHECK_NOTHROW(async.wait());
+  REQUIRE(async.valid());
+  CHECK_NOTHROW(async.get());
+  CHECK_NOTHROW(recovered = data_buffer_->Get(key));
+  CHECK(recovered == value);
 
   uint32_t events(RandomUint32() % 100);
   for (uint32_t i = 0; i != events; ++i) {
@@ -495,16 +500,16 @@ TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Be
     auto async =
         std::async(std::launch::async,
                    [this, key, last_value] { data_buffer_->Store(key, last_value); });
-    REQUIRE_NOTHROW(async.wait());
-    REQUIRE(true == async.valid());
-    REQUIRE_NOTHROW(async.get());
+    CHECK_NOTHROW(async.wait());
+    CHECK(async.valid());
+    CHECK_NOTHROW(async.get());
   }
   Sleep(std::chrono::milliseconds(100));
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-  REQUIRE(value != recovered);
-  REQUIRE(last_value == recovered);
+  CHECK_NOTHROW(recovered = data_buffer_->Get(key));
+  CHECK(value != recovered);
+  CHECK(last_value == recovered);
   data_buffer_.reset();
-  REQUIRE(DeleteDirectory(data_buffer_path_));
+  CHECK(DeleteDirectory(data_buffer_path_));
 }
 
 TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
@@ -564,15 +569,14 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
   }
 
   for (auto& future_store : future_stores) {
-    REQUIRE_NOTHROW(future_store.get());
+    CHECK_NOTHROW(future_store.get());
   }
 
   for (auto& future_delete : future_deletes) {
     try {
       future_delete.get();
     }
-    catch (const std::exception&) {
-    }
+    catch (const common_error&) {}
   }
 
   for (auto& future_get : future_gets) {
@@ -582,11 +586,10 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
       auto it = std::find_if(
           key_value_pairs.begin(), key_value_pairs.end(),
           [this, &value](const value_type & key_value) { return key_value.second == value; });
-      REQUIRE(key_value_pairs.end() != it);
+      CHECK(key_value_pairs.end() != it);
     }
-    catch (const std::exception& e) {
-      std::string msg(e.what());
-      LOG(kInfo) << msg;
+    catch (const common_error& e) {
+      LOG(kInfo) << boost::diagnostic_information(e);
     }
   }
   // Need to destroy data_buffer_ so that test_path can be deleted.
@@ -632,10 +635,10 @@ TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Store", "[DataBuffer][Behavi
     NonEmptyString value(std::string(RandomAlphaNumericString(
                       static_cast<uint32_t>(resource_usage->memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
-    REQUIRE_NOTHROW(data_buffer_->Store(key, value));
+    CHECK_NOTHROW(data_buffer_->Store(key, value));
     NonEmptyString recovered;
-    REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-    REQUIRE(value == recovered);
+    CHECK_NOTHROW(recovered = data_buffer_->Get(key));
+    CHECK(value == recovered);
     if (disk_usage != 0) {
       disk_usage -= resource_usage->memory_usage;
       total_usage -= resource_usage->memory_usage;
@@ -669,7 +672,7 @@ TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behav
     key_value_pairs[key] = value;
   #endif
 
-    REQUIRE_NOTHROW(data_buffer_->Store(key, value));
+    CHECK_NOTHROW(data_buffer_->Store(key, value));
     if (disk_usage != 0) {
       disk_usage -= resource_usage->memory_usage;
       total_usage -= resource_usage->memory_usage;
@@ -680,10 +683,10 @@ TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behav
   NonEmptyString recovered;
   for (auto key_value : key_value_pairs) {
     KeyType key(key_value.first);
-    REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-    REQUIRE(key_value.second == recovered);
-    REQUIRE_NOTHROW(data_buffer_->Delete(key));
-    REQUIRE_THROWS_AS(recovered = data_buffer_->Get(key), std::exception);
+    CHECK_NOTHROW(recovered = data_buffer_->Get(key));
+    CHECK(key_value.second == recovered);
+    CHECK_NOTHROW(data_buffer_->Delete(key));
+    CHECK_THROWS_AS(recovered = data_buffer_->Get(key), common_error);
   }
 }
 

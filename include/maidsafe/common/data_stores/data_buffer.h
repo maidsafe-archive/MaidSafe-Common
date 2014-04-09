@@ -88,7 +88,7 @@ class DataBuffer {
   void Store(const KeyType& key, const NonEmptyString& value);
   // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
   // the value can't be read from disk.  If the value isn't in memory and has started to be stored
-  // to disk, blocks while waiting for the storing to complete.
+  // to disk, blocks briefly while waiting for the storing to complete.
   NonEmptyString Get(const KeyType& key);
   // Throws if the background worker has thrown (e.g. the disk has become inaccessible).  Throws if
   // the value was written to disk and can't be removed.
@@ -156,7 +156,7 @@ class DataBuffer {
                             std::unique_lock<std::mutex>& memory_store_lock);
   void StoreOnDisk(const KeyType& key, const NonEmptyString& value,
                    std::unique_lock<std::mutex>&& disk_store_lock);
-  void WaitForSpaceOnDisk(const KeyType& key, uint64_t required_space,
+  void WaitForSpaceOnDisk(const KeyType& key, const NonEmptyString* const value,
                           std::unique_lock<std::mutex>& disk_store_lock, bool& cancelled);
   void DeleteFromMemory(const KeyType& key, StoringState& also_on_disk);
   void DeleteFromDisk(const KeyType& key);
@@ -189,9 +189,10 @@ class DataBuffer {
   const PopFunctor kPopFunctor_;
   const boost::filesystem::path kDiskBuffer_;
   const bool kShouldRemoveRoot_;
-  std::atomic<bool> running_;
-  std::mutex worker_mutex_;
-  std::future<void> worker_;
+  std::map<KeyType, const NonEmptyString*> elements_being_moved_to_disk_{};
+  std::atomic<bool> running_{ true };
+  std::mutex worker_mutex_{};
+  std::future<void> worker_{};
 };
 
 // ==================== Implementation =============================================================
@@ -203,10 +204,7 @@ DataBuffer<Key>::DataBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_usa
       kPopFunctor_(std::move(pop_functor)),
       kDiskBuffer_(boost::filesystem::unique_path(boost::filesystem::temp_directory_path() /
                                                   "DB-%%%%-%%%%-%%%%-%%%%")),
-      kShouldRemoveRoot_(true),
-      running_(true),
-      worker_mutex_(),
-      worker_() {
+      kShouldRemoveRoot_(true) {
   Init();
 }
 
@@ -218,10 +216,7 @@ DataBuffer<Key>::DataBuffer(MemoryUsage max_memory_usage, DiskUsage max_disk_usa
       disk_store_(max_disk_usage),
       kPopFunctor_(std::move(pop_functor)),
       kDiskBuffer_(disk_buffer),
-      kShouldRemoveRoot_(should_remove_root),
-      running_(true),
-      worker_mutex_(),
-      worker_() {
+      kShouldRemoveRoot_(should_remove_root) {
   Init();
 }
 
@@ -357,7 +352,7 @@ void DataBuffer<Key>::StoreOnDisk(const KeyType& key, const NonEmptyString& valu
   disk_store_.index.emplace_back(key);
 
   bool cancelled(false);
-  WaitForSpaceOnDisk(key, value.string().size(), disk_store_lock, cancelled);
+  WaitForSpaceOnDisk(key, &value, disk_store_lock, cancelled);
   if (!running_)
     return;
 
@@ -378,10 +373,10 @@ void DataBuffer<Key>::StoreOnDisk(const KeyType& key, const NonEmptyString& valu
 }
 
 template <typename Key>
-void DataBuffer<Key>::WaitForSpaceOnDisk(const KeyType& key, uint64_t required_space,
+void DataBuffer<Key>::WaitForSpaceOnDisk(const KeyType& key, const NonEmptyString* const value,
                                          std::unique_lock<std::mutex>& disk_store_lock,
                                          bool& cancelled) {
-  while (!HasSpace(disk_store_, required_space) && running_) {
+  while (!HasSpace(disk_store_, value->string().size()) && running_) {
     auto itr(Find(disk_store_, key));
     if (itr == disk_store_.index.end()) {
       cancelled = true;
@@ -405,9 +400,14 @@ void DataBuffer<Key>::WaitForSpaceOnDisk(const KeyType& key, uint64_t required_s
         kPopFunctor_(oldest_key, oldest_value);
       }
     } else {
-      // Rely on client of this class to call Delete until enough space becomes available
-      if (running_)
+      // Rely on client of this class to call Delete until enough space becomes available.  Make the
+      // current value available for 'Get' (avoid 'Get' permanent blocking) by adding to
+      // 'elements_being_moved_to_disk_'.
+      if (running_) {
+        elements_being_moved_to_disk_[key] = value;
         disk_store_.cond_var.wait(disk_store_lock);
+        elements_being_moved_to_disk_.erase(key);
+      }
     }
   }
 }
@@ -424,6 +424,9 @@ NonEmptyString DataBuffer<Key>::Get(const KeyType& key) {
   std::unique_lock<std::mutex> disk_store_lock(disk_store_.mutex);
   auto itr(FindAndThrowIfCancelled(key));
   if ((*itr).state == StoringState::kStarted) {
+    auto temp_itr(elements_being_moved_to_disk_.find(key));
+    if (temp_itr != std::end(elements_being_moved_to_disk_))
+      return *temp_itr->second;
     disk_store_.cond_var.wait(disk_store_lock, [this, &key]()->bool {
       auto itr(Find(disk_store_, key));
       return (itr == disk_store_.index.end() || (*itr).state != StoringState::kStarted);
@@ -468,10 +471,10 @@ void DataBuffer<Key>::Delete(std::function<bool(const KeyType&)> predicate) {
   std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
   auto before_size(disk_store_.index.size());
   disk_store_.index.erase(std::remove_if(std::begin(disk_store_.index),
-                                          std::end(disk_store_.index),
-                                          [&](const DiskElement& item) {
-                                            return predicate(item.key);
-                                          }),
+                                         std::end(disk_store_.index),
+                                         [&](const DiskElement& item) {
+                                           return predicate(item.key);
+                                         }),
                           std::end(disk_store_.index));
   if (disk_store_.index.size() != before_size)
     disk_store_.cond_var.notify_all();
