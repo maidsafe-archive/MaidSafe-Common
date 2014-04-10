@@ -551,16 +551,20 @@ void Logging::Send(std::function<void()> message_functor) { background_.Send(mes
 
 void Logging::WriteToCombinedLogfile(const std::string& message) {
   std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
-  if (combined_logfile_stream_.stream.good())
+  if (combined_logfile_stream_.stream.good()) {
     combined_logfile_stream_.stream.write(message.c_str(), message.size());
+    combined_logfile_stream_.stream.flush();
+  }
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
   auto itr(project_logfile_streams_.find(project));
   if (itr != project_logfile_streams_.end()) {
     std::lock_guard<std::mutex> lock((*itr).second->mutex);
-    if ((*itr).second->stream.good())
+    if ((*itr).second->stream.good()) {
       (*itr).second->stream.write(message.c_str(), message.size());
+      (*itr).second->stream.flush();
+    }
   }
 }
 
