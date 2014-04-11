@@ -82,12 +82,12 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   }
-  return CipherText(result);
+  return CipherText(NonEmptyString(result));
 }
 
 PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+  if (!input->IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
     LOG(kError) << "SymmEncrypt one of class uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
@@ -99,7 +99,7 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                            new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, AES256_KeySize, byte_iv);
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
+    CryptoPP::StringSource(input->string(), true, new CryptoPP::StreamTransformationFilter(
                                                      decryptor, new CryptoPP::StringSink(result)));
   }
   catch (const CryptoPP::Exception& e) {
@@ -129,17 +129,17 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
     LOG(kError) << "Failed compressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
   }
-  return CompressedText(result);
+  return CompressedText(NonEmptyString(result));
 }
 
 UncompressedText Uncompress(const CompressedText& input) {
-  if (!input.IsInitialised()) {
+  if (!input->IsInitialised()) {
     LOG(kError) << "Uncompress input uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   std::string result;
   try {
-    CryptoPP::StringSource(input.string(), true,
+    CryptoPP::StringSource(input->string(), true,
                            new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
   }
   catch (const CryptoPP::Exception& e) {

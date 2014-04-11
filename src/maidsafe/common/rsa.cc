@@ -80,7 +80,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
     safe_encrypt.set_data(
-        crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv).string());
+        crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv)->string());
     std::string encryption_key_encrypted;
     std::string const local_key_and_iv = symm_encryption_key.string() + symm_encryption_iv.string();
     CryptoPP::StringSource(
@@ -116,7 +116,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
         LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
         BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
       }
-      result = crypto::SymmDecrypt(crypto::CipherText(safe_encrypt.data()),
+      result = crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(safe_encrypt.data())),
                                    crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
                                    crypto::AES256InitialisationVector(out_data.substr(
                                        crypto::AES256_KeySize, crypto::AES256_IVSize)));

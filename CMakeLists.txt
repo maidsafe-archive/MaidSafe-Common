@@ -43,6 +43,10 @@ ms_glob_dir(Common ${CommonSourcesDir} Common)
 ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
+ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authentication")
+ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
+ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
+
 ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
 ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
 set(CommonDataStoresTestsUtilsFiles
@@ -78,6 +82,8 @@ list(APPEND CommonTestsAllFiles ${TestsMain})
 # Common library
 ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
+    ${CommonAuthenticationAllFiles}
+    ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
     ${CommonDataTypesAllFiles})
 add_dependencies(maidsafe_common boost_process catch)
@@ -105,6 +111,7 @@ target_link_libraries(maidsafe_common
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
     ${BoostLocaleLibs}
+    ${BoostRegexLibs}
     ${BoostSystemLibs}
     ${BoostThreadLibs}
     ${BoostProgramOptionsLibs}
@@ -141,7 +148,7 @@ target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
 if(MaidsafeTesting)
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
   target_link_libraries(test_common maidsafe_common)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})

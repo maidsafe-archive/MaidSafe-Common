@@ -219,7 +219,7 @@ void EncryptFile() {
   }
 
   if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(data),
-                                                               key, iv).string()))
+                                                               key, iv)->string()))
     std::cout << "error writing file\n";
   else
     std::cout << "File is now encrypted " << filename << "\n";
@@ -238,8 +238,9 @@ void DecryptFile() {
     std::cout << "error reading file\n";
     return;
   }
-  if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmDecrypt(maidsafe::crypto::PlainText(data),
-                                                               key, iv).string()))
+  if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmDecrypt(maidsafe::crypto::CipherText(
+                                                               maidsafe::NonEmptyString(data)), key,
+                                                               iv).string()))
     std::cout << "error writing file\n";
   else
     std::cout << "File is now decrypted " << filename << "\n";
@@ -287,7 +288,7 @@ void CreateKeyGroup() {
       fs::path file(location + name + ".keyfile");
       if (!maidsafe::WriteFile(
                file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(chunks.at(i)), key,
-                                                   iv).string())) {
+                                                   iv)->string())) {
         std::cout << "error writing file\n";
         --i;
         std::cout << "Error, are you sure you used a unique name, retry !\n";
@@ -327,7 +328,8 @@ void GroupSignIn() {
       std::cout << "Error, are you sure you used a correct name/password, retry !\n";
     } else {
       chunks.push_back(
-          maidsafe::crypto::SymmDecrypt(maidsafe::crypto::CipherText(enc_data), key, iv).string());
+          maidsafe::crypto::SymmDecrypt(maidsafe::crypto::CipherText(
+              maidsafe::NonEmptyString(enc_data)), key, iv).string());
       enc_data.clear();
     }
   }
