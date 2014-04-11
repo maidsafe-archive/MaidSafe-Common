@@ -32,9 +32,9 @@ struct UserCredentials {
   typedef detail::SecureInputString<
       std::greater_equal<detail::SecureString::size_type>, 1, detail::KeywordTag> Keyword;
   typedef detail::SecureInputString<
-      std::greater_equal<detail::SecureString::size_type>, 1, detail::PasswordTag> Password;
-  typedef detail::SecureInputString<
       std::greater_equal<detail::SecureString::size_type>, 1, detail::PinTag> Pin;
+  typedef detail::SecureInputString<
+      std::greater_equal<detail::SecureString::size_type>, 1, detail::PasswordTag> Password;
 
   UserCredentials() : keyword(), pin(), password() {}
 

@@ -21,19 +21,26 @@
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/authentication/user_credentials.h"
 
 namespace maidsafe {
 
 namespace authentication {
 
-struct UserCredentials;
-
+// Uses PBKDFv2 function to generate a secure password from the user's password and pin.  The user's
+// keyword is not used in this function.  Throws if the password or pin is null.
 crypto::SecurePassword CreateSecurePassword(const UserCredentials& user_credentials);
 
+// Uses PBKDFv2 function to generate a secure password from the user's keyword, password and pin,
+// then performs a bitwise XOR on the secure password and data.  Throws if any user credential is
+// null.
 NonEmptyString Obfuscate(const UserCredentials& user_credentials, const NonEmptyString& data);
 
+// Returns the first part of the secure password to be used as a symmetric encryption key.
 crypto::AES256Key DeriveSymmEncryptKey(const crypto::SecurePassword& secure_password);
 
+// Returns the last part of the secure password to be used as a symmetric encryption initialisation
+// vector.
 crypto::AES256InitialisationVector DeriveSymmEncryptIv(
     const crypto::SecurePassword& secure_password);
 
