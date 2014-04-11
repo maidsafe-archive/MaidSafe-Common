@@ -55,8 +55,15 @@ std::string XOR(const std::string& first, const std::string& second) {
   }
 
   std::string result(common_size, 0);
-  for (size_t i(0); i != common_size; ++i)
-    result[i] = first[i] ^ second[i];
+  auto first_itr(std::begin(first));
+  auto second_itr(std::begin(second));
+  auto result_itr(std::begin(result));
+  while (result_itr != std::end(result)) {
+    *result_itr = *first_itr ^ *second_itr;
+    ++first_itr;
+    ++second_itr;
+    ++result_itr;
+  }
 
   return result;
 }

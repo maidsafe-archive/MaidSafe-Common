@@ -115,18 +115,26 @@ typedef NonEmptyString Salt, PlainText, UncompressedText;
 // thread-specific pointer (i.e. it's thread-safe).
 CryptoPP::RandomNumberGenerator& random_number_generator();
 
-// Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
-// 0, an empty string is returned.
+// Performs a bitwise XOR on each char of first with the corresponding char of second.
 template <size_t size>
 detail::BoundedString<size, size> XOR(const detail::BoundedString<size, size>& first,
                                       const detail::BoundedString<size, size>& second) {
   std::string result(size, 0);
-  for (size_t i(0); i != size; ++i)
-    result[i] = first.string()[i] ^ second.string()[i];
+  auto first_itr(std::begin(first.string()));
+  auto second_itr(std::begin(second.string()));
+  auto result_itr(std::begin(result));
+  while (result_itr != std::end(result)) {
+    *result_itr = *first_itr ^ *second_itr;
+    ++first_itr;
+    ++second_itr;
+    ++result_itr;
+  }
 
   return detail::BoundedString<size, size>(result);
 }
 
+// Performs a bitwise XOR on each char of first with the corresponding char of second.  If the
+// the strings are different lengths or are empty, the function throws a common_error.
 std::string XOR(const std::string& first, const std::string& second);
 
 // Creates a secure password of size AES256_KeySize + AES256_IVSize using the Password-Based Key
