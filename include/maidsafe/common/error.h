@@ -118,14 +118,7 @@ const std::error_category& GetAsymmCategory();
 asymm_error MakeError(AsymmErrors code);
 
 enum class PassportErrors {
-  fob_serialisation_error = 1,
-  fob_parsing_error,
-  mid_parsing_error,
-  tmid_parsing_error,
-  uninitialised_fob,
-  passport_parsing_error,
-  public_id_already_exists,
-  no_such_public_id
+  id_already_exists = 1
 };
 
 class passport_error : public maidsafe_error {
