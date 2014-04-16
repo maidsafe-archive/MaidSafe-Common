@@ -33,8 +33,7 @@ NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) {}
 NodeId::NodeId(NodeId&& other) : raw_id_(std::move(other.raw_id_)) {}
 
 NodeId& NodeId::operator=(NodeId other) {
-  using std::swap;
-  swap(raw_id_, other.raw_id_);
+  swap(*this, other);
   return *this;
 }
 
@@ -46,15 +45,14 @@ NodeId::NodeId(IdType type)
           case kRandomId:
             return RandomString(kSize);
           default:
-            ThrowError(CommonErrors::invalid_parameter);
+            BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
         }
-        return "";
       }()) {}
 
 NodeId::NodeId(std::string id) : raw_id_(std::move(id)) {
   if (raw_id_.size() != kSize) {
     raw_id_.clear();
-    ThrowError(CommonErrors::invalid_node_id);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
   }
 }
 
@@ -84,7 +82,7 @@ NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_
     Base64Decode(id);
   } else if (raw_id_.size() != kSize) {
     raw_id_.clear();
-    ThrowError(CommonErrors::invalid_node_id);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
   }
 }
 
@@ -147,5 +145,10 @@ NodeId& NodeId::operator^=(const NodeId& rhs) {
 }
 
 std::string DebugId(const NodeId& node_id) { return HexSubstr(node_id.raw_id_); }
+
+void swap(NodeId& lhs, NodeId& rhs) MAIDSAFE_NOEXCEPT {
+  using std::swap;
+  swap(lhs.raw_id_, rhs.raw_id_);
+}
 
 }  // namespace maidsafe

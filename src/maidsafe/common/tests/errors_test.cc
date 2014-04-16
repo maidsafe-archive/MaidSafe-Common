@@ -18,6 +18,8 @@
 
 #include "maidsafe/common/error.h"
 
+#include "boost/throw_exception.hpp"
+
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -52,6 +54,62 @@ TEST_CASE("Error codes and conditions", "[ErrorCode][ErrorCondition][Unit]") {
                                              null_pointer_condition.value()));
   CHECK_FALSE(GetCommonCategory().equivalent(data_empty_error.code().value(),
                                              null_pointer_condition));
+}
+
+TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
+  // Catch as specific error type
+  try {
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
+  }
+  catch (const common_error& e) {
+    LOG(kWarning) << e.what();
+    LOG(kError) << boost::diagnostic_information(e);
+  }
+
+  // Catch as maidsafe_error
+  try {
+    BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
+  }
+  catch (const maidsafe_error& e) {
+    LOG(kWarning) << e.what();
+    LOG(kError) << boost::diagnostic_information(e);
+  }
+
+  // Catch as std::exception
+  try {
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
+  }
+  catch (const std::exception& e) {
+    LOG(kWarning) << e.what();
+    LOG(kError) << boost::diagnostic_information(e);
+  }
+
+  // Catch as boost::exception
+  try {
+    BOOST_THROW_EXCEPTION(MakeError(EncryptErrors::bad_sequence));
+  }
+  catch (const boost::exception& e) {
+    LOG(kError) << boost::diagnostic_information(e);
+  }
+
+  // Catch as any type
+  try {
+    BOOST_THROW_EXCEPTION(MakeError(DriveErrors::failed_to_mount));
+  }
+  catch (...) {
+    LOG(kError) << boost::current_exception_diagnostic_information();
+  }
+
+  // Use plain throw
+  try {
+    throw MakeError(NfsErrors::failed_to_get_data);
+  }
+  catch (const nfs_error& e) {
+    LOG(kWarning) << e.what();
+    LOG(kError) << boost::diagnostic_information(e);
+  }
+
+  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
 }  // namespace test

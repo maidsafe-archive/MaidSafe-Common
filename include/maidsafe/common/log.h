@@ -60,28 +60,22 @@ enum class ColourMode {
   kFullLine
 };
 
-#ifdef MAIDSAFE_WIN32
-class NullStream {
- public:
-  NullStream() {}
-  template <typename T>
-  NullStream& operator<<(T const&) {
-    return *this;
-  }
-  operator bool() const { return false; }
-};
-#else
 // compile away DLOG and LOG statements
 class NullStream {
  public:
   NullStream() {}
   template <typename T>
-  NullStream& operator<<(T const&) {
-    return *this;
-  }
+  NullStream& operator<<(const T&) { return *this; }
+  typedef std::basic_ostream<char, std::char_traits<char>> CoutType;
+  typedef CoutType& (*StandardEndLine)(CoutType&);
+  // define an operator<< to take in std::endl
+  NullStream& operator<<(StandardEndLine) { return *this; }
+#ifdef MAIDSAFE_WIN32
+  operator bool() const { return false; }
+#else
   explicit operator bool() const { return false; }
-};
 #endif
+};
 
 struct Envoid {
  public:
@@ -100,6 +94,7 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFat
 #define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
 #define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
+#define GLOG() maidsafe::log::GraphLogMessage().messageStream()
 
 class LogMessage {
  public:
@@ -126,11 +121,22 @@ class GtestLogMessage {
   std::ostringstream stream_;
 };
 
+class GraphLogMessage {
+ public:
+  GraphLogMessage();
+  ~GraphLogMessage();
+  std::ostringstream& messageStream() { return stream_; }
+
+ private:
+  std::ostringstream stream_;
+};
+
 class Logging {
  public:
   static Logging& Instance();
   // Returns unused options
-  std::vector<std::string> Initialise(int argc, char** argv);
+  template <typename Char>
+  std::vector<std::vector<Char>> Initialise(int argc, Char** argv);
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);

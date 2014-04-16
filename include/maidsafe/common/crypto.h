@@ -75,7 +75,6 @@ class SHA1;
 class SHA256;
 class SHA384;
 class SHA512;
-class Tiger;
 }  // namespace CryptoPP
 
 namespace maidsafe {
@@ -86,7 +85,6 @@ typedef CryptoPP::SHA1 SHA1;
 typedef CryptoPP::SHA256 SHA256;
 typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
-typedef CryptoPP::Tiger Tiger;
 typedef CryptoPP::Integer BigInt;
 
 enum {
@@ -105,7 +103,6 @@ typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
 typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
 typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
 typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
-typedef detail::BoundedString<Tiger::DIGESTSIZE, Tiger::DIGESTSIZE> TigerHash;
 typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText, CompressedText,
     UncompressedText;
 
@@ -131,8 +128,10 @@ template <typename PasswordType>
 SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt,
                                     uint32_t pin,
                                     const std::string& label = kMaidSafeVersionLabel) {
-  if (!password.IsInitialised() || !salt.IsInitialised())
-    ThrowError(CommonErrors::uninitialised);
+  if (!password.IsInitialised() || !salt.IsInitialised()) {
+    LOG(kError) << "CreateSecurePassword password or salt uninitialised";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
   uint16_t iter = (pin % 10000) + 10000;
   CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA512> pbkdf;
   CryptoPP::SecByteBlock derived(AES256_KeySize + AES256_IVSize);
@@ -160,7 +159,7 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
-    ThrowError(CommonErrors::hashing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
   return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
@@ -187,26 +186,9 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Ha
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
-    ThrowError(CommonErrors::hashing_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
   return BoundedString(result);
-}
-
-// Hash function operating on a file.
-template <typename HashType>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> HashFile(
-    const boost::filesystem::path& file_path) {
-  std::string result;
-  HashType hash;
-  try {
-    CryptoPP::FileSource(file_path.c_str(), true,
-                         new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Error hashing file " << file_path << ": " << e.what();
-    ThrowError(CommonErrors::hashing_error);
-  }
-  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
 
 // Performs symmetric encrytion using AES256. It throws a std::exception if the

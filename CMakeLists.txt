@@ -20,9 +20,15 @@
 #                                                                                                  #
 #==================================================================================================#
 
-
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
+
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../../cmake_modules/standard_setup.cmake")
+  cmake_minimum_required(VERSION 2.8)  # To suppress warning cluttering error message
+  set(Msg "\nThis project can currently only be build as part of the MaidSafe super-project.  For")
+  set(Msg "${Msg} full details, see https://github.com/maidsafe/MaidSafe/wiki/Build-Instructions\n")
+  message(FATAL_ERROR "${Msg}")
+endif()
 
 project(common)
 
@@ -33,10 +39,23 @@ include(../../cmake_modules/standard_setup.cmake)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
-glob_dir(Common ${CommonSourcesDir} Common)
-glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
-glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
-glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
+ms_glob_dir(Common ${CommonSourcesDir} Common)
+ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
+ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
+
+ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
+ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
+set(CommonDataStoresTestsUtilsFiles
+    ${CommonSourcesDir}/data_stores/tests/test_utils.cc
+    ${CommonSourcesDir}/data_stores/tests/test_utils.h)
+list(REMOVE_ITEM CommonDataStoresTestsAllFiles ${CommonDataStoresTestsUtilsFiles})
+
+ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
+ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
+
+ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
+ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
+
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(CommonGTestsAllFiles ${CommonTestsAllFiles})
 set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
@@ -48,17 +67,20 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/utils_test.cc
                         ${CommonSourcesDir}/tests/cli_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
-set(LocationFile ${CMAKE_CURRENT_BINARY_DIR}/ipc_test/ipc_child_process_location.h)
-list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess})
+set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
+list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
 list(APPEND CommonTestsAllFiles ${TestsMain})
 
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(common ${CommonAllFiles})
-ms_add_static_library(network_viewer ${CommonToolsAllFiles})
-add_dependencies(maidsafe_common boost boost_process catch)
+# Common library
+ms_add_static_library(maidsafe_common
+    ${CommonAllFiles}
+    ${CommonDataStoresAllFiles}
+    ${CommonDataTypesAllFiles})
+add_dependencies(maidsafe_common boost_process catch)
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -66,46 +88,85 @@ target_include_directories(maidsafe_common
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-target_include_directories(maidsafe_common SYSTEM
-  PUBLIC
-    ${BoostSourceDir}
-    ${CatchSourceDir}
-    $<$<BOOL:${JustThread_FOUND}>:${JustThread_INCLUDE_DIR}>
-)
-target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
-
-if(MaidsafeTesting)
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${LocationFile})
-  ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
-  # ms_add_executable(TESTboost "Tests/Common" ${TestsMain} ${BoostTestsAllFiles})
+ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSourceDir})
+if(JustThread_FOUND)
+  ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
-
 target_link_libraries(maidsafe_common
-                        cryptopp
-                        protobuf
-                        gtest
-                        ${BoostChronoLibs}
-                        ${BoostDateTimeLibs}
-                        ${BoostFilesystemLibs}
-                        ${BoostSystemLibs}
-                        ${BoostThreadLibs}
-                        ${BoostProgramOptionsLibs}
-                        ${JustThread_LIBRARIES}
-                        ${SYS_LIB})
+    maidsafe_passport
+    cryptopp
+    protobuf
+    gtest
+    ${BoostChronoLibs}
+    ${BoostDateTimeLibs}
+    ${BoostFilesystemLibs}
+    ${BoostLocaleLibs}
+    ${BoostSystemLibs}
+    ${BoostThreadLibs}
+    ${BoostProgramOptionsLibs}
+    ${JustThread_LIBRARIES}
+    ${SYS_LIB})
 
+# Network Viewer library
+ms_add_static_library(maidsafe_network_viewer
+    "${CommonSourcesDir}/tools/network_viewer.cc"
+    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.cc"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.h"
+    "${CommonSourcesDir}/tools/network_viewer.proto")
+target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
+# Signing tool
+ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing_tool.cc")
+target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
+
+# Bootstrap file tool
+ms_add_executable(bootstrap_file_tool "Tools/Common"
+    "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.cc"
+    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
+target_link_libraries(bootstrap_file_tool maidsafe_common)
+
+# Tests
 if(MaidsafeTesting)
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
   target_link_libraries(test_common maidsafe_common)
+
+  ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
-  add_process_location(ipc_child_process "${LocationFile}")
   add_dependencies(test_common ipc_child_process)
-  target_include_directories(test_common PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipc_test)
+
+  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
+  target_link_libraries(test_config maidsafe_common)
+
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_common)
-  # target_link_libraries(TESTboost maidsafe_common boost_unit_test_framework-static gtest ${SYS_LIB})
+
+  macro(CommonTests Group)
+    foreach(TestSource ${ARGN})
+      get_filename_component(Exe ${TestSource} NAME_WE)
+      string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
+      set(TestSources ${TestSource} ${TestsMain})
+      ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
+      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_common)
+      ms_add_catch_tests(${Exe})
+    endforeach()
+  endmacro()
+
+  ms_add_static_library(maidsafe_data_stores_test_utils ${CommonDataStoresTestsUtilsFiles})
+  set_target_properties(maidsafe_data_stores_test_utils PROPERTIES FOLDER "MaidSafe/Executables/Tests/Common/Data Store Tests")
+  target_include_directories(maidsafe_data_stores_test_utils PUBLIC ${PROJECT_SOURCE_DIR}/src)
+  target_link_libraries(maidsafe_data_stores_test_utils maidsafe_common)
+  foreach(TestExe test_data_store test_memory_buffer test_permanent_store)
+    set(${TestExe}AdditionalLibs maidsafe_data_stores_test_utils)
+  endforeach()
+  CommonTests("Data Store Tests" ${CommonDataStoresTestsAllFiles})
+
+  CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
 endif()
-rename_outdated_built_exes()
+
+ms_rename_outdated_built_exes()
 
 
 #==================================================================================================#
@@ -119,50 +180,10 @@ include(standard_flags)
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
-  add_style_test()
-  add_catch_tests(test_common)
-  add_gtests(TESTcommon)
-  # add_gtests(TESTboost)
-  add_custom_command(TARGET TESTcommon
-                       POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory $<TARGET_FILE_DIR:cryptest>/TestData ${CMAKE_CURRENT_BINARY_DIR}/TestData)
-  add_custom_command(TARGET TESTcommon
-                       POST_BUILD
-                       COMMAND ${CMAKE_COMMAND} ARGS -E copy_directory $<TARGET_FILE_DIR:cryptest>/TestVectors ${CMAKE_CURRENT_BINARY_DIR}/TestVectors)
-  add_test(NAME CryptoppTest.BEH_FULL COMMAND cryptest v)
-  add_test(NAME CryptoppTest.BEH_AES COMMAND cryptest tv aes)
-  add_test(NAME CryptoppTest.BEH_SHA COMMAND cryptest tv sha)
-  add_test(NAME CryptoppTest.BEH_RSA_PSS COMMAND cryptest tv rsa_pss)
-  add_test(NAME CryptoppTest.BEH_RSA_OAEP COMMAND cryptest tv rsa_oaep)
-  add_test(NAME CryptoppTest.BEH_RSA_PKCS1_1_5 COMMAND cryptest tv rsa_pkcs1_1_5)
-
-  set_property(TEST CryptoppTest.BEH_FULL PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
-  set_property(TEST CryptoppTest.BEH_FULL PROPERTY TIMEOUT 60)
-  set_property(TEST CryptoppTest.BEH_AES PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
-  set_property(TEST CryptoppTest.BEH_AES PROPERTY TIMEOUT 60)
-  set_property(TEST CryptoppTest.BEH_SHA PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
-  set_property(TEST CryptoppTest.BEH_SHA PROPERTY TIMEOUT 60)
-  set_property(TEST CryptoppTest.BEH_RSA_PSS PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
-  set_property(TEST CryptoppTest.BEH_RSA_PSS PROPERTY TIMEOUT 60)
-  set_property(TEST CryptoppTest.BEH_RSA_OAEP PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
-  set_property(TEST CryptoppTest.BEH_RSA_OAEP PROPERTY TIMEOUT 60)
-  set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY LABELS Common Behavioural CryptoPP ${CMAKE_BUILD_TYPE})
-  set_property(TEST CryptoppTest.BEH_RSA_PKCS1_1_5 PROPERTY TIMEOUT 60)
-
-  add_project_experimental()
-  test_summary_output()
+  ms_add_style_test()
+  ms_add_catch_tests(test_common)
+  ms_add_catch_tests(test_config)
+  ms_add_gtests(TESTcommon)
+  ms_add_project_experimental()
+  ms_test_summary_output()
 endif()
-
-
-# Remove files from coverage stats
-add_coverage_exclude(cryptopp/)
-add_coverage_exclude(third_party_libs/)
-add_coverage_exclude(utils\\\\.h)
-
-# Remove third-party tests from MemCheck runs.
-add_memcheck_ignore(CrypoppTest.BEH_FULL)
-add_memcheck_ignore(CrypoppTest.BEH_AES)
-add_memcheck_ignore(CrypoppTest.BEH_SHA)
-add_memcheck_ignore(CrypoppTest.BEH_RSA_PSS)
-add_memcheck_ignore(CrypoppTest.BEH_RSA_OAEP)
-add_memcheck_ignore(CrypoppTest.BEH_RSA_PKCS1_1_5)

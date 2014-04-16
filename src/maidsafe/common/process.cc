@@ -18,9 +18,14 @@
 
 #include "maidsafe/common/process.h"
 
+#include <csignal>
 #include <iterator>
 #include <numeric>
 
+#include "boost/filesystem/operations.hpp"
+
+#include "maidsafe/common/config.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -44,13 +49,49 @@ std::wstring ConstructCommandLine(const std::vector<std::string>& process_args) 
   return StringToWstring(ConcatenateArgs(process_args));
 }
 
+ManagedHandle::ManagedHandle(HANDLE handle_in) : handle(handle_in) {
+  assert(handle_in != INVALID_HANDLE_VALUE);
+}
+
+ManagedHandle::~ManagedHandle() {
+  try {
+    CloseHandle(handle);
+  }
+  catch (...) {}
+}
+
+bool IsRunning(const ProcessInfo& process_info) {
+  DWORD exit_code;
+  if (GetExitCodeProcess(process_info.handle, &exit_code) == FALSE) {
+    LOG(kError) << "Failed to get status of process.  Windows error: " << GetLastError();
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  }
+  return exit_code == STILL_ACTIVE;
+}
+
 #else
 
 std::string ConstructCommandLine(const std::vector<std::string>& process_args) {
   return ConcatenateArgs(process_args);
 }
 
+bool IsRunning(const ProcessInfo& process_info) {
+  if (kill(process_info, 0) == 0) {
+    return true;
+  } else if (errno != ESRCH) {
+    LOG(kError) << "Failed to get status of process.  errno: " << errno;
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  }
+  return false;
+}
+
 #endif
+
+boost::filesystem::path GetOtherExecutablePath(
+    const boost::filesystem::path& name_without_extension) {
+  return (ThisExecutableDir() /
+          name_without_extension).replace_extension(ThisExecutablePath().extension());
+}
 
 }  // namespace process
 

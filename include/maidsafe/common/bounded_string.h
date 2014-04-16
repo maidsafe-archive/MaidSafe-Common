@@ -24,6 +24,7 @@
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 
 namespace maidsafe {
 
@@ -43,7 +44,7 @@ class BoundedString {
 
   explicit BoundedString(StringType string) : string_(std::move(string)), valid_(true) {
     if (OutwithBounds())
-      ThrowError(CommonErrors::invalid_string_size);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
   }
 
   friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
@@ -64,10 +65,14 @@ class BoundedString {
   }
 
   BoundedString& operator+=(const BoundedString& other) {
-    if (!valid_ || !other.valid_)
-      ThrowError(CommonErrors::uninitialised);
-    if (SizeOutOfBounds(string_.size() + other.string_.size()))
-      ThrowError(CommonErrors::invalid_string_size);
+    if (!valid_ || !other.valid_) {
+      LOG(kError) << "BoundedString one of class uninitialised in operator+=";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
+    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
+      LOG(kError) << "BoundedString invalid_string_size in operator+=";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+    }
     StringType temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
@@ -92,18 +97,24 @@ class BoundedString {
 
   template <size_t other_min, size_t other_max, typename OtherStringType>
   BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
-    if (!valid_ || !other.valid_)
-      ThrowError(CommonErrors::uninitialised);
-    if (SizeOutOfBounds(string_.size() + other.string_.size()))
-      ThrowError(CommonErrors::invalid_string_size);
+    if (!valid_ || !other.valid_) {
+      LOG(kError) << "BoundedString one of class uninitialised in operator+=";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
+    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
+      LOG(kError) << "BoundedString invalid_string_size in operator+=";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+    }
     StringType temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
   }
 
   const StringType& string() const {
-    if (!valid_)
-      ThrowError(CommonErrors::uninitialised);
+    if (!valid_) {
+      LOG(kError) << "class uninitialised";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
     return string_;
   }
 

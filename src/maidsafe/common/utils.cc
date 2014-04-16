@@ -139,7 +139,7 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
   const auto result(converter.out(state, &input[0], &input[input.size()], from_next,
                                   &output[0], &output[output.size()], to_next));
   if (result != Converter::ok && result != Converter::noconv)
-    ThrowError(CommonErrors::invalid_conversion);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
   output.resize(to_next - &output[0]);
   return output;
@@ -156,11 +156,12 @@ std::mutex& random_number_generator_mutex() { return g_random_number_generator_m
 
 const int kInvalidVersion(-1);
 const uint16_t kLivePort(5483);
+const bptime::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));  // 01 Jan 2000
 
 boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
   boost::asio::io_service io_service;
-  boost::asio::ip::udp::socket socket(io_service);
   try {
+    boost::asio::ip::udp::socket socket(io_service);
     socket.connect(peer_endpoint);
     if (socket.local_endpoint().address().is_unspecified() ||
         socket.local_endpoint().address().is_loopback())
@@ -242,7 +243,7 @@ std::string HexEncode(const std::string& non_hex_input) {
 std::string HexDecode(const std::string& hex_input) {
   auto size(hex_input.size());
   if (size % 2)  // Sanity check
-    ThrowError(CommonErrors::invalid_conversion);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
   std::string non_hex_output(size / 2, 0);
   for (size_t i(0), j(0); i != size / 2; ++i) {
@@ -285,13 +286,12 @@ std::string Base64Encode(const std::string& non_base64_input) {
       encoded_string[i++] = kPadCharacter;
       break;
   }
-
   return std::string(std::begin(encoded_string), std::end(encoded_string));
 }
 
 std::string Base64Decode(const std::string& base64_input) {
   if (base64_input.size() % 4)  // Sanity check
-    ThrowError(CommonErrors::invalid_conversion);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
   size_t padding = 0;
   if (base64_input.size()) {
@@ -329,10 +329,10 @@ std::string Base64Decode(const std::string& base64_input) {
             decoded_bytes.push_back((temp >> 10) & 0x000000FF);
             return decoded_bytes;
           default:
-            ThrowError(CommonErrors::invalid_conversion);
+            BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
         }
       } else {
-        ThrowError(CommonErrors::invalid_conversion);
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
       }
       ++cursor;
     }
@@ -386,15 +386,12 @@ std::string DebugId(const Identity& id) {
   return id.IsInitialised() ? "Uninitialised Identity" : HexSubstr(id.string());
 }
 
-bptime::time_duration GetDurationSinceEpoch() {
-  // 01 Jan 2000
-  static const boost::posix_time::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));
-  return bptime::microsec_clock::universal_time() - kMaidSafeEpoch;
+uint64_t GetTimeStamp() {
+  return (bptime::microsec_clock::universal_time() - kMaidSafeEpoch).total_milliseconds();
 }
 
-uint32_t GetTimeStamp() {
-  bptime::time_duration since_epoch(GetDurationSinceEpoch());
-  return since_epoch.total_seconds();
+boost::posix_time::ptime TimeStampToPtime(uint64_t timestamp) {
+  return kMaidSafeEpoch + bptime::milliseconds(timestamp);
 }
 
 bool ReadFile(const fs::path& file_path, std::string* content) {
@@ -435,7 +432,7 @@ bool ReadFile(const fs::path& file_path, std::string* content) {
 NonEmptyString ReadFile(const fs::path& file_path) {
   uintmax_t file_size(fs::file_size(file_path));
   if (file_size > std::numeric_limits<size_t>::max())
-    ThrowError(CommonErrors::file_too_large);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
 
   std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
 
@@ -461,19 +458,6 @@ bool WriteFile(const fs::path& file_path, const std::string& content) {
   }
   catch (const std::exception& e) {
     LOG(kError) << "Failed to write file " << file_path << ": " << e.what();
-    return false;
-  }
-  return true;
-}
-
-bool InterruptibleSleep(const boost::chrono::high_resolution_clock::duration& duration) {
-  try {
-    boost::this_thread::sleep_for(duration);
-  }
-  catch (const boost::thread_interrupted&) {
-    LOG(kWarning) << "Thread was interrupted while sleeping for "
-                  << boost::chrono::duration_cast<boost::chrono::microseconds>(duration).count()
-                  << " microseconds.";
     return false;
   }
   return true;

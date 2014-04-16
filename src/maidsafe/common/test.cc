@@ -78,29 +78,34 @@ TestPath CreateTestPath(std::string test_prefix) {
 }
 
 void RunInParallel(int thread_count, std::function<void()> functor) {
+  functor();
+#ifdef MAIDSAFE_WIN32
   std::vector<std::future<void>> futures;
   for (int i = 0; i < thread_count; ++i)
     futures.push_back(std::async(std::launch::async, functor));
   for (auto& future : futures)
     future.get();
+#else  // until catch handles threaded tests on Linux
+  static_cast<void>(thread_count);
+#endif
 }
 
 uint16_t GetRandomPort() {
   static std::set<uint16_t> already_used_ports;
-    if (already_used_ports.size() == 10000) {
+  if (already_used_ports.size() == 10000) {
     LOG(kInfo) << "Clearing already-used ports list.";
     already_used_ports.clear();
   }
   uint16_t port(0);
   do {
-    port = (RandomUint32() % 64511) + 2025;
+    port = (RandomUint32() % 64511) + 1025;
   } while (!already_used_ports.insert(port).second);
   return port;
 }
 
 namespace detail {
 
-int ExecuteGTestMain(int argc, char** argv) {
+int ExecuteGTestMain(int argc, char* argv[]) {
   log::Logging::Instance().Initialise(argc, argv);
 #if defined(__clang__) || defined(__GNUC__)
   // To allow Clang and GCC advanced diagnostics to work properly.
@@ -114,11 +119,17 @@ int ExecuteGTestMain(int argc, char** argv) {
   return (test_count == 0) ? -1 : result;
 }
 
-int ExecuteCatchMain(int argc, char** argv) {
+int ExecuteCatchMain(int argc, char* argv[]) {
   auto unused_options(log::Logging::Instance().Initialise(argc, argv));
+
+  std::vector<char*> unused_chars;
+  for (auto& unused_option : unused_options)
+    unused_chars.push_back(&unused_option[0]);
+
   Catch::Session session;
   auto command_line_result(
-      session.applyCommandLine(argc, argv, Catch::Session::OnUnusedOptions::Ignore));
+      session.applyCommandLine(static_cast<int>(unused_options.size()), &unused_chars[0],
+                               Catch::Session::OnUnusedOptions::Ignore));
   if (command_line_result != 0)
     LOG(kWarning) << "Catch command line parsing error: " << command_line_result;
   return session.run();

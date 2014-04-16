@@ -17,12 +17,21 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/config.h"
+#include <mutex>
+
+#include "maidsafe/common/error.h"
 
 #if !defined TARGET_PLATFORM || !defined TARGET_ARCHITECTURE
 #error TARGET_PLATFORM and TARGET_ARCHITECTURE must be defined.
 #endif
 
 namespace maidsafe {
+
+namespace {
+
+boost::filesystem::path g_this_executable_path;
+
+}  // unnamed namespace
 
 std::string kTargetPlatform() {
   static const std::string target_platform(BOOST_PP_STRINGIZE(TARGET_PLATFORM));
@@ -32,6 +41,28 @@ std::string kTargetPlatform() {
 std::string kTargetArchitecture() {
   static const std::string target_architecture(BOOST_PP_STRINGIZE(TARGET_ARCHITECTURE));
   return target_architecture;
+}
+
+template <>
+void SetThisExecutablePath(const char* const argv[]) {
+  static std::once_flag flag;
+  std::call_once(flag, [argv] { g_this_executable_path = boost::filesystem::path(argv[0]); });
+}
+
+template <>
+void SetThisExecutablePath(const wchar_t* const argv[]) {
+  static std::once_flag flag;
+  std::call_once(flag, [argv] { g_this_executable_path = boost::filesystem::path(argv[0]); });
+}
+
+boost::filesystem::path ThisExecutablePath() {
+  if (g_this_executable_path.empty())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return g_this_executable_path;
+}
+
+boost::filesystem::path ThisExecutableDir() {
+  return ThisExecutablePath().parent_path();
 }
 
 }  // namespace maidsafe

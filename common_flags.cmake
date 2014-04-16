@@ -156,3 +156,4 @@ target_compile_options(maidsafe_common
         $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++>
     >
 )
+

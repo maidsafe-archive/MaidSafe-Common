@@ -20,34 +20,28 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-namespace bptime = boost::posix_time;
-
 namespace maidsafe {
 
 AsioService::AsioService(uint32_t thread_count)
-    : service_(), work_(), threads_(thread_count), mutex_() {
+    : service_(), work_(new boost::asio::io_service::work(service_)), threads_(),
+      mutex_() {
   if (thread_count == 0)
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  for (uint32_t i(0); i != thread_count; ++i)
+    threads_.emplace_back([&] {
+      try {
+        service_.run();
+      }
+      catch (...) {
+        LOG(kError) << boost::current_exception_diagnostic_information();
+        // Rethrowing here will cause the application to terminate - so flush the log message first.
+        log::Logging::Instance().Flush();
+        throw;
+      }
+  });
 }
 
 AsioService::~AsioService() { Stop(); }
-
-void AsioService::Start() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  for (auto& asio_thread : threads_) {
-    if (boost::this_thread::get_id() == asio_thread.get_id())
-      ThrowError(CommonErrors::cannot_invoke_from_this_thread);
-  }
-
-  if (work_) {
-    LOG(kError) << "AsioService is already running with " << threads_.size() << " threads.";
-    return;
-  }
-  service_.reset();
-  work_.reset(new boost::asio::io_service::work(service_));
-  for (auto& asio_thread : threads_)
-    asio_thread = std::move(boost::thread([&] { service_.run(); }));
-}
 
 void AsioService::Stop() {
   std::lock_guard<std::mutex> lock(mutex_);
@@ -55,37 +49,19 @@ void AsioService::Stop() {
     LOG(kVerbose) << "AsioService has already stopped.";
     return;
   }
-  for (auto& asio_thread : threads_) {
-    if (boost::this_thread::get_id() == asio_thread.get_id())
-      ThrowError(CommonErrors::cannot_invoke_from_this_thread);
+  for (const auto& asio_thread : threads_) {
+    if (std::this_thread::get_id() == asio_thread.get_id())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::cannot_invoke_from_this_thread));
   }
 
   work_.reset();
-  // Interrupt and join all asio worker threads concurrently
-  std::vector<boost::thread> joining_workers(threads_.size());
-  for (size_t i(0); i < threads_.size(); ++i) {
-    joining_workers[i] = std::move(boost::thread([&, i] {
-      while (threads_[i].joinable()) {
-        try {
-          threads_[i].interrupt();
-          threads_[i].try_join_for(boost::chrono::milliseconds(20));
-        }
-        catch (const boost::thread_interrupted&) {
-          LOG(kError) << "Exception joining boost thread with ID " << threads_[i].get_id();
-          boost::this_thread::yield();
-        }
-      }
-    }));
-  }
 
-  for (boost::thread& joining_worker : joining_workers) {
-    while (joining_worker.joinable()) {
-      try {
-        joining_worker.join();
-      }
-      catch (const boost::thread_interrupted&) {
-        LOG(kError) << "Exception joining worker thread";
-      }
+  for (auto& asio_thread : threads_) {
+    try {
+      asio_thread.join();
+    }
+    catch (const std::exception& e) {
+      LOG(kError) << "Exception joining asio thread: " << e.what();
     }
   }
 }

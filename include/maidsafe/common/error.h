@@ -147,7 +147,8 @@ passport_error MakeError(PassportErrors code);
 
 enum class EncryptErrors {
   bad_sequence = 1,
-  no_data
+  no_data,
+  invalid_encryption_version
 };
 
 class encrypt_error : public maidsafe_error {
@@ -215,7 +216,9 @@ nfs_error MakeError(NfsErrors code);
 enum class DriveErrors {
   no_drive_letter_available = 1,
   failed_to_mount,
-  permission_denied
+  permission_denied,
+  no_such_file,
+  file_exists
 };
 
 class drive_error : public maidsafe_error {
@@ -245,7 +248,8 @@ enum class VaultErrors {
   not_enough_space,
   unique_data_clash,
   data_available_not_given,
-  account_already_exists
+  account_already_exists,
+  data_already_exists
 };
 
 class vault_error : public maidsafe_error {
@@ -265,32 +269,31 @@ std::error_condition make_error_condition(VaultErrors code);
 const std::error_category& GetVaultCategory();
 vault_error MakeError(VaultErrors code);
 
-enum class LifeStuffErrors {
+enum class ApiErrors {
   kPasswordFailure = 1
 };
 
-class lifestuff_error : public maidsafe_error {
+class api_error : public maidsafe_error {
  public:
-  lifestuff_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  lifestuff_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit lifestuff_error(std::error_code ec) : maidsafe_error(ec) {}
-  lifestuff_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+  api_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  api_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit api_error(std::error_code ec) : maidsafe_error(ec) {}
+  api_error(int ev, const std::error_category& ecat, const std::string& what_arg)
       : maidsafe_error(ev, ecat, what_arg) {}
-  lifestuff_error(int ev, const std::error_category& ecat, const char* what_arg)
+  api_error(int ev, const std::error_category& ecat, const char* what_arg)
       : maidsafe_error(ev, ecat, what_arg) {}
-  lifestuff_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+  api_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
 };
 
-std::error_code make_error_code(LifeStuffErrors code);
-std::error_condition make_error_condition(LifeStuffErrors code);
-const std::error_category& GetLifeStuffCategory();
-lifestuff_error MakeError(LifeStuffErrors code);
+std::error_code make_error_code(ApiErrors code);
+std::error_condition make_error_condition(ApiErrors code);
+const std::error_category& GetApiCategory();
+api_error MakeError(ApiErrors code);
 
 template <typename MaidsafeErrorCode>
-inline void ThrowError(const MaidsafeErrorCode& code) {
-  auto error(MakeError(code));
-  if (error.code())
-    boost::throw_exception(error);
+auto MakeBoostException(const MaidsafeErrorCode& code)->
+    decltype(boost::enable_error_info(MakeError(code))) {
+  return boost::enable_error_info(MakeError(code));
 }
 
 }  // namespace maidsafe
@@ -322,7 +325,7 @@ template <>
 struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::LifeStuffErrors> : public true_type {};
+struct is_error_code_enum<maidsafe::ApiErrors> : public true_type {};
 
 }  // namespace std
 

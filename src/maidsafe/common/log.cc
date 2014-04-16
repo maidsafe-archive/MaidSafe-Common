@@ -39,6 +39,7 @@
 #include "boost/program_options/parsers.hpp"
 #include "boost/program_options/value_semantic.hpp"
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -66,9 +67,8 @@ std::mutex& g_console_mutex() {
   return mutex;
 }
 
-const std::array<std::string, 10> kProjects = {{"common", "drive",    "encrypt", "lifestuff",
-                                                "nfs",    "passport", "private", "routing",
-                                                "rudp",   "vault"}};
+const std::array<std::string, 10> kProjects = { { "api", "common", "drive", "encrypt", "nfs",
+    "passport", "routing", "rudp", "vault", "vault_manager" } };
 
 #ifdef MAIDSAFE_WIN32
 
@@ -212,7 +212,7 @@ std::string GetLocalTime() {
 
   char temp[10];
   if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
-    ThrowError(CommonErrors::unknown);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
 
   return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
 }
@@ -283,13 +283,14 @@ po::options_description SetProgramOptions(std::string& config_file, bool& no_log
   return log_config;
 }
 
+template <typename Char>
 void ParseProgramOptions(const po::options_description& log_config, const std::string& config_file,
-                         int argc, char** argv, po::variables_map& log_variables,
-                         std::vector<std::string>& unused_options) {
+                         int argc, Char** argv, po::variables_map& log_variables,
+                         std::vector<std::vector<Char>>& unused_options) {
   po::options_description cmdline_options;
   cmdline_options.add(log_config);
-  po::parsed_options parsed(
-      po::command_line_parser(argc, argv).options(cmdline_options).allow_unregistered().run());
+  po::basic_parsed_options<Char> parsed(po::basic_command_line_parser<Char>(argc, argv)
+                                          .options(cmdline_options).allow_unregistered().run());
 
   po::store(parsed, log_variables);
   po::notify(log_variables);
@@ -302,9 +303,16 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
     po::notify(log_variables);
   }
 
-  unused_options = po::collect_unrecognized(parsed.options, po::include_positional);
-  if (log_variables.count("help"))
-    unused_options.push_back("--help");
+  auto this_exe_path(ThisExecutablePath().string());
+  unused_options.emplace_back(this_exe_path.c_str(),
+                              this_exe_path.c_str() + this_exe_path.size() + 1u);
+  auto unuseds(po::collect_unrecognized(parsed.options, po::include_positional));
+  if (log_variables.count("help")) {
+    const Char help[] = {'-', '-', 'h', 'e', 'l', 'p'};
+    unuseds.push_back(help);
+  }
+  for (const auto& unused : unuseds)
+    unused_options.emplace_back(unused.c_str(), unused.c_str() + unused.size() + 1u);
 }
 
 void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mode,
@@ -312,7 +320,7 @@ void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mod
   if (col_mode != -1) {
     if (col_mode < 0 || col_mode > 2) {
       std::cout << "colour_mode must be 0, 1, or 2\n";
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
     colour_mode = static_cast<ColourMode>(col_mode);
   }
@@ -399,6 +407,25 @@ GtestLogMessage::~GtestLogMessage() {
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
 
+GraphLogMessage::GraphLogMessage() : stream_() {
+  stream_ << "[" << GetLocalTime() << "] ";
+}
+
+GraphLogMessage::~GraphLogMessage() {
+  stream_ << "\n";
+  std::string log_entry(stream_.str());
+  FilterMap filter(Logging::Instance().Filter());
+  auto print_functor([log_entry, filter] {
+    if (Logging::Instance().LogToConsole())
+      ColouredPrint(Colour::kDefaultColour, log_entry);
+    for (auto& entry : filter)
+      Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
+    if (filter.size() != 1)
+      Logging::Instance().WriteToCombinedLogfile(log_entry);
+  });
+  Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
+}
+
 Logging::Logging()
     : log_variables_(),
       filter_(),
@@ -420,8 +447,34 @@ Logging& Logging::Instance() {
   return logging;
 }
 
-std::vector<std::string> Logging::Initialise(int argc, char** argv) {
-  std::vector<std::string> unused_options;
+template <>
+std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
+  SetThisExecutablePath(argv);
+  std::vector<std::vector<char>> unused_options;
+  std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
+    try {
+      std::string config_file, log_folder;
+      int colour_mode(-1);
+      po::options_description log_config(
+          SetProgramOptions(config_file, no_log_to_console_, log_folder, no_async_, colour_mode));
+      ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
+      if (IsHelpOption(log_config))
+        return;
+      DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
+      HandleFilterOptions();
+      SetStreams();
+    }
+    catch (const std::exception& e) {
+      std::cout << "Exception initialising logging: " << e.what() << "\n\n";
+    }
+  });
+  return unused_options;
+}
+
+template <>
+std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) {
+  SetThisExecutablePath(argv);
+  std::vector<std::vector<wchar_t>> unused_options;
   std::call_once(logging_initialised, [this, argc, argv, &unused_options]() {
     try {
       std::string config_file, log_folder;
@@ -446,7 +499,7 @@ bool Logging::IsHelpOption(const po::options_description& log_config) const {
 #ifdef USE_LOGGING
   if (log_variables_.count("help")) {
     std::cout << log_config << "Logging levels are as follows:\n"
-              << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Fatal(F)\n\n\n";
+              << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Fatal(F), Graph(G)\n\n\n";
     return true;
   }
   return false;

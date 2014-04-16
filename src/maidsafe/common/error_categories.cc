@@ -192,6 +192,8 @@ std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Bad sequence";
     case EncryptErrors::no_data:
       return "No data";
+    case EncryptErrors::invalid_encryption_version:
+      return "Invalid version of encryption algorithm";
     default:
       return "Unknown error in Encrypt";
   }
@@ -262,6 +264,10 @@ std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Failed to mount the drive";
     case DriveErrors::permission_denied:
       return "Permission denied for given action";
+    case DriveErrors::no_such_file:
+      return "No such file";
+    case DriveErrors::file_exists:
+      return "File already exists";
     default:
       return "Unknown error in Drive";
   }
@@ -272,6 +278,8 @@ std::error_condition DriveCategory::default_error_condition(int error_value) con
   switch (static_cast<DriveErrors>(error_value)) {
     case DriveErrors::permission_denied:
       return std::errc::permission_denied;
+    case DriveErrors::file_exists:
+      return std::errc::file_exists;
     default:
       return std::error_condition(error_value, *this);
   }
@@ -301,6 +309,8 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Data is held by the network, but was not provided";
     case VaultErrors::account_already_exists:
       return "Attempt to create an account which already exists";
+    case VaultErrors::data_already_exists:
+      return "Attempt to put data which already exists";
     default:
       return "Unknown error in Vault";
   }
@@ -318,20 +328,19 @@ std::error_condition VaultCategory::default_error_condition(int error_value) con
   }
 }
 
-const char* LifeStuffCategory::name() const MAIDSAFE_NOEXCEPT { return "LifeStuff"; }
+const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
 
-std::string LifeStuffCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
-  switch (static_cast<LifeStuffErrors>(error_value)) {
-    case LifeStuffErrors::kPasswordFailure:
+std::string ApiCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<ApiErrors>(error_value)) {
+    case ApiErrors::kPasswordFailure:
       return "Failed to validate password";
     default:
-      return "Unknown error in LifeStuff";
+      return "Unknown error in Client";
   }
 }
 
-std::error_condition LifeStuffCategory::default_error_condition(int error_value) const
-    MAIDSAFE_NOEXCEPT {
-  //  switch (static_cast<LifeStuffErrors>(error_value)) {
+std::error_condition ApiCategory::default_error_condition(int error_value) const MAIDSAFE_NOEXCEPT {
+  //  switch (static_cast<ApiErrors>(error_value)) {
   //    default:
   return std::error_condition(error_value, *this);
   //  }

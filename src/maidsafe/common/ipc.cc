@@ -31,10 +31,9 @@ void RemoveSharedMemory(std::string name_in) {
 void CreateSharedMemory(std::string name_in, std::vector<std::string> items) {
   std::string name(HexEncode(name_in));
   RemoveSharedMemory(name);
-  // Create a managed shared memory segment of large arbitary size !
-  bi::managed_shared_memory segment(bi::create_only , name.c_str(),
-                                                     65536);
-  // Create an object of Type initialized to type
+  // Create a managed shared memory segment of large arbitrary size!
+  bi::managed_shared_memory segment(bi::create_only, name.c_str(), 65536);
+  // Create an object of Type initialised to type
   CharAllocator charallocator(segment.get_segment_manager());
   for (size_t i(0); i < items.size(); ++i) {
     bi_string str(charallocator);

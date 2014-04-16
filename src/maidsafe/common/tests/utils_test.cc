@@ -107,8 +107,8 @@ TEST_CASE("ByteRatios", "[Utils][Unit]") {
   CHECK(Bytes(2) != KiloBytes(4) / 2000);  // this is a narrowing call rhs == 0
   CHECK((Bytes(1) + Bytes(1)) == Bytes(2));
   CHECK((Bytes(2) - Bytes(1)) == Bytes(1));
-  CHECK(Bytes(1).count() == 1);
-  CHECK(KiloBytes(1).count() == 1);
+  CHECK(Bytes(1).count() == 1ULL);
+  CHECK(KiloBytes(1).count() == 1ULL);
 }
 
 TEST_CASE("BytesToDecimalSiUnits", "[Utils][Unit]") {
@@ -381,6 +381,7 @@ std::string WstringToStringOldMethod(const std::wstring& input) {
 }
 
 TEST_CASE("WstringToString", "[Utils][Unit]") {
+#ifdef MAIDSAFE_WIN32
   std::wstring input(L"Test wstring");
   std::string converted(WstringToString(input));
   CHECK(converted == "Test wstring");
@@ -394,6 +395,9 @@ TEST_CASE("WstringToString", "[Utils][Unit]") {
     }
     catch(const common_error&) {}
   }
+#else
+  CHECK(true);
+#endif
 }
 
 std::wstring StringToWstringOldMethod(const std::string& input) {
@@ -427,14 +431,10 @@ TEST_CASE("StringToWstring", "[Utils][Unit]") {
 }
 
 TEST_CASE("TimeFunctions", "[Utils][Unit]") {
-  uint64_t s, ms, ns;
-  bptime::time_duration since_epoch(GetDurationSinceEpoch());
-  ms = since_epoch.total_milliseconds();
-  ns = since_epoch.total_nanoseconds();
-  s = since_epoch.total_seconds();
-  CHECK(s == ms / 1000);
-  CHECK(s == ns / 1000000000);
-  CHECK(ms == ns / 1000000);
+  uint64_t ms_since_epoch(GetTimeStamp());
+  auto now(bptime::microsec_clock::universal_time());
+  auto from_timestamp(TimeStampToPtime(ms_since_epoch));
+  CHECK((now - from_timestamp) <= bptime::milliseconds(1));
 }
 
 TEST_CASE("RandomNumberGen", "[Utils][Unit]") {  // Timeout 20
@@ -473,7 +473,6 @@ TEST_CASE("ReadFile and WriteFile", "[Utils][Unit]") {
   file_content = RandomString(3000 + RandomUint32() % 1000);
   CHECK(WriteFile(file_path, file_content));
   CHECK_NOTHROW(ReadFile(file_path));
-  CHECK(crypto::Hash<crypto::SHA512>(file_content) == crypto::HashFile<crypto::SHA512>(file_path));
   std::string file_content_in;
   CHECK(ReadFile(file_path, &file_content_in));
   CHECK(file_content == file_content_in);

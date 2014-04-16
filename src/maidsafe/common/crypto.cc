@@ -45,7 +45,7 @@ std::string XOR(const std::string& first, const std::string& second) {
   size_t common_size(first.size());
   if ((common_size != second.size()) || (common_size == 0)) {
     LOG(kWarning) << "Size mismatch or zero.";
-    return "";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
   }
 
   std::string result(common_size, 0);
@@ -57,8 +57,10 @@ std::string XOR(const std::string& first, const std::string& second) {
 
 CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
-    ThrowError(CommonErrors::uninitialised);
+  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+    LOG(kError) << "SymmEncrypt one of class uninitialised";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -72,15 +74,17 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
-    ThrowError(CommonErrors::symmetric_encryption_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   }
   return CipherText(result);
 }
 
 PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised())
-    ThrowError(CommonErrors::uninitialised);
+  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+    LOG(kError) << "SymmEncrypt one of class uninitialised";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
   std::string result;
   try {
     byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
@@ -94,7 +98,7 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric decryption: " << e.what();
-    ThrowError(CommonErrors::symmetric_decryption_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_decryption_error));
   }
   return PlainText(result);
 }
@@ -103,10 +107,12 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   if (compression_level > kMaxCompressionLevel) {
     LOG(kError) << "Requested compression level of " << compression_level << " is above the max of "
                 << kMaxCompressionLevel;
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
-  if (!input.IsInitialised())
-    ThrowError(CommonErrors::uninitialised);
+  if (!input.IsInitialised()) {
+    LOG(kError) << "Compress input uninitialised";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
 
   std::string result;
   try {
@@ -115,14 +121,16 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed compressing: " << e.what();
-    ThrowError(CommonErrors::compression_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
   }
   return CompressedText(result);
 }
 
 UncompressedText Uncompress(const CompressedText& input) {
-  if (!input.IsInitialised())
-    ThrowError(CommonErrors::uninitialised);
+  if (!input.IsInitialised()) {
+    LOG(kError) << "Uncompress input uninitialised";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
   std::string result;
   try {
     CryptoPP::StringSource(input.string(), true,
@@ -130,7 +138,7 @@ UncompressedText Uncompress(const CompressedText& input) {
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
-    ThrowError(CommonErrors::uncompression_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uncompression_error));
   }
   return UncompressedText(result);
 }

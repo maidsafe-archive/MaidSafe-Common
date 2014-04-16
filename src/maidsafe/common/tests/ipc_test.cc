@@ -29,13 +29,12 @@
 #include "boost/process/terminate.hpp"
 #include "boost/system/error_code.hpp"
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/process.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
-#include "ipc_child_process_location.h"  // NOLINT
 
 namespace maidsafe {
 
@@ -144,7 +143,7 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
   std::string kAnswer(maidsafe::HexEncode(
                                 crypto::Hash<crypto::SHA512>(total).string()));
   // Set up boost::process args for passing to 'ipc_child_process' executable
-  const auto kExePath(process::GetIpcChildProcessLocation());
+  const auto kExePath(process::GetOtherExecutablePath("ipc_child_process").string());
   std::vector<std::string> process_args;
   process_args.push_back(kExePath);
   process_args.push_back(HexEncode(kTestName));
