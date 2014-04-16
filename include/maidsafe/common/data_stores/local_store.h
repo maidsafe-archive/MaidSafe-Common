@@ -143,7 +143,7 @@ boost::future<typename DataName::data_type> LocalStore::Get(
       promise->set_value(data);
     }
     catch (const std::exception& e) {
-      LOG(kError) << e.what();
+      LOG(kError) << boost::diagnostic_information(e);
       promise->set_exception(boost::current_exception());
     }
   }));
@@ -160,7 +160,7 @@ void LocalStore::Put(const Data& data) {
       DoPut(KeyType(data.name()), data.Serialise());
     }
     catch (const std::exception& e) {
-      LOG(kWarning) << "Put failed: " << e.what();
+      LOG(kWarning) << "Put failed: " << boost::diagnostic_information(e);
     }
   });
 }
@@ -173,7 +173,7 @@ void LocalStore::Delete(const DataName& data_name) {
       DoDelete(KeyType(data_name));
     }
     catch (const std::exception& e) {
-      LOG(kWarning) << "Delete failed: " << e.what();
+      LOG(kWarning) << "Delete failed: " << boost::diagnostic_information(e);
     }
   });
 }
@@ -193,7 +193,7 @@ LocalStore::VersionNamesFuture LocalStore::GetVersions(
       promise->set_value(versions->Get());
     }
     catch (const std::exception& e) {
-      LOG(kError) << "Failed getting versions: " << e.what();
+      LOG(kError) << "Failed getting versions: " << boost::diagnostic_information(e);
       promise->set_exception(boost::current_exception());
     }
   }));
@@ -218,7 +218,7 @@ LocalStore::VersionNamesFuture LocalStore::GetBranch(
       promise->set_value(versions->GetBranch(branch_tip));
     }
     catch (const std::exception& e) {
-      LOG(kError) << "Failed getting branch: " << e.what();
+      LOG(kError) << "Failed getting branch: " << boost::diagnostic_information(e);
       promise->set_exception(boost::current_exception());
     }
   }));
@@ -245,7 +245,7 @@ void LocalStore::PutVersion(const DataName& data_name,
     WriteVersions(key, *versions);
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed putting version: " << e.what();
+    LOG(kError) << "Failed putting version: " << boost::diagnostic_information(e);
   }
 }
 
@@ -264,7 +264,7 @@ void LocalStore::DeleteBranchUntilFork(const DataName& data_name,
     WriteVersions(key, *versions);
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed deleting branch: " << e.what();
+    LOG(kError) << "Failed deleting branch: " << boost::diagnostic_information(e);
   }
 }
 

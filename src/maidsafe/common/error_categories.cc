@@ -155,22 +155,8 @@ const char* PassportCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe 
 
 std::string PassportCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<PassportErrors>(error_value)) {
-    case PassportErrors::fob_serialisation_error:
-      return "Error serialising to protocol buffer representation";
-    case PassportErrors::fob_parsing_error:
-      return "Error parsing fob from protocol buffer representation";
-    case PassportErrors::mid_parsing_error:
-      return "Error parsing MID or SMID from protocol buffer representation";
-    case PassportErrors::tmid_parsing_error:
-      return "Error parsing TMID from protocol buffer representation";
-    case PassportErrors::uninitialised_fob:
-      return "No fob of requested type available";
-    case PassportErrors::passport_parsing_error:
-      return "Error parsing passport";
-    case PassportErrors::public_id_already_exists:
-      return "Public ID already exists in the passport";
-    case PassportErrors::no_such_public_id:
-      return "No such public ID exists in the passport";
+    case PassportErrors::id_already_exists:
+      return "ID already exists in the passport";
     default:
       return "Unknown error in Passport";
   }

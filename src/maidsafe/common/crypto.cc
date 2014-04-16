@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <vector>
 
+#include "boost/thread/tss.hpp"
+
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -30,16 +32,20 @@ namespace crypto {
 
 namespace {
 
-CryptoPP::RandomNumberGenerator& rng() {
-  static CryptoPP::AutoSeededRandomPool random_number_generator;
-  return random_number_generator;
-}
+// Keep outside the function to avoid lazy static init races on MSVC
+static boost::thread_specific_ptr<CryptoPP::AutoSeededRandomPool> g_random_number_generator;
 
 }  // unnamed namespace
 
 const uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
+
+CryptoPP::RandomNumberGenerator& random_number_generator() {
+  if (!g_random_number_generator.get())
+    g_random_number_generator.reset(new CryptoPP::AutoSeededRandomPool);
+  return *g_random_number_generator;
+}
 
 std::string XOR(const std::string& first, const std::string& second) {
   size_t common_size(first.size());
@@ -49,8 +55,15 @@ std::string XOR(const std::string& first, const std::string& second) {
   }
 
   std::string result(common_size, 0);
-  for (size_t i(0); i != common_size; ++i)
-    result[i] = first[i] ^ second[i];
+  auto first_itr(std::begin(first));
+  auto second_itr(std::begin(second));
+  auto result_itr(std::begin(result));
+  while (result_itr != std::end(result)) {
+    *result_itr = *first_itr ^ *second_itr;
+    ++first_itr;
+    ++second_itr;
+    ++result_itr;
+  }
 
   return result;
 }
@@ -76,12 +89,12 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   }
-  return CipherText(result);
+  return CipherText(NonEmptyString(result));
 }
 
 PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+  if (!input->IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
     LOG(kError) << "SymmEncrypt one of class uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
@@ -93,7 +106,7 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                            new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
 
     CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, AES256_KeySize, byte_iv);
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
+    CryptoPP::StringSource(input->string(), true, new CryptoPP::StreamTransformationFilter(
                                                      decryptor, new CryptoPP::StringSink(result)));
   }
   catch (const CryptoPP::Exception& e) {
@@ -123,17 +136,17 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
     LOG(kError) << "Failed compressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
   }
-  return CompressedText(result);
+  return CompressedText(NonEmptyString(result));
 }
 
 UncompressedText Uncompress(const CompressedText& input) {
-  if (!input.IsInitialised()) {
+  if (!input->IsInitialised()) {
     LOG(kError) << "Uncompress input uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   std::string result;
   try {
-    CryptoPP::StringSource(input.string(), true,
+    CryptoPP::StringSource(input->string(), true,
                            new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
   }
   catch (const CryptoPP::Exception& e) {
@@ -147,7 +160,8 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
                                          const std::string& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::StringSource source(
-      data, false, new CryptoPP::SecretSharing(rng(), threshold, number_of_shares, channel_switch));
+      data, false, new CryptoPP::SecretSharing(random_number_generator(), threshold,
+      number_of_shares, channel_switch));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
   std::vector<std::string> out_strings(number_of_shares);
   std::string channel;

@@ -77,7 +77,7 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
 
   // Catch as std::exception
   try {
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::id_already_exists));
   }
   catch (const std::exception& e) {
     LOG(kWarning) << e.what();

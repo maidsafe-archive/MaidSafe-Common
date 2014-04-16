@@ -68,6 +68,7 @@
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
 namespace CryptoPP {
@@ -103,27 +104,43 @@ typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
 typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
 typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
 typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
-typedef NonEmptyString SecurePassword, Salt, PlainText, CipherText, CompressedText,
-    UncompressedText;
+typedef TaggedValue<
+    detail::BoundedString<AES256_KeySize + AES256_IVSize, AES256_KeySize + AES256_IVSize>,
+    struct SecurePasswordTag> SecurePassword;
+typedef TaggedValue<NonEmptyString, struct CipherTextTag> CipherText;
+typedef TaggedValue<NonEmptyString, struct CompressedTextTag> CompressedText;
+typedef NonEmptyString Salt, PlainText, UncompressedText;
 
-// Performs a bitwise XOR on each char of first with the corresponding char of second.  If size is
-// 0, an empty string is returned.
+// Returns a reference to a static CryptoPP::RandomNumberGenerator held in a
+// thread-specific pointer (i.e. it's thread-safe).
+CryptoPP::RandomNumberGenerator& random_number_generator();
+
+// Performs a bitwise XOR on each char of first with the corresponding char of second.
 template <size_t size>
 detail::BoundedString<size, size> XOR(const detail::BoundedString<size, size>& first,
                                       const detail::BoundedString<size, size>& second) {
   std::string result(size, 0);
-  for (size_t i(0); i != size; ++i)
-    result[i] = first.string()[i] ^ second.string()[i];
+  auto first_itr(std::begin(first.string()));
+  auto second_itr(std::begin(second.string()));
+  auto result_itr(std::begin(result));
+  while (result_itr != std::end(result)) {
+    *result_itr = *first_itr ^ *second_itr;
+    ++first_itr;
+    ++second_itr;
+    ++result_itr;
+  }
 
   return detail::BoundedString<size, size>(result);
 }
 
+// Performs a bitwise XOR on each char of first with the corresponding char of second.  If the
+// the strings are different lengths or are empty, the function throws a common_error.
 std::string XOR(const std::string& first, const std::string& second);
 
-// Creates a secure password using the Password-Based Key Derivation Function (PBKDF) version 2
-// algorithm.  The number of iterations is derived from "pin".  "label" is additional data to
-// provide distinct input data to PBKDF.  The function will throw a std::exception if invalid
-// parameters are passed.
+// Creates a secure password of size AES256_KeySize + AES256_IVSize using the Password-Based Key
+// Derivation Function (PBKDF) version 2 algorithm.  The number of iterations is derived from "pin".
+// "label" is additional data to provide distinct input data to PBKDF.  The function will throw a
+// std::exception if invalid parameters are passed.
 template <typename PasswordType>
 SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt,
                                     uint32_t pin,
@@ -145,7 +162,7 @@ SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& sa
   std::string derived_password;
   CryptoPP::StringSink string_sink(derived_password);
   string_sink.Put(derived, derived.size());
-  return SecurePassword(derived_password);
+  return SecurePassword(SecurePassword::value_type(derived_password));
 }
 
 // Hash function operating on a string.
@@ -191,12 +208,12 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Ha
   return BoundedString(result);
 }
 
-// Performs symmetric encrytion using AES256. It throws a std::exception if the
+// Performs symmetric encryption using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
 CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector);
 
-// Performs symmetric decrytion using AES256. It throws a std::exception if the
+// Performs symmetric decryption using AES256. It throws a std::exception if the
 // key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
 PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
                       const AES256InitialisationVector& initialisation_vector);

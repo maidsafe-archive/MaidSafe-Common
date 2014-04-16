@@ -84,8 +84,8 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
                     std::back_inserter(dirs_to_do));
         }
       }
-      catch (std::system_error& exception) {
-        LOG(kError) << exception.what();
+      catch (const std::system_error& exception) {
+        LOG(kError) << boost::diagnostic_information(exception);
         BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
       }
       catch (...) {

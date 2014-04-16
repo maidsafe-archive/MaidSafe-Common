@@ -43,6 +43,10 @@ ms_glob_dir(Common ${CommonSourcesDir} Common)
 ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
+ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authentication")
+ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
+ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
+
 ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
 ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
 set(CommonDataStoresTestsUtilsFiles
@@ -62,6 +66,7 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/bounded_string_test.cc
                         ${CommonSourcesDir}/tests/errors_test.cc
                         ${CommonSourcesDir}/tests/ipc_test.cc
+                        ${CommonSourcesDir}/tests/make_unique_test.cc
                         ${CommonSourcesDir}/tests/node_id_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc
                         ${CommonSourcesDir}/tests/utils_test.cc
@@ -78,6 +83,8 @@ list(APPEND CommonTestsAllFiles ${TestsMain})
 # Common library
 ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
+    ${CommonAuthenticationAllFiles}
+    ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
     ${CommonDataTypesAllFiles})
 add_dependencies(maidsafe_common boost_process catch)
@@ -92,6 +99,10 @@ ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSo
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
+if(MSVC12 AND CMAKE_CL_64)
+  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved.")
+  set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
+endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
@@ -101,11 +112,15 @@ target_link_libraries(maidsafe_common
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
     ${BoostLocaleLibs}
+    ${BoostRegexLibs}
     ${BoostSystemLibs}
     ${BoostThreadLibs}
     ${BoostProgramOptionsLibs}
     ${JustThread_LIBRARIES}
     ${SYS_LIB})
+if(TARGET check_sanitizer_blacklist)
+  add_dependencies(maidsafe_common check_sanitizer_blacklist)
+endif()
 
 # Network Viewer library
 ms_add_static_library(maidsafe_network_viewer
@@ -128,9 +143,13 @@ ms_add_executable(bootstrap_file_tool "Tools/Common"
     "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
+# Address space tool
+ms_add_executable(address_space_tool "Tools/Common" "${CommonSourcesDir}/tools/address_space_tool.cc")
+target_link_libraries(address_space_tool maidsafe_common)
+
 # Tests
 if(MaidsafeTesting)
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles})
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
   target_link_libraries(test_common maidsafe_common)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})

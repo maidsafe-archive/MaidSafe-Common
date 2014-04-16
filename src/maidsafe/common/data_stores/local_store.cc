@@ -24,6 +24,7 @@
 #include "boost/filesystem/convenience.hpp"
 
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/data_stores/utils.h"
 
@@ -89,8 +90,8 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
                     std::back_inserter(dirs_to_do));
         }
       }
-      catch (std::system_error& exception) {
-        LOG(kError) << exception.what();
+      catch (const std::system_error& exception) {
+        LOG(kError) << boost::diagnostic_information(exception);
         BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
       }
       catch (...) {
@@ -190,7 +191,7 @@ void LocalStore::IncrementReferenceCount(const std::vector<ImmutableData::Name>&
       DoIncrement(data_names);
     }
     catch (const std::exception& e) {
-      LOG(kWarning) << "IncrementReferenceCount failed: " << e.what();
+      LOG(kWarning) << "IncrementReferenceCount failed: " << boost::diagnostic_information(e);
     }
   });
 }
@@ -201,7 +202,7 @@ void LocalStore::DecrementReferenceCount(const std::vector<ImmutableData::Name>&
       DoDecrement(data_names);
     }
     catch (const std::exception& e) {
-      LOG(kWarning) << "DecrementReferenceCount failed: " << e.what();
+      LOG(kWarning) << "DecrementReferenceCount failed: " << boost::diagnostic_information(e);
     }
   });
 }
@@ -287,7 +288,7 @@ uint32_t LocalStore::GetReferenceCount(const fs::path& path) const {
     }
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Exception: " << e.what();
+    LOG(kError) << "Exception: " << boost::diagnostic_information(e);
   }
 
   return 0;
@@ -338,13 +339,10 @@ std::unique_ptr<StructuredDataVersions> LocalStore::ReadVersions(const KeyType& 
   fs::path file_path(KeyToFilePath(key, false));
   file_path.replace_extension(".ver");
   boost::system::error_code ec;
-  if (fs::exists(file_path, ec)) {
-    std::unique_ptr<StructuredDataVersions> versions(
-        new StructuredDataVersions(StructuredDataVersions::serialised_type(ReadFile(file_path))));
-    return std::move(versions);
-  } else {
-    return std::move(std::unique_ptr<StructuredDataVersions>());
-  }
+  return fs::exists(file_path, ec) ?
+      std::move(maidsafe::make_unique<StructuredDataVersions>(
+          StructuredDataVersions::serialised_type(ReadFile(file_path)))) :
+      std::move(std::unique_ptr<StructuredDataVersions>());
 }
 
 void LocalStore::WriteVersions(const KeyType& key, const StructuredDataVersions& versions) {

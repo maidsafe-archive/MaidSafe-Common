@@ -50,7 +50,7 @@ TestPath CreateTestPath(std::string test_prefix) {
   fs::path* test_path(
       new fs::path(fs::unique_path(fs::temp_directory_path(error_code) / test_prefix)));
   std::string debug(test_path->string());
-  TestPath test_path_ptr(test_path, [debug](fs::path * delete_path) {
+  TestPath test_path_ptr(test_path, [debug](fs::path* delete_path) {
     if (!delete_path->empty()) {
       boost::system::error_code ec;
       if (fs::remove_all(*delete_path, ec) == 0) {

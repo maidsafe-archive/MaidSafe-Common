@@ -40,6 +40,7 @@
 #include "boost/program_options/value_semantic.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -465,7 +466,7 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
       SetStreams();
     }
     catch (const std::exception& e) {
-      std::cout << "Exception initialising logging: " << e.what() << "\n\n";
+      std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
     }
   });
   return unused_options;
@@ -489,7 +490,7 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
       SetStreams();
     }
     catch (const std::exception& e) {
-      std::cout << "Exception initialising logging: " << e.what() << "\n\n";
+      std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
     }
   });
   return unused_options;
@@ -537,7 +538,7 @@ void Logging::SetStreams() {
     return;
 
   for (auto& entry : filter_) {
-    std::unique_ptr<LogFile> log_file(new LogFile);
+    auto log_file(make_unique<LogFile>());
     log_file->stream.open(GetLogfileName(entry.first).c_str(), std::ios_base::trunc);
     project_logfile_streams_.insert(std::make_pair(entry.first, std::move(log_file)));
   }
@@ -550,16 +551,20 @@ void Logging::Send(std::function<void()> message_functor) { background_.Send(mes
 
 void Logging::WriteToCombinedLogfile(const std::string& message) {
   std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
-  if (combined_logfile_stream_.stream.good())
+  if (combined_logfile_stream_.stream.good()) {
     combined_logfile_stream_.stream.write(message.c_str(), message.size());
+    combined_logfile_stream_.stream.flush();
+  }
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
   auto itr(project_logfile_streams_.find(project));
   if (itr != project_logfile_streams_.end()) {
     std::lock_guard<std::mutex> lock((*itr).second->mutex);
-    if ((*itr).second->stream.good())
+    if ((*itr).second->stream.good()) {
       (*itr).second->stream.write(message.c_str(), message.size());
+      (*itr).second->stream.flush();
+    }
   }
 }
 
