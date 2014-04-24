@@ -196,7 +196,7 @@ TEST(CryptoTest, BEH_Hash) {
 std::string CorruptData(const std::string& input) {
   // Replace a single char of input to a different random char.
   std::string output(input);
-  output.at(RandomUint32() % input.size()) += (RandomUint32() % 254) + 1;
+  output.back() += (RandomUint32() % 254) + 1;
   return output;
 }
 
@@ -222,8 +222,8 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
   EXPECT_THROW(AES256InitialisationVector(std::string(AES256_IVSize - 1, 0)), std::exception);
   EXPECT_NO_THROW(AES256Key(std::string(AES256_KeySize, 0)));
   EXPECT_NO_THROW(AES256InitialisationVector(std::string(AES256_IVSize, 0)));
-  EXPECT_NO_THROW(AES256Key(std::string(AES256_KeySize + 1, 0)));
-  EXPECT_NO_THROW(AES256InitialisationVector(std::string(AES256_IVSize + 1, 0)));
+  EXPECT_THROW(AES256Key(std::string(AES256_KeySize + 1, 0)), std::exception);
+  EXPECT_THROW(AES256InitialisationVector(std::string(AES256_IVSize + 1, 0)), std::exception);
 
   // Encryption string to string
   EXPECT_EQ(kEncrypted, SymmEncrypt(kUnencrypted, kKey, kIV));

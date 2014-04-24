@@ -98,8 +98,11 @@ extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
 
-typedef detail::BoundedString<AES256_KeySize> AES256Key;
-typedef detail::BoundedString<AES256_IVSize> AES256InitialisationVector;
+// AES requires a key size of 128, 192, or 256 bits.  We only use 256 bits.
+typedef detail::BoundedString<AES256_KeySize, AES256_KeySize> AES256Key;
+// Since the block size for AES is 128 bits, only the first 128 bits of the IV are used.  We force
+// the IV to be exactly 128 bits.
+typedef detail::BoundedString<AES256_IVSize, AES256_IVSize> AES256InitialisationVector;
 typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
 typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
 typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
