@@ -48,6 +48,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "File too large";
     case CommonErrors::uninitialised:
       return "Class is uninitialised.";
+    case CommonErrors::already_initialised:
+      return "Class has already been initialised.";
     case CommonErrors::hashing_error:
       return "Error during hashing";
     case CommonErrors::symmetric_encryption_error:

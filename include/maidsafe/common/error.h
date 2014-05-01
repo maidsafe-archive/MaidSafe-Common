@@ -53,6 +53,7 @@ enum class CommonErrors {
   invalid_conversion,
   file_too_large,
   uninitialised,
+  already_initialised,
   hashing_error,
   symmetric_encryption_error,
   symmetric_decryption_error,
@@ -282,12 +283,6 @@ std::error_code make_error_code(ApiErrors code);
 std::error_condition make_error_condition(ApiErrors code);
 const std::error_category& GetApiCategory();
 api_error MakeError(ApiErrors code);
-
-template <typename MaidsafeErrorCode>
-auto MakeBoostException(const MaidsafeErrorCode& code)->
-    decltype(boost::enable_error_info(MakeError(code))) {
-  return boost::enable_error_info(MakeError(code));
-}
 
 }  // namespace maidsafe
 
