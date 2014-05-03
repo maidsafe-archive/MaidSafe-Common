@@ -302,7 +302,7 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
                        "131e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
   answer.emplace_back("d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b8dd4c44e6"
                       "d01a88526647df8c7555330f3d347e1ac3735e1a73c79c258e9fa7094f9ab07e33");
-  for (int i = 0; i < 10; ++i ) {
+  for (int i = 0; i < 10; ++i) {
     EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), i)->string())),
               answer.at(i));
   }
