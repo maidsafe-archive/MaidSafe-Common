@@ -38,13 +38,12 @@ class VisualiserLogMessage {
  public:
   template <typename PersonaEnum, typename ActionEnum>
   VisualiserLogMessage(PersonaEnum persona_enum, ActionEnum action_enum, Identity target)
-      : kSeparator_(','), stream_() {
+      : stream_(), kSeparator_(',') {
     stream_ << Logging::Instance().VlogPrefix() << kSeparator_
-            << static_cast<std::underlying_type<PersonaEnum>::type>(persona_enum) << kSeparator_
-            << persona_enum << kSeparator_
-            << static_cast<std::underlying_type<ActionEnum>::type>(action_enum) << kSeparator_
-            << action_enum << kSeparator_
-            << DebugId(target) << kSeparator_
+            << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
+            << kSeparator_ << persona_enum << kSeparator_
+            << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
+            << kSeparator_ << action_enum << kSeparator_ << DebugId(target) << kSeparator_
             << detail::GetLocalTime() << kSeparator_;
   }
   ~VisualiserLogMessage() {
