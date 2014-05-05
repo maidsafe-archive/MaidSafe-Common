@@ -69,7 +69,8 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/make_unique_test.cc
                         ${CommonSourcesDir}/tests/node_id_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc
-                        ${CommonSourcesDir}/tests/utils_test.cc)
+                        ${CommonSourcesDir}/tests/utils_test.cc
+                        ${CommonSourcesDir}/tests/visualiser_log_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
