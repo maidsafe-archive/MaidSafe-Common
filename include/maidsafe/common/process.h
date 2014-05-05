@@ -48,6 +48,8 @@ struct ManagedHandle {
 
 typedef ManagedHandle ProcessInfo;
 
+bool IsRunning(HANDLE handle);
+
 #else
 
 typedef pid_t ProcessInfo;

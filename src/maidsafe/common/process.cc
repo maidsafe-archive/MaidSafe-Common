@@ -60,13 +60,17 @@ ManagedHandle::~ManagedHandle() {
   catch (...) {}
 }
 
-bool IsRunning(const ProcessInfo& process_info) {
+bool IsRunning(HANDLE handle) {
   DWORD exit_code;
-  if (GetExitCodeProcess(process_info.handle, &exit_code) == FALSE) {
+  if (GetExitCodeProcess(handle, &exit_code) == FALSE) {
     LOG(kError) << "Failed to get status of process.  Windows error: " << GetLastError();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   return exit_code == STILL_ACTIVE;
+}
+
+bool IsRunning(const ProcessInfo& process_info) {
+  return IsRunning(process_info.handle);
 }
 
 #else
