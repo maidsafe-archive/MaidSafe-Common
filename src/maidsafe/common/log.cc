@@ -296,7 +296,7 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
                               this_exe_path.c_str() + this_exe_path.size() + 1u);
   auto unuseds(po::collect_unrecognized(parsed.options, po::include_positional));
   if (log_variables.count("help")) {
-    const Char help[] = {'-', '-', 'h', 'e', 'l', 'p'};
+    const Char help[] = {'-', '-', 'h', 'e', 'l', 'p', '\0'};
     unuseds.push_back(help);
   }
   for (const auto& unused : unuseds)
