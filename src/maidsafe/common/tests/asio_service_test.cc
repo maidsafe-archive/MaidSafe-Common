@@ -53,6 +53,7 @@ TEST_CASE("AsioService start and stop", "[AsioService][Unit]") {
 
   SECTION("Normal usage") {
     AsioService asio_service(2);
+    CHECK(asio_service.ThreadCount() == 2U);
     asio_service.service().post(task);
     std::unique_lock<std::mutex> lock(mutex);
     CHECK(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
@@ -60,7 +61,9 @@ TEST_CASE("AsioService start and stop", "[AsioService][Unit]") {
 
     SECTION("Explicit Stop before destruction") {
       CHECK_NOTHROW(asio_service.Stop());
+      CHECK(asio_service.ThreadCount() == 0U);
       CHECK_NOTHROW(asio_service.Stop());
+      CHECK(asio_service.ThreadCount() == 0U);
     }
 
     SECTION("Stop, then post more tasks") {

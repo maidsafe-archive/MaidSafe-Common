@@ -22,12 +22,13 @@
 
 namespace maidsafe {
 
-AsioService::AsioService(uint32_t thread_count)
-    : service_(), work_(new boost::asio::io_service::work(service_)), threads_(),
+AsioService::AsioService(size_t thread_count)
+    : service_(),
+      work_(new boost::asio::io_service::work(service_)), threads_(),
       mutex_() {
   if (thread_count == 0)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  for (uint32_t i(0); i != thread_count; ++i)
+  for (size_t i(0); i != thread_count; ++i)
     threads_.emplace_back([&] {
       try {
         service_.run();
@@ -44,7 +45,7 @@ AsioService::AsioService(uint32_t thread_count)
 AsioService::~AsioService() { Stop(); }
 
 void AsioService::Stop() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock{ mutex_ };
   if (!work_) {
     LOG(kVerbose) << "AsioService has already stopped.";
     return;
@@ -62,10 +63,18 @@ void AsioService::Stop() {
     }
     catch (const std::exception& e) {
       LOG(kError) << "Exception joining asio thread: " << boost::diagnostic_information(e);
+      asio_thread.detach();
     }
   }
+
+  threads_.clear();
 }
 
 boost::asio::io_service& AsioService::service() { return service_; }
+
+size_t AsioService::ThreadCount() const {
+  std::lock_guard<std::mutex> lock{ mutex_ };
+  return threads_.size();
+}
 
 }  // namespace maidsafe

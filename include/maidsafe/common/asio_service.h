@@ -31,16 +31,17 @@ namespace maidsafe {
 
 class AsioService {
  public:
-  explicit AsioService(uint32_t thread_count);
+  explicit AsioService(size_t thread_count);
   ~AsioService();
   void Stop();
   boost::asio::io_service& service();
+  size_t ThreadCount() const;
 
  private:
   boost::asio::io_service service_;
   std::unique_ptr<boost::asio::io_service::work> work_;
   std::vector<std::thread> threads_;
-  std::mutex mutex_;
+  mutable  std::mutex mutex_;
 };
 
 }  // namespace maidsafe
