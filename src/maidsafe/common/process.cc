@@ -21,6 +21,7 @@
 #include <csignal>
 #include <iterator>
 #include <numeric>
+#include <type_traits>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -69,6 +70,13 @@ bool IsRunning(HANDLE handle) {
   return exit_code == STILL_ACTIVE;
 }
 
+ProcessId GetProcessId() {
+  static_assert(std::is_unsigned<decltype(GetCurrentProcessId())>::value, "Must be unsigned.");
+  static_assert(sizeof(decltype(GetCurrentProcessId())) <= sizeof(ProcessId),
+                "Size of ProcessId type is too small to cast into.");
+  return static_cast<ProcessId>(GetCurrentProcessId());
+}
+
 bool IsRunning(const ProcessInfo& process_info) {
   return IsRunning(process_info.handle);
 }
@@ -77,6 +85,12 @@ bool IsRunning(const ProcessInfo& process_info) {
 
 std::string ConstructCommandLine(const std::vector<std::string>& process_args) {
   return ConcatenateArgs(process_args);
+}
+
+ProcessId GetProcessId() {
+  static_assert(sizeof(decltype(getpid())) < sizeof(ProcessId),
+                "Size of ProcessId type is too small to cast into.");
+  return static_cast<ProcessId>(getpid());
 }
 
 bool IsRunning(const ProcessInfo& process_info) {
