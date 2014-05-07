@@ -23,7 +23,8 @@
 namespace maidsafe {
 
 AsioService::AsioService(size_t thread_count)
-    : service_(),
+    : thread_count_(thread_count),
+      service_(),
       work_(new boost::asio::io_service::work(service_)), threads_(),
       mutex_() {
   if (thread_count == 0)
@@ -45,6 +46,7 @@ AsioService::AsioService(size_t thread_count)
 AsioService::~AsioService() { Stop(); }
 
 void AsioService::Stop() {
+  thread_count_ = 0U;
   std::lock_guard<std::mutex> lock{ mutex_ };
   if (!work_) {
     LOG(kVerbose) << "AsioService has already stopped.";
@@ -73,8 +75,7 @@ void AsioService::Stop() {
 boost::asio::io_service& AsioService::service() { return service_; }
 
 size_t AsioService::ThreadCount() const {
-  std::lock_guard<std::mutex> lock{ mutex_ };
-  return threads_.size();
+  return thread_count_;
 }
 
 }  // namespace maidsafe

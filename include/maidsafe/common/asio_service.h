@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_COMMON_ASIO_SERVICE_H_
 #define MAIDSAFE_COMMON_ASIO_SERVICE_H_
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -38,10 +39,11 @@ class AsioService {
   size_t ThreadCount() const;
 
  private:
+  std::atomic<size_t> thread_count_;
   boost::asio::io_service service_;
   std::unique_ptr<boost::asio::io_service::work> work_;
   std::vector<std::thread> threads_;
-  mutable  std::mutex mutex_;
+  mutable std::mutex mutex_;
 };
 
 }  // namespace maidsafe
