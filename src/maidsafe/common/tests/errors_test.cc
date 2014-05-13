@@ -112,6 +112,20 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
   CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
+TEST_CASE("Serialising and parsing errors", "[ErrorCode][Unit]") {
+  common_error hashing_error{ MakeError(CommonErrors::hashing_error) };
+  maidsafe_error::serialised_type serialised{ Serialise(hashing_error) };
+  CHECK(hashing_error.code() == Parse(serialised).code());
+  CHECK(std::string{ hashing_error.what() } == std::string{ Parse(serialised).what() });
+
+  vault_manager_error listening_error{ MakeError(VaultManagerErrors::failed_to_listen) };
+  serialised = Serialise(listening_error);
+  CHECK(listening_error.code() == Parse(serialised).code());
+  CHECK(std::string{ listening_error.what() } == std::string{ Parse(serialised).what() });
+  CHECK(hashing_error.code() != Parse(serialised).code());
+  CHECK(std::string{ hashing_error.what() } != std::string{ Parse(serialised).what() });
+}
+
 }  // namespace test
 
 }  // namespace detail

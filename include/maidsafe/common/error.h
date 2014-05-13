@@ -25,11 +25,13 @@
 #include "boost/exception/all.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/tagged_value.h"
 
 namespace maidsafe {
 
 class maidsafe_error : public std::system_error {
  public:
+  typedef TaggedValue<std::string, struct SerialisedErrorTag> serialised_type;
   maidsafe_error(std::error_code ec, const std::string& what_arg)
       : std::system_error(ec, what_arg) {}
   maidsafe_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
@@ -40,6 +42,9 @@ class maidsafe_error : public std::system_error {
       : std::system_error(ev, ecat, what_arg) {}
   maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
 };
+
+maidsafe_error::serialised_type Serialise(maidsafe_error error);
+maidsafe_error Parse(maidsafe_error::serialised_type serialised_error);
 
 enum class CommonErrors {
   success = 0,

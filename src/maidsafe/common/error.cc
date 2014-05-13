@@ -21,8 +21,42 @@
 #include "boost/throw_exception.hpp"
 
 #include "maidsafe/common/error_categories.h"
+#include "maidsafe/common/error.pb.h"
 
 namespace maidsafe {
+
+maidsafe_error::serialised_type Serialise(maidsafe_error error) {
+  protobuf::maidsafe_error proto_copy;
+  proto_copy.set_value(error.code().value());
+  proto_copy.set_category_name(error.code().category().name());
+  return maidsafe_error::serialised_type{ proto_copy.SerializeAsString() };
+}
+
+maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
+  protobuf::maidsafe_error proto_copy;
+  if (!proto_copy.ParseFromString(serialised_error.data))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  if (proto_copy.category_name() == std::string(GetCommonCategory().name()))
+    return MakeError(static_cast<CommonErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetAsymmCategory().name()))
+    return MakeError(static_cast<AsymmErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetPassportCategory().name()))
+    return MakeError(static_cast<PassportErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetNfsCategory().name()))
+    return MakeError(static_cast<NfsErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetRoutingCategory().name()))
+    return MakeError(static_cast<RoutingErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetDriveCategory().name()))
+    return MakeError(static_cast<DriveErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetVaultCategory().name()))
+    return MakeError(static_cast<VaultErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetVaultManagerCategory().name()))
+    return MakeError(static_cast<VaultManagerErrors>(proto_copy.value()));
+  if (proto_copy.category_name() == std::string(GetApiCategory().name()))
+    return MakeError(static_cast<ApiErrors>(proto_copy.value()));
+
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+}
 
 std::error_code make_error_code(CommonErrors code) {
   return std::error_code(static_cast<int>(code), GetCommonCategory());
