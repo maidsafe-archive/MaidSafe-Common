@@ -144,6 +144,23 @@ const std::error_category& GetVaultCategory() {
 
 vault_error MakeError(VaultErrors code) { return vault_error(make_error_code(code)); }
 
+std::error_code make_error_code(VaultManagerErrors code) {
+  return std::error_code(static_cast<int>(code), GetVaultManagerCategory());
+}
+
+std::error_condition make_error_condition(VaultManagerErrors code) {
+  return std::error_condition(static_cast<int>(code), GetVaultManagerCategory());
+}
+
+const std::error_category& GetVaultManagerCategory() {
+  static detail::VaultManagerCategory instance;
+  return instance;
+}
+
+vault_manager_error MakeError(VaultManagerErrors code) {
+  return vault_manager_error(make_error_code(code));
+}
+
 std::error_code make_error_code(ApiErrors code) {
   return std::error_code(static_cast<int>(code), GetApiCategory());
 }

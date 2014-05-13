@@ -316,7 +316,40 @@ std::error_condition VaultCategory::default_error_condition(int error_value) con
   }
 }
 
-const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
+const char* VaultManagerCategory::name() const MAIDSAFE_NOEXCEPT{ return "MaidSafe VaultManager"; }
+
+std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCEPT{
+  switch (static_cast<VaultManagerErrors>(error_value)) {
+    case VaultManagerErrors::connection_not_found:
+      return "IPC connection not found";
+    case VaultManagerErrors::failed_to_connect:
+      return "Failed to connect";
+    case VaultManagerErrors::failed_to_listen:
+      return "Failed to listen";
+    case VaultManagerErrors::ipc_message_too_large:
+      return "IPC message too large";
+    case VaultManagerErrors::unvalidated_client:
+      return "IPC message from unvalidated client refused";
+    default:
+      return "Unknown error in VaultManager";
+  }
+}
+
+std::error_condition VaultManagerCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT{
+  switch (static_cast<VaultManagerErrors>(error_value)) {
+    case VaultManagerErrors::connection_not_found:
+      return std::errc::not_connected;
+    case VaultManagerErrors::failed_to_connect:
+      return std::errc::connection_refused;
+    case VaultManagerErrors::ipc_message_too_large:
+      return std::errc::message_size;
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
+const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT{ return "Client"; }
 
 std::string ApiCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<ApiErrors>(error_value)) {

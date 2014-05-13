@@ -263,6 +263,32 @@ std::error_condition make_error_condition(VaultErrors code);
 const std::error_category& GetVaultCategory();
 vault_error MakeError(VaultErrors code);
 
+enum class VaultManagerErrors {
+  connection_not_found = 1,
+  failed_to_connect,
+  failed_to_listen,
+  ipc_message_too_large,
+  unvalidated_client
+};
+
+class vault_manager_error : public maidsafe_error {
+ public:
+  vault_manager_error(std::error_code ec, const std::string& what_arg)
+      : maidsafe_error(ec, what_arg) {}
+  vault_manager_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit vault_manager_error(std::error_code ec) : maidsafe_error(ec) {}
+  vault_manager_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  vault_manager_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  vault_manager_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(VaultManagerErrors code);
+std::error_condition make_error_condition(VaultManagerErrors code);
+const std::error_category& GetVaultManagerCategory();
+vault_manager_error MakeError(VaultManagerErrors code);
+
 enum class ApiErrors {
   kPasswordFailure = 1
 };
