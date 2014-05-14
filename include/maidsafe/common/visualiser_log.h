@@ -52,6 +52,10 @@ class VisualiserLogMessage {
   }
   ~VisualiserLogMessage() {
     std::string log_entry{ stream_.str() + '\n' };
+    if (Logging::Instance().LogToConsole()) {
+      printf("%s", log_entry.c_str());
+      fflush(stdout);
+    }
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
   }
