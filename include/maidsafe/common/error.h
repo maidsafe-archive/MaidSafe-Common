@@ -273,7 +273,10 @@ enum class VaultManagerErrors {
   failed_to_connect,
   failed_to_listen,
   ipc_message_too_large,
-  unvalidated_client
+  timed_out,
+  unvalidated_client,
+  vault_exited_with_error,
+  vault_terminated
 };
 
 class vault_manager_error : public maidsafe_error {

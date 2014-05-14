@@ -328,8 +328,14 @@ std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCE
       return "Failed to listen";
     case VaultManagerErrors::ipc_message_too_large:
       return "IPC message too large";
+    case VaultManagerErrors::timed_out:
+      return "Timed out";
     case VaultManagerErrors::unvalidated_client:
       return "IPC message from unvalidated client refused";
+    case VaultManagerErrors::vault_exited_with_error:
+      return "Vault process exited with an error";
+    case VaultManagerErrors::vault_terminated:
+      return "Vault process required termination";
     default:
       return "Unknown error in VaultManager";
   }
@@ -344,6 +350,8 @@ std::error_condition VaultManagerCategory::default_error_condition(int error_val
       return std::errc::connection_refused;
     case VaultManagerErrors::ipc_message_too_large:
       return std::errc::message_size;
+    case VaultManagerErrors::timed_out:
+      return std::errc::timed_out;
     default:
       return std::error_condition(error_value, *this);
   }
