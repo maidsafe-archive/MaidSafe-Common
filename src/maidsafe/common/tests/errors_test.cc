@@ -124,6 +124,10 @@ TEST_CASE("Serialising and parsing errors", "[ErrorCode][Unit]") {
   CHECK(std::string{ listening_error.what() } == std::string{ Parse(serialised).what() });
   CHECK(hashing_error.code() != Parse(serialised).code());
   CHECK(std::string{ hashing_error.what() } != std::string{ Parse(serialised).what() });
+
+  CHECK_THROWS_AS(IntToError(0), maidsafe_error);
+  CHECK(IntToError(-100000).code() == MakeError(CommonErrors::success).code());
+  CHECK(ErrorToInt(MakeError(CommonErrors::success)) == -100000);
 }
 
 }  // namespace test

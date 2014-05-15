@@ -20,5 +20,4 @@ package maidsafe.protobuf;
 
 message maidsafe_error {
   required int64 value = 1;
-  required bytes category_name = 2;
 }

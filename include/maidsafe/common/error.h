@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_COMMON_ERROR_H_
 #define MAIDSAFE_COMMON_ERROR_H_
 
+#include <cstdint>
 #include <string>
 #include <system_error>
 
@@ -43,6 +44,8 @@ class maidsafe_error : public std::system_error {
   maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
 };
 
+int32_t ErrorToInt(maidsafe_error error);
+maidsafe_error IntToError(int32_t);
 maidsafe_error::serialised_type Serialise(maidsafe_error error);
 maidsafe_error Parse(maidsafe_error::serialised_type serialised_error);
 

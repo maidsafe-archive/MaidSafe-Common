@@ -25,10 +25,82 @@
 
 namespace maidsafe {
 
+namespace {
+
+const int kMultiple(100000);
+
+enum class ErrorCategories : int {
+  kCommon =       1 * kMultiple,
+  kAsymm =        2 * kMultiple,
+  kPassport =     3 * kMultiple,
+  kEncrypt =      4 * kMultiple,
+  kRouting =      5 * kMultiple,
+  kNfs =          6 * kMultiple,
+  kDrive =        7 * kMultiple,
+  kVault =        8 * kMultiple,
+  kVaultManager = 9 * kMultiple,
+  kApi =          10 * kMultiple
+};
+
+}  // unnamed namespace
+
+int ErrorToInt(maidsafe_error error) {
+  if (error.code().category() == GetCommonCategory())
+    return -static_cast<int>(ErrorCategories::kCommon) - error.code().value();
+  if (error.code().category() == GetAsymmCategory())
+    return -static_cast<int>(ErrorCategories::kAsymm) - error.code().value();
+  if (error.code().category() == GetPassportCategory())
+    return -static_cast<int>(ErrorCategories::kPassport) - error.code().value();
+  if (error.code().category() == GetEncryptCategory())
+    return -static_cast<int>(ErrorCategories::kEncrypt) - error.code().value();
+  if (error.code().category() == GetRoutingCategory())
+    return -static_cast<int>(ErrorCategories::kRouting) - error.code().value();
+  if (error.code().category() == GetNfsCategory())
+    return -static_cast<int>(ErrorCategories::kNfs) - error.code().value();
+  if (error.code().category() == GetDriveCategory())
+    return -static_cast<int>(ErrorCategories::kDrive) - error.code().value();
+  if (error.code().category() == GetVaultCategory())
+    return -static_cast<int>(ErrorCategories::kVault) - error.code().value();
+  if (error.code().category() == GetVaultManagerCategory())
+    return -static_cast<int>(ErrorCategories::kVaultManager) - error.code().value();
+  if (error.code().category() == GetApiCategory())
+    return -static_cast<int>(ErrorCategories::kApi) - error.code().value();
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::serialisation_error));
+}
+
+maidsafe_error IntToError(int value) {
+  value = 0 - value;
+  ErrorCategories category_value{ static_cast<ErrorCategories>(value - (value % kMultiple)) };
+  int error_value{ value % kMultiple };
+  switch (category_value) {
+    case ErrorCategories::kCommon:
+      return maidsafe_error{ error_value, GetCommonCategory() };
+    case ErrorCategories::kAsymm:
+      return maidsafe_error{ error_value, GetAsymmCategory() };
+    case ErrorCategories::kPassport:
+      return maidsafe_error{ error_value, GetPassportCategory() };
+    case ErrorCategories::kEncrypt:
+      return maidsafe_error{ error_value, GetEncryptCategory() };
+    case ErrorCategories::kRouting:
+      return maidsafe_error{ error_value, GetRoutingCategory() };
+    case ErrorCategories::kNfs:
+      return maidsafe_error{ error_value, GetNfsCategory() };
+    case ErrorCategories::kDrive:
+      return maidsafe_error{ error_value, GetDriveCategory() };
+    case ErrorCategories::kVault:
+      return maidsafe_error{ error_value, GetVaultCategory() };
+    case ErrorCategories::kVaultManager:
+      return maidsafe_error{ error_value, GetVaultManagerCategory() };
+    case ErrorCategories::kApi:
+      return maidsafe_error{ error_value, GetApiCategory() };
+    default:
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  }
+}
+
 maidsafe_error::serialised_type Serialise(maidsafe_error error) {
   protobuf::maidsafe_error proto_copy;
-  proto_copy.set_value(error.code().value());
-  proto_copy.set_category_name(error.code().category().name());
+  proto_copy.set_value(ErrorToInt(error));
   return maidsafe_error::serialised_type{ proto_copy.SerializeAsString() };
 }
 
@@ -36,26 +108,7 @@ maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
   protobuf::maidsafe_error proto_copy;
   if (!proto_copy.ParseFromString(serialised_error.data))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  if (proto_copy.category_name() == std::string(GetCommonCategory().name()))
-    return MakeError(static_cast<CommonErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetAsymmCategory().name()))
-    return MakeError(static_cast<AsymmErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetPassportCategory().name()))
-    return MakeError(static_cast<PassportErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetNfsCategory().name()))
-    return MakeError(static_cast<NfsErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetRoutingCategory().name()))
-    return MakeError(static_cast<RoutingErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetDriveCategory().name()))
-    return MakeError(static_cast<DriveErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetVaultCategory().name()))
-    return MakeError(static_cast<VaultErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetVaultManagerCategory().name()))
-    return MakeError(static_cast<VaultManagerErrors>(proto_copy.value()));
-  if (proto_copy.category_name() == std::string(GetApiCategory().name()))
-    return MakeError(static_cast<ApiErrors>(proto_copy.value()));
-
-  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  return IntToError(static_cast<int>(proto_copy.value()));
 }
 
 std::error_code make_error_code(CommonErrors code) {
