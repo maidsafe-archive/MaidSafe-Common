@@ -275,6 +275,7 @@ enum class VaultManagerErrors {
   connection_not_found = 1,
   failed_to_connect,
   failed_to_listen,
+  connection_aborted,
   ipc_message_too_large,
   timed_out,
   unvalidated_client,

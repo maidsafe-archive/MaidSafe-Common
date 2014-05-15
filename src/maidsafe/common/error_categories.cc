@@ -326,6 +326,8 @@ std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCE
       return "Failed to connect";
     case VaultManagerErrors::failed_to_listen:
       return "Failed to listen";
+    case VaultManagerErrors::connection_aborted:
+      return "Connection aborted";
     case VaultManagerErrors::ipc_message_too_large:
       return "IPC message too large";
     case VaultManagerErrors::timed_out:
@@ -348,6 +350,8 @@ std::error_condition VaultManagerCategory::default_error_condition(int error_val
       return std::errc::not_connected;
     case VaultManagerErrors::failed_to_connect:
       return std::errc::connection_refused;
+    case VaultManagerErrors::connection_aborted:
+      return std::errc::connection_aborted;
     case VaultManagerErrors::ipc_message_too_large:
       return std::errc::message_size;
     case VaultManagerErrors::timed_out:
