@@ -17,7 +17,10 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/config.h"
+
 #include <mutex>
+
+#include "boost/filesystem/operations.hpp"
 
 #include "maidsafe/common/error.h"
 
@@ -46,13 +49,27 @@ std::string kTargetArchitecture() {
 template <>
 void SetThisExecutablePath(const char* const argv[]) {
   static std::once_flag flag;
-  std::call_once(flag, [argv] { g_this_executable_path = boost::filesystem::path(argv[0]); });
+  std::call_once(flag, [argv] {
+    try {
+      g_this_executable_path = boost::filesystem::absolute(argv[0]);
+    }
+    catch (const std::exception&) {
+      g_this_executable_path = boost::filesystem::path(argv[0]);
+    }
+  });
 }
 
 template <>
 void SetThisExecutablePath(const wchar_t* const argv[]) {
   static std::once_flag flag;
-  std::call_once(flag, [argv] { g_this_executable_path = boost::filesystem::path(argv[0]); });
+  std::call_once(flag, [argv] {
+    try {
+      g_this_executable_path = boost::filesystem::absolute(argv[0]);
+    }
+    catch (const std::exception&) {
+      g_this_executable_path = boost::filesystem::path(argv[0]);
+    }
+  });
 }
 
 boost::filesystem::path ThisExecutablePath() {
