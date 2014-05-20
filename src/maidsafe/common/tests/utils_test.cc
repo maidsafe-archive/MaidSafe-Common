@@ -33,6 +33,7 @@
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/process.h"
 #include "maidsafe/common/test.h"
 
 namespace fs = boost::filesystem;
@@ -575,6 +576,10 @@ TEST_CASE("CreateTestPath", "[Utils][Unit]") {
   fs::path* non_existent(new fs::path(std::string(100, 'a')));
   CleanupTest(non_existent);
   CHECK(!non_existent);
+}
+
+TEST_CASE("GetProcessId", "[Process][Unit]") {
+  CHECK(process::GetProcessId() > 0);
 }
 
 }  // namespace test

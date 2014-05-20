@@ -68,6 +68,13 @@ class LocalStore {
   void DecrementReferenceCount(const std::vector<ImmutableData::Name>& data_names);
 
   template <typename DataName>
+  boost::future<void> CreateVersionTree(const DataName& data_name,
+                         const StructuredDataVersions::VersionName& version_name,
+                         uint32_t max_versions, uint32_t max_branches,
+                         const std::chrono::steady_clock::duration& timeout =
+                             std::chrono::seconds(10));
+
+  template <typename DataName>
   VersionNamesFuture GetVersions(const DataName& data_name,
                                  const std::chrono::steady_clock::duration& timeout =
                                      std::chrono::seconds(10));
@@ -179,6 +186,28 @@ void LocalStore::Delete(const DataName& data_name) {
 }
 
 template <typename DataName>
+boost::future<void> LocalStore::CreateVersionTree(const DataName& data_name,
+                       const StructuredDataVersions::VersionName& version_name,
+                       uint32_t max_versions, uint32_t max_branches,
+                       const std::chrono::steady_clock::duration& /*timeout*/) {
+  LOG(kVerbose) << "Create Version " << HexSubstr(data_name.value);
+  auto promise(std::make_shared<boost::promise<void>>());
+  try {
+    KeyType key(data_name);
+    StructuredDataVersions versions(max_versions, max_branches);
+    std::lock_guard<std::mutex> lock(this->mutex_);
+    versions.Put(StructuredDataVersions::VersionName(), version_name);
+    WriteVersions(key, versions);
+    promise->set_value();
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed creating versions: " << e.what();
+    promise->set_exception(boost::current_exception());
+  }
+  return promise->get_future();
+}
+
+template <typename DataName>
 LocalStore::VersionNamesFuture LocalStore::GetVersions(
     const DataName& data_name, const std::chrono::steady_clock::duration& /*timeout*/) {
   LOG(kVerbose) << "Getting versions: " << HexSubstr(data_name.value);
@@ -239,8 +268,10 @@ void LocalStore::PutVersion(const DataName& data_name,
     KeyType key(data_name);
     std::lock_guard<std::mutex> lock(mutex_);
     auto versions(ReadVersions(key));
-    if (!versions)
-      versions.reset(new StructuredDataVersions(100, 5));
+    if (!versions) {
+      LOG(kError) << "Failed to read versions";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
     versions->Put(old_version_name, new_version_name);
     WriteVersions(key, *versions);
   }

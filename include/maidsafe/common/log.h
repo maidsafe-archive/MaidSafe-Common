@@ -21,11 +21,11 @@
 
 #include <cstdarg>
 #include <ctime>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <fstream>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -84,7 +84,7 @@ struct Envoid {
   void operator&(NullStream&) {}
 };
 
-const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFatal = 4;
+const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlways = 4;
 
 #ifdef USE_LOGGING
 #define LOG(level)                                                                            \
@@ -93,8 +93,7 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kFat
 #else
 #define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
-#define TLOG(colour) maidsafe::log::GtestLogMessage(maidsafe::log::Colour::colour).messageStream()
-#define GLOG() maidsafe::log::GraphLogMessage().messageStream()
+#define TLOG(colour) maidsafe::log::TestLogMessage(maidsafe::log::Colour::colour).messageStream()
 
 class LogMessage {
  public:
@@ -110,24 +109,14 @@ class LogMessage {
   std::ostringstream stream_;
 };
 
-class GtestLogMessage {
+class TestLogMessage {
  public:
-  explicit GtestLogMessage(Colour colour);
-  ~GtestLogMessage();
+  explicit TestLogMessage(Colour colour);
+  ~TestLogMessage();
   std::ostringstream& messageStream() { return stream_; }
 
  private:
   const Colour kColour_;
-  std::ostringstream stream_;
-};
-
-class GraphLogMessage {
- public:
-  GraphLogMessage();
-  ~GraphLogMessage();
-  std::ostringstream& messageStream() { return stream_; }
-
- private:
   std::ostringstream stream_;
 };
 
@@ -137,13 +126,16 @@ class Logging {
   // Returns unused options
   template <typename Char>
   std::vector<std::vector<Char>> Initialise(int argc, Char** argv);
+  void SetVlogPrefix(const std::string& prefix);
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
+  void WriteToVisualiserLogfile(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
   bool Async() const { return !no_async_; }
   bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
+  std::string VlogPrefix() const { return vlog_prefix_; }
   void Flush();
 
  private:
@@ -157,6 +149,7 @@ class Logging {
   void HandleFilterOptions();
   boost::filesystem::path GetLogfileName(const std::string& project) const;
   void SetStreams();
+  void WriteToLogfile(const std::string& message, LogFile& log_file);
 
   boost::program_options::variables_map log_variables_;
   FilterMap filter_;
@@ -164,10 +157,17 @@ class Logging {
   std::time_t start_time_;
   boost::filesystem::path log_folder_;
   ColourMode colour_mode_;
-  LogFile combined_logfile_stream_;
+  LogFile combined_logfile_stream_, visualiser_logfile_stream_;
   std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
+  std::string vlog_prefix_;
   Active background_;
 };
+
+namespace detail {
+
+std::string GetLocalTime();
+
+}  // namespace detail
 
 }  // namespace log
 

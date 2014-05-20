@@ -23,8 +23,10 @@
 #include <Windows.h>
 #else
 #include <sys/types.h>
+#include <unistd.h>
 #endif
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -35,6 +37,8 @@
 namespace maidsafe {
 
 namespace process {
+
+typedef uint64_t ProcessId;
 
 #ifdef MAIDSAFE_WIN32
 
@@ -48,6 +52,8 @@ struct ManagedHandle {
 
 typedef ManagedHandle ProcessInfo;
 
+bool IsRunning(HANDLE handle);
+
 #else
 
 typedef pid_t ProcessInfo;
@@ -55,6 +61,8 @@ typedef pid_t ProcessInfo;
 std::string ConstructCommandLine(const std::vector<std::string>& process_args);
 
 #endif
+
+ProcessId GetProcessId();
 
 bool IsRunning(const ProcessInfo& process_info);
 

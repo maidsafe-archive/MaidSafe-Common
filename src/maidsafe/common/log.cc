@@ -24,6 +24,7 @@
 #include <unistd.h>
 #endif
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -61,7 +62,8 @@ void UseUnreferenced() {
 }
 #endif
 
-std::once_flag logging_initialised;
+std::atomic<bool> vlog_prefix_initialised{ false };
+std::once_flag logging_initialised, vlog_prefix_once_flag;
 
 std::mutex& g_console_mutex() {
   static std::mutex mutex;
@@ -194,28 +196,13 @@ void GetColourAndLevel(char& log_level, Colour& colour, int level) {
       log_level = 'E';
       colour = Colour::kRed;
       break;
-    case kFatal:
-      log_level = 'F';
-      colour = Colour::kRed;
+    case kAlways:
+      log_level = 'A';
+      colour = Colour::kDefaultColour;
       break;
     default:
       log_level = ' ';
   }
-}
-
-std::string GetLocalTime() {
-  auto now(std::chrono::system_clock::now());
-  auto seconds_since_epoch(
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
-
-  std::time_t now_t(std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::time_point(seconds_since_epoch)));
-
-  char temp[10];
-  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-
-  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
 }
 
 std::string GetColouredLogEntry(char log_level) {
@@ -226,7 +213,7 @@ std::string GetColouredLogEntry(char log_level) {
 #else
   oss << ' ';
 #endif
-  oss << GetLocalTime();
+  oss << detail::GetLocalTime();
   return oss.str();
 }
 
@@ -309,7 +296,7 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
                               this_exe_path.c_str() + this_exe_path.size() + 1u);
   auto unuseds(po::collect_unrecognized(parsed.options, po::include_positional));
   if (log_variables.count("help")) {
-    const Char help[] = {'-', '-', 'h', 'e', 'l', 'p'};
+    const Char help[] = {'-', '-', 'h', 'e', 'l', 'p', '\0'};
     unuseds.push_back(help);
   }
   for (const auto& unused : unuseds)
@@ -340,7 +327,7 @@ int GetLogLevel(std::string level) {
     return 2;
   if ((level == "e") || (level == "error") || (level == "kerror") || (level == "3"))
     return 3;
-  if ((level == "f") || (level == "fatal") || (level == "kfatal") || (level == "4"))
+  if ((level == "a") || (level == "always") || (level == "kalways") || (level == "4"))
     return 4;
   return std::numeric_limits<int>::min();
 }
@@ -363,6 +350,9 @@ bool SetupLogFolder(const fs::path& log_folder) {
 
 }  // unnamed namespace
 
+
+
+// ======================================= LogMessage ==============================================
 LogMessage::LogMessage(std::string file, int line, std::string function, int level)
     : file_(std::move(file)),
       kLine_(line),
@@ -391,9 +381,12 @@ LogMessage::~LogMessage() {
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
 
-GtestLogMessage::GtestLogMessage(Colour colour) : kColour_(colour), stream_() {}
 
-GtestLogMessage::~GtestLogMessage() {
+
+// ===================================== TestLogMessage ============================================
+TestLogMessage::TestLogMessage(Colour colour) : kColour_(colour), stream_() {}
+
+TestLogMessage::~TestLogMessage() {
   Colour colour(kColour_);
   std::string log_entry(stream_.str());
   FilterMap filter(Logging::Instance().Filter());
@@ -408,25 +401,9 @@ GtestLogMessage::~GtestLogMessage() {
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
 
-GraphLogMessage::GraphLogMessage() : stream_() {
-  stream_ << "[" << GetLocalTime() << "] ";
-}
 
-GraphLogMessage::~GraphLogMessage() {
-  stream_ << "\n";
-  std::string log_entry(stream_.str());
-  FilterMap filter(Logging::Instance().Filter());
-  auto print_functor([log_entry, filter] {
-    if (Logging::Instance().LogToConsole())
-      ColouredPrint(Colour::kDefaultColour, log_entry);
-    for (auto& entry : filter)
-      Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
-    if (filter.size() != 1)
-      Logging::Instance().WriteToCombinedLogfile(log_entry);
-  });
-  Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
-}
 
+// ========================================= Logging ===============================================
 Logging::Logging()
     : log_variables_(),
       filter_(),
@@ -436,7 +413,9 @@ Logging::Logging()
       log_folder_(),
       colour_mode_(ColourMode::kPartialLine),
       combined_logfile_stream_(),
+      visualiser_logfile_stream_(),
       project_logfile_streams_(),
+      vlog_prefix_("Vault ID uninitialised"),
       background_() {
   // Force intialisation order to ensure g_console_mutex is available in Logging's destuctor.
   std::lock_guard<std::mutex> lock(g_console_mutex());
@@ -472,6 +451,15 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
   return unused_options;
 }
 
+void Logging::SetVlogPrefix(const std::string& prefix) {
+  if (vlog_prefix_initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
+  std::call_once(vlog_prefix_once_flag, [&] {
+    vlog_prefix_initialised = true;
+    vlog_prefix_ = prefix;
+  });
+}
+
 template <>
 std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) {
   SetThisExecutablePath(argv);
@@ -500,7 +488,7 @@ bool Logging::IsHelpOption(const po::options_description& log_config) const {
 #ifdef USE_LOGGING
   if (log_variables_.count("help")) {
     std::cout << log_config << "Logging levels are as follows:\n"
-              << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Fatal(F), Graph(G)\n\n\n";
+              << "Verbose(V), Info(I), Success(S), Warning(W), Error(E), Always(A)\n\n\n";
     return true;
   }
   return false;
@@ -545,27 +533,33 @@ void Logging::SetStreams() {
 
   if (filter_.size() != 1)
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
+
+  visualiser_logfile_stream_.stream.open(GetLogfileName("visualiser").c_str(),
+                                         std::ios_base::trunc);
 }
 
 void Logging::Send(std::function<void()> message_functor) { background_.Send(message_functor); }
 
-void Logging::WriteToCombinedLogfile(const std::string& message) {
-  std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
-  if (combined_logfile_stream_.stream.good()) {
-    combined_logfile_stream_.stream.write(message.c_str(), message.size());
-    combined_logfile_stream_.stream.flush();
+void Logging::WriteToLogfile(const std::string& message, LogFile& log_file) {
+  std::lock_guard<std::mutex> lock(log_file.mutex);
+  if (log_file.stream.good()) {
+    log_file.stream.write(message.c_str(), message.size());
+    log_file.stream.flush();
   }
+}
+
+void Logging::WriteToCombinedLogfile(const std::string& message) {
+  WriteToLogfile(message, combined_logfile_stream_);
+}
+
+void Logging::WriteToVisualiserLogfile(const std::string& message) {
+  WriteToLogfile(message, visualiser_logfile_stream_);
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
   auto itr(project_logfile_streams_.find(project));
-  if (itr != project_logfile_streams_.end()) {
-    std::lock_guard<std::mutex> lock((*itr).second->mutex);
-    if ((*itr).second->stream.good()) {
-      (*itr).second->stream.write(message.c_str(), message.size());
-      (*itr).second->stream.flush();
-    }
-  }
+  if (itr != project_logfile_streams_.end())
+    WriteToLogfile(message, *(itr->second));
 }
 
 void Logging::Flush() {
@@ -576,6 +570,25 @@ void Logging::Flush() {
   std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
   combined_logfile_stream_.stream.flush();
 }
+
+namespace detail {
+
+std::string GetLocalTime() {
+  auto now(std::chrono::system_clock::now());
+  auto seconds_since_epoch(
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+
+  std::time_t now_t(std::chrono::system_clock::to_time_t(
+      std::chrono::system_clock::time_point(seconds_since_epoch)));
+
+  char temp[10];
+  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+
+  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+}
+
+}  // namespace detail
 
 }  // namespace log
 

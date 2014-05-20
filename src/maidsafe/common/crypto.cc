@@ -76,12 +76,9 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
   }
   std::string result;
   try {
-    byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.string(), true, new CryptoPP::ArraySink(byte_key, AES256_KeySize));
-    CryptoPP::StringSource(initialisation_vector.string(), true,
-                           new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
-
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(byte_key, AES256_KeySize, byte_iv);
+    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(
+        reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
+        reinterpret_cast<const byte*>(initialisation_vector.string().data()));
     CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
                                                      encryptor, new CryptoPP::StringSink(result)));
   }
@@ -100,12 +97,9 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
   }
   std::string result;
   try {
-    byte byte_key[AES256_KeySize], byte_iv[AES256_IVSize];
-    CryptoPP::StringSource(key.string(), true, new CryptoPP::ArraySink(byte_key, AES256_KeySize));
-    CryptoPP::StringSource(initialisation_vector.string(), true,
-                           new CryptoPP::ArraySink(byte_iv, AES256_IVSize));
-
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(byte_key, AES256_KeySize, byte_iv);
+    CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(
+        reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
+        reinterpret_cast<const byte*>(initialisation_vector.string().data()));
     CryptoPP::StringSource(input->string(), true, new CryptoPP::StreamTransformationFilter(
                                                      decryptor, new CryptoPP::StringSink(result)));
   }
@@ -169,7 +163,7 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
   for (int i = 0; i < number_of_shares; ++i) {
     string_sink[i].reset(new CryptoPP::StringSink(out_strings[i]));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
-    string_sink[i]->Put(const_cast<byte*>(reinterpret_cast<const byte*>(channel.data())), 4);
+    string_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
     // see http://www.cryptopp.com/wiki/ChannelSwitch
     channel_switch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
   }

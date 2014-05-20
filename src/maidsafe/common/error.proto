@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,36 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_ASIO_SERVICE_H_
-#define MAIDSAFE_COMMON_ASIO_SERVICE_H_
+package maidsafe.protobuf;
 
-#include <atomic>
-#include <cstdint>
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <vector>
-
-#include "boost/asio/io_service.hpp"
-
-namespace maidsafe {
-
-class AsioService {
- public:
-  explicit AsioService(size_t thread_count);
-  ~AsioService();
-  void Stop();
-  boost::asio::io_service& service();
-  size_t ThreadCount() const;
-
- private:
-  std::atomic<size_t> thread_count_;
-  boost::asio::io_service service_;
-  std::unique_ptr<boost::asio::io_service::work> work_;
-  std::vector<std::thread> threads_;
-  mutable std::mutex mutex_;
-};
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_ASIO_SERVICE_H_
+message maidsafe_error {
+  required int64 value = 1;
+}

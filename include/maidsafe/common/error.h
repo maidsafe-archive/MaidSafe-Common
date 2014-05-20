@@ -19,17 +19,20 @@
 #ifndef MAIDSAFE_COMMON_ERROR_H_
 #define MAIDSAFE_COMMON_ERROR_H_
 
+#include <cstdint>
 #include <string>
 #include <system_error>
 
 #include "boost/exception/all.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/tagged_value.h"
 
 namespace maidsafe {
 
 class maidsafe_error : public std::system_error {
  public:
+  typedef TaggedValue<std::string, struct SerialisedErrorTag> serialised_type;
   maidsafe_error(std::error_code ec, const std::string& what_arg)
       : std::system_error(ec, what_arg) {}
   maidsafe_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
@@ -40,6 +43,11 @@ class maidsafe_error : public std::system_error {
       : std::system_error(ev, ecat, what_arg) {}
   maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
 };
+
+int32_t ErrorToInt(maidsafe_error error);
+maidsafe_error IntToError(int32_t);
+maidsafe_error::serialised_type Serialise(maidsafe_error error);
+maidsafe_error Parse(maidsafe_error::serialised_type serialised_error);
 
 enum class CommonErrors {
   success = 0,
@@ -53,6 +61,7 @@ enum class CommonErrors {
   invalid_conversion,
   file_too_large,
   uninitialised,
+  already_initialised,
   hashing_error,
   symmetric_encryption_error,
   symmetric_decryption_error,
@@ -262,6 +271,36 @@ std::error_condition make_error_condition(VaultErrors code);
 const std::error_category& GetVaultCategory();
 vault_error MakeError(VaultErrors code);
 
+enum class VaultManagerErrors {
+  connection_not_found = 1,
+  failed_to_connect,
+  failed_to_listen,
+  connection_aborted,
+  ipc_message_too_large,
+  timed_out,
+  unvalidated_client,
+  vault_exited_with_error,
+  vault_terminated
+};
+
+class vault_manager_error : public maidsafe_error {
+ public:
+  vault_manager_error(std::error_code ec, const std::string& what_arg)
+      : maidsafe_error(ec, what_arg) {}
+  vault_manager_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit vault_manager_error(std::error_code ec) : maidsafe_error(ec) {}
+  vault_manager_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  vault_manager_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  vault_manager_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(VaultManagerErrors code);
+std::error_condition make_error_condition(VaultManagerErrors code);
+const std::error_category& GetVaultManagerCategory();
+vault_manager_error MakeError(VaultManagerErrors code);
+
 enum class ApiErrors {
   kPasswordFailure = 1
 };
@@ -282,12 +321,6 @@ std::error_code make_error_code(ApiErrors code);
 std::error_condition make_error_condition(ApiErrors code);
 const std::error_category& GetApiCategory();
 api_error MakeError(ApiErrors code);
-
-template <typename MaidsafeErrorCode>
-auto MakeBoostException(const MaidsafeErrorCode& code)->
-    decltype(boost::enable_error_info(MakeError(code))) {
-  return boost::enable_error_info(MakeError(code));
-}
 
 }  // namespace maidsafe
 

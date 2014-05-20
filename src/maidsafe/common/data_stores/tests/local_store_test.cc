@@ -76,7 +76,8 @@ TEST_CASE_METHOD(LocalStoreTest, "SuccessfulStore", "[Behavioural]") {
   StructuredDataVersions::VersionName version2(2, ImmutableData::Name(Identity(RandomString(64))));
   MutableData::Name dir_name(Identity(RandomString(64)));
 
-  local_store_.PutVersion(dir_name, default_version, version0);
+  local_store_.PutVersion(dir_name, default_version, version0);  // Silently fails
+  local_store_.CreateVersionTree(dir_name, version0, 20, 5);
   local_store_.PutVersion(dir_name, version0, version1);
   local_store_.PutVersion(dir_name, version1, version2);
 

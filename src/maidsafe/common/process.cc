@@ -21,6 +21,7 @@
 #include <csignal>
 #include <iterator>
 #include <numeric>
+#include <type_traits>
 
 #include "boost/filesystem/operations.hpp"
 
@@ -60,19 +61,36 @@ ManagedHandle::~ManagedHandle() {
   catch (...) {}
 }
 
-bool IsRunning(const ProcessInfo& process_info) {
+bool IsRunning(HANDLE handle) {
   DWORD exit_code;
-  if (GetExitCodeProcess(process_info.handle, &exit_code) == FALSE) {
+  if (GetExitCodeProcess(handle, &exit_code) == FALSE) {
     LOG(kError) << "Failed to get status of process.  Windows error: " << GetLastError();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   return exit_code == STILL_ACTIVE;
 }
 
+ProcessId GetProcessId() {
+  static_assert(std::is_unsigned<decltype(GetCurrentProcessId())>::value, "Must be unsigned.");
+  static_assert(sizeof(decltype(GetCurrentProcessId())) <= sizeof(ProcessId),
+                "Size of ProcessId type is too small to cast into.");
+  return static_cast<ProcessId>(GetCurrentProcessId());
+}
+
+bool IsRunning(const ProcessInfo& process_info) {
+  return IsRunning(process_info.handle);
+}
+
 #else
 
 std::string ConstructCommandLine(const std::vector<std::string>& process_args) {
   return ConcatenateArgs(process_args);
+}
+
+ProcessId GetProcessId() {
+  static_assert(sizeof(decltype(getpid())) < sizeof(ProcessId),
+                "Size of ProcessId type is too small to cast into.");
+  return static_cast<ProcessId>(getpid());
 }
 
 bool IsRunning(const ProcessInfo& process_info) {
