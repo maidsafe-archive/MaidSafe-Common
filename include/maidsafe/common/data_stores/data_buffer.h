@@ -252,6 +252,8 @@ DataBuffer<Key>::~DataBuffer() {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex, std::adopt_lock);
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex, std::adopt_lock);
     running_ = false;
+    memory_store_.cond_var.notify_all();
+    disk_store_.cond_var.notify_all();
   }
   {
     std::unique_lock<std::mutex> worker_lock(worker_mutex_);
@@ -546,13 +548,19 @@ void DataBuffer<Key>::CopyQueueToDisk() {
     {
       // Get oldest value not yet stored to disk
       std::unique_lock<std::mutex> memory_store_lock(memory_store_.mutex);
+      if (!worker_.valid())
+        return;
       auto itr(memory_store_.index.end());
-      memory_store_.cond_var.wait(memory_store_lock, [this, &itr]()->bool {
-        itr = FindOldestInMemoryOnly();
-        return itr != memory_store_.index.end() || !running_;
-      });
+
+      memory_store_.cond_var.wait(memory_store_lock,
+                                        [this, &itr]()->bool {
+                                            itr = FindOldestInMemoryOnly();
+                                            return itr != memory_store_.index.end() || !running_;
+                                        });
       if (!running_)
         return;
+      if (itr == memory_store_.index.end())
+        continue;
 
       key = (*itr).key;
       value = (*itr).value;
