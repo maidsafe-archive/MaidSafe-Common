@@ -21,10 +21,8 @@
 #include <functional>
 #include <string>
 #include <thread>
+#include <chrono>
 
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/on_scope_exit.h"
-#include "maidsafe/common/process.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
@@ -33,11 +31,33 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("CLI", "[cli][Unit]") {
+TEST_CASE("TokenTest", "[cli][Unit]") {
   CLI cli;
   std::string  test_str("this is five small tokens");
   CHECK((cli.TokeniseLine(test_str).size()) == 5);
 }
+
+
+TEST_CASE("GetTest", "[cli][Unit]") {
+  CLI cli;
+  std::string result;
+  auto func = [&] { result = cli.Get<std::string>("test");};
+  auto func2 = [&] { std::cout << std::string("input\n");};
+  std::thread t1(func);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::thread t2(func2);
+  t1.join();
+  t2.join();
+  CHECK(result == "input");
+
+}
+
+
+TEST_CASE("MenuTest", "[cli][Unit]") {
+  CLI cli;
+  
+}
+
 
 }  // namespace test
 
