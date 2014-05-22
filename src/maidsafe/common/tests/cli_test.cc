@@ -22,6 +22,14 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <iostream>
+#include <streambuf>
+#include "boost/process/child.hpp"
+#include "boost/process/execute.hpp"
+#include "boost/process/initializers.hpp"
+#include "boost/process/wait_for_exit.hpp"
+#include "boost/process/terminate.hpp"
+#include "boost/system/error_code.hpp"
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -41,14 +49,25 @@ TEST_CASE("TokenTest", "[cli][Unit]") {
 TEST_CASE("GetTest", "[cli][Unit]") {
   CLI cli;
   std::string result;
-  auto func = [&] { result = cli.Get<std::string>("test");};
-  auto func2 = [&] { std::cout << std::string("input\n");};
-  std::thread t1(func);
-  std::this_thread::sleep_for(std::chrono::seconds(1));
-  std::thread t2(func2);
-  t1.join();
-  t2.join();
+  // grab original cin as streambuf ptr
+  std::streambuf* orig = std::cin.rdbuf();
+  // redirect cin 
+  std::istringstream input("input\n");
+  std::cin.rdbuf(input.rdbuf());
+  // test
+  result = cli.Get<std::string>("test");
   CHECK(result == "input");
+  result.clear(); 
+  CHECK(result.empty());
+
+  // redirect cin 
+  std::istringstream input2("badinput\n");
+  std::cin.rdbuf(input2.rdbuf());
+  // test
+  result = cli.Get<std::string>("test");
+  CHECK(result != "input");
+  // reset cin back to normal
+  std::cin.rdbuf(orig);
 
 }
 
