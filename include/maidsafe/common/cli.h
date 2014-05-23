@@ -75,14 +75,14 @@ struct MenuItem{
 };
 
 struct Menu {
-  Menu(MenuLevel root_level);
+  Menu();
   void add_level(MenuLevel level, MenuLevel parent);
   void add_item(MenuItem item);
   void start_menu();
  private:
   std::vector<MenuItem> menus_;
-  MenuLevel root_level_;
   std::vector<std::pair<MenuLevel, MenuLevel>> levels_;
+  std::vector<std::pair<MenuLevel, MenuLevel>>::iterator level_itr_;
   CLI cli_;
 };
 

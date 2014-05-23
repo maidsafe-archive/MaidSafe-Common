@@ -55,8 +55,8 @@ MenuItem::MenuItem(std::string name, MenuLevel level, Func func)
 MenuItem::MenuItem(std::string name, MenuLevel level, MenuLevel target_level)
     : name(name), level(level), target_level(target_level), run() {}
 
-Menu::Menu(MenuLevel root_level)
-    : menus_(), root_level_(root_level), levels_(), cli_() {}
+Menu::Menu()
+    : menus_(), levels_(), level_itr_(std::begin(levels_)), cli_() {}
 
 void Menu::add_level(MenuLevel level, MenuLevel parent) {
   levels_.push_back(std::make_pair(level,parent));
@@ -68,8 +68,13 @@ void Menu::add_item(MenuItem item) {
 
 void Menu::start_menu() {
   do{
-    
-  } while(cli_.Get<std::string>("Please Enter Option (Q to quit)") != "Q");
+      std::cout << level_itr_->first.name << "\n";
+      std::cout << "######################################\n";
+    // for (auto i: levels_) {
+      // if (level_itr_->first == i.first) {
+      // }
+    // }
+  } while(cli_.Get<std::string>("\nPlease Enter Option (Q to quit)") != "Q");
 }
 
 
