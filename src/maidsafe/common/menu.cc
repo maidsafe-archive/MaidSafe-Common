@@ -26,32 +26,38 @@
 
 namespace maidsafe {
 
-void Menu::add_level(MenuLevel level, MenuLevel parent) {
-  if (std::any_of(std::begin(levels_), std::end(levels_),[&] (std::pair<MenuLevel, MenuLevel>& up_one)
-                  {
-                  return up_one.first == parent;
-                  }) && level != parent )
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  levels_.push_back(std::make_pair(level,parent));
+void Menu::add_level(MenuLevel level) {
+  current_level_ = level;
 }
 
 void Menu::add_item(MenuItem item) {
-  menus_.push_back(item);
+  menus_.push_back(std::make_pair(current_level_, item));
 }
 
 void Menu::start_menu() {
   int result(999);
-  int level(0);
+  current_level_ = std::begin(menus_)->first;
   while(result != 0) {
-  std::string current = (std::begin(levels_) + level)->first.name; 
-  std::cout << current << "\n";
-  std::cout << "\n######################################\n";
-  for (auto i: levels_) {
+  for(int i = 0 ; i < 200; ++i)
+    std::cout << "\n";  // very ugly hack
+  std::cout << "\n###################################################\n";
+  std::cout << "\t" << current_level_.name << "\n";
+  std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+// code here
+  if(result != 0 && (std::begin(menus_) + result)->second.run != nullptr)
+   (std::begin(menus_) + result - 1)->second.run();
+  else if (result != 0 && (std::begin(menus_) + result)->second.name != MenuLevel())
+    current_level_ =  (std::begin(menus_) + result)->second.name; 
 
-    if (result != 0) {
-      std::cout << " You selected " << i.first.name;
+  std::pair<int, MenuItem> option(1, MenuItem());
+  for (auto i: menus_) {
+    if (i.first.name == current_level_) {
+      std::cout << "\n" << option.first << ": \t\t" << i.second.name;
+      option = std::make_pair(option.first, i.second);
+      ++option.first;
     }
   }
+  std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
   result = cli_.Get<int>("\nPlease Enter Option (0 to quit)");
   }
 }

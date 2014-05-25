@@ -53,13 +53,12 @@ class Menu {
   Menu() = default;
   ~Menu() = default;
   
-  void add_level(MenuLevel level, MenuLevel parent);
+  void add_level(MenuLevel level);
   void add_item(MenuItem item);
   void start_menu();
  private:
-  std::vector<MenuItem> menus_;
-  std::vector<std::pair<MenuLevel, MenuLevel>> levels_;
-  std::vector<std::pair<MenuLevel, MenuLevel>>::iterator level_itr_;
+  MenuLevel current_level_;
+  std::vector<std::pair<MenuLevel, MenuItem>> menus_;
   CLI cli_;
 };
 

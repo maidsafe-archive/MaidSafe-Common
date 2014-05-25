@@ -32,25 +32,24 @@ namespace maidsafe {
 typedef std::function<void()> Func;
 
 struct MenuItem{
-  MenuItem(std::string name, MenuLevel level, Func func)
-      : name(name), level(level), target_level(level), run(func) {}
+  MenuItem(std::string name, Func func)
+      : name(name), target_level(), run(func) {}
 
-  MenuItem(std::string name, MenuLevel level, MenuLevel target_level)
-      : name(name), level(level), target_level(target_level) {}
+  MenuItem(std::string name, MenuLevel target_level)
+      : name(name), target_level(target_level), run(nullptr) {}
 
+  MenuItem() = default;
   ~MenuItem() = default;
 
   MenuItem(const MenuItem& other) = default;
   MenuItem(MenuItem&& other)
       : name(std::move(other.name)),
-        level(std::move(other.level)),
-        target_level(std::move(other.level)),
+        target_level(std::move(other.target_level)),
         run(std::move(other.run)) {}
 
   void swap(MenuItem& lhs, MenuItem& rhs) noexcept {
     using std::swap;
     swap(lhs.name, rhs.name);
-    swap(lhs.level, rhs.level);
     swap(lhs.target_level, rhs.target_level);
     swap(lhs.run, rhs.run);
   }
@@ -62,8 +61,8 @@ struct MenuItem{
 
   friend
   bool operator==(const MenuItem& lhs, const MenuItem& rhs) {
-    return std::tie(lhs.name, lhs.level, lhs.target_level)
-        == std::tie(rhs.name, rhs.level, rhs.target_level);
+    return std::tie(lhs.name, lhs.target_level)
+        == std::tie(rhs.name, rhs.target_level);
   }
 
   friend
@@ -72,7 +71,6 @@ struct MenuItem{
   }
 
   std::string name;
-  MenuLevel level;
   MenuLevel target_level;
   Func run;
 };

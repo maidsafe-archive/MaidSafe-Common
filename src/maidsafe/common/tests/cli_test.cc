@@ -71,13 +71,41 @@ TEST_CASE("MenuTest", "[cli][Unit]") {
   int test_value(0);
   auto inc = [&] () { ++test_value;};
   MenuLevel main("Main");
-  MenuItem one("one", main, inc);
+  MenuItem one("one", inc);
+  MenuItem two("two", inc);
+  MenuItem three("three", [&] () { --test_value;});
+  // grab original cin as streambuf ptr
+  std::streambuf* orig = std::cin.rdbuf();
+  // redirect cin 
+  std::istringstream input("1\n0\n");
+  std::cin.rdbuf(input.rdbuf());
 
   Menu menu;
-  menu.add_level(main, main);
+  menu.add_level(main);
   menu.add_item(one);
+  menu.add_item(two);
+  menu.add_item(three);
   menu.start_menu();
-  // CHECK(test_value == "1");
+  CHECK(test_value == 1);
+  std::cin.rdbuf(orig);
+
+  // grab original cin as streambuf ptr
+  orig = std::cin.rdbuf();
+  // redirect cin 
+  std::istringstream input2("1\n1\n0\n");
+  std::cin.rdbuf(input2.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 3);  // 3 as we are updating a reference
+  std::cin.rdbuf(orig);
+  
+  // grab original cin as streambuf ptr
+  orig = std::cin.rdbuf();
+  // redirect cin 
+  std::istringstream input3("3\n3\n0\n");
+  std::cin.rdbuf(input3.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 1);  // 3 as we are updating a reference
+  std::cin.rdbuf(orig);
 }
 
 

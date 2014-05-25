@@ -27,6 +27,7 @@ namespace maidsafe {
 
 struct MenuLevel {
   MenuLevel(std::string name) : name(name) {}
+  MenuLevel() : name() {}
   ~MenuLevel() = default;
 
   MenuLevel(const MenuLevel& other) = default;
