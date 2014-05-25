@@ -27,39 +27,55 @@
 namespace maidsafe {
 
 void Menu::add_level(MenuLevel level) {
-  current_level_ = level;
+  if (menus_.empty()) current_level_ = level.name;
+  MenuItem item(level.name, level);
+  menus_.push_back(std::make_pair(current_level_, item));
+  current_level_ = level.name;
 }
 
-void Menu::add_item(MenuItem item) {
-  menus_.push_back(std::make_pair(current_level_, item));
-}
+void Menu::add_item(MenuItem item) { menus_.push_back(std::make_pair(current_level_, item)); }
 
 void Menu::start_menu() {
   int result(999);
   current_level_ = std::begin(menus_)->first;
-  while(result != 0) {
-  for(int i = 0 ; i < 200; ++i)
-    std::cout << "\n";  // very ugly hack
+  std::vector<Option> current_options;
+
+  while (result != 0) {
+    if (result == 99) current_level_ = previous_level_;
+    auto found = std::find_if(std::begin(current_options), std::end(current_options),
+                              [&](Option& member) { return (member.first == result); });
+
+    if (found != std::end(current_options)) ExecuteOption(*found);
+    current_options.clear();
+    int counter(0);
+    Header();
+    for (auto itr = std::begin(menus_); itr < std::end(menus_); ++itr) {
+      if (itr->first.name == current_level_ && itr != std::begin(menus_)) {
+        std::cout << "\n" << ++counter << ": \t\t" << itr->second.name;
+        current_options.push_back(std::make_pair(counter, itr));
+      }
+      if (itr->second.name == current_level_) previous_level_ = itr->first.name;
+    }
+    if (previous_level_ != current_level_)
+      std::cout << "\n" << 99 << ": \t\tBack to: " << previous_level_.name;
+
+    std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+    result = cli_.Get<int>("\nPlease Enter Option (0 to quit)");
+  }
+}
+
+void Menu::ExecuteOption(Option option) {
+  if (option.second->second.run != nullptr)
+    option.second->second.run();
+  else if (!option.second->second.name.empty())
+    current_level_ = option.second->second.name;
+}
+
+void Menu::Header() {
+  for (int i = 0; i < 200; ++i) std::cout << "\n";  // very ugly hack
   std::cout << "\n###################################################\n";
   std::cout << "\t" << current_level_.name << "\n";
   std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-// code here
-  if(result != 0 && (std::begin(menus_) + result)->second.run != nullptr)
-   (std::begin(menus_) + result - 1)->second.run();
-  else if (result != 0 && (std::begin(menus_) + result)->second.name != MenuLevel())
-    current_level_ =  (std::begin(menus_) + result)->second.name; 
-
-  std::pair<int, MenuItem> option(1, MenuItem());
-  for (auto i: menus_) {
-    if (i.first.name == current_level_) {
-      std::cout << "\n" << option.first << ": \t\t" << i.second.name;
-      option = std::make_pair(option.first, i.second);
-      ++option.first;
-    }
-  }
-  std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-  result = cli_.Get<int>("\nPlease Enter Option (0 to quit)");
-  }
 }
 
 }  // namespace maidsafe

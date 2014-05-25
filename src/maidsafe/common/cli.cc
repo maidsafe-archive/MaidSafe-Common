@@ -45,7 +45,6 @@ namespace maidsafe {
 
 CLI::CLI(std::string prompt) : kPrompt_(prompt) {}
 
-
 void CLI::Echo(bool enable) {
 #ifdef WIN32
   HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
@@ -74,8 +73,7 @@ std::string CLI::GetPasswd(bool repeat) {
   std::string passwd("r"), passwd2("s");
   do {
     passwd = Get<std::string>("please Enter passwd \n", false);
-    if (repeat)
-      passwd2 = Get<std::string>("please Re-Enter same passwd \n", false);
+    if (repeat) passwd2 = Get<std::string>("please Re-Enter same passwd \n", false);
   } while ((passwd != passwd2) && (repeat));
   return maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(passwd).string();
 }

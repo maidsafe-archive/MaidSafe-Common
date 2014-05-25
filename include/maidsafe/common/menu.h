@@ -19,7 +19,6 @@
 #ifndef MAIDSAFE_COMMON_MENU_H_
 #define MAIDSAFE_COMMON_MENU_H_
 
-
 #if defined MAIDSAFE_WIN32
 #include <windows.h>
 #else
@@ -42,8 +41,8 @@
 #include <functional>
 #include <utility>
 
-#include "maidsafe/common/menu_level.h"
-#include "maidsafe/common/menu_item.h"
+#include "maidsafe/common/detail/menu_level.h"
+#include "maidsafe/common/detail/menu_item.h"
 #include "maidsafe/common/cli.h"
 
 namespace maidsafe {
@@ -52,12 +51,17 @@ class Menu {
  public:
   Menu() = default;
   ~Menu() = default;
-  
+
   void add_level(MenuLevel level);
   void add_item(MenuItem item);
   void start_menu();
+
  private:
+  using Option = std::pair<int, std::vector<std::pair<MenuLevel, MenuItem>>::iterator>;
+  void Header();
+  void ExecuteOption(Option option);
   MenuLevel current_level_;
+  MenuLevel previous_level_;
   std::vector<std::pair<MenuLevel, MenuItem>> menus_;
   CLI cli_;
 };

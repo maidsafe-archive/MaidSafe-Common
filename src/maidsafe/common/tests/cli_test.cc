@@ -16,7 +16,6 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-
 #include <functional>
 #include <string>
 #include <thread>
@@ -29,33 +28,31 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-
 namespace maidsafe {
 
 namespace test {
 
 TEST_CASE("TokenTest", "[cli][Unit]") {
   CLI cli;
-  std::string  test_str("this is five small tokens");
+  std::string test_str("this is five small tokens");
   CHECK((cli.TokeniseLine(test_str).size()) == 5);
 }
-
 
 TEST_CASE("GetTest", "[cli][Unit]") {
   CLI cli;
   std::string result;
   // grab original cin as streambuf ptr
   std::streambuf* orig = std::cin.rdbuf();
-  // redirect cin 
+  // redirect cin
   std::istringstream input("input\n");
   std::cin.rdbuf(input.rdbuf());
   // test
   result = cli.Get<std::string>("test");
   CHECK(result == "input");
-  result.clear(); 
+  result.clear();
   CHECK(result.empty());
 
-  // redirect cin 
+  // redirect cin
   std::istringstream input2("badinput\n");
   std::cin.rdbuf(input2.rdbuf());
   // test
@@ -63,20 +60,18 @@ TEST_CASE("GetTest", "[cli][Unit]") {
   CHECK(result != "input");
   // reset cin back to normal
   std::cin.rdbuf(orig);
-
 }
 
-
-TEST_CASE("MenuTest", "[cli][Unit]") {
+TEST_CASE("MenuFunctions", "[cli][Unit]") {
   int test_value(0);
-  auto inc = [&] () { ++test_value;};
+  auto inc = [&]() { ++test_value; };
   MenuLevel main("Main");
   MenuItem one("one", inc);
   MenuItem two("two", inc);
-  MenuItem three("three", [&] () { --test_value;});
+  MenuItem three("three", [&]() { --test_value; });
   // grab original cin as streambuf ptr
   std::streambuf* orig = std::cin.rdbuf();
-  // redirect cin 
+  // redirect cin
   std::istringstream input("1\n0\n");
   std::cin.rdbuf(input.rdbuf());
 
@@ -91,23 +86,102 @@ TEST_CASE("MenuTest", "[cli][Unit]") {
 
   // grab original cin as streambuf ptr
   orig = std::cin.rdbuf();
-  // redirect cin 
+  // redirect cin
   std::istringstream input2("1\n1\n0\n");
   std::cin.rdbuf(input2.rdbuf());
   menu.start_menu();
   CHECK(test_value == 3);  // 3 as we are updating a reference
   std::cin.rdbuf(orig);
-  
+
   // grab original cin as streambuf ptr
   orig = std::cin.rdbuf();
-  // redirect cin 
+  // redirect cin
   std::istringstream input3("3\n3\n0\n");
   std::cin.rdbuf(input3.rdbuf());
   menu.start_menu();
-  CHECK(test_value == 1);  // 3 as we are updating a reference
+  CHECK(test_value == 1);
   std::cin.rdbuf(orig);
 }
 
+TEST_CASE("MenuHierarchy", "[cli][Unit]") {
+  int test_value(0);
+  auto inc = [&]() { ++test_value; };
+  auto dec = [&]() { --test_value; };
+  MenuLevel main("Main");
+  MenuItem one("one", inc);
+  MenuItem two("two", inc);
+  MenuItem three("three", dec);
+  MenuLevel sub("Sub");
+  MenuLevel subsub("SubSub");
+
+  Menu menu;
+  menu.add_level(main);
+  menu.add_item(one);
+  menu.add_item(two);
+  menu.add_item(three);
+
+  menu.add_level(sub);
+  menu.add_item(one);
+
+  menu.add_level(subsub);
+  menu.add_item(three);
+  menu.add_item(one);
+  menu.add_item(three);
+
+  // grab original cin as streambuf ptr
+  std::streambuf* orig = std::cin.rdbuf();
+  // redirect cin
+  std::istringstream input("1\n0\n");
+  std::cin.rdbuf(input.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 1);
+  std::cin.rdbuf(orig);
+
+  // grab original cin as streambuf ptr
+  orig = std::cin.rdbuf();
+  // redirect cin
+  std::istringstream input2("1\n1\n0\n");
+  std::cin.rdbuf(input2.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 3);  // 3 as we are updating a reference
+  std::cin.rdbuf(orig);
+
+  // inc and dec to make sure we ar doing the right thing
+  orig = std::cin.rdbuf();
+  // redirect cin
+  std::istringstream input3("3\n3\n0\n0\n");
+  std::cin.rdbuf(input3.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 1);
+  std::cin.rdbuf(orig);
+
+  // check up and down heirarchy
+  orig = std::cin.rdbuf();
+  // redirect cin
+  std::istringstream input4("4\n2\n99\n99\n0\n");
+  std::cin.rdbuf(input4.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 1);
+  std::cin.rdbuf(orig);
+
+  // check running copied function ptr is OK
+  orig = std::cin.rdbuf();
+  // redirect cin
+  std::istringstream input5("4\n2\n1\n99\n99\n0\n");
+  std::cin.rdbuf(input5.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 0);
+  std::cin.rdbuf(orig);
+
+  // just exit
+  orig = std::cin.rdbuf();
+  // redirect cin
+  std::istringstream input6("0\n\r\n");
+  std::cin.rdbuf(input6.rdbuf());
+  menu.start_menu();
+  CHECK(test_value == 0);
+  std::cin.rdbuf(orig);
+}
 
 }  // namespace test
 

@@ -25,15 +25,14 @@
 #include <tuple>
 #include <functional>
 
-#include "maidsafe/common/menu_level.h"
+#include "maidsafe/common/detail/menu_level.h"
 
 namespace maidsafe {
 
 typedef std::function<void()> Func;
 
-struct MenuItem{
-  MenuItem(std::string name, Func func)
-      : name(name), target_level(), run(func) {}
+struct MenuItem {
+  MenuItem(std::string name, Func func) : name(name), target_level(), run(func) {}
 
   MenuItem(std::string name, MenuLevel target_level)
       : name(name), target_level(target_level), run(nullptr) {}
@@ -43,31 +42,15 @@ struct MenuItem{
 
   MenuItem(const MenuItem& other) = default;
   MenuItem(MenuItem&& other)
-      : name(std::move(other.name)),
-        target_level(std::move(other.target_level)),
-        run(std::move(other.run)) {}
+      : name(std::move(other.name))
+      , target_level(std::move(other.target_level))
+      , run(std::move(other.run)) {}
 
-  void swap(MenuItem& lhs, MenuItem& rhs) noexcept {
-    using std::swap;
-    swap(lhs.name, rhs.name);
-    swap(lhs.target_level, rhs.target_level);
-    swap(lhs.run, rhs.run);
-  }
+  void swap(MenuItem& lhs, MenuItem& rhs) noexcept;
 
   MenuItem& operator=(MenuItem other) {
     swap(*this, other);
     return *this;
-  }
-
-  friend
-  bool operator==(const MenuItem& lhs, const MenuItem& rhs) {
-    return std::tie(lhs.name, lhs.target_level)
-        == std::tie(rhs.name, rhs.target_level);
-  }
-
-  friend
-  bool operator!=(const MenuItem& lhs, const MenuItem& rhs) {
-    return !operator==(lhs, rhs);
   }
 
   std::string name;
@@ -75,9 +58,18 @@ struct MenuItem{
   Func run;
 };
 
+inline void MenuItem::swap(MenuItem& lhs, MenuItem& rhs) noexcept {
+  using std::swap;
+  swap(lhs.name, rhs.name);
+  swap(lhs.target_level, rhs.target_level);
+  swap(lhs.run, rhs.run);
+}
 
+inline bool operator==(const MenuItem& lhs, const MenuItem& rhs) {
+  return std::tie(lhs.name, lhs.target_level) == std::tie(rhs.name, rhs.target_level);
+}
 
-
+inline bool operator!=(const MenuItem& lhs, const MenuItem& rhs) { return !operator==(lhs, rhs); }
 
 }  // namespace maidsafe
 

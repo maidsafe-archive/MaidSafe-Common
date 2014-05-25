@@ -55,6 +55,7 @@ class CLI {
   std::vector<std::string> TokeniseLine(std::string line);
   void Exit();
   std::string GetPasswd(bool repeat = true);
+
  private:
   std::string kPrompt_;
 };
