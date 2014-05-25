@@ -16,19 +16,70 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+/*
+  Documentation 
+  =============  
+
+  This is a very simple menu cli tool. 
+
+  Example use 
+  ===========
+  auto inc = [&]() { ++test_value; }; // create some void functions you wish to run 
+  
+  MenuLevel main("Main"); // create as many levels, use a descriptive name
+  MenuItem one("one", inc); // Create items, these will have a function the sig void f();
+  MenuItem two("two", inc);
+  MenuItem three("three", dec);
+  MenuLevel sub("Sub");
+  MenuLevel subsub("SubSub");
+
+  Menu menu; // give it a name
+  menu.add_level(main); // now add the levels and items in the order you wish them to appear
+  menu.add_item(one);
+  menu.add_item(two);
+  menu.add_item(three);
+
+  menu.add_level(sub);
+  menu.add_item(one);
+
+  menu.add_level(subsub);
+  menu.add_item(three);
+  menu.add_item(one);
+  menu.add_item(three);  
+  menu.start_menu(); // This starts the main loop which runs until the user presses 0.  
+
+  This will create a menu like
+
+  ###################
+  Main
+  ~~~~~~~~~~~~~~~~~~~
+  1: one
+  2: two 
+  3: three
+  4: Sub (this is a sub menu, i.e a level not an item)
+  ~~~~~~~~~~~~~~~~~~~~
+  Select item or 0 to exit 
+
+  If you selected 4 here then you would have  
+  ###################
+  Sub
+  ~~~~~~~~~~~~~~~~~~~
+  1:  one
+  2:  SubSub 
+  99: Back to Sub
+  ~~~~~~~~~~~~~~~~~~~~
+  Select item or 0 to exit 
+
+  That's basically it. You can include CLI objects as menu items if you wish. 
+  Please see the cli_test.cc for information on testing cli tools automatically.
+  This requires redirecting cin and cout etc. 
+ */
+
+
+
+
 #ifndef MAIDSAFE_COMMON_MENU_H_
 #define MAIDSAFE_COMMON_MENU_H_
-
-#if defined MAIDSAFE_WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#if defined MAIDSAFE_LINUX
-#include <termio.h>
-#elif defined MAIDSAFE_APPLE
-#include <termios.h>
-#endif
-#endif
 
 #include <cstdint>
 #include <fstream>
