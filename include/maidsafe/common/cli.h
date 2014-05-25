@@ -48,7 +48,7 @@ typedef std::function<void()> Func;
 
 class CLI {
  public:
-  CLI(std::string prompt = ">> ");
+  explicit CLI(std::string prompt = ">> ");
   template <typename T>
   T Get(std::string display_message, bool echo_input = true);
   void Echo(bool enable = true);

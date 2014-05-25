@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_MENU_LEVEL_H_
-#define MAIDSAFE_COMMON_MENU_LEVEL_H_
+#ifndef MAIDSAFE_COMMON_DETAIL_MENU_LEVEL_H_
+#define MAIDSAFE_COMMON_DETAIL_MENU_LEVEL_H_
 
 #include <cstdint>
 #include <string>
@@ -26,7 +26,7 @@
 namespace maidsafe {
 
 struct MenuLevel {
-  MenuLevel(std::string name) : name(name) {}
+  explicit MenuLevel(std::string name) : name(name) {}
   MenuLevel() : name() {}
   ~MenuLevel() = default;
 
@@ -54,4 +54,4 @@ inline bool operator!=(const MenuLevel& lhs, const MenuLevel& rhs) { return !ope
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_MENU_LEVEL_H_
+#endif  // MAIDSAFE_COMMON_DETAIL_MENU_LEVEL_H_

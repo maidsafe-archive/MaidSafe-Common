@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_MENU_ITEM_H_
-#define MAIDSAFE_COMMON_MENU_ITEM_H_
+#ifndef MAIDSAFE_COMMON_DETAIL_MENU_ITEM_H_
+#define MAIDSAFE_COMMON_DETAIL_MENU_ITEM_H_
 
 #include <cstdint>
 #include <utility>
@@ -73,4 +73,4 @@ inline bool operator!=(const MenuItem& lhs, const MenuItem& rhs) { return !opera
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_MENU_ITEM_H_
+#endif  // MAIDSAFE_COMMON_DETAIL_MENU_ITEM_H_
