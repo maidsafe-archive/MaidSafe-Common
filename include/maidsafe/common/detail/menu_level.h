@@ -29,11 +29,12 @@ struct MenuLevel {
   explicit MenuLevel(std::string name) : name(name) {}
   MenuLevel() : name() {}
   ~MenuLevel() = default;
-
   MenuLevel(const MenuLevel& other) = default;
-  MenuLevel(MenuLevel&& other) : name(std::move(other.name)) {}
-
   void swap(MenuLevel& lhs, MenuLevel& rhs) noexcept;
+
+  MenuLevel(MenuLevel&& other) : MenuLevel() {
+    swap(*this, other);
+  }
 
   MenuLevel& operator=(MenuLevel other) {
     swap(*this, other);

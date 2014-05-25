@@ -27,10 +27,10 @@
 namespace maidsafe {
 
 void Menu::add_level(MenuLevel level) {
-  if (menus_.empty()) current_level_ = level.name;
+  if (menus_.empty()) current_level_ = level;
   MenuItem item(level.name, level);
   menus_.push_back(std::make_pair(current_level_, item));
-  current_level_ = level.name;
+  current_level_ = level;
 }
 
 void Menu::add_item(MenuItem item) { menus_.push_back(std::make_pair(current_level_, item)); }
@@ -50,11 +50,11 @@ void Menu::start_menu() {
     int counter(0);
     Header();
     for (auto itr = std::begin(menus_); itr < std::end(menus_); ++itr) {
-      if (itr->first.name == current_level_ && itr != std::begin(menus_)) {
+      if (itr->first == current_level_ && itr != std::begin(menus_)) {
         std::cout << "\n" << ++counter << ": \t\t" << itr->second.name;
         current_options.push_back(std::make_pair(counter, itr));
       }
-      if (itr->second.name == current_level_) previous_level_ = itr->first.name;
+      if (itr->second.target_level == current_level_) previous_level_ = itr->first;
     }
     if (previous_level_ != current_level_)
       std::cout << "\n" << 99 << ": \t\tBack to: " << previous_level_.name;
@@ -68,7 +68,7 @@ void Menu::ExecuteOption(Option option) {
   if (option.second->second.run != nullptr)
     option.second->second.run();
   else if (!option.second->second.name.empty())
-    current_level_ = option.second->second.name;
+    current_level_ = option.second->second.target_level;
 }
 
 void Menu::Header() {

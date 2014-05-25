@@ -39,14 +39,11 @@ struct MenuItem {
 
   MenuItem() = default;
   ~MenuItem() = default;
-
-  MenuItem(const MenuItem& other) = default;
-  MenuItem(MenuItem&& other)
-      : name(std::move(other.name))
-      , target_level(std::move(other.target_level))
-      , run(std::move(other.run)) {}
-
   void swap(MenuItem& lhs, MenuItem& rhs) noexcept;
+  MenuItem(const MenuItem& other) = default;
+  MenuItem(MenuItem&& other) : MenuItem() {
+        swap (*this, other);
+  }
 
   MenuItem& operator=(MenuItem other) {
     swap(*this, other);
