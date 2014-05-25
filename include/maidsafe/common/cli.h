@@ -19,7 +19,6 @@
 #ifndef MAIDSAFE_COMMON_CLI_H_
 #define MAIDSAFE_COMMON_CLI_H_
 
-
 #if defined MAIDSAFE_WIN32
 #include <windows.h>
 #else
@@ -36,6 +35,7 @@
 #include <iostream>
 #include <istream>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <map>
@@ -59,6 +59,33 @@ class CLI {
   std::string kPrompt_;
 };
 
+#if defined MAIDSAFE_WIN32
+#pragma warning(push)
+#pragma warning(disable : 4701)
+#endif
+template <class T>
+T CLI::Get(std::string display_message, bool echo_input) {
+  Echo(echo_input);
+  std::cout << display_message << "\n";
+  std::cout << kPrompt_ << std::flush;
+  T command;
+  std::string input;
+  while (std::getline(std::cin, input, '\n')) {
+    std::cout << kPrompt_ << std::flush;
+    if (std::stringstream(input) >> command) {
+      Echo(true);
+      return command;
+    } else {
+      Echo(true);
+      std::cout << "invalid option\n";
+      std::cout << kPrompt_ << std::flush;
+    }
+  }
+  return command;
+}
+#if defined MAIDSAFE_WIN32
+#pragma warning(pop)
+#endif
 
 }  // namespace maidsafe
 

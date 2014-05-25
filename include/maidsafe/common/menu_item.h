@@ -71,7 +71,7 @@ struct MenuItem{
     return !operator==(lhs, rhs);
   }
 
- std::string name;
+  std::string name;
   MenuLevel level;
   MenuLevel target_level;
   Func run;

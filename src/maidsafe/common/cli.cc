@@ -45,33 +45,6 @@ namespace maidsafe {
 
 CLI::CLI(std::string prompt) : kPrompt_(prompt) {}
 
-#if defined MAIDSAFE_WIN32
-#pragma warning(push)
-#pragma warning(disable : 4701)
-#endif
-template <class T>
-T CLI::Get(std::string display_message, bool echo_input) {
-  Echo(echo_input);
-  std::cout << display_message << "\n";
-  std::cout << kPrompt_ << std::flush;
-  T command;
-  std::string input;
-  while (std::getline(std::cin, input, '\n')) {
-    std::cout << kPrompt_ << std::flush;
-    if (std::stringstream(input) >> command) {
-      Echo(true);
-      return command;
-    } else {
-      Echo(true);
-      std::cout << "invalid option\n";
-      std::cout << kPrompt_ << std::flush;
-    }
-  }
-  return command;
-}
-#if defined MAIDSAFE_WIN32
-#pragma warning(pop)
-#endif
 
 void CLI::Echo(bool enable) {
 #ifdef WIN32

@@ -22,10 +22,16 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
 void Menu::add_level(MenuLevel level, MenuLevel parent) {
+  if (std::any_of(std::begin(levels_), std::end(levels_),[&] (std::pair<MenuLevel, MenuLevel>& up_one)
+                  {
+                  return up_one.first == parent;
+                  }) && level != parent )
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   levels_.push_back(std::make_pair(level,parent));
 }
 
@@ -34,17 +40,19 @@ void Menu::add_item(MenuItem item) {
 }
 
 void Menu::start_menu() {
-  std::string result("");
-  level_itr_ = std::begin(levels_);
-  std::cout << level_itr_->second.description << "\n";
+  int result(999);
+  int level(0);
+  while(result != 0) {
+  std::string current = (std::begin(levels_) + level)->first.name; 
+  std::cout << current << "\n";
   std::cout << "\n######################################\n";
-  while(result != "Q" &&  result != "q") {
-    for (auto i: levels_) {
-       if (result == i.first.name) {
-          std::cout << " You selected " << i.first.description;
-       }
+  for (auto i: levels_) {
+
+    if (result != 0) {
+      std::cout << " You selected " << i.first.name;
     }
-    result = cli_.Get<std::string>("\nPlease Enter Option (Q to quit)");
+  }
+  result = cli_.Get<int>("\nPlease Enter Option (0 to quit)");
   }
 }
 

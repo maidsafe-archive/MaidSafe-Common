@@ -26,30 +26,26 @@
 namespace maidsafe {
 
 struct MenuLevel {
-  MenuLevel(std::string name, std::string description)
-    : name(name), description(description) {}
+  MenuLevel(std::string name) : name(name) {}
   ~MenuLevel() = default;
 
   MenuLevel(const MenuLevel& other) = default;
   MenuLevel(MenuLevel&& other)
-      : name(std::move(other.name)),
-      description(std::move(other.description)) {}
+      : name(std::move(other.name)) {}
 
   void swap(MenuLevel& lhs, MenuLevel& rhs) noexcept {
     using std::swap;
     swap(lhs.name, rhs.name);
-    swap(lhs.description, rhs.description);
   }
 
   MenuLevel& operator=(MenuLevel other) {
-    swap(*this, other);
+    swap (*this, other);
     return *this;
   }
 
   friend
   bool operator==(const MenuLevel& lhs, const MenuLevel& rhs) {
-    return std::tie(lhs.name, lhs.description)
-        == std::tie(rhs.name, rhs.description);
+    return lhs.name == rhs.name;
   }
 
   friend
@@ -57,8 +53,7 @@ struct MenuLevel {
     return !operator==(lhs, rhs);
   }
 
-  std::string name{""};
-  std::string description{""};
+  std::string name;
 
 };
 
