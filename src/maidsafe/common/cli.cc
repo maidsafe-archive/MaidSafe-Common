@@ -43,41 +43,6 @@
 
 namespace maidsafe {
 
-MenuLevel::MenuLevel(std::string name, std::string description)
-      : name(name), description(description) {}
-
-MenuLevel::MenuLevel()
-      : name(), description() {}
-
-MenuItem::MenuItem(std::string name, MenuLevel level, Func func)
-    : name(name), level(level), target_level(), run(func) {}
-
-MenuItem::MenuItem(std::string name, MenuLevel level, MenuLevel target_level)
-    : name(name), level(level), target_level(target_level), run() {}
-
-Menu::Menu()
-    : menus_(), levels_(), level_itr_(std::begin(levels_)), cli_() {}
-
-void Menu::add_level(MenuLevel level, MenuLevel parent) {
-  levels_.push_back(std::make_pair(level,parent));
-}
-
-void Menu::add_item(MenuItem item) {
-  menus_.push_back(item);
-}
-
-void Menu::start_menu() {
-  do{
-      std::cout << level_itr_->first.name << "\n";
-      std::cout << "######################################\n";
-    // for (auto i: levels_) {
-      // if (level_itr_->first == i.first) {
-      // }
-    // }
-  } while(cli_.Get<std::string>("\nPlease Enter Option (Q to quit)") != "Q");
-}
-
-
 CLI::CLI(std::string prompt) : kPrompt_(prompt) {}
 
 #if defined MAIDSAFE_WIN32
@@ -107,7 +72,6 @@ T CLI::Get(std::string display_message, bool echo_input) {
 #if defined MAIDSAFE_WIN32
 #pragma warning(pop)
 #endif
-
 
 void CLI::Echo(bool enable) {
 #ifdef WIN32

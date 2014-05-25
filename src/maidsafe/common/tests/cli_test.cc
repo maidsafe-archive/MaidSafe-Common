@@ -16,7 +16,6 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/cli.h"
 
 #include <functional>
 #include <string>
@@ -24,13 +23,9 @@
 #include <chrono>
 #include <iostream>
 #include <streambuf>
-#include "boost/process/child.hpp"
-#include "boost/process/execute.hpp"
-#include "boost/process/initializers.hpp"
-#include "boost/process/wait_for_exit.hpp"
-#include "boost/process/terminate.hpp"
-#include "boost/system/error_code.hpp"
 
+#include "maidsafe/common/cli.h"
+#include "maidsafe/common/menu.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 

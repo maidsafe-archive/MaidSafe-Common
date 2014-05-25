@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_CLI_H_
-#define MAIDSAFE_COMMON_CLI_H_
+#ifndef MAIDSAFE_COMMON_MENU_H_
+#define MAIDSAFE_COMMON_MENU_H_
 
 
 #if defined MAIDSAFE_WIN32
@@ -42,24 +42,27 @@
 #include <functional>
 #include <utility>
 
+#include "maidsafe/common/menu_level.h"
+#include "maidsafe/common/menu_item.h"
+#include "maidsafe/common/cli.h"
+
 namespace maidsafe {
 
-typedef std::function<void()> Func;
-
-class CLI {
+class Menu {
  public:
-  CLI(std::string prompt = ">> ");
-  template <typename T>
-  T Get(std::string display_message, bool echo_input = true);
-  void Echo(bool enable = true);
-  std::vector<std::string> TokeniseLine(std::string line);
-  void Exit();
-  std::string GetPasswd(bool repeat = true);
+  Menu() = default;
+  ~Menu() = default;
+  
+  void add_level(MenuLevel level, MenuLevel parent);
+  void add_item(MenuItem item);
+  void start_menu();
  private:
-  std::string kPrompt_;
+  std::vector<MenuItem> menus_;
+  std::vector<std::pair<MenuLevel, MenuLevel>> levels_;
+  std::vector<std::pair<MenuLevel, MenuLevel>>::iterator level_itr_;
+  CLI cli_;
 };
-
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_CLI_H_
+#endif  // MAIDSAFE_COMMON_MENU_H_

@@ -16,50 +16,54 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_CLI_H_
-#define MAIDSAFE_COMMON_CLI_H_
-
-
-#if defined MAIDSAFE_WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#if defined MAIDSAFE_LINUX
-#include <termio.h>
-#elif defined MAIDSAFE_APPLE
-#include <termios.h>
-#endif
-#endif
+#ifndef MAIDSAFE_COMMON_MENU_LEVEL_H_
+#define MAIDSAFE_COMMON_MENU_LEVEL_H_
 
 #include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <istream>
-#include <ostream>
 #include <string>
-#include <vector>
-#include <map>
-#include <functional>
 #include <utility>
 
 namespace maidsafe {
 
-typedef std::function<void()> Func;
+struct MenuLevel {
+  MenuLevel(std::string name, std::string description)
+    : name(name), description(description) {}
+  ~MenuLevel() = default;
 
-class CLI {
- public:
-  CLI(std::string prompt = ">> ");
-  template <typename T>
-  T Get(std::string display_message, bool echo_input = true);
-  void Echo(bool enable = true);
-  std::vector<std::string> TokeniseLine(std::string line);
-  void Exit();
-  std::string GetPasswd(bool repeat = true);
- private:
-  std::string kPrompt_;
+  MenuLevel(const MenuLevel& other) = default;
+  MenuLevel(MenuLevel&& other)
+      : name(std::move(other.name)),
+      description(std::move(other.description)) {}
+
+  void swap(MenuLevel& lhs, MenuLevel& rhs) noexcept {
+    using std::swap;
+    swap(lhs.name, rhs.name);
+    swap(lhs.description, rhs.description);
+  }
+
+  MenuLevel& operator=(MenuLevel other) {
+    swap(*this, other);
+    return *this;
+  }
+
+  friend
+  bool operator==(const MenuLevel& lhs, const MenuLevel& rhs) {
+    return std::tie(lhs.name, lhs.description)
+        == std::tie(rhs.name, rhs.description);
+  }
+
+  friend
+  bool operator!=(const MenuLevel& lhs, const MenuLevel& rhs) {
+    return !operator==(lhs, rhs);
+  }
+
+  std::string name{""};
+  std::string description{""};
+
 };
+
 
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_CLI_H_
+#endif  // MAIDSAFE_COMMON_MENU_LEVEL_H_

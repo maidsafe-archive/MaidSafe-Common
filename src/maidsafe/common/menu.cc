@@ -16,50 +16,36 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_CLI_H_
-#define MAIDSAFE_COMMON_CLI_H_
-
-
-#if defined MAIDSAFE_WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#if defined MAIDSAFE_LINUX
-#include <termio.h>
-#elif defined MAIDSAFE_APPLE
-#include <termios.h>
-#endif
-#endif
+#include "maidsafe/common/menu.h"
 
 #include <cstdint>
-#include <fstream>
 #include <iostream>
-#include <istream>
-#include <ostream>
 #include <string>
-#include <vector>
-#include <map>
-#include <functional>
 #include <utility>
 
 namespace maidsafe {
 
-typedef std::function<void()> Func;
+void Menu::add_level(MenuLevel level, MenuLevel parent) {
+  levels_.push_back(std::make_pair(level,parent));
+}
 
-class CLI {
- public:
-  CLI(std::string prompt = ">> ");
-  template <typename T>
-  T Get(std::string display_message, bool echo_input = true);
-  void Echo(bool enable = true);
-  std::vector<std::string> TokeniseLine(std::string line);
-  void Exit();
-  std::string GetPasswd(bool repeat = true);
- private:
-  std::string kPrompt_;
-};
+void Menu::add_item(MenuItem item) {
+  menus_.push_back(item);
+}
 
+void Menu::start_menu() {
+  std::string result("");
+  level_itr_ = std::begin(levels_);
+  std::cout << level_itr_->second.description << "\n";
+  std::cout << "\n######################################\n";
+  while(result != "Q" &&  result != "q") {
+    for (auto i: levels_) {
+       if (result == i.first.name) {
+          std::cout << " You selected " << i.first.description;
+       }
+    }
+    result = cli_.Get<std::string>("\nPlease Enter Option (Q to quit)");
+  }
+}
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_CLI_H_
