@@ -25,6 +25,7 @@
 #include <tuple>
 #include <functional>
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/menu_level.h"
 
 namespace maidsafe {
@@ -39,7 +40,7 @@ struct MenuItem {
 
   MenuItem() = default;
   ~MenuItem() = default;
-  void swap(MenuItem& lhs, MenuItem& rhs) noexcept;
+  void swap(MenuItem& lhs, MenuItem& rhs) MAIDSAFE_NOEXCEPT;
   MenuItem(const MenuItem& other) = default;
   MenuItem(MenuItem&& other) : MenuItem() {
         swap (*this, other);
@@ -54,7 +55,7 @@ struct MenuItem {
   Func run;
 };
 
-inline void MenuItem::swap(MenuItem& lhs, MenuItem& rhs) noexcept {
+inline void MenuItem::swap(MenuItem& lhs, MenuItem& rhs) MAIDSAFE_NOEXCEPT{
   using std::swap;
   swap(lhs.name, rhs.name);
   swap(lhs.parent_level, rhs.parent_level);

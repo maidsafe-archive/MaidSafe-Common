@@ -23,6 +23,8 @@
 #include <string>
 #include <utility>
 
+#include "maidsafe/common/config.h"
+
 namespace maidsafe {
 
 struct MenuLevel {
@@ -30,7 +32,7 @@ struct MenuLevel {
   MenuLevel() : name() {}
   ~MenuLevel() = default;
   MenuLevel(const MenuLevel& other) = default;
-  void swap(MenuLevel& lhs, MenuLevel& rhs) noexcept;
+  void swap(MenuLevel& lhs, MenuLevel& rhs) MAIDSAFE_NOEXCEPT;
 
   MenuLevel(MenuLevel&& other) : MenuLevel() {
     swap(*this, other);
@@ -44,7 +46,7 @@ struct MenuLevel {
   std::string name;
 };
 
-inline void MenuLevel::swap(MenuLevel& lhs, MenuLevel& rhs) noexcept {
+inline void MenuLevel::swap(MenuLevel& lhs, MenuLevel& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.name, rhs.name);
 }
