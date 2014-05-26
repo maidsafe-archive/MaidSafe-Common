@@ -18,17 +18,6 @@
 
 #include "maidsafe/common/cli.h"
 
-#if defined MAIDSAFE_WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#if defined MAIDSAFE_LINUX
-#include <termio.h>
-#elif defined MAIDSAFE_APPLE
-#include <termios.h>
-#endif
-#endif
-
 #include <cstdint>
 #include <fstream>
 #include <iostream>
