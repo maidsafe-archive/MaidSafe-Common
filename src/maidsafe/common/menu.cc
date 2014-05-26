@@ -26,10 +26,10 @@
 
 namespace maidsafe {
 
-void Menu::add_level(MenuLevel level) {
+void Menu::add_level(MenuLevel level, MenuLevel parent) {
   if (menus_.empty()) current_level_ = level;
-  MenuItem item(level.name, level);
-  menus_.push_back(std::make_pair(current_level_, item));
+  MenuItem item(level, parent);
+  menus_.push_back(std::make_pair(parent, item));
   current_level_ = level;
 }
 
@@ -41,7 +41,7 @@ void Menu::start_menu() {
   std::vector<Option> current_options;
 
   while (result != 0) {
-    if (result == 99) current_level_ = previous_level_;
+    if (result == 99) current_level_ = parent_level_;
     auto found = std::find_if(std::begin(current_options), std::end(current_options),
                               [&](Option& member) { return (member.first == result); });
 
@@ -54,10 +54,10 @@ void Menu::start_menu() {
         std::cout << "\n" << ++counter << ": \t\t" << itr->second.name;
         current_options.push_back(std::make_pair(counter, itr));
       }
-      if (itr->second.target_level == current_level_) previous_level_ = itr->first;
+      if (itr->second.name == current_level_) parent_level_ = itr->first;
     }
-    if (previous_level_ != current_level_)
-      std::cout << "\n" << 99 << ": \t\tBack to: " << previous_level_.name;
+    if (parent_level_ != current_level_)
+      std::cout << "\n" << 99 << ": \t\tBack to: " << parent_level_.name;
 
     std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
     result = cli_.Get<int>("\nPlease Enter Option (0 to quit)");
@@ -67,12 +67,13 @@ void Menu::start_menu() {
 void Menu::ExecuteOption(Option option) {
   if (option.second->second.run != nullptr)
     option.second->second.run();
-  else if (!option.second->second.name.empty())
-    current_level_ = option.second->second.target_level;
+  else if (option.second->second.name != MenuLevel())
+    current_level_ = option.second->second.name;
 }
 
 void Menu::Header() {
-  for (int i = 0; i < 200; ++i) std::cout << "\n";  // very ugly hack
+  for (int i = 0; i < 200; ++i)
+    std::cout << "\n";  // very ugly hack
   std::cout << "\n###################################################\n";
   std::cout << "\t" << current_level_.name << "\n";
   std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";

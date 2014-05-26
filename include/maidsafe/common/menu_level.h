@@ -16,58 +16,47 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DETAIL_MENU_ITEM_H_
-#define MAIDSAFE_COMMON_DETAIL_MENU_ITEM_H_
+#ifndef MAIDSAFE_COMMON_MENU_LEVEL_H_
+#define MAIDSAFE_COMMON_MENU_LEVEL_H_
 
 #include <cstdint>
-#include <utility>
 #include <string>
-#include <tuple>
-#include <functional>
-
-#include "maidsafe/common/detail/menu_level.h"
+#include <utility>
 
 namespace maidsafe {
 
-typedef std::function<void()> Func;
+struct MenuLevel {
+  explicit MenuLevel(std::string name) : name(name) {}
+  MenuLevel() : name() {}
+  ~MenuLevel() = default;
+  MenuLevel(const MenuLevel& other) = default;
+  void swap(MenuLevel& lhs, MenuLevel& rhs) noexcept;
 
-struct MenuItem {
-  MenuItem(std::string name, Func func) : name(name), target_level(), run(func) {}
-
-  MenuItem(std::string name, MenuLevel target_level)
-      : name(name), target_level(target_level), run(nullptr) {}
-
-  MenuItem() = default;
-  ~MenuItem() = default;
-  void swap(MenuItem& lhs, MenuItem& rhs) noexcept;
-  MenuItem(const MenuItem& other) = default;
-  MenuItem(MenuItem&& other) : MenuItem() {
-        swap (*this, other);
+  MenuLevel(MenuLevel&& other) : MenuLevel() {
+    swap(*this, other);
   }
 
-  MenuItem& operator=(MenuItem other) {
+  MenuLevel& operator=(MenuLevel other) {
     swap(*this, other);
     return *this;
   }
-
+  friend std::ostream& operator<<(std::ostream& os, const MenuLevel& menu_level);
   std::string name;
-  MenuLevel target_level;
-  Func run;
 };
 
-inline void MenuItem::swap(MenuItem& lhs, MenuItem& rhs) noexcept {
+inline void MenuLevel::swap(MenuLevel& lhs, MenuLevel& rhs) noexcept {
   using std::swap;
   swap(lhs.name, rhs.name);
-  swap(lhs.target_level, rhs.target_level);
-  swap(lhs.run, rhs.run);
 }
 
-inline bool operator==(const MenuItem& lhs, const MenuItem& rhs) {
-  return std::tie(lhs.name, lhs.target_level) == std::tie(rhs.name, rhs.target_level);
+inline bool operator==(const MenuLevel& lhs, const MenuLevel& rhs) { return lhs.name == rhs.name; }
+
+inline bool operator!=(const MenuLevel& lhs, const MenuLevel& rhs) { return !operator==(lhs, rhs); }
+
+inline std::ostream& operator<<(std::ostream& os, const MenuLevel& menu_level) {
+  os << menu_level.name;
+  return os;
 }
-
-inline bool operator!=(const MenuItem& lhs, const MenuItem& rhs) { return !operator==(lhs, rhs); }
-
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DETAIL_MENU_ITEM_H_
+#endif  // MAIDSAFE_COMMON_MENU_LEVEL_H_

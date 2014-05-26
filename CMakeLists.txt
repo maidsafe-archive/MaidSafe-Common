@@ -135,6 +135,10 @@ target_link_libraries(maidsafe_network_viewer maidsafe_common)
 ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing_tool.cc")
 target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
 
+# Qa tool
+ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc")
+target_link_libraries(qa_tool maidsafe_common maidsafe_passport)
+
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
     "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"

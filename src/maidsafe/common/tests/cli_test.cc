@@ -66,9 +66,9 @@ TEST_CASE("MenuFunctions", "[cli][Unit]") {
   int test_value(0);
   auto inc = [&]() { ++test_value; };
   MenuLevel main("Main");
-  MenuItem one("one", inc);
-  MenuItem two("two", inc);
-  MenuItem three("three", [&]() { --test_value; });
+  MenuItem one(MenuLevel("one"), inc);
+  MenuItem two(MenuLevel("two"), inc);
+  MenuItem three(MenuLevel("three"), [&]() { --test_value; });
   // grab original cin as streambuf ptr
   std::streambuf* orig = std::cin.rdbuf();
   // redirect cin
@@ -76,7 +76,7 @@ TEST_CASE("MenuFunctions", "[cli][Unit]") {
   std::cin.rdbuf(input.rdbuf());
 
   Menu menu;
-  menu.add_level(main);
+  menu.add_level(main, main);
   menu.add_item(one);
   menu.add_item(two);
   menu.add_item(three);
@@ -107,23 +107,23 @@ TEST_CASE("MenuHierarchy", "[cli][Unit]") {
   int test_value(0);
   auto inc = [&]() { ++test_value; };
   auto dec = [&]() { --test_value; };
-  MenuLevel main("Main");
-  MenuItem one("one", inc);
-  MenuItem two("two", inc);
-  MenuItem three("three", dec);
+  MenuLevel main(MenuLevel("Main"));
+  MenuItem one(MenuLevel("one"), inc);
+  MenuItem two(MenuLevel("two"), inc);
+  MenuItem three(MenuLevel("three"), dec);
   MenuLevel sub("Sub");
   MenuLevel subsub("SubSub");
 
   Menu menu;
-  menu.add_level(main);
+  menu.add_level(main, main);
   menu.add_item(one);
   menu.add_item(two);
   menu.add_item(three);
 
-  menu.add_level(sub);
+  menu.add_level(sub, main);
   menu.add_item(one);
 
-  menu.add_level(subsub);
+  menu.add_level(subsub, sub);
   menu.add_item(three);
   menu.add_item(one);
   menu.add_item(three);

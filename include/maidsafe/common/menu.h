@@ -26,26 +26,26 @@
   ===========
   auto inc = [&]() { ++test_value; }; // create some void functions you wish to run 
   
-  MenuLevel main("Main"); // create as many levels, use a descriptive name
+  MenuLevel main(MenuLevel("Main")); // create as many levels, use a descriptive name
   MenuItem one("one", inc); // Create items, these will have a function the sig void f();
   MenuItem two("two", inc);
   MenuItem three("three", dec);
-  MenuLevel sub("Sub");
-  MenuLevel subsub("SubSub");
+  MenuLevel sub(MenuLevel("sub"));
+  MenuLevel subsub(MenuLevel("subsub"));
 
   Menu menu; // give it a name
   menu.add_level(main); // now add the levels and items in the order you wish them to appear
-  menu.add_item(one);
-  menu.add_item(two);
-  menu.add_item(three);
+  menu.add_item(one); // this item will be added in the main menu
+  menu.add_item(two); // this item will be added in the main menu
+  menu.add_item(three); // this item will be added in the main menu
 
-  menu.add_level(sub);
-  menu.add_item(one);
-
-  menu.add_level(subsub);
-  menu.add_item(three);
-  menu.add_item(one);
-  menu.add_item(three);  
+  menu.add_level(sub, main); // add parent level then this level
+  menu.add_item(one); // this item will be added in the sub menu
+ 
+  menu.add_level(sub, subsub);
+  menu.add_item(three); // this item will be added in the subsub menu
+  menu.add_item(one); // this item will be added in the subsub menu
+  menu.add_item(three);  // this item will be added in the subsub menu
   menu.start_menu(); // This starts the main loop which runs until the user presses 0.  
 
   This will create a menu like
@@ -92,8 +92,8 @@
 #include <functional>
 #include <utility>
 
-#include "maidsafe/common/detail/menu_level.h"
-#include "maidsafe/common/detail/menu_item.h"
+#include "maidsafe/common/menu_level.h"
+#include "maidsafe/common/menu_item.h"
 #include "maidsafe/common/cli.h"
 
 namespace maidsafe {
@@ -103,8 +103,9 @@ class Menu {
   Menu() = default;
   ~Menu() = default;
 
-  void add_level(MenuLevel level);
+  void add_level(MenuLevel level, MenuLevel parent);
   void add_item(MenuItem item);
+  void add_seperator();
   void start_menu();
 
  private:
@@ -112,7 +113,7 @@ class Menu {
   void Header();
   void ExecuteOption(Option option);
   MenuLevel current_level_;
-  MenuLevel previous_level_;
+  MenuLevel parent_level_;
   std::vector<std::pair<MenuLevel, MenuItem>> menus_;
   CLI cli_;
 };
