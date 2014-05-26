@@ -32,7 +32,7 @@ namespace maidsafe {
 
 typedef std::function<void()> Func;
 
-sstruct MenuItem {
+struct MenuItem {
   explicit MenuItem(std::string name) : name(name), parent_level(), run() {}
   MenuItem(MenuLevel name, Func func) : name(name), parent_level(), run(func) {}
   MenuItem(MenuLevel name, MenuLevel parent_level)
