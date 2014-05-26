@@ -41,9 +41,7 @@ struct MenuItem {
   ~MenuItem() = default;
   void swap(MenuItem& lhs, MenuItem& rhs) noexcept;
   MenuItem(const MenuItem& other) = default;
-  MenuItem(MenuItem&& other) : MenuItem() {
-        swap (*this, other);
-  }
+  MenuItem(MenuItem&& other) : MenuItem() { swap(*this, other); }
 
   MenuItem& operator=(MenuItem other) {
     swap(*this, other);

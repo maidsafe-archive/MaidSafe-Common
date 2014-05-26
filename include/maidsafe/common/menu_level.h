@@ -32,9 +32,7 @@ struct MenuLevel {
   MenuLevel(const MenuLevel& other) = default;
   void swap(MenuLevel& lhs, MenuLevel& rhs) noexcept;
 
-  MenuLevel(MenuLevel&& other) : MenuLevel() {
-    swap(*this, other);
-  }
+  MenuLevel(MenuLevel&& other) : MenuLevel() { swap(*this, other); }
 
   MenuLevel& operator=(MenuLevel other) {
     swap(*this, other);

@@ -72,8 +72,7 @@ void Menu::ExecuteOption(Option option) {
 }
 
 void Menu::Header() {
-  for (int i = 0; i < 200; ++i)
-    std::cout << "\n";  // very ugly hack
+  for (int i = 0; i < 200; ++i) std::cout << "\n";  // very ugly hack
   std::cout << "\n###################################################\n";
   std::cout << "\t" << current_level_.name << "\n";
   std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";

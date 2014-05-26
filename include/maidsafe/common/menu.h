@@ -17,15 +17,15 @@
     use of the MaidSafe Software.                                                                 */
 
 /*
-  Documentation 
-  =============  
+  Documentation
+  =============
 
-  This is a very simple menu cli tool. 
+  This is a very simple menu cli tool.
 
-  Example use 
+  Example use
   ===========
-  auto inc = [&]() { ++test_value; }; // create some void functions you wish to run 
-  
+  auto inc = [&]() { ++test_value; }; // create some void functions you wish to run
+
   MenuLevel main(MenuLevel("Main")); // create as many levels, use a descriptive name
   MenuItem one("one", inc); // Create items, these will have a function the sig void f();
   MenuItem two("two", inc);
@@ -41,12 +41,12 @@
 
   menu.add_level(sub, main); // add parent level then this level
   menu.add_item(one); // this item will be added in the sub menu
- 
+
   menu.add_level(sub, subsub);
   menu.add_item(three); // this item will be added in the subsub menu
   menu.add_item(one); // this item will be added in the subsub menu
   menu.add_item(three);  // this item will be added in the subsub menu
-  menu.start_menu(); // This starts the main loop which runs until the user presses 0.  
+  menu.start_menu(); // This starts the main loop which runs until the user presses 0.
 
   This will create a menu like
 
@@ -54,29 +54,26 @@
   Main
   ~~~~~~~~~~~~~~~~~~~
   1: one
-  2: two 
+  2: two
   3: three
   4: Sub (this is a sub menu, i.e a level not an item)
   ~~~~~~~~~~~~~~~~~~~~
-  Select item or 0 to exit 
+  Select item or 0 to exit
 
-  If you selected 4 here then you would have  
+  If you selected 4 here then you would have
   ###################
   Sub
   ~~~~~~~~~~~~~~~~~~~
   1:  one
-  2:  SubSub 
+  2:  SubSub
   99: Back to Sub
   ~~~~~~~~~~~~~~~~~~~~
-  Select item or 0 to exit 
+  Select item or 0 to exit
 
-  That's basically it. You can include CLI objects as menu items if you wish. 
+  That's basically it. You can include CLI objects as menu items if you wish.
   Please see the cli_test.cc for information on testing cli tools automatically.
-  This requires redirecting cin and cout etc. 
+  This requires redirecting cin and cout etc.
  */
-
-
-
 
 #ifndef MAIDSAFE_COMMON_MENU_H_
 #define MAIDSAFE_COMMON_MENU_H_

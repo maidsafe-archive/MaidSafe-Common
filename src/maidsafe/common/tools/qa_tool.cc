@@ -48,8 +48,8 @@ void MainMenu() {
   auto inc = [] {};
   MenuLevel main(MenuLevel("Main"));
   MenuItem three(MenuLevel("three"), inc);
-  MenuLevel qa("Qa (stress tests, synamic and static analysis");
-  MenuLevel dev("Dev (core development help");
+  MenuLevel qa("Qa (stress tests, dynamic and static analysis)");
+  MenuLevel dev("Dev (core development help)");
   MenuLevel builders("Builders (includes examples)");
   MenuLevel test("Test (check your setup and farming ability)");
 
