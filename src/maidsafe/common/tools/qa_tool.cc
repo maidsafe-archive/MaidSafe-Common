@@ -34,9 +34,9 @@
 namespace maidsafe {
 
 void MainMenu() {
-  auto inc = [] {};
+  auto func = [] {  };
   MenuLevel main(MenuLevel("Main"));
-  MenuItem three(MenuLevel("three"), inc);
+  MenuItem three(MenuLevel("three"), func);
   MenuLevel qa("Qa (stress tests, dynamic and static analysis)");
   MenuLevel dev("Dev (core development help)");
   MenuLevel builders("Builders (includes examples)");
@@ -47,7 +47,10 @@ void MainMenu() {
   menu.add_item(three);
   menu.add_level(qa, main);
   menu.add_level(dev, main);
-  menu.add_level(builders, main);
+  menu.add_level(test, dev);
+  menu.add_item(three);
+  menu.add_level(builders, dev);
+  menu.add_item(three);
   menu.add_level(test, main);
 
   menu.start_menu();
