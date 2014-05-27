@@ -42,7 +42,7 @@ class UserCredentialsTest {
   const std::string kPasswordStr{ RandomAlphaNumericString((RandomUint32() % 100) + 1) };
 };
 
-TEST_CASE_METHOD(UserCredentialsTest, "CreateSecurePassword", "[UserCredentialUtils][Unit]") {
+TEST_CASE_METHOD(UserCredentialsTest, "CreateSecurePassword", "[UserCredentialUtils][Unit]") {  // Timeout 10  // NOLINT
   const crypto::SecurePassword kSecurePassword{ CreateSecurePassword(user_credentials) };
   REQUIRE(kSecurePassword->IsInitialised());
   CHECK(kSecurePassword->string() != kPasswordStr);
@@ -77,7 +77,7 @@ TEST_CASE_METHOD(UserCredentialsTest, "CreateSecurePassword", "[UserCredentialUt
   CHECK_THROWS_AS(CreateSecurePassword(user_credentials), common_error);
 }
 
-TEST_CASE_METHOD(UserCredentialsTest, "ObfuscateData", "[UserCredentialUtils][Unit]") {
+TEST_CASE_METHOD(UserCredentialsTest, "ObfuscateData", "[UserCredentialUtils][Unit]") {  // Timeout 10  // NOLINT
   const NonEmptyString kData{ RandomString(1024 * 1024) };
   const NonEmptyString kObfuscated{ Obfuscate(user_credentials, kData) };
   REQUIRE(kObfuscated.IsInitialised());
@@ -129,7 +129,7 @@ TEST_CASE_METHOD(UserCredentialsTest, "ObfuscateData", "[UserCredentialUtils][Un
 }
 
 TEST_CASE_METHOD(UserCredentialsTest, "Derive symmetric encryption key and IV",
-                 "[UserCredentialUtils][Unit]") {
+                 "[UserCredentialUtils][Unit]") {  // Timeout 10
   const crypto::SecurePassword kSecurePassword{ CreateSecurePassword(user_credentials) };
   const crypto::AES256Key kKey{ DeriveSymmEncryptKey(kSecurePassword) };
   const crypto::AES256InitialisationVector kIv{ DeriveSymmEncryptIv(kSecurePassword) };
