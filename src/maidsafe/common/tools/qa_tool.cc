@@ -34,7 +34,7 @@
 namespace maidsafe {
 
 void MainMenu() {
-  auto func = [] {  };
+  auto func = [] { };
   MenuLevel main(MenuLevel("Main"));
   MenuItem three(MenuLevel("three"), func);
   MenuLevel qa("Qa (stress tests, dynamic and static analysis)");

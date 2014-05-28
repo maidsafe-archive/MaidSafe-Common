@@ -36,6 +36,7 @@
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
 
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
 
@@ -45,6 +46,8 @@ namespace detail {
 
 boost::mt19937& random_number_generator();
 std::mutex& random_number_generator_mutex();
+boost::filesystem::path GetFileName(const DataNameVariant& data_name_variant);
+DataNameVariant GetDataNameVariant(const boost::filesystem::path& file_name);
 
 }  // namespace detail
 

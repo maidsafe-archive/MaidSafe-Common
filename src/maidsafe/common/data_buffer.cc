@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,27 +16,20 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_STORES_UTILS_H_
-#define MAIDSAFE_COMMON_DATA_STORES_UTILS_H_
-
-#include "boost/filesystem/path.hpp"
-
-#include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/common/data_buffer.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
-namespace data_stores {
+template <>
+boost::filesystem::path DataBuffer<DataNameVariant>::GetFilename(const DataNameVariant& key) const {
+  return kDiskBuffer_ / detail::GetFileName(key);
+}
 
-namespace detail {
-
-boost::filesystem::path GetFileName(const DataNameVariant& data_name_variant);
-
-DataNameVariant GetDataNameVariant(const boost::filesystem::path& file_name);
-
-}  // namespace detail
-
-}  // namespace data_stores
+template <>
+std::string DataBuffer<DataNameVariant>::DebugKeyName(const DataNameVariant& key) {
+  static GetIdentityVisitor get_identity_visitor;
+  return HexEncode(boost::apply_visitor(get_identity_visitor, key).string());
+}
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_DATA_STORES_UTILS_H_
