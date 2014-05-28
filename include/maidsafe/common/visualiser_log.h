@@ -28,7 +28,7 @@
 #include "maidsafe/common/utils.h"
 
 #define VLOG(persona_enum, action_enum, identity) \
-    maidsafe::log::VisualiserLogMessage(persona_enum, action_enum, identity).messageStream()
+    maidsafe::log::VisualiserLogMessage(persona_enum, action_enum, identity).MessageStream()
 
 namespace maidsafe {
 
@@ -40,10 +40,10 @@ class VisualiserLogMessage {
   VisualiserLogMessage(PersonaEnum persona_enum, ActionEnum action_enum, Identity target)
       : stream_(), kSeparator_(',') {
     stream_ << Logging::Instance().VlogPrefix() << kSeparator_
-      << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
-      << kSeparator_ << persona_enum << kSeparator_
-      << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
-      << kSeparator_ << action_enum << kSeparator_;
+            << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
+            << kSeparator_ << persona_enum << kSeparator_
+            << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
+            << kSeparator_ << action_enum << kSeparator_;
     if (target.IsInitialised())
       stream_ << DebugId(target);
     else
@@ -59,7 +59,7 @@ class VisualiserLogMessage {
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
   }
-  std::ostringstream& messageStream() { return stream_; }
+  std::ostringstream& MessageStream() { return stream_; }
 
  private:
   std::ostringstream stream_;
