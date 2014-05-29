@@ -25,9 +25,13 @@
 #include "boost/filesystem/path.hpp"
 
 #ifdef _MSC_VER
-#define MAIDSAFE_NOEXCEPT
+# if _MSC_VER >= 1900  // VS2014
+#  define MAIDSAFE_NOEXCEPT noexcept  // conditional noexcept not supported yet
+# else
+#  define MAIDSAFE_NOEXCEPT  // throw()
+# endif
 #else
-#define MAIDSAFE_NOEXCEPT noexcept(true)
+# define MAIDSAFE_NOEXCEPT noexcept(true)
 #endif
 
 namespace maidsafe {
