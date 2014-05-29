@@ -89,17 +89,17 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlw
 #ifdef USE_LOGGING
 #define LOG(level)                                                                            \
   maidsafe::log::LogMessage(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION, maidsafe::log::level) \
-      .messageStream()
+      .MessageStream()
 #else
-#define LOG(_) maidsafe::log::Envoid() & maidsafe::log::NullStream()
+#define LOG(_) true ? static_cast<void>(19) : maidsafe::log::Envoid() & maidsafe::log::NullStream()
 #endif
-#define TLOG(colour) maidsafe::log::TestLogMessage(maidsafe::log::Colour::colour).messageStream()
+#define TLOG(colour) maidsafe::log::TestLogMessage(maidsafe::log::Colour::colour).MessageStream()
 
 class LogMessage {
  public:
   LogMessage(std::string file, int line, std::string function, int level);
   ~LogMessage();
-  std::ostringstream& messageStream() { return stream_; }
+  std::ostringstream& MessageStream() { return stream_; }
 
  private:
   std::string file_;
@@ -113,7 +113,7 @@ class TestLogMessage {
  public:
   explicit TestLogMessage(Colour colour);
   ~TestLogMessage();
-  std::ostringstream& messageStream() { return stream_; }
+  std::ostringstream& MessageStream() { return stream_; }
 
  private:
   const Colour kColour_;
@@ -166,6 +166,7 @@ class Logging {
 namespace detail {
 
 std::string GetLocalTime();
+std::string GetUTCTime();
 
 }  // namespace detail
 

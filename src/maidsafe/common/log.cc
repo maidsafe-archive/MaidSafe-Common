@@ -588,6 +588,22 @@ std::string GetLocalTime() {
   return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
 }
 
+std::string GetUTCTime() {
+  auto now(std::chrono::system_clock::now());
+  auto seconds_since_epoch(
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+
+  std::time_t now_t(std::chrono::system_clock::to_time_t(
+      std::chrono::system_clock::time_point(seconds_since_epoch)));
+
+  char temp[30];
+  if (!std::strftime(temp, sizeof(temp), "%F %H:%M:%S.", std::gmtime(&now_t)))  // NOLINT (Fraser)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+
+  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+
+}
+
 }  // namespace detail
 
 }  // namespace log
