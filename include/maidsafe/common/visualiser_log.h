@@ -39,7 +39,8 @@ class VisualiserLogMessage {
   template <typename PersonaEnum, typename ActionEnum>
   VisualiserLogMessage(PersonaEnum persona_enum, ActionEnum action_enum, Identity target)
       : stream_(), kSeparator_(',') {
-    stream_ << Logging::Instance().VlogPrefix() << kSeparator_
+    stream_ << detail::GetUTCTime() << kSeparator_
+      << Logging::Instance().VlogPrefix() << kSeparator_
       << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
       << kSeparator_ << persona_enum << kSeparator_
       << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
@@ -48,7 +49,7 @@ class VisualiserLogMessage {
       stream_ << DebugId(target);
     else
       stream_ << "Unknown target";
-    stream_ << kSeparator_ << detail::GetUTCTime() << kSeparator_;
+    stream_ << kSeparator_;
   }
   ~VisualiserLogMessage() {
     std::string log_entry{ stream_.str() + '\n' };
