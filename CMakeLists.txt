@@ -34,7 +34,6 @@ project(common)
 
 include(../../cmake_modules/standard_setup.cmake)
 
-
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
@@ -70,12 +69,12 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/node_id_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc
                         ${CommonSourcesDir}/tests/utils_test.cc
+                        ${CommonSourcesDir}/tests/cli_test.cc
                         ${CommonSourcesDir}/tests/visualiser_log_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
 list(APPEND CommonTestsAllFiles ${TestsMain})
-
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -136,6 +135,10 @@ target_link_libraries(maidsafe_network_viewer maidsafe_common)
 ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing_tool.cc")
 target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
 
+# Qa tool
+ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc")
+target_link_libraries(qa_tool maidsafe_common maidsafe_passport)
+
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
     "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
@@ -187,13 +190,11 @@ endif()
 
 ms_rename_outdated_built_exes()
 
-
 #==================================================================================================#
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
 include(${CMAKE_CURRENT_SOURCE_DIR}/common_flags.cmake)
 include(standard_flags)
-
 
 #==================================================================================================#
 # Tests                                                                                            #
