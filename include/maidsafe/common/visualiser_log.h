@@ -48,7 +48,7 @@ class VisualiserLogMessage {
       stream_ << DebugId(target);
     else
       stream_ << "Unknown target";
-    stream_ << kSeparator_ << detail::GetLocalTime() << kSeparator_;
+    stream_ << kSeparator_ << detail::GetUTCTime() << kSeparator_;
   }
   ~VisualiserLogMessage() {
     std::string log_entry{ stream_.str() + '\n' };

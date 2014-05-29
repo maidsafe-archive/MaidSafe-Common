@@ -166,6 +166,7 @@ class Logging {
 namespace detail {
 
 std::string GetLocalTime();
+std::string GetUTCTime();
 
 }  // namespace detail
 
