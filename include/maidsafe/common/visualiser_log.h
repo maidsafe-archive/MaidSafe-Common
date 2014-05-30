@@ -42,9 +42,11 @@ class VisualiserLogMessage {
     stream_ << detail::GetUTCTime() << kSeparator_
             << Logging::Instance().VlogPrefix() << kSeparator_
             << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
-            << kSeparator_ << persona_enum << kSeparator_
+            << kSeparator_
+//             << persona_enum << kSeparator_
             << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
-            << kSeparator_ << action_enum << kSeparator_;
+            << kSeparator_;
+//             << action_enum << kSeparator_;
     if (target.IsInitialised())
       stream_ << DebugId(target);
     else
