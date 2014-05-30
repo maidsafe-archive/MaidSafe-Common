@@ -348,6 +348,40 @@ bool SetupLogFolder(const fs::path& log_folder) {
   return true;
 }
 
+enum class TimeType { kLocal, kUTC };
+
+template <TimeType time_type>
+std::string Strftime(const std::time_t* now_t);
+
+template <>
+std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
+  char temp[10];
+  if (!std::strftime(temp, sizeof(temp), "%H:%M:%S.", std::localtime(now_t)))  // NOLINT (Fraser)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+  return std::string{ temp };
+}
+
+template <>
+std::string Strftime<TimeType::kUTC>(const std::time_t* now_t) {
+  char temp[21];
+  if (!std::strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.", std::gmtime(now_t)))  // NOLINT (Fraser)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+  return std::string{ temp };
+}
+
+template <TimeType time_type>
+std::string GetTime() {
+  auto now(std::chrono::system_clock::now());
+  auto seconds_since_epoch(
+    std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+
+  std::time_t now_t(std::chrono::system_clock::to_time_t(
+    std::chrono::system_clock::time_point(seconds_since_epoch)));
+
+  return Strftime<time_type>(&now_t) +
+         std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+}
+
 }  // unnamed namespace
 
 
@@ -574,34 +608,11 @@ void Logging::Flush() {
 namespace detail {
 
 std::string GetLocalTime() {
-  auto now(std::chrono::system_clock::now());
-  auto seconds_since_epoch(
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
-
-  std::time_t now_t(std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::time_point(seconds_since_epoch)));
-
-  char temp[10];
-  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-
-  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+  return GetTime<TimeType::kLocal>();
 }
 
 std::string GetUTCTime() {
-  auto now(std::chrono::system_clock::now());
-  auto seconds_since_epoch(
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
-
-  std::time_t now_t(std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::time_point(seconds_since_epoch)));
-
-  char temp[30];
-  if (!std::strftime(temp, sizeof(temp), "%F %H:%M:%S.", std::gmtime(&now_t)))  // NOLINT (Fraser)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-
-  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
-
+  return GetTime<TimeType::kUTC>();
 }
 
 }  // namespace detail
