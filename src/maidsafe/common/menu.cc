@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -20,62 +20,68 @@
 
 #include <cstdint>
 #include <iostream>
-#include <string>
-#include <utility>
+
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/menu_item.h"
 
 namespace maidsafe {
 
-void Menu::add_level(MenuLevel level, MenuLevel parent) {
-  if (menus_.empty()) current_level_ = level;
-  MenuItem item(level, parent);
-  menus_.push_back(std::make_pair(parent, item));
-  current_level_ = level;
+Menu::Menu(std::string main_menu_name)
+    : top_level_item_(std::move(main_menu_name), [] {}), current_item_(&top_level_item_), cli_() {}
+
+Menu::Menu(std::string main_menu_name, std::string prompt)
+    : top_level_item_(std::move(main_menu_name), [] {}),
+      current_item_(&top_level_item_),
+      cli_(std::move(prompt)) {}
+
+MenuItem* Menu::AddItem(std::string name, MenuItem::Functor operation) {
+  return top_level_item_.AddChildItem(std::move(name), std::move(operation));
 }
 
-void Menu::add_item(MenuItem item) { menus_.push_back(std::make_pair(current_level_, item)); }
-
-void Menu::start_menu() {
-  int result(999);
-  current_level_ = std::begin(menus_)->first;
-  std::vector<Option> current_options;
-
-  while (result != 0) {
-    if (result == 99) current_level_ = parent_level_;
-    auto found = std::find_if(std::begin(current_options), std::end(current_options),
-                              [&](Option& member) { return (member.first == result); });
-
-    if (found != std::end(current_options)) ExecuteOption(*found);
-    current_options.clear();
-    int counter(0);
-    Header();
-    for (auto itr = std::begin(menus_); itr < std::end(menus_); ++itr) {
-      if (itr->first == current_level_ && itr != std::begin(menus_)) {
-        std::cout << "\n" << ++counter << ": \t\t" << itr->second.name;
-        current_options.push_back(std::make_pair(counter, itr));
+int Menu::Run() {
+  try {
+    bool clear_cli{ true };
+    for (;;) {
+      if (clear_cli) {
+        cli_.Clear();
+        clear_cli = false;
+        if (current_item_->HasNoChildren())
+          current_item_ = current_item_->kParent_;
+        ShowOptions();
       }
-      if (itr->second.name == current_level_) parent_level_ = itr->first;
+      try {
+        int result{ cli_.Get<int>("Please enter option (0 to quit)") };
+        if (result == 0) {
+          break;
+        } else if (result == 99 && current_item_->kParent_) {
+          current_item_ = current_item_->kParent_;
+        } else {
+          current_item_ = current_item_->Child(result - 1);
+        }
+      }
+      catch (const std::exception&) {
+        TLOG(kYellow) << "Invalid choice\n";
+        continue;
+      }
+      current_item_->DoOperation();
+      clear_cli = true;
     }
-    if (parent_level_ != current_level_)
-      std::cout << "\n" << 99 << ": \t\tBack to: " << parent_level_.name;
-
-    std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-    result = cli_.Get<int>("\nPlease Enter Option (0 to quit)");
+    return 0;
+  }
+  catch (const maidsafe_error& error) {
+    TLOG(kRed) << boost::diagnostic_information(error) << "\n\n";
+    return ErrorToInt(error);
+  }
+  catch (const std::exception& e) {
+    TLOG(kRed) << e.what() << "\n\n";
+    return ErrorToInt(MakeError(CommonErrors::unknown));
   }
 }
 
-void Menu::ExecuteOption(Option option) {
-  if (option.second->second.run != nullptr)
-    option.second->second.run();
-  else if (option.second->second.name != MenuLevel())
-    current_level_ = option.second->second.name;
-}
-
-void Menu::Header() {
-  for (int i = 0; i < 200; ++i) std::cout << "\n";  // very ugly hack
-  std::cout << "\n###################################################\n";
-  std::cout << "\t" << current_level_.name << "\n";
-  std::cout << "\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+void Menu::ShowOptions() const {
+  TLOG(kDefaultColour) << current_item_->kName_ << '\n';
+  current_item_->ShowChildrenNames();
 }
 
 }  // namespace maidsafe

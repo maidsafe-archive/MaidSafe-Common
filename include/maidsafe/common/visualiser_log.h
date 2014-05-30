@@ -1,4 +1,4 @@
-/*  Copyright 2010 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -42,11 +42,9 @@ class VisualiserLogMessage {
     stream_ << detail::GetUTCTime() << kSeparator_
             << Logging::Instance().VlogPrefix() << kSeparator_
             << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
-            << kSeparator_
-//             << persona_enum << kSeparator_
+            << kSeparator_ << persona_enum << kSeparator_
             << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
-            << kSeparator_;
-//             << action_enum << kSeparator_;
+            << kSeparator_ << action_enum << kSeparator_;
     if (target.IsInitialised())
       stream_ << DebugId(target);
     else
@@ -55,10 +53,10 @@ class VisualiserLogMessage {
   }
   ~VisualiserLogMessage() {
     std::string log_entry{ stream_.str() + '\n' };
-    if (Logging::Instance().LogToConsole()) {
-      printf("%s", log_entry.c_str());
-      fflush(stdout);
-    }
+    //if (Logging::Instance().LogToConsole()) {
+    //  printf("%s", log_entry.c_str());
+    //  fflush(stdout);
+    //}
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
   }

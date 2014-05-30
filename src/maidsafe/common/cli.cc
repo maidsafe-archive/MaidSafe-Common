@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -18,25 +18,24 @@
 
 #include "maidsafe/common/cli.h"
 
-#include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <istream>
-#include <ostream>
-#include <string>
-#include <vector>
-#include <map>
-#include <utility>
+#if defined MAIDSAFE_WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <termios.h>
+#endif
+#include <cstdlib>
+
 #include "boost/tokenizer.hpp"
 #include "maidsafe/common/crypto.h"
 
 namespace maidsafe {
 
-CLI::CLI(std::string prompt) : kPrompt_(prompt) {}
+CLI::CLI(std::string prompt) : kPrompt_(std::move(prompt)) {}
 
-void CLI::Echo(bool enable) {
-#ifdef WIN32
-  HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+void CLI::Echo(bool enable) const {
+#ifdef MAIDSAFE_WIN32
+  HANDLE hStdin{ GetStdHandle(STD_INPUT_HANDLE) };
   DWORD mode;
   GetConsoleMode(hStdin, &mode);
 
@@ -54,29 +53,47 @@ void CLI::Echo(bool enable) {
   else
     tty.c_lflag |= ECHO;
 
-  (void)tcsetattr(STDIN_FILENO, TCSANOW, &tty);
+  tcsetattr(STDIN_FILENO, TCSANOW, &tty);
 #endif
 }
 
-std::string CLI::GetPasswd(bool repeat) {
-  std::string passwd("r"), passwd2("s");
-  do {
-    passwd = Get<std::string>("please Enter passwd \n", false);
-    if (repeat) passwd2 = Get<std::string>("please Re-Enter same passwd \n", false);
-  } while ((passwd != passwd2) && (repeat));
-  return maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(passwd).string();
+void CLI::Clear() const {
+#ifdef MAIDSAFE_WIN32
+  COORD top_left = { 0, 0 };
+  HANDLE console{ GetStdHandle(STD_OUTPUT_HANDLE) };
+  CONSOLE_SCREEN_BUFFER_INFO screen;
+  DWORD written;
+  GetConsoleScreenBufferInfo(console, &screen);
+  FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, top_left, &written);
+  FillConsoleOutputAttribute(
+      console, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE,
+      screen.dwSize.X * screen.dwSize.Y, top_left, &written);
+  SetConsoleCursorPosition(console, top_left);
+#else
+  TLOG(kDefaultColour) << "\x1B[2J\x1B[H";  // CSI[2J to clear, CSI[H to move cursor to top-left
+#endif
 }
 
-std::vector<std::string> CLI::TokeniseLine(std::string line) {
+std::string CLI::GetPassword(bool repeat) const {
+  std::string password1, password2;
+  do {
+    password1 = Get<std::string>("Please enter password\n", false);
+    if (repeat)
+      password2 = Get<std::string>("Please re-enter same password\n", false);
+  } while ((password1 != password2) && repeat);
+  return crypto::Hash<crypto::SHA512>(password1).string();
+}
+
+std::vector<std::string> CLI::TokeniseLine(std::string line) const {
   std::vector<std::string> args;
-  line = std::string("--") + line;
-  boost::char_separator<char> sep(" ");
-  boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
-  for (const auto& t : tokens)  // NOLINT (Fraser)
-    args.push_back(t);
+  line = std::string{ "--" } +line;
+  boost::char_separator<char> sep{ " " };
+  boost::tokenizer<boost::char_separator<char>> tokens{ line, sep };
+  for (const auto& token : tokens)
+    args.push_back(token);
   return args;
 }
 
-void CLI::Exit() { exit(0); }
+void CLI::Exit() const { exit(0); }
 
 }  // namespace maidsafe

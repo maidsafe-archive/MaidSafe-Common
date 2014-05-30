@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -19,52 +19,44 @@
 #ifndef MAIDSAFE_COMMON_MENU_ITEM_H_
 #define MAIDSAFE_COMMON_MENU_ITEM_H_
 
-#include <cstdint>
-#include <utility>
-#include <string>
-#include <tuple>
 #include <functional>
+#include <string>
+#include <vector>
 
 #include "maidsafe/common/config.h"
-#include "maidsafe/common/menu_level.h"
 
 namespace maidsafe {
 
-typedef std::function<void()> Func;
+class MenuItem {
+ public:
+  typedef std::function<void()> Functor;
 
-struct MenuItem {
-  explicit MenuItem(std::string name) : name(name), parent_level(), run() {}
-  MenuItem(MenuLevel name, Func func) : name(name), parent_level(), run(func) {}
-  MenuItem(MenuLevel name, MenuLevel parent_level)
-      : name(name), parent_level(parent_level), run(nullptr) {}
-
-  MenuItem() = default;
+  MenuItem() = delete;
+  // This creates a MenuItem with a NULL parent - it should only be used when creating the top-level
+  // set of MenuItems held in the Menu class.
+  MenuItem(std::string name, Functor operation);
+  MenuItem(const MenuItem& other) = delete;
+  MenuItem(MenuItem&& other) = delete;
+  MenuItem& operator=(MenuItem other) = delete;
   ~MenuItem() = default;
-  void swap(MenuItem& lhs, MenuItem& rhs) MAIDSAFE_NOEXCEPT;
-  MenuItem(const MenuItem& other) = default;
-  MenuItem(MenuItem&& other) : MenuItem() { swap(*this, other); }
 
-  MenuItem& operator=(MenuItem other) {
-    swap(*this, other);
-    return *this;
-  }
-  MenuLevel name;
-  MenuLevel parent_level;
-  Func run;
+  // Returns a mutable pointer to the newly-added item so it can be populated with children if
+  // required.
+  MenuItem* AddChildItem(std::string name, Functor operation = nullptr);
+  void ShowChildrenNames() const;
+  const MenuItem* Child(int index) const;
+  bool HasNoChildren() const;
+  void DoOperation() const;
+
+  const MenuItem* const kParent_;
+  const std::string kName_;
+
+ private:
+  MenuItem(MenuItem* parent, std::string name, Functor operation);
+
+  const Functor kOperation_;
+  std::vector<std::unique_ptr<MenuItem>> children_;
 };
-
-inline void MenuItem::swap(MenuItem& lhs, MenuItem& rhs) MAIDSAFE_NOEXCEPT{
-  using std::swap;
-  swap(lhs.name, rhs.name);
-  swap(lhs.parent_level, rhs.parent_level);
-  swap(lhs.run, rhs.run);
-}
-
-inline bool operator==(const MenuItem& lhs, const MenuItem& rhs) {
-  return std::tie(lhs.name, lhs.parent_level) == std::tie(rhs.name, rhs.parent_level);
-}
-
-inline bool operator!=(const MenuItem& lhs, const MenuItem& rhs) { return !operator==(lhs, rhs); }
 
 }  // namespace maidsafe
 
