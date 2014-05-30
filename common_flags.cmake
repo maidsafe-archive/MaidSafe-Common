@@ -60,7 +60,8 @@ target_compile_definitions(maidsafe_common
         _FILE_OFFSET_BITS=64
         HAVE_PTHREAD
         $<$<BOOL:${APPLE}>:MAIDSAFE_APPLE>
-        $<$<NOT:$<BOOL:${APPLE}>>:MAIDSAFE_LINUX>
+        $<$<BOOL:${BSD}>:MAIDSAFE_BSD>
+        $<$<NOT:$<BOOL:${APPLE}>>:MAIDSAFE_LINUX>  # Also defined on BSD (ugly, but failsafe in favour of BSD)
         $<$<CONFIG:Release>:_FORTIFY_SOURCE=2>
     >
     $<$<CONFIG:Release>:NDEBUG>
