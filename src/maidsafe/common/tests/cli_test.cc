@@ -45,7 +45,7 @@ class CliTest {
   ~CliTest() { std::cin.rdbuf(original_cin_); }
 
   void SendToCin(std::string input) {
-    input_ = maidsafe::make_unique<std::istringstream>{ std::move(input) };
+    input_ = maidsafe::make_unique<std::istringstream>(std::move(input));
     std::cin.rdbuf(input_->rdbuf());
   }
 
