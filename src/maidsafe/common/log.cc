@@ -66,22 +66,20 @@ std::atomic<bool> vlog_prefix_initialised{ false };
 std::once_flag logging_initialised, vlog_prefix_once_flag;
 
 // This fellow needs to work during static data deinit
-class spinlock
-{
-  std::atomic<bool> flag;
-public:
+class spinlock {
+ public:
   spinlock() : flag(false) { }
-  void lock()
-  {
+  void lock() {
     bool v;
     while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
           std::memory_order_acquire))
       std::this_thread::yield();
   }
-  void unlock()
-  {
+  void unlock() {
     flag.store(false, std::memory_order_release);
   }
+ private:
+  std::atomic<bool> flag;
 };
 spinlock& g_console_mutex() {
   static spinlock mutex;

@@ -38,8 +38,12 @@
 
 #include "maidsafe/common/active.h"
 
-#if !defined(USE_LOGGING) && !defined(NDEBUG)
-# define USE_LOGGING 1
+#ifndef USE_LOGGING
+# ifdef NDEBUG
+#  define USE_LOGGING 0
+# else
+#  define USE_LOGGING 1
+# endif
 #endif
 
 namespace maidsafe {
