@@ -18,9 +18,12 @@
 
 #include "maidsafe/common/visualiser_log.h"
 
+#include <mutex>
+
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/type_macros.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
@@ -37,16 +40,107 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(TestAction, uint64_t,
     (AccountTransfer)
     (IncrementReferenceCount))
 
-TEST_CASE("Visualiser Log", "[Log][Unit]") {
+class VisualiserLogTest {
+ protected:
+  VisualiserLogTest() : this_vault_id_(InitId()) {}
+  std::string GetPostRequestBody(const log::VisualiserLogMessage& vlog) {
+    return vlog.GetPostRequestBody();
+  }
+  void DebugPrint(const log::VisualiserLogMessage& vlog) {
+    LOG(kVerbose) << "\tts:                   \"" << vlog.kTimestamp_ << '\"';
+    LOG(kVerbose) << "\tvault_id:             \"" << vlog.kVaultId_ << '\"';
+    LOG(kVerbose) << "\tpersona_id:           \"" << vlog.kPersonaId_.value << '\"';
+    LOG(kVerbose) << "\taction_id:            \"" << vlog.kActionId_.value << '\"';
+    if (vlog.kValue1_.size() == crypto::SHA512::DIGESTSIZE)
+      LOG(kVerbose) << "\tvalue1 (hex encoded): \"" << HexEncode(vlog.kValue1_) << '\"';
+    else
+      LOG(kVerbose) << "\tvalue1 (unencoded):   \"" << vlog.kValue1_ << '\"';
+    LOG(kVerbose) << "\tvalue2 (hex encoded): \"" << HexEncode(vlog.kValue2_) << "\"\n";
+  }
+
+  static Identity InitId() {
+    static Identity id{ RandomString(64) };
+    return id;
+  }
+
+  Identity this_vault_id_;
+};
+
+TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {
+  CHECK(IsValid(TestPersona::kMaidNode));
+  CHECK(IsValid(TestPersona::kDataGetter));
+  CHECK(IsValid(TestPersona::kCacheHandler));
+  CHECK(!IsValid(static_cast<TestPersona>(-1)));
+  CHECK(!IsValid(static_cast<TestPersona>(3)));
+
+#ifdef USE_VLOGGING
   Identity target{ RandomString(64) };
   // Call before VlogPrefix has been set
-  VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target) << "First test.";
+  CHECK_THROWS_AS(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
+                  common_error);
+
   // Call after VlogPrefix has been set
-  log::Logging::Instance().SetVlogPrefix(DebugId(Identity{ RandomString(64) }));
-  VLOG(TestPersona::kDataGetter, TestAction::kIncrementReferenceCount, target) << "Next test.";
+  log::Logging::Instance().SetVlogPrefix(DebugId(this_vault_id_));
+  VLOG(TestPersona::kDataGetter, TestAction::kGet, target, target);
+  VLOG(TestPersona::kDataGetter, TestAction::kGet, target);
+  VLOG(TestPersona::kDataGetter, TestAction::kGet, 99);
+  VLOG(TestAction::kGet, target, target);
+  VLOG(TestAction::kGet, target);
+  VLOG(TestAction::kGet, 99);
+
+  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
+  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
+  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
+  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
+  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
+  CHECK_THROWS_AS(VLOG(TestAction::kGet, Identity{}), common_error);
+  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), target), common_error);
+  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), 99), common_error);
+
   // Try to set the VlogPrefix again
-  CHECK_THROWS_AS(log::Logging::Instance().SetVlogPrefix("1"), maidsafe_error);
-  VLOG(TestPersona::kMaidNode, TestAction::kGet, target) << "Last test.";
+  CHECK_THROWS_AS(log::Logging::Instance().SetVlogPrefix("1"), common_error);
+  VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
+#endif
+}
+
+// This test outputs the URL-encoded version of VLOG messages along with the string representation
+// of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
+TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Unit]") {
+  std::vector<Identity> identities;
+  for (int i(0); i < 4; ++i) {
+    std::string id;
+    for (int j(0); j < 64; ++j)
+      id += static_cast<char>((i * 64) + j);
+    identities.emplace_back(id);
+  }
+
+#ifdef USE_VLOGGING
+  // Set VLOG prefix in case this test isn't run after the previous one.
+  try {
+    log::Logging::Instance().SetVlogPrefix(DebugId(this_vault_id_));
+  }
+  catch (const std::exception&) {}
+
+  auto vlog0 = VLOG(TestPersona::kDataGetter, TestAction::kGet, identities[0], identities[1]);
+  LOG(kVerbose) << '\t' << GetPostRequestBody(vlog0);
+  DebugPrint(vlog0);
+
+  auto vlog1 = VLOG(TestPersona::kDataGetter, TestAction::kPut, identities[2]);
+  LOG(kVerbose) << '\t' << GetPostRequestBody(vlog1);
+  DebugPrint(vlog1);
+
+  auto vlog2 = VLOG(TestPersona::kMaidNode, TestAction::kPut, std::numeric_limits<uint64_t>::max());
+  LOG(kVerbose) << '\t' << GetPostRequestBody(vlog2);
+  DebugPrint(vlog2);
+
+  auto vlog3 = VLOG(TestAction::kGet, identities[3]);
+  LOG(kVerbose) << '\t' << GetPostRequestBody(vlog3);
+  DebugPrint(vlog3);
+
+  Sleep(std::chrono::milliseconds(100));  // To avoid Catch output getting mixed in with TLOGs.
+#endif
+
+  CHECK(true);
 }
 
 }  // namespace test

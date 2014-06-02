@@ -466,6 +466,7 @@ Logging::Logging()
       colour_mode_(ColourMode::kPartialLine),
       combined_logfile_stream_(),
       visualiser_logfile_stream_(),
+      visualiser_server_stream_("maidsafe.net/visualiser", "http"),
       project_logfile_streams_(),
       vlog_prefix_("Vault ID uninitialised"),
       background_() {
@@ -608,6 +609,17 @@ void Logging::WriteToVisualiserLogfile(const std::string& message) {
   WriteToLogfile(message, visualiser_logfile_stream_);
 }
 
+void Logging::WriteToVisualiserServer(const std::string& message) {
+  // TODO(Fraser#5#): 2014-06-02 - Set correct host address and print LOG message if response fails.
+  visualiser_server_stream_ << "POST / HTTP/1.1\r\n"
+      << "Host: maidsafe.net\r\n"
+      << "Content-Type: application/x-www-form-urlencoded\r\n"
+      << "Content - Length: " << std::to_string(message.size()) << "\r\n"
+      << "\r\n" << message << "\r\n" << std::flush;
+  std::string response_line;
+  std::getline(visualiser_server_stream_, response_line);
+}
+
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
   auto itr(project_logfile_streams_.find(project));
   if (itr != project_logfile_streams_.end())
@@ -621,6 +633,12 @@ void Logging::Flush() {
   }
   std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
   combined_logfile_stream_.stream.flush();
+}
+
+std::string Logging::VlogPrefix() const {
+  if (!vlog_prefix_initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
+  return vlog_prefix_;
 }
 
 namespace detail {

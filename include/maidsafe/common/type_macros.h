@@ -25,8 +25,10 @@
 #include "boost/preprocessor/cat.hpp"
 #include "boost/preprocessor/comparison/not_equal.hpp"
 #include "boost/preprocessor/punctuation/comma_if.hpp"
+#include "boost/preprocessor/seq/elem.hpp"
 #include "boost/preprocessor/seq/for_each.hpp"
 #include "boost/preprocessor/seq/for_each_i.hpp"
+#include "boost/preprocessor/seq/seq.hpp"
 #include "boost/preprocessor/seq/size.hpp"
 #include "boost/preprocessor/stringize.hpp"
 
@@ -46,6 +48,7 @@
 //     enum class 'name' : 'type' { 'enumerators' };
 // Each enumerator is prefixed with a 'k' char.
 // Also defines a std::ostream operator<< for the enum class.
+// Also defines a 'bool IsValid(name)' function which returns true iff 'name' is a valid value.
 #define DEFINE_OSTREAMABLE_ENUM_VALUES(name, type, enumerators)                                    \
     enum class name : type {                                                                       \
       BOOST_PP_SEQ_FOR_EACH_I(GET_OSTREAMABLE_FIRST_WITH_COMMA,                                    \
@@ -54,7 +57,7 @@
                                                                                                    \
     template<typename Elem, typename Traits>                                                       \
     std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,        \
-                                                 const name &n) {                                  \
+                                                 name n) {                                         \
       std::string str;                                                                             \
       switch (n) {                                                                                 \
         BOOST_PP_SEQ_FOR_EACH(                                                                     \
@@ -68,6 +71,13 @@
       for (std::string::iterator itr(str.begin()); itr != str.end(); ++itr)                        \
         ostream << ostream.widen(*itr);                                                            \
       return ostream;                                                                              \
+    }                                                                                              \
+                                                                                                   \
+    inline bool IsValid(name n) {                                                                  \
+      return n >= name::GET_OSTREAMABLE_ENUM_VALUE(BOOST_PP_SEQ_HEAD(enumerators)) &&              \
+             n <= name::GET_OSTREAMABLE_ENUM_VALUE(BOOST_PP_SEQ_ELEM(                              \
+                      BOOST_PP_DEC(BOOST_PP_SEQ_SIZE(enumerators)), enumerators));                 \
     }
+
 
 #endif  // MAIDSAFE_COMMON_TYPE_MACROS_H_

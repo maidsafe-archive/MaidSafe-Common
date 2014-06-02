@@ -30,6 +30,7 @@
 #include <sstream>
 #include <vector>
 
+#include "boost/asio/ip/tcp.hpp"
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options/options_description.hpp"
@@ -37,8 +38,8 @@
 
 #include "maidsafe/common/active.h"
 
-#ifndef NDEBUG
-#define USE_LOGGING
+#if !defined(USE_LOGGING) && !defined(NDEBUG)
+# define USE_LOGGING 1
 #endif
 
 namespace maidsafe {
@@ -86,7 +87,7 @@ struct Envoid {
 
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlways = 4;
 
-#ifdef USE_LOGGING
+#if USE_LOGGING
 #define LOG(level)                                                                            \
   maidsafe::log::LogMessage(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION, maidsafe::log::level) \
       .MessageStream()
@@ -130,12 +131,13 @@ class Logging {
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToVisualiserLogfile(const std::string& message);
+  void WriteToVisualiserServer(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
   bool Async() const { return !no_async_; }
   bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
-  std::string VlogPrefix() const { return vlog_prefix_; }
+  std::string VlogPrefix() const;
   void Flush();
 
  private:
@@ -158,6 +160,7 @@ class Logging {
   boost::filesystem::path log_folder_;
   ColourMode colour_mode_;
   LogFile combined_logfile_stream_, visualiser_logfile_stream_;
+  boost::asio::ip::tcp::iostream visualiser_server_stream_;
   std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
   std::string vlog_prefix_;
   Active background_;
