@@ -38,8 +38,8 @@
 
 #include "maidsafe/common/active.h"
 
-#ifndef NDEBUG
-#define USE_LOGGING
+#if !defined(USE_LOGGING) && !defined(NDEBUG)
+# define USE_LOGGING 1
 #endif
 
 namespace maidsafe {
@@ -87,7 +87,7 @@ struct Envoid {
 
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlways = 4;
 
-#ifdef USE_LOGGING
+#if USE_LOGGING
 #define LOG(level)                                                                            \
   maidsafe::log::LogMessage(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION, maidsafe::log::level) \
       .MessageStream()

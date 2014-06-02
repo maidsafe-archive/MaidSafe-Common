@@ -73,6 +73,7 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {
   CHECK(!IsValid(static_cast<TestPersona>(-1)));
   CHECK(!IsValid(static_cast<TestPersona>(3)));
 
+#ifdef USE_VLOGGING
   Identity target{ RandomString(64) };
   // Call before VlogPrefix has been set
   CHECK_THROWS_AS(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
@@ -99,6 +100,7 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {
   // Try to set the VlogPrefix again
   CHECK_THROWS_AS(log::Logging::Instance().SetVlogPrefix("1"), common_error);
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
+#endif
 }
 
 // This test outputs the URL-encoded version of VLOG messages along with the string representation
@@ -112,6 +114,7 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
     identities.emplace_back(id);
   }
 
+#ifdef USE_VLOGGING
   // Set VLOG prefix in case this test isn't run after the previous one.
   try {
     log::Logging::Instance().SetVlogPrefix(DebugId(this_vault_id_));
@@ -135,6 +138,8 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
   DebugPrint(vlog3);
 
   Sleep(std::chrono::milliseconds(100));  // To avoid Catch output getting mixed in with TLOGs.
+#endif
+
   CHECK(true);
 }
 
