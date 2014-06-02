@@ -27,7 +27,7 @@ namespace log {
 
 namespace {
 
-std::string UrlEncode(const std::string &value) {
+std::string UrlEncode(const std::string& value) {
   static const std::string kUrlEncodedAlphabet[] = {
     "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07", "%08", "%09", "%0a", "%0b", "%0c",
     "%0d", "%0e", "%0f", "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17", "%18", "%19",
@@ -55,6 +55,13 @@ std::string UrlEncode(const std::string &value) {
   return encoded;
 }
 
+std::string UrlEncodeIdentityOrInt(const std::string& value) {
+  // If the value is 64 chars, assume it's an Identity and will benefit from being Base64 encoded.
+  if (value.size() == crypto::SHA512::DIGESTSIZE)
+    return UrlEncode(Base64Encode(value));
+  return UrlEncode(value);
+}
+
 }  // unnamed namespace
 
 VisualiserLogMessage::~VisualiserLogMessage() {
@@ -62,15 +69,19 @@ VisualiserLogMessage::~VisualiserLogMessage() {
   WriteToFile();
 }
 
+std::string VisualiserLogMessage::GetPostRequestBody() const {
+  return std::string {
+      "ts=" + UrlEncode(kTimestamp_) +
+      "&vault_id=" + UrlEncode(kVaultId_) +
+      (kPersonaId_.name.empty() ? "" : "&persona_id=" + kPersonaId_.value) +
+      "&action_id=" + kActionId_.value +
+      "&value1=" + UrlEncodeIdentityOrInt(kValue1_) +
+      (kValue2_.empty() ? "" : "&value2=" + UrlEncodeIdentityOrInt(kValue2_)) };
+}
+
 void VisualiserLogMessage::SendToServer() const {
   try {
-    std::string message{
-        "ts=" + UrlEncode(kTimestamp_) +
-        "&vault_id=" + UrlEncode(kVaultId_) +
-        (kPersonaId_.name.empty() ? "" : "&persona_id=" + kPersonaId_.value) +
-        "&action_id=" + kActionId_.value +
-        "&value1=" + UrlEncode(kValue1_) +
-        (kValue2_.empty() ? "" : "&value2=" + UrlEncode(kValue2_)) };
+    std::string message{ GetPostRequestBody() };
     auto post_functor([message] { Logging::Instance().WriteToVisualiserServer(message); });
     Logging::Instance().Send(post_functor);
   }
@@ -86,8 +97,8 @@ void VisualiserLogMessage::WriteToFile() const {
         kVaultId_ + ',' +
         (kPersonaId_.name.empty() ? "" : kPersonaId_.name + ',') +
         kActionId_.name + ',' +
-        kValue1_ +
-        (kValue2_.empty() ? "" : "," + kValue2_) + '\n' };
+        HexSubstr(kValue1_) +
+        (kValue2_.empty() ? "" : "," + HexSubstr(kValue2_)) + '\n' };
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
   }

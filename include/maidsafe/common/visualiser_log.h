@@ -32,6 +32,8 @@
 
 namespace maidsafe {
 
+namespace test { class VisualiserLogTest; }
+
 namespace log {
 
 class VisualiserLogMessage {
@@ -41,8 +43,8 @@ class VisualiserLogMessage {
                        Identity value2 = Identity{})
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
-        kValue1_(DebugId(value1)),
-        kValue2_(value2.IsInitialised() ? DebugId(value2) : std::string()),
+        kValue1_(value1.string()),
+        kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
         kPersonaId_(persona),
         kActionId_(action) {}
 
@@ -60,8 +62,8 @@ class VisualiserLogMessage {
   VisualiserLogMessage(ActionEnum action, Identity value1, Identity value2 = Identity{})
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
-        kValue1_(DebugId(value1)),
-        kValue2_(value2.IsInitialised() ? DebugId(value2) : std::string()),
+        kValue1_(value1.string()),
+        kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
         kPersonaId_(),
         kActionId_(action) {}
 
@@ -76,6 +78,8 @@ class VisualiserLogMessage {
         kActionId_(action) {}
 
   ~VisualiserLogMessage();
+
+  friend class test::VisualiserLogTest;
 
  private:
   struct Enum {
@@ -98,6 +102,7 @@ class VisualiserLogMessage {
     std::string value, name;
   };
 
+  std::string GetPostRequestBody() const;
   void SendToServer() const;
   void WriteToFile() const;
 

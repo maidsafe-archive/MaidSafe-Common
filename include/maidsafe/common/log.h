@@ -137,7 +137,7 @@ class Logging {
   bool Async() const { return !no_async_; }
   bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
-  std::string VlogPrefix() const { return vlog_prefix_; }
+  std::string VlogPrefix() const;
   void Flush();
 
  private:

@@ -617,6 +617,12 @@ void Logging::Flush() {
   combined_logfile_stream_.stream.flush();
 }
 
+std::string Logging::VlogPrefix() const {
+  if (!vlog_prefix_initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
+  return vlog_prefix_;
+}
+
 namespace detail {
 
 std::string GetLocalTime() {
