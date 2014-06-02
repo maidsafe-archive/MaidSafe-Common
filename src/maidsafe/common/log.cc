@@ -65,8 +65,26 @@ void UseUnreferenced() {
 std::atomic<bool> vlog_prefix_initialised{ false };
 std::once_flag logging_initialised, vlog_prefix_once_flag;
 
-std::mutex& g_console_mutex() {
-  static std::mutex mutex;
+// This fellow needs to work during static data deinit
+class spinlock
+{
+  std::atomic<bool> flag;
+public:
+  spinlock() : flag(false) { }
+  void lock()
+  {
+    bool v;
+    while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
+          std::memory_order_acquire))
+      std::this_thread::yield();
+  }
+  void unlock()
+  {
+    flag.store(false, std::memory_order_release);
+  }
+};
+spinlock& g_console_mutex() {
+  static spinlock mutex;
   return mutex;
 }
 
@@ -93,7 +111,7 @@ WORD GetColourAttribute(Colour colour) {
 void ColouredPrint(Colour colour, const std::string& text) {
   CONSOLE_SCREEN_BUFFER_INFO console_info_before;
   const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
-  std::lock_guard<std::mutex> lock(g_console_mutex());
+  std::lock_guard<spinlock> lock(g_console_mutex());
   if (kConsoleHandle != INVALID_HANDLE_VALUE) {
     int got_console_info = GetConsoleScreenBufferInfo(kConsoleHandle, &console_info_before);
     fflush(stdout);
@@ -127,7 +145,7 @@ const char* GetAnsiColourCode(Colour colour) {
 
 void ColouredPrint(Colour colour, const std::string& text) {
   // On non-Windows platforms, we rely on the TERM variable.
-  std::lock_guard<std::mutex> lock(g_console_mutex());
+  std::lock_guard<spinlock> lock(g_console_mutex());
   auto env_ptr = std::getenv("TERM");
   const std::string kTerm(env_ptr ? env_ptr : "");
   const bool kTermSupportsColour(kTerm == "xterm" || kTerm == "xterm-color" ||
@@ -452,7 +470,7 @@ Logging::Logging()
       vlog_prefix_("Vault ID uninitialised"),
       background_() {
   // Force intialisation order to ensure g_console_mutex is available in Logging's destuctor.
-  std::lock_guard<std::mutex> lock(g_console_mutex());
+  std::lock_guard<spinlock> lock(g_console_mutex());
   static_cast<void>(lock);
 }
 
