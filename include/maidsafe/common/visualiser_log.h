@@ -23,12 +23,12 @@
 #include <string>
 #include <type_traits>
 
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/utils.h"
 
-#define VLOG(persona_enum, action_enum, identity) \
-    maidsafe::log::VisualiserLogMessage(persona_enum, action_enum, identity).MessageStream()
+#define VLOG maidsafe::log::VisualiserLogMessage
 
 namespace maidsafe {
 
@@ -37,34 +37,72 @@ namespace log {
 class VisualiserLogMessage {
  public:
   template <typename PersonaEnum, typename ActionEnum>
-  VisualiserLogMessage(PersonaEnum persona_enum, ActionEnum action_enum, Identity target)
-      : stream_(), kSeparator_(',') {
-    stream_ << detail::GetUTCTime() << kSeparator_
-            << Logging::Instance().VlogPrefix() << kSeparator_
-            << static_cast<typename std::underlying_type<PersonaEnum>::type>(persona_enum)
-            << kSeparator_ << persona_enum << kSeparator_
-            << static_cast<typename std::underlying_type<ActionEnum>::type>(action_enum)
-            << kSeparator_ << action_enum << kSeparator_;
-    if (target.IsInitialised())
-      stream_ << DebugId(target);
-    else
-      stream_ << "Unknown target";
-    stream_ << kSeparator_;
-  }
-  ~VisualiserLogMessage() {
-    std::string log_entry{ stream_.str() + '\n' };
-    //if (Logging::Instance().LogToConsole()) {
-    //  printf("%s", log_entry.c_str());
-    //  fflush(stdout);
-    //}
-    auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
-    Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
-  }
-  std::ostringstream& MessageStream() { return stream_; }
+  VisualiserLogMessage(PersonaEnum persona, ActionEnum action, Identity value1,
+                       Identity value2 = Identity{})
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kValue1_(DebugId(value1)),
+        kValue2_(value2.IsInitialised() ? DebugId(value2) : std::string()),
+        kPersonaId_(persona),
+        kActionId_(action) {}
+
+  template <typename PersonaEnum, typename ActionEnum, typename T,
+            typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+  VisualiserLogMessage(PersonaEnum persona, ActionEnum action, T value)
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kValue1_(std::to_string(value)),
+        kValue2_(),
+        kPersonaId_(persona),
+        kActionId_(action) {}
+
+  template <typename ActionEnum>
+  VisualiserLogMessage(ActionEnum action, Identity value1, Identity value2 = Identity{})
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kValue1_(DebugId(value1)),
+        kValue2_(value2.IsInitialised() ? DebugId(value2) : std::string()),
+        kPersonaId_(),
+        kActionId_(action) {}
+
+  template <typename ActionEnum, typename T,
+            typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+  VisualiserLogMessage(ActionEnum action, T value)
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kValue1_(std::to_string(value)),
+        kValue2_(),
+        kPersonaId_(),
+        kActionId_(action) {}
+
+  ~VisualiserLogMessage();
 
  private:
-  std::ostringstream stream_;
-  const char kSeparator_;
+  struct Enum {
+    template <typename EnumType>
+    explicit Enum(EnumType e)
+        : value(std::to_string(static_cast<typename std::underlying_type<EnumType>::type>(e))),
+          name([e]()->std::string {
+            std::ostringstream stream;
+            stream << e;
+            return stream.str();
+          }()) {
+      if (!IsValid(e))
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    }
+    Enum() = default;
+    Enum(const Enum&) = default;
+    Enum(Enum&& other) : value(std::move(other.value)), name(std::move(other.name)) {}
+    Enum& operator=(const Enum&) = default;
+
+    std::string value, name;
+  };
+
+  void SendToServer() const;
+  void WriteToFile() const;
+
+  const std::string kTimestamp_, kVaultId_, kValue1_, kValue2_;
+  const Enum kPersonaId_, kActionId_;
 };
 
 }  // namespace log

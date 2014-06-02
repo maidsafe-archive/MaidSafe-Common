@@ -30,6 +30,7 @@
 #include <sstream>
 #include <vector>
 
+#include "boost/asio/ip/tcp.hpp"
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options/options_description.hpp"
@@ -130,6 +131,7 @@ class Logging {
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToVisualiserLogfile(const std::string& message);
+  void WriteToVisualiserServer(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
   bool Async() const { return !no_async_; }
@@ -158,6 +160,7 @@ class Logging {
   boost::filesystem::path log_folder_;
   ColourMode colour_mode_;
   LogFile combined_logfile_stream_, visualiser_logfile_stream_;
+  boost::asio::ip::tcp::iostream visualiser_server_stream_;
   std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
   std::string vlog_prefix_;
   Active background_;
