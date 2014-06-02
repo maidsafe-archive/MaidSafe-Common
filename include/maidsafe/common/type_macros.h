@@ -73,7 +73,7 @@
       return ostream;                                                                              \
     }                                                                                              \
                                                                                                    \
-    bool IsValid(name n) {                                                                         \
+    inline bool IsValid(name n) {                                                                  \
       return n >= name::GET_OSTREAMABLE_ENUM_VALUE(BOOST_PP_SEQ_HEAD(enumerators)) &&              \
              n <= name::GET_OSTREAMABLE_ENUM_VALUE(BOOST_PP_SEQ_ELEM(                              \
                       BOOST_PP_DEC(BOOST_PP_SEQ_SIZE(enumerators)), enumerators));                 \
