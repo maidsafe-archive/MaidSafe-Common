@@ -464,7 +464,7 @@ Logging::Logging()
       colour_mode_(ColourMode::kPartialLine),
       combined_logfile_stream_(),
       visualiser_logfile_stream_(),
-      visualiser_server_stream_("maidsafe.net/visualiser", "http"),
+      visualiser_server_stream_(),
       project_logfile_streams_(),
       vlog_prefix_("Vault ID uninitialised"),
       background_() {
