@@ -31,17 +31,8 @@
 #ifdef USE_VLOGGING
 #define VLOG maidsafe::log::VisualiserLogMessage
 #else
-
-namespace maidsafe { namespace log { class VisualiserLogMessage; } }
-
-struct Envoid {
- public:
-  Envoid() {}
-  void operator&(maidsafe::log::VisualiserLogMessage&) {}
-};
-
 #define VLOG(...) true ? static_cast<void>(19) : \
-                         Envoid() & maidsafe::log::VisualiserLogMessage(__VA_ARGS__)
+                         maidsafe::log::VisualiserLogMessage(__VA_ARGS__).Envoid()
 #endif
 
 namespace maidsafe {
@@ -92,6 +83,8 @@ class VisualiserLogMessage {
         kActionId_(action) {}
 
   ~VisualiserLogMessage();
+
+  void Envoid() const {}
 
   friend class test::VisualiserLogTest;
 
