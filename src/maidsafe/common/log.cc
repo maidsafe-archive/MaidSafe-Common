@@ -626,7 +626,7 @@ void Logging::WriteToVisualiserServer(const std::string& message) {
     });
     try {
       read_response(' ');  // "HTTP/1.1"
-      unsigned int http_code{ std::stoul(read_response(' ')) };
+      unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
       if (http_code != 200) {
         std::string http_code_message{ read_response('\r') };
         LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
