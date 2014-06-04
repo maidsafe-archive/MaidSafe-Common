@@ -20,6 +20,7 @@
 #                                                                                                  #
 #==================================================================================================#
 
+
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
@@ -33,6 +34,7 @@ endif()
 project(common)
 
 include(../../cmake_modules/standard_setup.cmake)
+
 
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
@@ -75,6 +77,7 @@ set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
 list(APPEND CommonTestsAllFiles ${TestsMain})
+
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -190,11 +193,13 @@ endif()
 
 ms_rename_outdated_built_exes()
 
+
 #==================================================================================================#
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
 include(${CMAKE_CURRENT_SOURCE_DIR}/common_flags.cmake)
 include(standard_flags)
+
 
 #==================================================================================================#
 # Tests                                                                                            #

@@ -32,7 +32,7 @@
 #define VLOG maidsafe::log::VisualiserLogMessage
 #else
 #define VLOG(...) true ? static_cast<void>(19) : \
-                         maidsafe::log::VisualiserLogMessage(__VA_ARGS__).Envoid()
+                         (maidsafe::log::VisualiserLogMessage(__VA_ARGS__), static_cast<void>(19))
 #endif
 
 namespace maidsafe {
@@ -83,8 +83,6 @@ class VisualiserLogMessage {
         kActionId_(action) {}
 
   ~VisualiserLogMessage();
-
-  void Envoid() const {}
 
   friend class test::VisualiserLogTest;
 
