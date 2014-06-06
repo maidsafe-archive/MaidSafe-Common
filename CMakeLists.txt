@@ -212,3 +212,29 @@ if(MaidsafeTesting)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
+
+
+#==================================================================================================#
+# Package                                                                                          #
+#==================================================================================================#
+set(EXPORT_NAME maidsafe_common)
+install(TARGETS maidsafe_common EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION bin/lib)
+set(EXPORT_NAME maidsafe_network_viewer)
+install(TARGETS maidsafe_network_viewer EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION bin/lib)
+set(EXPORT_NAME signing_tool)
+install(TARGETS signing_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+set(EXPORT_NAME qa_tool)
+install(TARGETS qa_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+set(EXPORT_NAME bootstrap_file_tool)
+install(TARGETS bootstrap_file_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+set(EXPORT_NAME address_space_tool)
+install(TARGETS address_space_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+
+install(FILES ${CommonApi} DESTINATION include/maidsafe/common)
+install(FILES ${CommonAuthenticationApi} DESTINATION include/maidsafe/common/authentication)
+install(FILES ${CommonAuthenticationDetailApi} DESTINATION include/maidsafe/common/authentication/detail)
+install(FILES ${CommonDataStoresApi} DESTINATION include/maidsafe/common/data_stores)
+install(FILES ${CommonDataTypesApi} DESTINATION include/maidsafe/common/data_types)
+install(FILES ${CommonToolsApi} DESTINATION include/maidsafe/common/tools)
+install(FILES ${CommonHeaders} DESTINATION src/maidsafe/common)
+install(FILES ${CommonDataStoresHeaders} DESTINATION src/maidsafe/common/data_stores)
