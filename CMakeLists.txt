@@ -218,9 +218,9 @@ endif()
 # Package                                                                                          #
 #==================================================================================================#
 set(EXPORT_NAME maidsafe_common)
-install(TARGETS maidsafe_common EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION bin/lib)
+install(TARGETS maidsafe_common EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
 set(EXPORT_NAME maidsafe_network_viewer)
-install(TARGETS maidsafe_network_viewer EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION bin/lib)
+install(TARGETS maidsafe_network_viewer EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
 set(EXPORT_NAME signing_tool)
 install(TARGETS signing_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
 set(EXPORT_NAME qa_tool)
@@ -236,5 +236,3 @@ install(FILES ${CommonAuthenticationDetailApi} DESTINATION include/maidsafe/comm
 install(FILES ${CommonDataStoresApi} DESTINATION include/maidsafe/common/data_stores)
 install(FILES ${CommonDataTypesApi} DESTINATION include/maidsafe/common/data_types)
 install(FILES ${CommonToolsApi} DESTINATION include/maidsafe/common/tools)
-install(FILES ${CommonHeaders} DESTINATION src/maidsafe/common)
-install(FILES ${CommonDataStoresHeaders} DESTINATION src/maidsafe/common/data_stores)
