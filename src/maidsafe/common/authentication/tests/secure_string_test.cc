@@ -112,6 +112,15 @@ TEST_CASE("Create Password string", "[SecureString][Unit]") {
   }
 }
 
+
+TEST_CASE("Pass empty Password string", "[SecureString][Unit]") {
+  // Password's are currently defined to have length at least 1 character.
+  SafeString safe_password;
+  CHECK_THROWS_AS(Password password(safe_password), std::exception);
+  std::string std_password;
+  CHECK_THROWS_AS(Password password(std_password), std::exception);
+}
+
 TEST_CASE("Remove first Password character", "[SecureString][Unit]") {
   Password password;
 
