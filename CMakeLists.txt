@@ -20,6 +20,7 @@
 #                                                                                                  #
 #==================================================================================================#
 
+
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
@@ -33,6 +34,7 @@ endif()
 project(common)
 
 include(../../cmake_modules/standard_setup.cmake)
+
 
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
@@ -75,6 +77,7 @@ set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
 list(APPEND CommonTestsAllFiles ${TestsMain})
+
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -190,11 +193,13 @@ endif()
 
 ms_rename_outdated_built_exes()
 
+
 #==================================================================================================#
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
 include(${CMAKE_CURRENT_SOURCE_DIR}/common_flags.cmake)
 include(standard_flags)
+
 
 #==================================================================================================#
 # Tests                                                                                            #
@@ -207,3 +212,27 @@ if(MaidsafeTesting)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
+
+
+#==================================================================================================#
+# Package                                                                                          #
+#==================================================================================================#
+set(EXPORT_NAME maidsafe_common)
+install(TARGETS maidsafe_common EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME maidsafe_network_viewer)
+install(TARGETS maidsafe_network_viewer EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+set(EXPORT_NAME signing_tool)
+install(TARGETS signing_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+set(EXPORT_NAME qa_tool)
+install(TARGETS qa_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+set(EXPORT_NAME bootstrap_file_tool)
+install(TARGETS bootstrap_file_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+set(EXPORT_NAME address_space_tool)
+install(TARGETS address_space_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+
+install(FILES ${CommonApi} DESTINATION include/maidsafe/common)
+install(FILES ${CommonAuthenticationApi} DESTINATION include/maidsafe/common/authentication)
+install(FILES ${CommonAuthenticationDetailApi} DESTINATION include/maidsafe/common/authentication/detail)
+install(FILES ${CommonDataStoresApi} DESTINATION include/maidsafe/common/data_stores)
+install(FILES ${CommonDataTypesApi} DESTINATION include/maidsafe/common/data_types)
+install(FILES ${CommonToolsApi} DESTINATION include/maidsafe/common/tools)

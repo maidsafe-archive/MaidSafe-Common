@@ -19,7 +19,9 @@
 #ifndef MAIDSAFE_COMMON_LOG_H_
 #define MAIDSAFE_COMMON_LOG_H_
 
+#include <atomic>
 #include <cstdarg>
+#include <cstdint>
 #include <ctime>
 #include <fstream>
 #include <iostream>
@@ -28,6 +30,7 @@
 #include <mutex>
 #include <string>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include "boost/asio/ip/tcp.hpp"
@@ -38,8 +41,12 @@
 
 #include "maidsafe/common/active.h"
 
-#if !defined(USE_LOGGING) && !defined(NDEBUG)
-# define USE_LOGGING 1
+#ifndef USE_LOGGING
+# ifdef NDEBUG
+#  define USE_LOGGING 0
+# else
+#  define USE_LOGGING 1
+# endif
 #endif
 
 namespace maidsafe {
@@ -127,7 +134,8 @@ class Logging {
   // Returns unused options
   template <typename Char>
   std::vector<std::vector<Char>> Initialise(int argc, Char** argv);
-  void SetVlogPrefix(const std::string& prefix);
+  void InitialiseVlog(const std::string& prefix, const std::string& server_name,
+                      uint16_t server_port, const std::string& server_dir);
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToVisualiserLogfile(const std::string& message);
@@ -146,6 +154,17 @@ class Logging {
     std::ofstream stream;
     std::mutex mutex;
   };
+  struct Visualiser {
+    Visualiser() : prefix("Vault ID uninitialised"), logfile(), server_stream(), server_name(),
+                   server_dir(), server_port(0), initialised(false), initialised_once_flag() {}
+    std::string prefix;
+    LogFile logfile;
+    boost::asio::ip::tcp::iostream server_stream;
+    std::string server_name, server_dir;
+    uint16_t server_port;
+    std::atomic<bool> initialised;
+    std::once_flag initialised_once_flag;
+  };
   Logging();
   bool IsHelpOption(const boost::program_options::options_description& log_config) const;
   void HandleFilterOptions();
@@ -159,10 +178,9 @@ class Logging {
   std::time_t start_time_;
   boost::filesystem::path log_folder_;
   ColourMode colour_mode_;
-  LogFile combined_logfile_stream_, visualiser_logfile_stream_;
-  boost::asio::ip::tcp::iostream visualiser_server_stream_;
+  LogFile combined_logfile_stream_;
   std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
-  std::string vlog_prefix_;
+  Visualiser visualiser_;
   Active background_;
 };
 

@@ -24,13 +24,11 @@
 #include <unistd.h>
 #endif
 #include <algorithm>
-#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <iterator>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include "boost/algorithm/string/case_conv.hpp"
@@ -62,26 +60,23 @@ void UseUnreferenced() {
 }
 #endif
 
-std::atomic<bool> vlog_prefix_initialised{ false };
-std::once_flag logging_initialised, vlog_prefix_once_flag;
+std::once_flag logging_initialised;
 
 // This fellow needs to work during static data deinit
-class spinlock
-{
-  std::atomic<bool> flag;
-public:
+class spinlock {
+ public:
   spinlock() : flag(false) { }
-  void lock()
-  {
+  void lock() {
     bool v;
     while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
           std::memory_order_acquire))
       std::this_thread::yield();
   }
-  void unlock()
-  {
+  void unlock() {
     flag.store(false, std::memory_order_release);
   }
+ private:
+  std::atomic<bool> flag;
 };
 spinlock& g_console_mutex() {
   static spinlock mutex;
@@ -465,10 +460,8 @@ Logging::Logging()
       log_folder_(),
       colour_mode_(ColourMode::kPartialLine),
       combined_logfile_stream_(),
-      visualiser_logfile_stream_(),
-      visualiser_server_stream_("maidsafe.net/visualiser", "http"),
       project_logfile_streams_(),
-      vlog_prefix_("Vault ID uninitialised"),
+      visualiser_(),
       background_() {
   // Force intialisation order to ensure g_console_mutex is available in Logging's destuctor.
   std::lock_guard<spinlock> lock(g_console_mutex());
@@ -504,15 +497,6 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
   return unused_options;
 }
 
-void Logging::SetVlogPrefix(const std::string& prefix) {
-  if (vlog_prefix_initialised)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
-  std::call_once(vlog_prefix_once_flag, [&] {
-    vlog_prefix_initialised = true;
-    vlog_prefix_ = prefix;
-  });
-}
-
 template <>
 std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) {
   SetThisExecutablePath(argv);
@@ -535,6 +519,25 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
     }
   });
   return unused_options;
+}
+
+void Logging::InitialiseVlog(const std::string& prefix, const std::string& server_name,
+                             uint16_t server_port, const std::string& server_dir) {
+  if (visualiser_.initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
+  std::call_once(visualiser_.initialised_once_flag, [&] {
+    visualiser_.initialised = true;
+    visualiser_.prefix = prefix;
+    visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
+    visualiser_.server_name = server_name;
+    visualiser_.server_port = server_port;
+    visualiser_.server_dir = server_dir;
+    visualiser_.server_stream.connect(server_name, std::to_string(server_port));
+    if (!visualiser_.server_stream) {
+      LOG(kError) << "Failed to connect to VLOG server: "
+                  << visualiser_.server_stream.error().message();
+    }
+  });
 }
 
 bool Logging::IsHelpOption(const po::options_description& log_config) const {
@@ -586,9 +589,6 @@ void Logging::SetStreams() {
 
   if (filter_.size() != 1)
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
-
-  visualiser_logfile_stream_.stream.open(GetLogfileName("visualiser").c_str(),
-                                         std::ios_base::trunc);
 }
 
 void Logging::Send(std::function<void()> message_functor) { background_.Send(message_functor); }
@@ -606,18 +606,41 @@ void Logging::WriteToCombinedLogfile(const std::string& message) {
 }
 
 void Logging::WriteToVisualiserLogfile(const std::string& message) {
-  WriteToLogfile(message, visualiser_logfile_stream_);
+  WriteToLogfile(message, visualiser_.logfile);
 }
 
 void Logging::WriteToVisualiserServer(const std::string& message) {
-  // TODO(Fraser#5#): 2014-06-02 - Set correct host address and print LOG message if response fails.
-  visualiser_server_stream_ << "POST / HTTP/1.1\r\n"
-      << "Host: maidsafe.net\r\n"
-      << "Content-Type: application/x-www-form-urlencoded\r\n"
-      << "Content - Length: " << std::to_string(message.size()) << "\r\n"
-      << "\r\n" << message << "\r\n" << std::flush;
-  std::string response_line;
-  std::getline(visualiser_server_stream_, response_line);
+  if (visualiser_.server_stream) {
+    visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
+        << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
+        << "Content-Type: application/x-www-form-urlencoded\r\n"
+        << "Content-Length: " << std::to_string(message.size()) << "\r\n"
+        << "\r\n" << message << "\r\n" << std::flush;
+    auto read_response([&](char delimiter)->std::string {
+      std::string response;
+      if (!std::getline(visualiser_.server_stream, response, delimiter)) {
+        LOG(kWarning) << "Failed to read VLOG server response.";
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+      }
+      return response;
+    });
+    try {
+      read_response(' ');  // "HTTP/1.1"
+      unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
+      if (http_code != 200) {
+        std::string http_code_message{ read_response('\r') };
+        LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
+                      << http_code_message << "\" to request \"" << message << "\"";
+      }
+    }
+    catch (const std::exception& e) {
+      LOG(kWarning) << e.what();
+    }
+    std::array<char, 100> discarded;
+    while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
+  } else {
+    LOG(kWarning) << "Not connected to VLOG server.";
+  }
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
@@ -636,9 +659,9 @@ void Logging::Flush() {
 }
 
 std::string Logging::VlogPrefix() const {
-  if (!vlog_prefix_initialised)
+  if (!visualiser_.initialised)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
-  return vlog_prefix_;
+  return visualiser_.prefix;
 }
 
 namespace detail {

@@ -171,7 +171,7 @@ TEST_CASE_METHOD(MemoryBufferTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]
   REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
   REQUIRE(value == recovered);
 
-  uint32_t events(RandomUint32() % (2 * size));
+  uint32_t events((RandomUint32() % (2 * size)) + 1);  // want at least one store to change 'value'
   for (uint32_t i = 0; i != events; ++i) {
     last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % size) + 1));
     auto async = std::async(std::launch::async,
@@ -182,7 +182,9 @@ TEST_CASE_METHOD(MemoryBufferTest, "RepeatedlyStoreUsingSameKey", "[Behavioural]
   }
 
   REQUIRE_NOTHROW(recovered = memory_buffer_->Get(key));
+  INFO("Original: " << value.string() << " Recovered: " << recovered.string());
   REQUIRE(value != recovered);
+  INFO("Expected: " << last_value.string() << " Recovered: " << recovered.string());
   REQUIRE(last_value == recovered);
 }
 

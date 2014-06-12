@@ -147,7 +147,10 @@ SecureInputString<Predicate, Size, Tag>::SecureInputString(const StringType& str
     : encrypted_chars_(),
       phrase_(GetRandomString<SafeString>(crypto::SHA512::DIGESTSIZE)),
       secure_string_(string),
-      finalised_(true) {}
+      finalised_(true) {
+  if (!Predicate()(string.size(), Size))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+}
 
 template <typename Predicate, SecureString::size_type Size, typename Tag>
 SecureInputString<Predicate, Size, Tag>::~SecureInputString() {}
@@ -206,7 +209,7 @@ void SecureInputString<Predicate, Size, Tag>::Finalise() {
   if (IsFinalised())
     return;
   if (!Predicate()(encrypted_chars_.size(), Size))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
   uint32_t index(0);
   for (auto& encrypted_char : encrypted_chars_) {
     if (encrypted_char.first != index) {

@@ -66,7 +66,7 @@ class VisualiserLogTest {
   Identity this_vault_id_;
 };
 
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {
+TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeout 10
   CHECK(IsValid(TestPersona::kMaidNode));
   CHECK(IsValid(TestPersona::kDataGetter));
   CHECK(IsValid(TestPersona::kCacheHandler));
@@ -79,8 +79,8 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {
   CHECK_THROWS_AS(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
                   common_error);
 
-  // Call after VlogPrefix has been set
-  log::Logging::Instance().SetVlogPrefix(DebugId(this_vault_id_));
+  // Call after VLOG has been initialised
+  log::Logging::Instance().InitialiseVlog("Visualiser log test", "128.199.223.97", 8080, "/log");
   VLOG(TestPersona::kDataGetter, TestAction::kGet, target, target);
   VLOG(TestPersona::kDataGetter, TestAction::kGet, target);
   VLOG(TestPersona::kDataGetter, TestAction::kGet, 99);
@@ -97,15 +97,16 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {
   CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), target), common_error);
   CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), 99), common_error);
 
-  // Try to set the VlogPrefix again
-  CHECK_THROWS_AS(log::Logging::Instance().SetVlogPrefix("1"), common_error);
+  // Try to initialise again
+  CHECK_THROWS_AS(log::Logging::Instance().InitialiseVlog("1", "128.199.223.97", 8080, "/log"),
+                  common_error);
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
 #endif
 }
 
 // This test outputs the URL-encoded version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Unit]") {
+TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Unit]") {  // Timeout 9
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
@@ -117,7 +118,8 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
 #ifdef USE_VLOGGING
   // Set VLOG prefix in case this test isn't run after the previous one.
   try {
-    log::Logging::Instance().SetVlogPrefix(DebugId(this_vault_id_));
+    log::Logging::Instance().InitialiseVlog(DebugId(this_vault_id_), "128.199.223.97", 8080,
+                                            "/log");
   }
   catch (const std::exception&) {}
 

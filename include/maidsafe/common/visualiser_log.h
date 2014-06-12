@@ -28,11 +28,12 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/utils.h"
 
-//#ifdef USE_VLOGGING
+#ifdef USE_VLOGGING
 #define VLOG maidsafe::log::VisualiserLogMessage
-//#else
-//#define VLOG(...) true ? static_cast<void>(19) : maidsafe::log::VisualiserLogMessage(__VA_ARGS__)
-//#endif
+#else
+#define VLOG(...) true ? static_cast<void>(19) : \
+                         (maidsafe::log::VisualiserLogMessage(__VA_ARGS__), static_cast<void>(19))
+#endif
 
 namespace maidsafe {
 
