@@ -36,7 +36,8 @@ NodeId::NodeId() : raw_id_(kSize, 0) INIT_DEBUG_NODE_ID {}
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) INIT_DEBUG_NODE_ID {}
 
-NodeId::NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT : raw_id_(std::move(other.raw_id_)) INIT_DEBUG_NODE_ID {}
+NodeId::NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT
+    : raw_id_(std::move(other.raw_id_)) INIT_DEBUG_NODE_ID {}
 
 NodeId& NodeId::operator=(NodeId other) {
   swap(*this, other);
