@@ -47,7 +47,7 @@ class NodeId {
   NodeId();
 
   NodeId(const NodeId& other);
-  NodeId(NodeId&& other);
+  NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT;
   NodeId& operator=(NodeId other);
 
   // Creates an ID = (2 ^ kKeySizeBits) - 1 or a random ID in the interval [0, 2 ^ kKeySizeBits).

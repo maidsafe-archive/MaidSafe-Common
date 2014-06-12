@@ -30,7 +30,7 @@ NodeId::NodeId() : raw_id_(kSize, 0) {}
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) {}
 
-NodeId::NodeId(NodeId&& other) : raw_id_(std::move(other.raw_id_)) {}
+NodeId::NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT : raw_id_(std::move(other.raw_id_)) {}
 
 NodeId& NodeId::operator=(NodeId other) {
   swap(*this, other);
