@@ -62,6 +62,13 @@ std::string UrlEncodeIdentityOrInt(const std::string& value) {
   return UrlEncode(value);
 }
 
+std::string EncodeIdentityOrInt(const std::string& value) {
+  // If the value is 64 chars, assume it's an Identity.
+  if (value.size() == crypto::SHA512::DIGESTSIZE)
+    return HexSubstr(value);
+  return value;
+}
+
 }  // unnamed namespace
 
 VisualiserLogMessage::~VisualiserLogMessage() {
@@ -97,8 +104,8 @@ void VisualiserLogMessage::WriteToFile() const {
         kVaultId_ + ',' +
         (kPersonaId_.name.empty() ? "" : kPersonaId_.name + ',') +
         kActionId_.name + ',' +
-        HexSubstr(kValue1_) +
-        (kValue2_.empty() ? "" : "," + HexSubstr(kValue2_)) + '\n' };
+        EncodeIdentityOrInt(kValue1_) +
+        (kValue2_.empty() ? "" : "," + EncodeIdentityOrInt(kValue2_)) + '\n' };
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
   }
