@@ -610,37 +610,44 @@ void Logging::WriteToVisualiserLogfile(const std::string& message) {
 }
 
 void Logging::WriteToVisualiserServer(const std::string& message) {
-  if (visualiser_.server_stream) {
-    visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
-        << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
-        << "Content-Type: application/x-www-form-urlencoded\r\n"
-        << "Content-Length: " << std::to_string(message.size()) << "\r\n"
-        << "\r\n" << message << "\r\n" << std::flush;
-    auto read_response([&](char delimiter)->std::string {
-      std::string response;
-      if (!std::getline(visualiser_.server_stream, response, delimiter)) {
-        LOG(kWarning) << "Failed to read VLOG server response.";
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-      }
-      return response;
-    });
-    try {
-      read_response(' ');  // "HTTP/1.1"
-      unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
-      if (http_code != 200) {
-        std::string http_code_message{ read_response('\r') };
-        LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
-                      << http_code_message << "\" to request \"" << message << "\"";
-      }
+  if (!visualiser_.server_stream) {
+    visualiser_.server_stream.clear();
+    visualiser_.server_stream.connect(visualiser_.server_name,
+                                      std::to_string(visualiser_.server_port));
+    if (!visualiser_.server_stream) {
+      LOG(kError) << "Failed to re-connect to VLOG server: "
+                  << visualiser_.server_stream.error().message();
+      return;
     }
-    catch (const std::exception& e) {
-      LOG(kWarning) << e.what();
-    }
-    std::array<char, 100> discarded;
-    while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
-  } else {
-    LOG(kWarning) << "Not connected to VLOG server.";
   }
+
+  visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
+      << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
+      << "Content-Type: application/x-www-form-urlencoded\r\n"
+      << "Content-Length: " << std::to_string(message.size()) << "\r\n"
+      << "\r\n" << message << "\r\n" << std::flush;
+  auto read_response([&](char delimiter)->std::string {
+    std::string response;
+    if (!std::getline(visualiser_.server_stream, response, delimiter)) {
+      LOG(kWarning) << "Failed to read VLOG server response.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+    }
+    return response;
+  });
+  try {
+    read_response(' ');  // "HTTP/1.1"
+    unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
+    if (http_code != 200) {
+      std::string http_code_message{ read_response('\r') };
+      LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
+                    << http_code_message << "\" to request \"" << message << "\"";
+    }
+  }
+  catch (const std::exception& e) {
+    LOG(kWarning) << e.what();
+  }
+  std::array<char, 100> discarded;
+  while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
