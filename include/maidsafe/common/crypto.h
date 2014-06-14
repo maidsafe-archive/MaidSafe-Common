@@ -233,7 +233,7 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
 
 std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings);
 
-std::pair<Identity, CipherText> ObfuscateData(const Identity& name, const PlainText& plain_text);
+CipherText ObfuscateData(const Identity& name, const PlainText& plain_text);
 PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text);
 
 }  // namespace crypto
