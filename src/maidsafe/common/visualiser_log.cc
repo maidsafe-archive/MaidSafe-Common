@@ -57,9 +57,7 @@ std::string UrlEncode(const std::string& value) {
 
 std::string UrlEncodeIdentityOrInt(const std::string& value) {
   // If the value is 64 chars, assume it's an Identity and will benefit from being Base64 encoded.
-  if (value.size() == crypto::SHA512::DIGESTSIZE)
-    return UrlEncode(Base64Encode(value));
-  return UrlEncode(value);
+  return UrlEncode(value.size() == crypto::SHA512::DIGESTSIZE ? HexEncode(value) : value);
 }
 
 std::string EncodeIdentityOrInt(const std::string& value) {
