@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -19,70 +19,53 @@
 #ifndef MAIDSAFE_COMMON_CLI_H_
 #define MAIDSAFE_COMMON_CLI_H_
 
-#if defined MAIDSAFE_WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#include <termios.h>
-#endif
-
-#include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <istream>
-#include <ostream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <map>
-#include <functional>
-#include <utility>
+
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/on_scope_exit.h"
 
 namespace maidsafe {
-
-typedef std::function<void()> Func;
 
 class CLI {
  public:
   explicit CLI(std::string prompt = ">> ");
+  CLI(const CLI&) = delete;
+  CLI(CLI&&) = delete;
+  CLI& operator=(CLI) = delete;
+
   template <typename T>
-  T Get(std::string display_message, bool echo_input = true);
-  void Echo(bool enable = true);
-  std::vector<std::string> TokeniseLine(std::string line);
-  void Exit();
-  std::string GetPasswd(bool repeat = true);
+  T Get(std::string display_message, bool echo_input = true) const;
+  void Echo(bool enable = true) const;
+  void Clear() const;
+  std::string GetPassword(bool repeat = true) const;
+  std::vector<std::string> TokeniseLine(std::string line) const;
+  void Exit() const;
 
  private:
-  std::string kPrompt_;
+  const std::string kPrompt_;
 };
 
-#if defined MAIDSAFE_WIN32
-#pragma warning(push)
-#pragma warning(disable : 4701)
-#endif
 template <class T>
-T CLI::Get(std::string display_message, bool echo_input) {
+T CLI::Get(std::string display_message, bool echo_input) const {
+  on_scope_exit restore_console{ [this] {
+    Echo(true);
+    TLOG(kDefaultColour) << kPrompt_;
+  } };
   Echo(echo_input);
-  std::cout << display_message << "\n";
-  std::cout << kPrompt_ << std::flush;
-  T command;
+  TLOG(kDefaultColour) << std::move(display_message) << '\n' << kPrompt_;
+  T command{};
   std::string input;
-  while (std::getline(std::cin, input, '\n')) {
-    std::cout << kPrompt_ << std::flush;
-    if (std::stringstream(input) >> command) {
-      Echo(true);
-      return command;
-    } else {
-      Echo(true);
-      std::cout << "invalid option\n";
-      std::cout << kPrompt_ << std::flush;
-    }
-  }
+  if (!std::getline(std::cin, input))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+
+  if (!(std::stringstream(input) >> command))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+
   return command;
 }
-#if defined MAIDSAFE_WIN32
-#pragma warning(pop)
-#endif
 
 }  // namespace maidsafe
 

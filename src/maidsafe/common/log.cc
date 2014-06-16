@@ -24,13 +24,11 @@
 #include <unistd.h>
 #endif
 #include <algorithm>
-#include <atomic>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <iterator>
 #include <mutex>
-#include <thread>
 #include <vector>
 
 #include "boost/algorithm/string/case_conv.hpp"
@@ -62,11 +60,26 @@ void UseUnreferenced() {
 }
 #endif
 
-std::atomic<bool> vlog_prefix_initialised{ false };
-std::once_flag logging_initialised, vlog_prefix_once_flag;
+std::once_flag logging_initialised;
 
-std::mutex& g_console_mutex() {
-  static std::mutex mutex;
+// This fellow needs to work during static data deinit
+class spinlock {
+ public:
+  spinlock() : flag(false) { }
+  void lock() {
+    bool v;
+    while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
+          std::memory_order_acquire))
+      std::this_thread::yield();
+  }
+  void unlock() {
+    flag.store(false, std::memory_order_release);
+  }
+ private:
+  std::atomic<bool> flag;
+};
+spinlock& g_console_mutex() {
+  static spinlock mutex;
   return mutex;
 }
 
@@ -93,7 +106,7 @@ WORD GetColourAttribute(Colour colour) {
 void ColouredPrint(Colour colour, const std::string& text) {
   CONSOLE_SCREEN_BUFFER_INFO console_info_before;
   const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
-  std::lock_guard<std::mutex> lock(g_console_mutex());
+  std::lock_guard<spinlock> lock(g_console_mutex());
   if (kConsoleHandle != INVALID_HANDLE_VALUE) {
     int got_console_info = GetConsoleScreenBufferInfo(kConsoleHandle, &console_info_before);
     fflush(stdout);
@@ -127,7 +140,7 @@ const char* GetAnsiColourCode(Colour colour) {
 
 void ColouredPrint(Colour colour, const std::string& text) {
   // On non-Windows platforms, we rely on the TERM variable.
-  std::lock_guard<std::mutex> lock(g_console_mutex());
+  std::lock_guard<spinlock> lock(g_console_mutex());
   auto env_ptr = std::getenv("TERM");
   const std::string kTerm(env_ptr ? env_ptr : "");
   const bool kTermSupportsColour(kTerm == "xterm" || kTerm == "xterm-color" ||
@@ -348,6 +361,40 @@ bool SetupLogFolder(const fs::path& log_folder) {
   return true;
 }
 
+enum class TimeType { kLocal, kUTC };
+
+template <TimeType time_type>
+std::string Strftime(const std::time_t* now_t);
+
+template <>
+std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
+  char temp[10];
+  if (!std::strftime(temp, sizeof(temp), "%H:%M:%S.", std::localtime(now_t)))  // NOLINT (Fraser)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+  return std::string{ temp };
+}
+
+template <>
+std::string Strftime<TimeType::kUTC>(const std::time_t* now_t) {
+  char temp[21];
+  if (!std::strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.", std::gmtime(now_t)))  // NOLINT (Fraser)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+  return std::string{ temp };
+}
+
+template <TimeType time_type>
+std::string GetTime() {
+  auto now(std::chrono::system_clock::now());
+  auto seconds_since_epoch(
+    std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+
+  std::time_t now_t(std::chrono::system_clock::to_time_t(
+    std::chrono::system_clock::time_point(seconds_since_epoch)));
+
+  return Strftime<time_type>(&now_t) +
+         std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+}
+
 }  // unnamed namespace
 
 
@@ -413,12 +460,11 @@ Logging::Logging()
       log_folder_(),
       colour_mode_(ColourMode::kPartialLine),
       combined_logfile_stream_(),
-      visualiser_logfile_stream_(),
       project_logfile_streams_(),
-      vlog_prefix_("Vault ID uninitialised"),
+      visualiser_(),
       background_() {
   // Force intialisation order to ensure g_console_mutex is available in Logging's destuctor.
-  std::lock_guard<std::mutex> lock(g_console_mutex());
+  std::lock_guard<spinlock> lock(g_console_mutex());
   static_cast<void>(lock);
 }
 
@@ -451,15 +497,6 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
   return unused_options;
 }
 
-void Logging::SetVlogPrefix(const std::string& prefix) {
-  if (vlog_prefix_initialised)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
-  std::call_once(vlog_prefix_once_flag, [&] {
-    vlog_prefix_initialised = true;
-    vlog_prefix_ = prefix;
-  });
-}
-
 template <>
 std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) {
   SetThisExecutablePath(argv);
@@ -482,6 +519,25 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
     }
   });
   return unused_options;
+}
+
+void Logging::InitialiseVlog(const std::string& prefix, const std::string& server_name,
+                             uint16_t server_port, const std::string& server_dir) {
+  if (visualiser_.initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
+  std::call_once(visualiser_.initialised_once_flag, [&] {
+    visualiser_.initialised = true;
+    visualiser_.prefix = prefix;
+    visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
+    visualiser_.server_name = server_name;
+    visualiser_.server_port = server_port;
+    visualiser_.server_dir = server_dir;
+    visualiser_.server_stream.connect(server_name, std::to_string(server_port));
+    if (!visualiser_.server_stream) {
+      LOG(kError) << "Failed to connect to VLOG server: "
+                  << visualiser_.server_stream.error().message();
+    }
+  });
 }
 
 bool Logging::IsHelpOption(const po::options_description& log_config) const {
@@ -533,9 +589,6 @@ void Logging::SetStreams() {
 
   if (filter_.size() != 1)
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
-
-  visualiser_logfile_stream_.stream.open(GetLogfileName("visualiser").c_str(),
-                                         std::ios_base::trunc);
 }
 
 void Logging::Send(std::function<void()> message_functor) { background_.Send(message_functor); }
@@ -553,7 +606,48 @@ void Logging::WriteToCombinedLogfile(const std::string& message) {
 }
 
 void Logging::WriteToVisualiserLogfile(const std::string& message) {
-  WriteToLogfile(message, visualiser_logfile_stream_);
+  WriteToLogfile(message, visualiser_.logfile);
+}
+
+void Logging::WriteToVisualiserServer(const std::string& message) {
+  if (!visualiser_.server_stream) {
+    visualiser_.server_stream.clear();
+    visualiser_.server_stream.connect(visualiser_.server_name,
+                                      std::to_string(visualiser_.server_port));
+    if (!visualiser_.server_stream) {
+      LOG(kError) << "Failed to re-connect to VLOG server: "
+                  << visualiser_.server_stream.error().message();
+      return;
+    }
+  }
+
+  visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
+      << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
+      << "Content-Type: application/x-www-form-urlencoded\r\n"
+      << "Content-Length: " << std::to_string(message.size()) << "\r\n"
+      << "\r\n" << message << "\r\n" << std::flush;
+  auto read_response([&](char delimiter)->std::string {
+    std::string response;
+    if (!std::getline(visualiser_.server_stream, response, delimiter)) {
+      LOG(kWarning) << "Failed to read VLOG server response.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+    }
+    return response;
+  });
+  try {
+    read_response(' ');  // "HTTP/1.1"
+    unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
+    if (http_code != 200) {
+      std::string http_code_message{ read_response('\r') };
+      LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
+                    << http_code_message << "\" to request \"" << message << "\"";
+    }
+  }
+  catch (const std::exception& e) {
+    LOG(kWarning) << e.what();
+  }
+  std::array<char, 100> discarded;
+  while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
@@ -571,37 +665,20 @@ void Logging::Flush() {
   combined_logfile_stream_.stream.flush();
 }
 
+std::string Logging::VlogPrefix() const {
+  if (!visualiser_.initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
+  return visualiser_.prefix;
+}
+
 namespace detail {
 
 std::string GetLocalTime() {
-  auto now(std::chrono::system_clock::now());
-  auto seconds_since_epoch(
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
-
-  std::time_t now_t(std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::time_point(seconds_since_epoch)));
-
-  char temp[10];
-  if (!std::strftime(temp, 10, "%H:%M:%S.", std::localtime(&now_t)))  // NOLINT (Fraser)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-
-  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
+  return GetTime<TimeType::kLocal>();
 }
 
 std::string GetUTCTime() {
-  auto now(std::chrono::system_clock::now());
-  auto seconds_since_epoch(
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
-
-  std::time_t now_t(std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::time_point(seconds_since_epoch)));
-
-  char temp[30];
-  if (!std::strftime(temp, sizeof(temp), "%F %H:%M:%S.", std::gmtime(&now_t)))  // NOLINT (Fraser)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-
-  return std::string(temp) + std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
-
+  return GetTime<TimeType::kUTC>();
 }
 
 }  // namespace detail

@@ -16,50 +16,74 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include <cstdint>
-#include <fstream>
-#include <iostream>
-#include <istream>
-#include <ostream>
+#include <chrono>
 #include <string>
-#include <vector>
-#include "boost/filesystem.hpp"
-#include "maidsafe/common/utils.h"
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/cli.h"
+#include <thread>
+
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/menu.h"
-#include "maidsafe/common/test.h"
 
-namespace maidsafe {
+#include "maidsafe/common/menu_item.h"
+#include "maidsafe/common/utils.h"
 
-void MainMenu() {
-  auto func = [] { };
-  MenuLevel main(MenuLevel("Main"));
-  MenuItem three(MenuLevel("three"), func);
-  MenuLevel qa("Qa (stress tests, dynamic and static analysis)");
-  MenuLevel dev("Dev (core development help)");
-  MenuLevel builders("Builders (includes examples)");
-  MenuLevel test("Test (check your setup and farming ability)");
+int main(int argc, char* argv[]) {
+  maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
-  Menu menu;
-  menu.add_level(main, main);
-  menu.add_item(three);
-  menu.add_level(qa, main);
-  menu.add_level(dev, main);
-  menu.add_level(test, dev);
-  menu.add_item(three);
-  menu.add_level(builders, dev);
-  menu.add_item(three);
-  menu.add_level(test, main);
+  maidsafe::Menu menu{ "Main menu" };
 
-  menu.start_menu();
-}
+  // QA
+  maidsafe::MenuItem* qa_item{ menu.AddItem("QA (stress tests, dynamic and static analysis)") };
 
-}  // namespace maidsafe
+  maidsafe::MenuItem* qa_dev_item{ qa_item->AddChildItem("Developer's Menu (core dev help)") };
 
-int main() {
-  maidsafe::MainMenu();
-  return 0;
+  maidsafe::MenuItem* qa_dev_test_item{ qa_dev_item->AddChildItem("Test Suite") };
+  qa_dev_test_item->AddChildItem("Test 1", [] {
+    TLOG(kGreen) << "Running dev test 1.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+  qa_dev_test_item->AddChildItem("Test 2", [] {
+    TLOG(kGreen) << "Running dev test 2.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+
+  maidsafe::MenuItem* qa_dev_bench_item{ qa_dev_item->AddChildItem("Benchmark Suite") };
+  qa_dev_bench_item->AddChildItem("Benchmark 1", [] {
+    TLOG(kGreen) << "Running benchmark 1.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+  qa_dev_bench_item->AddChildItem("Benchmark 2", [] {
+    TLOG(kGreen) << "Running benchmark 2.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+
+  // Builders
+  maidsafe::MenuItem* builders_item{ menu.AddItem("Builder's Menu (includes tools and examples)") };
+  maidsafe::MenuItem* builders_examples_item{ builders_item->AddChildItem("Examples") };
+  builders_examples_item->AddChildItem("Example 1", [] {
+    TLOG(kGreen) << "Running builder's example 1.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+  builders_examples_item->AddChildItem("Example 2", [] {
+    TLOG(kGreen) << "Running builder's example 2.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+
+  maidsafe::MenuItem* builders_tools_item{ builders_item->AddChildItem("Tools") };
+  builders_tools_item->AddChildItem("Tool 1", [] {
+    TLOG(kGreen) << "Running builder's tool 1.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+  builders_tools_item->AddChildItem("Tool 2", [] {
+    TLOG(kGreen) << "Running builder's tool 2.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+
+  // Suitability tests
+  menu.AddItem("Suitability Tests (check your setup and farming ability)", [] {
+    TLOG(kGreen) << "Running setup and farming test.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+  });
+
+  return menu.Run();
 }
 

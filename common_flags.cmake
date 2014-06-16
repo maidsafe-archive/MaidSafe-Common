@@ -34,6 +34,9 @@ target_compile_definitions(maidsafe_common
     TARGET_ARCHITECTURE=${TargetArchitecture}
     $<$<BOOL:${MaidsafeTesting}>:TESTING>
     $<$<BOOL:${PROFILING}>:USE_PROFILING>
+    $<$<BOOL:${USE_LOGGING}>:USE_LOGGING=1>
+    $<$<BOOL:${DONT_USE_LOGGING}>:USE_LOGGING=0>
+    $<$<BOOL:${VLOGGING}>:USE_VLOGGING>
     BOOST_ASIO_HAS_MOVE
     BOOST_ASIO_HAS_STD_ARRAY
     BOOST_ASIO_HAS_STD_ATOMIC
@@ -60,7 +63,8 @@ target_compile_definitions(maidsafe_common
         _FILE_OFFSET_BITS=64
         HAVE_PTHREAD
         $<$<BOOL:${APPLE}>:MAIDSAFE_APPLE>
-        $<$<NOT:$<BOOL:${APPLE}>>:MAIDSAFE_LINUX>
+        $<$<BOOL:${BSD}>:MAIDSAFE_BSD>
+        $<$<NOT:$<BOOL:${APPLE}>>:MAIDSAFE_LINUX>  # Also defined on BSD (ugly, but failsafe in favour of BSD)
         $<$<CONFIG:Release>:_FORTIFY_SOURCE=2>
     >
     $<$<CONFIG:Release>:NDEBUG>

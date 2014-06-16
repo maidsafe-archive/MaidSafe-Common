@@ -20,6 +20,7 @@
 #define MAIDSAFE_COMMON_NODE_ID_H_
 
 #include <cstdint>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -47,7 +48,7 @@ class NodeId {
   NodeId();
 
   NodeId(const NodeId& other);
-  NodeId(NodeId&& other);
+  NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT;
   NodeId& operator=(NodeId other);
 
   // Creates an ID = (2 ^ kKeySizeBits) - 1 or a random ID in the interval [0, 2 ^ kKeySizeBits).
@@ -85,6 +86,9 @@ class NodeId {
   std::string EncodeToBinary() const;
   void DecodeFromBinary(const std::string& binary_id);
   std::string raw_id_;
+#ifndef NDEBUG
+  std::string debug_id_;
+#endif
 };
 
 inline bool operator==(const NodeId& lhs, const NodeId& rhs) { return lhs.raw_id_ == rhs.raw_id_; }
@@ -101,6 +105,13 @@ inline NodeId operator^(NodeId lhs, const NodeId& rhs) {
 
 // Returns an abbreviated hex representation of node_id.
 std::string DebugId(const NodeId& node_id);
+
+template<typename Elem, typename Traits>
+std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
+                                             const NodeId& node_id) {
+  ostream << DebugId(node_id);
+  return ostream;
+}
 
 }  // namespace maidsafe
 
