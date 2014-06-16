@@ -41,6 +41,8 @@ include(../../cmake_modules/standard_setup.cmake)
 #==================================================================================================#
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 ms_glob_dir(Common ${CommonSourcesDir} Common)
+set(TestLibAllFiles ${CommonSourcesDir}/test.cc ${PROJECT_SOURCE_DIR}/include/maidsafe/common/test.h)
+list(REMOVE_ITEM CommonAllFiles ${TestLibAllFiles})
 ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
@@ -109,7 +111,6 @@ target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
     protobuf
-    gtest
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
@@ -155,8 +156,11 @@ target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
 if(MaidsafeTesting)
+  ms_add_static_library(maidsafe_test ${TestLibAllFiles})
+  target_link_libraries(maidsafe_test maidsafe_common gtest)
+
   ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
-  target_link_libraries(test_common maidsafe_common)
+  target_link_libraries(test_common maidsafe_test)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
@@ -166,7 +170,7 @@ if(MaidsafeTesting)
   target_link_libraries(test_config maidsafe_common)
 
   ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
-  target_link_libraries(TESTcommon maidsafe_common)
+  target_link_libraries(TESTcommon maidsafe_test)
 
   macro(CommonTests Group)
     foreach(TestSource ${ARGN})
@@ -174,7 +178,7 @@ if(MaidsafeTesting)
       string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
       set(TestSources ${TestSource} ${TestsMain})
       ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
-      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_common)
+      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_test)
       ms_add_catch_tests(${Exe})
     endforeach()
   endmacro()
@@ -182,7 +186,7 @@ if(MaidsafeTesting)
   ms_add_static_library(maidsafe_data_stores_test_utils ${CommonDataStoresTestsUtilsFiles})
   set_target_properties(maidsafe_data_stores_test_utils PROPERTIES FOLDER "MaidSafe/Executables/Tests/Common/Data Store Tests")
   target_include_directories(maidsafe_data_stores_test_utils PUBLIC ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(maidsafe_data_stores_test_utils maidsafe_common)
+  target_link_libraries(maidsafe_data_stores_test_utils maidsafe_test)
   foreach(TestExe test_data_store test_memory_buffer test_permanent_store)
     set(${TestExe}AdditionalLibs maidsafe_data_stores_test_utils)
   endforeach()
@@ -217,22 +221,12 @@ endif()
 #==================================================================================================#
 # Package                                                                                          #
 #==================================================================================================#
-set(EXPORT_NAME maidsafe_common)
-install(TARGETS maidsafe_common EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_network_viewer)
-install(TARGETS maidsafe_network_viewer EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME signing_tool)
-install(TARGETS signing_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
-set(EXPORT_NAME qa_tool)
-install(TARGETS qa_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
-set(EXPORT_NAME bootstrap_file_tool)
-install(TARGETS bootstrap_file_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
-set(EXPORT_NAME address_space_tool)
-install(TARGETS address_space_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+install(TARGETS maidsafe_common maidsafe_network_viewer COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
+install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Release RUNTIME DESTINATION bin)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-install(FILES ${CommonApi} DESTINATION include/maidsafe/common)
-install(FILES ${CommonAuthenticationApi} DESTINATION include/maidsafe/common/authentication)
-install(FILES ${CommonAuthenticationDetailApi} DESTINATION include/maidsafe/common/authentication/detail)
-install(FILES ${CommonDataStoresApi} DESTINATION include/maidsafe/common/data_stores)
-install(FILES ${CommonDataTypesApi} DESTINATION include/maidsafe/common/data_types)
-install(FILES ${CommonToolsApi} DESTINATION include/maidsafe/common/tools)
+if(MaidsafeTesting)
+  install(TARGETS test_common ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS test_common ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+endif()
