@@ -50,13 +50,6 @@ ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authenticat
 ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
 ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
 
-ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
-ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
-set(CommonDataStoresTestsUtilsFiles
-    ${CommonSourcesDir}/data_stores/tests/test_utils.cc
-    ${CommonSourcesDir}/data_stores/tests/test_utils.h)
-list(REMOVE_ITEM CommonDataStoresTestsAllFiles ${CommonDataStoresTestsUtilsFiles})
-
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
@@ -74,7 +67,9 @@ set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/on_scope_exit_test.cc
                         ${CommonSourcesDir}/tests/utils_test.cc
                         ${CommonSourcesDir}/tests/cli_test.cc
-                        ${CommonSourcesDir}/tests/visualiser_log_test.cc)
+                        ${CommonSourcesDir}/tests/visualiser_log_test.cc
+                        ${CommonSourcesDir}/tests/data_buffer_unit_test.cc
+                        ${CommonSourcesDir}/tests/data_buffer_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
@@ -182,15 +177,6 @@ if(MaidsafeTesting)
       ms_add_catch_tests(${Exe})
     endforeach()
   endmacro()
-
-  ms_add_static_library(maidsafe_data_stores_test_utils ${CommonDataStoresTestsUtilsFiles})
-  set_target_properties(maidsafe_data_stores_test_utils PROPERTIES FOLDER "MaidSafe/Executables/Tests/Common/Data Store Tests")
-  target_include_directories(maidsafe_data_stores_test_utils PUBLIC ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(maidsafe_data_stores_test_utils maidsafe_test)
-  foreach(TestExe test_data_store test_memory_buffer test_permanent_store)
-    set(${TestExe}AdditionalLibs maidsafe_data_stores_test_utils)
-  endforeach()
-  CommonTests("Data Store Tests" ${CommonDataStoresTestsAllFiles})
 
   CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
 endif()

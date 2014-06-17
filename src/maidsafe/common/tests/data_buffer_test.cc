@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/data_stores/data_buffer.h"
+#include "maidsafe/common/data_buffer.h"
 
 #include <memory>
 
@@ -32,8 +32,6 @@ namespace fs = boost::filesystem;
 namespace mpl = boost::mpl;
 
 namespace maidsafe {
-
-namespace data_stores {
 
 namespace test {
 
@@ -691,7 +689,5 @@ TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behav
 }
 
 }  // namespace test
-
-}  // namespace data_stores
 
 }  // namespace maidsafe

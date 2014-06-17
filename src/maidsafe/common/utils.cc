@@ -48,6 +48,7 @@
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
 #include "boost/token_functions.hpp"
+#include "boost/variant/apply_visitor.hpp"
 
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"
@@ -151,6 +152,19 @@ namespace detail {
 
 boost::mt19937& random_number_generator() { return g_random_number_generator; }
 std::mutex& random_number_generator_mutex() { return g_random_number_generator_mutex; }
+
+fs::path GetFileName(const DataNameVariant& data_name_variant) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), data_name_variant));
+  return (HexEncode(result.second) + '_' + std::to_string(static_cast<uint32_t>(result.first)));
+}
+
+DataNameVariant GetDataNameVariant(const fs::path& file_name) {
+  std::string file_name_str(file_name.string());
+  size_t index(file_name_str.rfind('_'));
+  auto id(static_cast<DataTagValue>(std::stoul(file_name_str.substr(index + 1))));
+  Identity key_id(HexDecode(file_name_str.substr(0, index)));
+  return GetDataNameVariant(id, key_id);
+}
 
 }  // namespace detail
 
@@ -519,5 +533,8 @@ fs::path GetPathFromProgramOptions(const std::string& option_name,
 }
 
 unsigned int Concurrency() { return std::max(std::thread::hardware_concurrency(), 2U); }
+
+
+
 
 }  // namespace maidsafe

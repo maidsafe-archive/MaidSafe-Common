@@ -55,17 +55,10 @@ std::string UrlEncode(const std::string& value) {
   return encoded;
 }
 
-std::string UrlEncodeIdentityOrInt(const std::string& value) {
-  // If the value is 64 chars, assume it's an Identity and will benefit from being Base64 encoded.
-  if (value.size() == crypto::SHA512::DIGESTSIZE)
-    return UrlEncode(Base64Encode(value));
-  return UrlEncode(value);
-}
-
-std::string EncodeIdentityOrInt(const std::string& value) {
+std::string EncodeIdentityOrInt(const std::string& value, bool debug_format) {
   // If the value is 64 chars, assume it's an Identity.
   if (value.size() == crypto::SHA512::DIGESTSIZE)
-    return HexSubstr(value);
+    return debug_format ? HexSubstr(value) : HexEncode(value);
   return value;
 }
 
@@ -79,11 +72,11 @@ VisualiserLogMessage::~VisualiserLogMessage() {
 std::string VisualiserLogMessage::GetPostRequestBody() const {
   return std::string {
       "ts=" + UrlEncode(kTimestamp_) +
-      "&vault_id=" + UrlEncode(kVaultId_) +
+      "&vault_id=" + kVaultId_ +
       (kPersonaId_.name.empty() ? "" : "&persona_id=" + kPersonaId_.value) +
       "&action_id=" + kActionId_.value +
-      "&value1=" + UrlEncodeIdentityOrInt(kValue1_) +
-      (kValue2_.empty() ? "" : "&value2=" + UrlEncodeIdentityOrInt(kValue2_)) };
+      "&value1=" + EncodeIdentityOrInt(kValue1_, false) +
+      (kValue2_.empty() ? "" : "&value2=" + EncodeIdentityOrInt(kValue2_, false)) };
 }
 
 void VisualiserLogMessage::SendToServer() const {
@@ -104,8 +97,8 @@ void VisualiserLogMessage::WriteToFile() const {
         kVaultId_ + ',' +
         (kPersonaId_.name.empty() ? "" : kPersonaId_.name + ',') +
         kActionId_.name + ',' +
-        EncodeIdentityOrInt(kValue1_) +
-        (kValue2_.empty() ? "" : "," + EncodeIdentityOrInt(kValue2_)) + '\n' };
+        EncodeIdentityOrInt(kValue1_, true) +
+        (kValue2_.empty() ? "" : "," + EncodeIdentityOrInt(kValue2_, true)) + '\n' };
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
   }
