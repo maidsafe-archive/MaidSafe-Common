@@ -438,8 +438,8 @@ TestLogMessage::~TestLogMessage() {
   std::string log_entry(stream_.str());
   FilterMap filter(Logging::Instance().Filter());
   auto print_functor([colour, log_entry, filter] {
-    if (Logging::Instance().LogToConsole())
-      ColouredPrint(colour, log_entry);
+//     if (Logging::Instance().LogToConsole())
+    ColouredPrint(colour, log_entry);
     for (auto& entry : filter)
       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
     if (filter.size() != 1)
