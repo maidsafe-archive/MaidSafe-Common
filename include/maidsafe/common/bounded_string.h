@@ -43,8 +43,10 @@ class BoundedString {
         valid_(!OutwithBounds()) {}
 
   explicit BoundedString(StringType string) : string_(std::move(string)), valid_(true) {
-    if (OutwithBounds())
+    if (OutwithBounds()) {
+      LOG(kError) << "BoundedString::BoundedString() invalid_string_size";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+    }
   }
 
   friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
