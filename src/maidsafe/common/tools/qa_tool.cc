@@ -22,6 +22,7 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/menu.h"
+
 #include "maidsafe/common/menu_item.h"
 #include "maidsafe/common/utils.h"
 

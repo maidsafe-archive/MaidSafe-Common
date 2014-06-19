@@ -28,7 +28,6 @@
 #if defined USE_GTEST
 
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
 
 #elif defined USE_CATCH
 
