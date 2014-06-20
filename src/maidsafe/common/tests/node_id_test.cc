@@ -115,8 +115,8 @@ TEST_CASE("NodeId default constructor", "[NodeId][Unit]") {
 
 TEST_CASE("NodeId distance check", "[NodeId][Unit]") {  // Timeout 10
   for (size_t i(0); i < 10000; ++i) {
-    NodeId one(NodeId::kRandomId);
-    NodeId two(NodeId::kRandomId);
+    NodeId one(NodeId::IdType::kRandomId);
+    NodeId two(NodeId::IdType::kRandomId);
     CHECK_FALSE(one == two);
     CHECK((one ^ two) == (two ^ one));
   }
@@ -143,7 +143,7 @@ TEST_CASE("NodeId other constructors", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId copy constructor", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   REQUIRE(kadid1 == kadid2);
   for (size_t i = 0; i < kadid1.string().size(); ++i)
@@ -158,10 +158,10 @@ TEST_CASE("NodeId copy constructor", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId assignment", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId), kadid2(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId), kadid2(NodeId::IdType::kRandomId);
   kadid2 = kadid1;
   REQUIRE(kadid1 == kadid2);
-  NodeId kadid3(NodeId::kRandomId);
+  NodeId kadid3(NodeId::IdType::kRandomId);
   kadid3 = std::move(kadid2);
   REQUIRE(kadid1 == kadid3);
 }
@@ -171,14 +171,14 @@ TEST_CASE("NodeId Kademlia Id type constructor", "[NodeId][Unit]") {
   REQUIRE(NodeId::kSize == min_id.size());
   for (int i = 0; i < NodeId::kSize; ++i)
     REQUIRE(min_id[i] == '\0');
-  NodeId max_id(NodeId::kMaxId);
+  NodeId max_id(NodeId::IdType::kMaxId);
   REQUIRE(NodeId::kSize == max_id.string().size());
   for (int i = 0; i < NodeId::kSize; ++i)
     REQUIRE(char(-1) == max_id.string()[i]);
-  NodeId rand_id(NodeId::kRandomId);
+  NodeId rand_id(NodeId::IdType::kRandomId);
   REQUIRE(NodeId::kSize == rand_id.string().size());
   // TODO(Fraser#5#): 2010-06-06 - Test for randomness properly
-  REQUIRE_FALSE(rand_id.string() == NodeId(NodeId::kRandomId).string());
+  REQUIRE_FALSE(rand_id.string() == NodeId(NodeId::IdType::kRandomId).string());
   CHECK_THROWS_AS(NodeId(static_cast<NodeId::IdType>(-999)), maidsafe_error);
 }
 
@@ -252,7 +252,7 @@ TEST_CASE("NodeId encoding constructor", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator equal", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
   std::string id(kadid1.string());
   NodeId kadid2(id);
   REQUIRE(kadid1 == kadid2);
@@ -265,7 +265,7 @@ TEST_CASE("NodeId operator equal", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator different", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
   std::string id(kadid1.string());
   NodeId kadid2(id);
   REQUIRE_FALSE(kadid1 != kadid2);
@@ -277,9 +277,9 @@ TEST_CASE("NodeId operator different", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator greater than", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
-  while (kadid1 == NodeId(NodeId::kMaxId))
-    kadid1 = NodeId(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
+  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+    kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   REQUIRE_FALSE(kadid1 > kadid2);
   NodeId kadid3(IncreaseId(kadid1));
@@ -288,9 +288,9 @@ TEST_CASE("NodeId operator greater than", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator less than", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
-  while (kadid1 == NodeId(NodeId::kMaxId))
-    kadid1 = NodeId(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
+  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+    kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   REQUIRE_FALSE(kadid1 < kadid2);
   NodeId kadid3(IncreaseId(kadid1));
@@ -299,9 +299,9 @@ TEST_CASE("NodeId operator less than", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator greater than or equal to", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
-  while (kadid1 == NodeId(NodeId::kMaxId))
-    kadid1 = NodeId(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
+  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+    kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   REQUIRE(kadid1 >= kadid2);
   NodeId kadid3(IncreaseId(kadid1));
@@ -309,9 +309,9 @@ TEST_CASE("NodeId operator greater than or equal to", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator less than or equal to", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId);
-  while (kadid1 == NodeId(NodeId::kMaxId))
-    kadid1 = NodeId(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId);
+  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+    kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   REQUIRE(kadid1 <= kadid2);
   NodeId kadid3(IncreaseId(kadid1));
@@ -319,7 +319,7 @@ TEST_CASE("NodeId operator less than or equal to", "[NodeId][Unit]") {
 }
 
 TEST_CASE("NodeId operator XOR", "[NodeId][Unit]") {
-  NodeId kadid1(NodeId::kRandomId), kadid2(NodeId::kRandomId);
+  NodeId kadid1(NodeId::IdType::kRandomId), kadid2(NodeId::IdType::kRandomId);
   NodeId kadid3(kadid1 ^ kadid2);
   std::string binid1(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary));
   std::string binid2(kadid2.ToStringEncoded(NodeId::EncodingType::kBinary));
@@ -352,7 +352,7 @@ TEST_CASE("NodeId Collision", "[NodeId][Unit]") {  // Timeout 10
   std::set<NodeId> node_ids;
   bool success(true);
   for (int i(0); i < 100000; ++i)
-    success &= node_ids.emplace(NodeId::kRandomId).second;
+    success &= node_ids.emplace(NodeId::IdType::kRandomId).second;
   REQUIRE(success);
 }
 
