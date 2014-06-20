@@ -319,7 +319,7 @@ std::string Base64Decode(const std::string& base64_input) {
   // Setup a vector to hold the result
   std::string decoded_bytes;
   decoded_bytes.reserve(((base64_input.size() / 4) * 3) - padding);
-  auto temp = 0;  // Holds decoded quanta
+  uint32_t temp = 0;  // Holds decoded quanta
   auto cursor = std::begin(base64_input);
   while (cursor < std::end(base64_input)) {
     for (size_t quantum_position = 0; quantum_position < 4; ++quantum_position) {
