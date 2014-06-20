@@ -298,7 +298,6 @@ void CreateKeyGroup() {
 }
 
 void GroupSignIn() {
-  std::string total;
   std::string quorum;
   std::cout << "please Enter number of people required to sign\n";
   std::getline(std::cin, quorum);

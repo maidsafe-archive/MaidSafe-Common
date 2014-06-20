@@ -238,7 +238,7 @@ class InputPolicyGetEndpoint {
 
  private:
   bool SplitInput(const std::string& entered_endpoint,
-                  const std::function<bool(const std::string&)> fail_functor,
+                  std::function<bool(const std::string&)> fail_functor,
                   std::string& entered_address, std::string& entered_port) const {
     if (entered_endpoint.size() < 9)
       return fail_functor("string too small).");
@@ -253,7 +253,7 @@ class InputPolicyGetEndpoint {
   }
 
   bool GetPort(const std::string& entered_port,
-               const std::function<bool(const std::string&)> fail_functor, uint16_t& port) const {
+               std::function<bool(const std::string&)> fail_functor, uint16_t& port) const {
     try {
       int port_as_int = std::stoi(entered_port);
       if (port_as_int < 1025 || port_as_int > std::numeric_limits<uint16_t>::max())
@@ -266,7 +266,7 @@ class InputPolicyGetEndpoint {
     return true;
   }
   bool GetAddress(const std::string& entered_address,
-                  const std::function<bool(const std::string&)> fail_functor,
+                  std::function<bool(const std::string&)> fail_functor,
                   boost::asio::ip::address_v4& address) const {
     boost::system::error_code error_code;
     address = boost::asio::ip::address_v4::from_string(entered_address, error_code);

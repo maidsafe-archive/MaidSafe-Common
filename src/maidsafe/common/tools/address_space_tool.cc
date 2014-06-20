@@ -143,7 +143,6 @@ std::vector<BadGroup> InjectBadGroups(std::vector<Node>& all_nodes,
 }
 
 void ReportBadGroups(const std::vector<BadGroup>& bad_groups) {
-  std::string output;
   for (size_t i(0); i < bad_groups.size(); ++i) {
     TLOG(kDefaultColour) << "Bad group " << i << " close to target "
                          << DebugId(bad_groups[i].first) << ":\n";
