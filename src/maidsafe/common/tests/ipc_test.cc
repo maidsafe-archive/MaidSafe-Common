@@ -99,33 +99,45 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
     test1_vec.push_back(RandomString(10 * i));
 
   // Check reading shared memory that hasn't been created yet throws.
-  auto all_should_throw([=] {
-    CHECK_THROWS_AS(ReadSharedMemory(kTestName, 1), bi::interprocess_exception);
+  bool all_threw{ false };
+  auto all_should_throw([&] {
+    try {
+      ReadSharedMemory(kTestName, 1);
+    }
+    catch (const bi::interprocess_exception&) {
+      all_threw = true;
+    }
   });
   std::thread reader_before_creation(all_should_throw);
   reader_before_creation.join();
+  CHECK(all_threw);
 
   // Create the shared memory segments.
   CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
 
-
   // Check reading works.
-  auto all_should_match([=] {
-    CHECK((test1_vec) == (ReadSharedMemory(kTestName, static_cast<int>(test1_vec.size()))));
+  bool all_match{ false };
+  auto all_should_match([&] {
+    all_match = ((test1_vec) == (ReadSharedMemory(kTestName, static_cast<int>(test1_vec.size()))));
   });
   std::thread reader(all_should_match);
   reader.join();
+  CHECK(all_match);
 
   // Check modifying the original objects doesn't affect reading from shared memory
   test1_vec.clear();
   CHECK(test1_vec.empty());
+  all_match = false;
   std::thread another_reader(all_should_match);
   another_reader.join();
+  CHECK(all_match);
 
   // Check deleting works.  Always passes, even if named shared memory doesn't exist.
   CHECK_NOTHROW(RemoveSharedMemory(kTestName));
+  all_threw = false;
   std::thread reader_after_deletion(all_should_throw);
   reader_after_deletion.join();
+  CHECK(all_threw);
   RemoveSharedMemory(kTestName);
 }
 

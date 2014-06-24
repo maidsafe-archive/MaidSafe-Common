@@ -284,15 +284,23 @@ TEST_CASE("RandomStringSingleThread", "[Utils][Unit]") {  // Timeout 10
 }
 
 TEST_CASE("HexEncodeDecode", "[Utils][Unit]") {
+  bool expected_sizes_ok{ true }, decoded_ok{ true };
+
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
       std::string encoded = HexEncode(original);
-      CHECK(200U == encoded.size());
+      if (encoded.size() != 200U)
+        expected_sizes_ok = false;
       std::string decoded = HexDecode(encoded);
-      CHECK(original == decoded);
+      if (decoded != original)
+        decoded_ok = false;
     }
   });
+
+  CHECK(expected_sizes_ok);
+  CHECK(decoded_ok);
+
   const std::string kKnownEncoded("0123456789abcdef");
   const std::string kKnownDecoded("\x1\x23\x45\x67\x89\xab\xcd\xef");
   CHECK(kKnownEncoded == HexEncode(kKnownDecoded));
@@ -303,15 +311,23 @@ TEST_CASE("HexEncodeDecode", "[Utils][Unit]") {
 }
 
 TEST_CASE("Base64EncodeDecode", "[Utils][Unit]") {  // Timeout 10
+  bool expected_sizes_ok{ true }, decoded_ok{ true };
+
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
       std::string encoded = Base64Encode(original);
-      CHECK(136U == encoded.size());
+      if (encoded.size() != 136U)
+        expected_sizes_ok = false;
       std::string decoded = Base64Decode(encoded);
-      CHECK(original == decoded);
+      if (decoded != original)
+        decoded_ok = false;
     }
   });
+
+  CHECK(expected_sizes_ok);
+  CHECK(decoded_ok);
+
   // from wikipedia
   std::string man;
   man += "Man is distinguished, not only by his reason, but by this singular ";
@@ -439,6 +455,7 @@ TEST_CASE("TimeFunctions", "[Utils][Unit]") {
 }
 
 TEST_CASE("RandomNumberGen", "[Utils][Unit]") {  // Timeout 20
+  bool within_threshold{ true };
   maidsafe::test::RunInParallel(10, [&] {
     std::set<int32_t> random_ints;
     std::set<uint32_t> random_uints;
@@ -449,9 +466,12 @@ TEST_CASE("RandomNumberGen", "[Utils][Unit]") {  // Timeout 20
       random_ints.insert(RandomInt32());
       random_uints.insert(RandomUint32());
     }
-    CHECK(kMaxDuplicates >= (kCount - random_ints.size()));
-    CHECK(kMaxDuplicates >= (kCount - random_uints.size()));
+    if (kMaxDuplicates < (kCount - random_ints.size()))
+      within_threshold = false;
+    if (kMaxDuplicates < (kCount - random_uints.size()))
+      within_threshold = false;
   });
+  CHECK(within_threshold);
 }
 
 TEST_CASE("ReadFile and WriteFile", "[Utils][Unit]") {
