@@ -83,6 +83,32 @@ std::string BytesToDecimalSiUnits(uint64_t num);
 // Converts num bytes to nearest integral binary SI value.
 std::string BytesToBinarySiUnits(uint64_t num);
 
+// Borrowed from http://burtleburtle.net/bob/rand/smallprng.html
+// Useful for a wait free very fast prng which passes DIEHARD
+namespace smallprng {
+  typedef uint32_t  u4;
+  typedef struct ranctx { u4 a; u4 b; u4 c; u4 d; } ranctx;
+
+#define smallprng_rot(x, k) (((x) << (k))|((x) >> (32 - (k))))
+  inline u4 ranval(ranctx *x) {
+    u4 e = x->a - smallprng_rot(x->b, 27);
+    x->a = x->b ^ smallprng_rot(x->c, 17);
+    x->b = x->c + x->d;
+    x->c = x->d + e;
+    x->d = e + x->a;
+    return x->d;
+  }
+#undef smallprng_rot
+
+  inline void raninit(ranctx *x, u4 seed) {
+    u4 i;
+    x->a = 0xf1ea5eed, x->b = x->c = x->d = seed;
+    for (i = 0; i < 20; ++i) {
+        (void) ranval(x);
+    }
+  }
+}  // namespace smallprng
+
 // Generates a non-cryptographically-secure 32bit signed integer.
 int32_t RandomInt32();
 
