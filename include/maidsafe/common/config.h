@@ -27,11 +27,17 @@
 #ifdef _MSC_VER
 # if _MSC_VER >= 1900  // VS2014
 #  define MAIDSAFE_NOEXCEPT noexcept  // conditional noexcept not supported yet
+#  define MAIDSAFE_CONSTEXPR constexpr
+#  define MAIDSAFE_CONSTEXPR_OR_CONST constexpr
 # else
 #  define MAIDSAFE_NOEXCEPT  // throw()
+#  define MAIDSAFE_CONSTEXPR
+#  define MAIDSAFE_CONSTEXPR_OR_CONST const
 # endif
 #else
 # define MAIDSAFE_NOEXCEPT noexcept(true)
+# define MAIDSAFE_CONSTEXPR constexpr
+# define MAIDSAFE_CONSTEXPR_OR_CONST constexpr
 #endif
 
 namespace maidsafe {

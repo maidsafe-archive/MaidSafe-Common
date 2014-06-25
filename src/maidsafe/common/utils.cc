@@ -78,7 +78,7 @@ struct UnitType {};
 template <>
 struct UnitType<BinaryUnit> {
   static const uint64_t kKilo = 1024;
-  static const uint64_t kExaThreshold = 11529215046068469760U;
+  // static const uint64_t kExaThreshold = 11529215046068469760U;
   static std::array<std::string, 7> Qualifier() {
     std::array<std::string, 7> temp = {{" B", " KiB", " MiB", " GiB", " TiB", " PiB", " EiB"}};
     return temp;
@@ -88,7 +88,7 @@ struct UnitType<BinaryUnit> {
 template <>
 struct UnitType<DecimalUnit> {
   static const uint64_t kKilo = 1000;
-  static const uint64_t kExaThreshold = 9500000000000000000U;
+  // static const uint64_t kExaThreshold = 9500000000000000000U;
   static std::array<std::string, 7> Qualifier() {
     std::array<std::string, 7> temp = {{" B", " kB", " MB", " GB", " TB", " PB", " EB"}};
     return temp;
@@ -97,6 +97,11 @@ struct UnitType<DecimalUnit> {
 
 template <typename Units>
 std::string BytesToSiUnits(uint64_t num) {
+  static const auto to_string = [](double num) {
+    char buffer[256];
+    snprintf(buffer, sizeof(buffer), "%.2f", double(num));
+    return std::string(buffer);
+  };
   const uint64_t kKilo(UnitType<Units>::kKilo);
   std::array<std::string, 7> qualifier = UnitType<Units>::Qualifier();
 
@@ -108,12 +113,10 @@ std::string BytesToSiUnits(uint64_t num) {
   for (; count != 6; midpoint *= kKilo, divisor *= kKilo, ++count) {
     threshold = (divisor * kKilo) - midpoint;
     if (num < threshold)
-      return std::to_string((num + midpoint) / divisor) + qualifier[count];
+      return to_string(double(num) / divisor) + qualifier[count];
   }
 
-  threshold = UnitType<Units>::kExaThreshold;
-  return num < threshold ? (std::to_string((num + midpoint) / divisor) + qualifier[6])
-                         : (std::to_string(((num - midpoint) / divisor) + 1) + qualifier[6]);
+  return to_string(double(num) / divisor) + qualifier[6];
 }
 
 const char kHexAlphabet[] = "0123456789abcdef";
