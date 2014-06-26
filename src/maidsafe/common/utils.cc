@@ -44,6 +44,7 @@
 
 #include "boost/config.hpp"
 #include "boost/filesystem/operations.hpp"
+#include "boost/format.hpp"
 #include "boost/random/mersenne_twister.hpp"
 #include "boost/random/uniform_int.hpp"
 #include "boost/random/variate_generator.hpp"
@@ -97,11 +98,7 @@ struct UnitType<DecimalUnit> {
 
 template <typename Units>
 std::string BytesToSiUnits(uint64_t num) {
-  static const auto to_string = [](double num) {
-    char buffer[256];
-    snprintf(buffer, sizeof(buffer), "%.2f", double(num));
-    return std::string(buffer);
-  };
+  static const auto to_string = [](double d) { return (boost::format("%.2f") % d).str(); };
   const uint64_t kKilo(UnitType<Units>::kKilo);
   std::array<std::string, 7> qualifier = UnitType<Units>::Qualifier();
 
