@@ -220,7 +220,8 @@ enum class DriveErrors {
   failed_to_mount,
   permission_denied,
   no_such_file,
-  file_exists
+  file_exists,
+  driver_not_installed
 };
 
 class drive_error : public maidsafe_error {
