@@ -50,6 +50,20 @@ struct is_payable : public std::true_type {};
 template <typename T>
 struct is_unique_on_network : public std::true_type {};
 
+namespace transport {
+
+class TcpConnection;
+class TcpListener;
+
+typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
+typedef std::shared_ptr<TcpListener> TcpListenerPtr;
+typedef std::function<void(std::string)> MessageReceivedFunctor;
+typedef std::function<void()> ConnectionClosedFunctor;
+typedef std::function<void(TcpConnectionPtr)> NewConnectionFunctor;
+typedef uint16_t Port;
+
+}  // namespace transport
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_TYPES_H_

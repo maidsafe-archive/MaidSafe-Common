@@ -56,8 +56,11 @@ ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Type
 ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
+ms_glob_dir(CommonTransport ${CommonSourcesDir}/transport "Transport")
+ms_glob_dir(CommonTransportTests ${CommonSourcesDir}/transport/tests "Transport Tests")
+
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
-set(CommonGTestsAllFiles ${CommonTestsAllFiles})
+set(CommonGTestsAllFiles ${CommonTestsAllFiles} ${CommonTransportTestsAllFiles})
 set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
                         ${CommonSourcesDir}/tests/bounded_string_test.cc
                         ${CommonSourcesDir}/tests/errors_test.cc
@@ -84,8 +87,8 @@ ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
-    ${CommonDataStoresAllFiles}
-    ${CommonDataTypesAllFiles})
+    ${CommonDataTypesAllFiles}
+    ${CommonTransportAllFiles})
 add_dependencies(maidsafe_common boost_process catch)
 target_include_directories(maidsafe_common
   PUBLIC

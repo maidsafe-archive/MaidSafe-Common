@@ -70,6 +70,12 @@ boost::filesystem::path ThisExecutablePath();
 // been called.
 boost::filesystem::path ThisExecutableDir();
 
+namespace transport {
+
+extern const unsigned kMaxRangeAboveDefaultPort;
+
+}  // namespace transport
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_CONFIG_H_
