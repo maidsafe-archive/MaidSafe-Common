@@ -256,6 +256,8 @@ std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "No such file";
     case DriveErrors::file_exists:
       return "File already exists";
+    case DriveErrors::driver_not_installed:
+      return "CbFs driver is not installed";
     default:
       return "Unknown error in Drive";
   }

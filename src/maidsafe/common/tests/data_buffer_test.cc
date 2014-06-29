@@ -490,7 +490,7 @@ TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Be
   CHECK_NOTHROW(recovered = data_buffer_->Get(key));
   CHECK(recovered == value);
 
-  uint32_t events(RandomUint32() % 100);
+  uint32_t events((RandomUint32() % 100) + 10);
   for (uint32_t i = 0; i != events; ++i) {
     last_value = value;
     while (last_value == value)
@@ -522,7 +522,7 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
                                         data_buffer_path_));
 
   KeyValueVector key_value_pairs;
-  uint32_t events(RandomUint32() % 500);
+  uint32_t events((RandomUint32() % 400) + 100);
   std::vector<std::future<void>> future_stores, future_deletes;
   std::vector<std::future<NonEmptyString>> future_gets;
 
