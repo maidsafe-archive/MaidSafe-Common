@@ -208,7 +208,7 @@ TEST(SecureString, BEH_CreateInvalidLengthPassword) {
   EXPECT_THROW(password.Finalise(), std::exception);
 }
 
-TEST(SecureString, ClearPasswordThenRedo) {
+TEST(SecureString, BEH_ClearPasswordThenRedo) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));

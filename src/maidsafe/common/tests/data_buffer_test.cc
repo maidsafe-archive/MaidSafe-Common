@@ -595,99 +595,113 @@ TEST_F(DataBufferTest, BEH_RandomAsync) {
 }
 
 
-class DataBufferValueParameterisedTest  : public ::testing::Test {
- protected:
-  typedef DataNameVariant KeyType;
-  typedef DataBuffer<KeyType> DataBufferType;
-  typedef DataBufferType::PopFunctor PopFunctorType;
-  typedef std::unique_ptr<DataBufferType> DataBufferPtr;
+namespace {
 
-  DataBufferValueParameterisedTest()
+struct DataBufferUsage {
+DataBufferUsage(int64_t memory_usage, int64_t disk_usage) 
+  : memory_usage(memory_usage), disk_usage(disk_usage) {} 
+
+int64_t memory_usage;
+int64_t disk_usage;
+};
+}  // unnamed namespace
+
+
+class DataBufferValueParameterisedTest : public testing::TestWithParam<DataBufferUsage> {
+  protected:
+    typedef DataNameVariant KeyType;
+    typedef DataBuffer<KeyType> DataBufferType;
+    typedef DataBufferType::PopFunctor PopFunctorType;
+    typedef std::unique_ptr<DataBufferType> DataBufferPtr;
+
+    DataBufferValueParameterisedTest()
       : pop_functor_(),
-        data_buffer_() {}
+      data_buffer_() {}
 
-  PopFunctorType pop_functor_;
-  DataBufferPtr data_buffer_;
+
+    virtual void SetUp() override { 
+      auto buf = GetParam(); 
+      memory_usage = buf.memory_usage;
+      disk_usage = buf.disk_usage;
+      total_usage = disk_usage + memory_usage;
+    }
+
+    uint64_t memory_usage;
+    uint64_t disk_usage;
+    uint64_t total_usage;
+    PopFunctorType pop_functor_;
+    DataBufferPtr data_buffer_;
 };
 
-// namespace {
-//
-// struct MaxDataBufferUsage { uint64_t memory_usage, disk_usage; };
-// MaxDataBufferUsage max_data_buffer_usage[] = {{1, 2}, {1, 1024}, {8, 1024}, {1024, 2048},
-//                                               {1024, 1024}, {16, 16 * 1024}, {32, 32},
-//                                               {1000, 10000}, {10000, 1000000}};
-// }  // unnamed namespace
-//
-// TEST_P(DataBufferValueParameterisedTest, "Store", "[DataBuffer][Behavioural]") {
-//   MaxDataBufferUsage* resource_usage = Catch::Generators::GENERATE(between(max_data_buffer_usage,
-//       &max_data_buffer_usage[sizeof(max_data_buffer_usage)/sizeof(MaxDataBufferUsage)-1]));
-//
-//   uint64_t memory_usage(resource_usage->memory_usage), disk_usage(resource_usage->disk_usage),
-//            total_usage(disk_usage + memory_usage);
-//
-//   MemoryUsage max_memory_usage(memory_usage);
-//   DiskUsage max_disk_usage(disk_usage);
-//   data_buffer_.reset(new DataBufferType(max_memory_usage, max_disk_usage, pop_functor_));
-//
-//   while (total_usage != 0) {
-//     NonEmptyString value(std::string(RandomAlphaNumericString(
-//                       static_cast<uint32_t>(resource_usage->memory_usage))));
-//     KeyType key(GenerateKeyFromValue<KeyType>(value));
-//     EXPECT_NO_THROW(data_buffer_->Store(key, value));
-//     NonEmptyString recovered;
-//     EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
-//     EXPECT_TRUE(value == recovered);
-//     if (disk_usage != 0) {
-//       disk_usage -= resource_usage->memory_usage;
-//       total_usage -= resource_usage->memory_usage;
-//     } else {
-//       total_usage -= resource_usage->memory_usage;
-//     }
-//   }
-// }
-//
-// TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behavioural]") {
-//   MaxDataBufferUsage* resource_usage = Catch::Generators::GENERATE(between(max_data_buffer_usage,
-//       &max_data_buffer_usage[sizeof(max_data_buffer_usage)/sizeof(MaxDataBufferUsage)-1]));
-//
-//   uint64_t memory_usage(resource_usage->memory_usage), disk_usage(resource_usage->disk_usage),
-//            total_usage(disk_usage + memory_usage);
-//
-//   MemoryUsage max_memory_usage(memory_usage);
-//   DiskUsage max_disk_usage(disk_usage);
-//   data_buffer_.reset(new DataBufferType(max_memory_usage, max_disk_usage, pop_functor_));
-//
-//   std::map<KeyType, NonEmptyString> key_value_pairs;
-//   while (total_usage != 0) {
-//     NonEmptyString value(
-//         std::string(RandomAlphaNumericString(static_cast<uint32_t>(resource_usage->memory_usage))));
-//     KeyType key(GenerateKeyFromValue<KeyType>(value));
-//   #if defined(__GNUC__) && !defined(__clang__)
-//     auto ret_val = key_value_pairs.insert(std::make_pair(key, value));
-//     if (!ret_val.second)
-//       ret_val.first->second = value;
-//   #else
-//     key_value_pairs[key] = value;
-//   #endif
-//
-//     EXPECT_NO_THROW(data_buffer_->Store(key, value));
-//     if (disk_usage != 0) {
-//       disk_usage -= resource_usage->memory_usage;
-//       total_usage -= resource_usage->memory_usage;
-//     } else {
-//       total_usage -= resource_usage->memory_usage;
-//     }
-//   }
-//   NonEmptyString recovered;
-//   for (auto key_value : key_value_pairs) {
-//     KeyType key(key_value.first);
-//     EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
-//     EXPECT_TRUE(key_value.second == recovered);
-//     EXPECT_NO_THROW(data_buffer_->Delete(key));
-//     EXPECT_THROW(recovered = data_buffer_->Get(key), common_error);
-//   }
-// }
-//
+
+TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
+
+  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage), pop_functor_));
+
+  while (total_usage != 0) {
+    NonEmptyString value(std::string(RandomAlphaNumericString(
+                      static_cast<uint32_t>(memory_usage))));
+    KeyType key(GenerateKeyFromValue<KeyType>(value));
+    EXPECT_NO_THROW(data_buffer_->Store(key, value));
+    NonEmptyString recovered;
+    EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
+    EXPECT_TRUE(value == recovered);
+    if (disk_usage != 0) {
+      disk_usage -= memory_usage;
+      total_usage -= memory_usage;
+    } else {
+      total_usage -= memory_usage;
+    }
+  }
+}
+
+TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
+  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage), pop_functor_));
+
+  std::map<KeyType, NonEmptyString> key_value_pairs;
+  while (total_usage != 0) {
+    NonEmptyString value(
+        std::string(RandomAlphaNumericString(static_cast<uint32_t>(memory_usage))));
+    KeyType key(GenerateKeyFromValue<KeyType>(value));
+  #if defined(__GNUC__) && !defined(__clang__)
+    auto ret_val = key_value_pairs.insert(std::make_pair(key, value));
+    if (!ret_val.second)
+      ret_val.first->second = value;
+  #else
+    key_value_pairs[key] = value;
+  #endif
+
+    EXPECT_NO_THROW(data_buffer_->Store(key, value));
+    if (disk_usage != 0) {
+      disk_usage -= memory_usage;
+      total_usage -= memory_usage;
+    } else {
+      total_usage -= memory_usage;
+    }
+  }
+  NonEmptyString recovered;
+  for (auto key_value : key_value_pairs) {
+    KeyType key(key_value.first);
+    EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
+    EXPECT_TRUE(key_value.second == recovered);
+    EXPECT_NO_THROW(data_buffer_->Delete(key));
+    EXPECT_THROW(recovered = data_buffer_->Get(key), common_error);
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(BufferValueParam, DataBufferValueParameterisedTest, ::testing::Values(
+DataBufferUsage{1, 2}, 
+DataBufferUsage{1, 1024},
+DataBufferUsage{8, 1024},
+DataBufferUsage{1024, 2048},
+DataBufferUsage{1024, 1024},
+DataBufferUsage{16, 16 * 1024},
+DataBufferUsage{32, 32},
+DataBufferUsage{1000, 10000},
+DataBufferUsage{10000, 1000000}
+));
+
+
 }  // namespace test
 
 }  // namespace maidsafe

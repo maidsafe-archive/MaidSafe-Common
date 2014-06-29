@@ -61,6 +61,7 @@ set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
 list(APPEND CommonTestsAllFiles ${TestsMain})
+list(APPEND ConfigTestFile ${TestsMain} ${CommonSourcesDir}/test.cc)
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -72,7 +73,7 @@ ms_add_static_library(maidsafe_common
     ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
     ${CommonDataTypesAllFiles})
-add_dependencies(maidsafe_common boost_process catch)
+add_dependencies(maidsafe_common boost_process)
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -140,8 +141,8 @@ if(MaidsafeTesting)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
-  target_link_libraries(test_config maidsafe_common)
+  ms_add_executable(TESTconfig "Tests/Common" ${ConfigTestFile})
+  target_link_libraries(TESTconfig maidsafe_common)
 
   ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_test)
@@ -167,8 +168,8 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_style_test()
-  ms_add_catch_tests(test_config)
-  ms_add_gtests(TESTcommon) # I have no idea how this is supposed to work
+  ms_add_gtests(TESTconfig)
+  ms_add_gtests(TESTcommon)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
@@ -183,6 +184,6 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
 if(MaidsafeTesting)
-  install(TARGETS ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS ipc_child_process TESTconfig TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS ipc_child_process TESTconfig TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
