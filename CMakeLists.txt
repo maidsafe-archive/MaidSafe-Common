@@ -43,7 +43,7 @@ set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 ms_glob_dir(Common ${CommonSourcesDir} Common)
 set(TestLibAllFiles ${CommonSourcesDir}/test.cc ${PROJECT_SOURCE_DIR}/include/maidsafe/common/test.h)
 list(REMOVE_ITEM CommonAllFiles ${TestLibAllFiles})
-ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
+ms_glob_dir(CommonTests ${CommonSourcesDir}/tests "Tests")
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
 ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authentication")
@@ -57,24 +57,10 @@ ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
-set(CommonGTestsAllFiles ${CommonTestsAllFiles})
-set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
-                        ${CommonSourcesDir}/tests/bounded_string_test.cc
-                        ${CommonSourcesDir}/tests/errors_test.cc
-                        ${CommonSourcesDir}/tests/ipc_test.cc
-                        ${CommonSourcesDir}/tests/make_unique_test.cc
-                        ${CommonSourcesDir}/tests/node_id_test.cc
-                        ${CommonSourcesDir}/tests/on_scope_exit_test.cc
-                        ${CommonSourcesDir}/tests/utils_test.cc
-                        ${CommonSourcesDir}/tests/cli_test.cc
-                        ${CommonSourcesDir}/tests/visualiser_log_test.cc
-                        ${CommonSourcesDir}/tests/data_buffer_unit_test.cc
-                        ${CommonSourcesDir}/tests/data_buffer_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
-list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
+list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
 list(APPEND CommonTestsAllFiles ${TestsMain})
-
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -154,31 +140,16 @@ if(MaidsafeTesting)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
-  target_link_libraries(test_common maidsafe_test)
-
-  ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
-  target_link_libraries(ipc_child_process maidsafe_common)
-  add_dependencies(test_common ipc_child_process)
-
   ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
   target_link_libraries(test_config maidsafe_common)
 
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_test)
+  
+  ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
+  target_link_libraries(ipc_child_process maidsafe_common)
+  add_dependencies(TESTcommon ipc_child_process)
 
-  macro(CommonTests Group)
-    foreach(TestSource ${ARGN})
-      get_filename_component(Exe ${TestSource} NAME_WE)
-      string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
-      set(TestSources ${TestSource} ${TestsMain})
-      ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
-      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_test)
-      ms_add_catch_tests(${Exe})
-    endforeach()
-  endmacro()
-
-  CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
 endif()
 
 ms_rename_outdated_built_exes()
@@ -196,9 +167,8 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_style_test()
-  ms_add_catch_tests(test_common)
   ms_add_catch_tests(test_config)
-  ms_add_gtests(TESTcommon)
+  ms_add_gtests(TESTcommon) # I have no idea how this is supposed to work
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
@@ -213,6 +183,6 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
 if(MaidsafeTesting)
-  install(TARGETS test_common ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS test_common ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()

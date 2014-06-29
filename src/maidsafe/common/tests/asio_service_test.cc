@@ -34,46 +34,39 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("AsioService start and stop", "[AsioService][Unit]") {
+TEST(AsioServiceTest, BEH_StartAndStop) {
   bool done(false);
   std::mutex mutex;
   std::condition_variable cond_var;
 
   auto task([&] {
-    {
+      {
       std::lock_guard<std::mutex> lock(mutex);
       done = true;
-    }
-    cond_var.notify_one();
-  });
+      }
+      cond_var.notify_one();
+      });
 
-  SECTION("Allocate no threads") {
-    CHECK_THROWS_AS(AsioService(0), std::exception);
-  }
+  EXPECT_THROW(AsioService(0), std::exception);
 
-  SECTION("Normal usage") {
-    AsioService asio_service(2);
-    CHECK(asio_service.ThreadCount() == 2U);
-    asio_service.service().post(task);
-    std::unique_lock<std::mutex> lock(mutex);
-    CHECK(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
-    CHECK(done);
 
-    SECTION("Explicit Stop before destruction") {
-      CHECK_NOTHROW(asio_service.Stop());
-      CHECK(asio_service.ThreadCount() == 0U);
-      CHECK_NOTHROW(asio_service.Stop());
-      CHECK(asio_service.ThreadCount() == 0U);
-    }
+  AsioService asio_service(2);
+  EXPECT_EQ(asio_service.ThreadCount(), 2U);
+  asio_service.service().post(task);
+  std::unique_lock<std::mutex> lock(mutex);
+  EXPECT_TRUE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
+  EXPECT_TRUE(done);
 
-    SECTION("Stop, then post more tasks") {
-      done = false;
-      asio_service.Stop();
-      asio_service.service().post(task);
-      CHECK_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
-      CHECK_FALSE(done);
-    }
-  }
+  EXPECT_NO_THROW(asio_service.Stop());
+  EXPECT_EQ(asio_service.ThreadCount(), 0U);
+  EXPECT_NO_THROW(asio_service.Stop());
+  EXPECT_EQ(asio_service.ThreadCount(), 0U);
+
+  done = false;
+  asio_service.Stop();
+  asio_service.service().post(task);
+  EXPECT_FALSE(cond_var.wait_for(lock, std::chrono::milliseconds(100), [&] { return done; }));
+  EXPECT_FALSE(done);
 }
 
 }  // namespace test

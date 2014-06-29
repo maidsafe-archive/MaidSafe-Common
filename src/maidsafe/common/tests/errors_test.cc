@@ -30,33 +30,33 @@ namespace detail {
 
 namespace test {
 
-TEST_CASE("Error codes and conditions", "[ErrorCode][ErrorCondition][Unit]") {
+TEST(ErrorTest, BEH_ErrorCodeErrorCondition) {
   common_error null_pointer_error(MakeError(CommonErrors::null_pointer));
   asymm_error data_empty_error(MakeError(AsymmErrors::data_empty));
-  CHECK(null_pointer_error.code() != data_empty_error.code());
-  CHECK(null_pointer_error.code() == make_error_code(CommonErrors::null_pointer));
+  EXPECT_TRUE(null_pointer_error.code() != data_empty_error.code());
+  EXPECT_TRUE(null_pointer_error.code() == make_error_code(CommonErrors::null_pointer));
 
   std::error_condition null_pointer_condition(make_error_condition(CommonErrors::null_pointer));
   std::error_condition data_empty_condition(make_error_condition(AsymmErrors::data_empty));
-  CHECK(null_pointer_condition != data_empty_condition);
-  CHECK(null_pointer_condition == make_error_condition(CommonErrors::null_pointer));
+  EXPECT_TRUE(null_pointer_condition != data_empty_condition);
+  EXPECT_TRUE(null_pointer_condition == make_error_condition(CommonErrors::null_pointer));
 
   std::error_condition null_pointer_default_error_condition(
       GetCommonCategory().default_error_condition(null_pointer_error.code().value()));
   std::error_condition data_empty_default_error_condition(
       GetAsymmCategory().default_error_condition(data_empty_error.code().value()));
-  CHECK(null_pointer_default_error_condition == data_empty_default_error_condition);
+  EXPECT_TRUE(null_pointer_default_error_condition == data_empty_default_error_condition);
 
-  CHECK(GetCommonCategory().equivalent(null_pointer_error.code(), null_pointer_condition.value()));
-  CHECK_FALSE(GetCommonCategory().equivalent(null_pointer_error.code().value(),
+  EXPECT_TRUE(GetCommonCategory().equivalent(null_pointer_error.code(), null_pointer_condition.value()));
+  EXPECT_FALSE(GetCommonCategory().equivalent(null_pointer_error.code().value(),
                                              null_pointer_condition));
-  CHECK_FALSE(GetCommonCategory().equivalent(data_empty_error.code(),
+  EXPECT_FALSE(GetCommonCategory().equivalent(data_empty_error.code(),
                                              null_pointer_condition.value()));
-  CHECK_FALSE(GetCommonCategory().equivalent(data_empty_error.code().value(),
+  EXPECT_FALSE(GetCommonCategory().equivalent(data_empty_error.code().value(),
                                              null_pointer_condition));
 }
 
-TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
+TEST(ErrorTest, BEH_ErrorCodesThrownAsBoostExceptions) {
   // Catch as specific error type
   try {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
@@ -109,25 +109,25 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kError) << boost::diagnostic_information(e);
   }
 
-  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
+  EXPECT_TRUE(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
-TEST_CASE("Serialising and parsing errors", "[ErrorCode][Unit]") {
+TEST(ErrorTest, BEH_SerialisingAndParsingErrors) {
   common_error hashing_error{ MakeError(CommonErrors::hashing_error) };
   maidsafe_error::serialised_type serialised{ Serialise(hashing_error) };
-  CHECK(hashing_error.code() == Parse(serialised).code());
-  CHECK(std::string{ hashing_error.what() } == std::string{ Parse(serialised).what() });
+  EXPECT_TRUE(hashing_error.code() == Parse(serialised).code());
+  EXPECT_TRUE(std::string{ hashing_error.what() } == std::string{ Parse(serialised).what() });
 
   vault_manager_error listening_error{ MakeError(VaultManagerErrors::failed_to_listen) };
   serialised = Serialise(listening_error);
-  CHECK(listening_error.code() == Parse(serialised).code());
-  CHECK(std::string{ listening_error.what() } == std::string{ Parse(serialised).what() });
-  CHECK(hashing_error.code() != Parse(serialised).code());
-  CHECK(std::string{ hashing_error.what() } != std::string{ Parse(serialised).what() });
+  EXPECT_TRUE(listening_error.code() == Parse(serialised).code());
+  EXPECT_TRUE(std::string{ listening_error.what() } == std::string{ Parse(serialised).what() });
+  EXPECT_TRUE(hashing_error.code() != Parse(serialised).code());
+  EXPECT_TRUE(std::string{ hashing_error.what() } != std::string{ Parse(serialised).what() });
 
-  CHECK_THROWS_AS(IntToError(0), maidsafe_error);
-  CHECK(IntToError(-100000).code() == MakeError(CommonErrors::success).code());
-  CHECK(ErrorToInt(MakeError(CommonErrors::success)) == -100000);
+  EXPECT_THROW(IntToError(0), maidsafe_error);
+  EXPECT_TRUE(IntToError(-100000).code() == MakeError(CommonErrors::success).code());
+  EXPECT_TRUE(ErrorToInt(MakeError(CommonErrors::success)) == -100000);
 }
 
 }  // namespace test

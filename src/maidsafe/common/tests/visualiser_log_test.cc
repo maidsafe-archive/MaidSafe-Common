@@ -40,7 +40,7 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(TestAction, uint64_t,
     (AccountTransfer)
     (IncrementReferenceCount))
 
-class VisualiserLogTest {
+class VisualiserLogTest : public ::testing::Test {
  protected:
   VisualiserLogTest() : this_vault_id_(InitId()) {}
   std::string GetPostRequestBody(const log::VisualiserLogMessage& vlog) {
@@ -66,12 +66,12 @@ class VisualiserLogTest {
   Identity this_vault_id_;
 };
 
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeout 10
-  CHECK(IsValid(TestPersona::kMaidNode));
-  CHECK(IsValid(TestPersona::kDataGetter));
-  CHECK(IsValid(TestPersona::kCacheHandler));
-  CHECK(!IsValid(static_cast<TestPersona>(-1)));
-  CHECK(!IsValid(static_cast<TestPersona>(3)));
+TEST_F(VisualiserLogTest, BEH_VisualiserLog) {  // Timeout 10
+  EXPECT_TRUE(IsValid(TestPersona::kMaidNode));
+  EXPECT_TRUE(IsValid(TestPersona::kDataGetter));
+  EXPECT_TRUE(IsValid(TestPersona::kCacheHandler));
+  EXPECT_TRUE(!IsValid(static_cast<TestPersona>(-1)));
+  EXPECT_TRUE(!IsValid(static_cast<TestPersona>(3)));
 
 #ifdef USE_VLOGGING
   Identity target{ RandomString(64) };
@@ -106,7 +106,7 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeo
 
 // This test outputs the URL-encoded version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Unit]") {  // Timeout 9
+TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {  // Timeout 9
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
@@ -142,7 +142,7 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
   Sleep(std::chrono::milliseconds(100));  // To avoid Catch output getting mixed in with TLOGs.
 #endif
 
-  CHECK(true);
+  EXPECT_TRUE(true);
 }
 
 }  // namespace test

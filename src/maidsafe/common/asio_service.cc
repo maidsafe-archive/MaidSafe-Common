@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/log.h"
 
 namespace maidsafe {
@@ -25,7 +26,7 @@ namespace maidsafe {
 AsioService::AsioService(size_t thread_count)
     : thread_count_(thread_count),
       service_(),
-      work_(new boost::asio::io_service::work(service_)), threads_(),
+      work_(make_unique<boost::asio::io_service::work>(service_)), threads_(),
       mutex_() {
   if (thread_count == 0)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));

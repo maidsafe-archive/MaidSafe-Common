@@ -34,52 +34,52 @@ namespace data_stores {
 
 namespace test {
 
-TEST_CASE("Zero size memory", "[DataBuffer][Unit]") {
-  CHECK_NOTHROW(DataBuffer<std::string>(MemoryUsage(0), DiskUsage(100), nullptr));
+TEST(DataBufferUnitTest, BEH_ZeroSizeMemory) {
+  EXPECT_NO_THROW(DataBuffer<std::string>(MemoryUsage(0), DiskUsage(100), nullptr));
 }
 
-TEST_CASE("Max memory usage must be <= max disk usage", "[DataBuffer][Unit]") {
-  CHECK_THROWS_AS(DataBuffer<std::string>(MemoryUsage(1), DiskUsage(0), nullptr), std::exception);
+TEST(DataBufferUnitTest, BEH_MaxMemoryLessmaxDiskUsage) {
+  EXPECT_THROW(DataBuffer<std::string>(MemoryUsage(1), DiskUsage(0), nullptr), std::exception);
 }
 
-TEST_CASE("Zero size disk and memory", "[DataBuffer][Unit]") {
-  CHECK_NOTHROW(DataBuffer<std::string>(MemoryUsage(0), DiskUsage(0), nullptr));
+TEST(DataBufferUnitTest, BEH_ZeroSizeDiskAndMemory) {
+  EXPECT_NO_THROW(DataBuffer<std::string>(MemoryUsage(0), DiskUsage(0), nullptr));
 }
 
-TEST_CASE("Construct with complex key", "[DataBuffer][Unit]") {
+TEST(DataBufferUnitTest, BEH_ConstructWithComplexkey) {
   typedef std::pair<std::string, std::string> Key;
-  CHECK_NOTHROW(DataBuffer<Key>(MemoryUsage(0), DiskUsage(100), nullptr));
+  EXPECT_NO_THROW(DataBuffer<Key>(MemoryUsage(0), DiskUsage(100), nullptr));
 }
 
-TEST_CASE("Disk only insert and delete", "[DataBuffer][Unit]") {
+TEST(DataBufferUnitTest, BEH_DiskonlyInsertAndDelete) {
   DataBuffer<std::string> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
-  CHECK_NOTHROW(data_buffer.Store("a", NonEmptyString("b")));
-  CHECK(NonEmptyString("b") == data_buffer.Get("a"));
-  CHECK_NOTHROW(data_buffer.Delete(std::string("a")));
-  CHECK_THROWS_AS(data_buffer.Delete(std::string("a")), std::exception);
+  EXPECT_NO_THROW(data_buffer.Store("a", NonEmptyString("b")));
+  EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get("a"));
+  EXPECT_NO_THROW(data_buffer.Delete(std::string("a")));
+  EXPECT_THROW(data_buffer.Delete(std::string("a")), std::exception);
 }
 
-TEST_CASE("Disk only insert and delete complex key", "[DataBuffer][Unit]") {
+TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteComplexKey) {
   typedef std::pair<std::string, std::string> Key;
   DataBuffer<Key> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
-  CHECK_NOTHROW(data_buffer.Store(std::make_pair("a", "b"), NonEmptyString("b")));
-  CHECK(NonEmptyString("b") == data_buffer.Get(std::make_pair("a", "b")));
-  CHECK_NOTHROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))));
-  CHECK_THROWS_AS(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
-                  std::exception);
+  EXPECT_NO_THROW(data_buffer.Store(std::make_pair("a", "b"), NonEmptyString("b")));
+  EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get(std::make_pair("a", "b")));
+  EXPECT_NO_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))));
+  EXPECT_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
+      std::exception);
 }
 
-TEST_CASE("Disk only insert and delete range", "[DataBuffer][Unit]") {
+TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteRange) {
   typedef std::pair<std::string, std::string> Key;
   DataBuffer<Key> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
-  CHECK_NOTHROW(data_buffer.Store(std::make_pair("a", "b"), NonEmptyString("b")));
-  CHECK_NOTHROW(data_buffer.Store(std::make_pair("b", "b"), NonEmptyString("b")));
-  CHECK(NonEmptyString("b") == data_buffer.Get(std::make_pair("a", "b")));
+  EXPECT_NO_THROW(data_buffer.Store(std::make_pair("a", "b"), NonEmptyString("b")));
+  EXPECT_NO_THROW(data_buffer.Store(std::make_pair("b", "b"), NonEmptyString("b")));
+  EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get(std::make_pair("a", "b")));
   std::function<bool(const Key&)> predicate([](const Key& key) { return key.second == "b"; });
-  CHECK_NOTHROW(data_buffer.Delete(predicate));
-  CHECK_THROWS_AS(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
+  EXPECT_NO_THROW(data_buffer.Delete(predicate));
+  EXPECT_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
                   std::exception);
-  CHECK_NOTHROW(data_buffer.Delete(predicate));
+  EXPECT_NO_THROW(data_buffer.Delete(predicate));
 }
 
 
