@@ -77,7 +77,7 @@ TEST_CASE_METHOD(UserCredentialsTest, "CreateSecurePassword", "[UserCredentialUt
   CHECK_THROWS_AS(CreateSecurePassword(user_credentials), common_error);
 }
 
-TEST_CASE_METHOD(UserCredentialsTest, "ObfuscateData", "[UserCredentialUtils][Unit]") {  // Timeout 10  // NOLINT
+TEST_CASE_METHOD(UserCredentialsTest, "ObfuscateData", "[UserCredentialUtils][Unit]") {  // Timeout 100  NOLINT
   const NonEmptyString kData{ RandomString(1024 * 1024) };
   const NonEmptyString kObfuscated{ Obfuscate(user_credentials, kData) };
   REQUIRE(kObfuscated.IsInitialised());
