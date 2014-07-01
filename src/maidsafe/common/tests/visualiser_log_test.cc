@@ -76,8 +76,8 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
 #ifdef USE_VLOGGING
   Identity target{ RandomString(64) };
   // Call before VlogPrefix has been set
-  CHECK_THROWS_AS(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
-                  common_error);
+  EXPECT_THROW(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
+               common_error);
 
   // Call after VLOG has been initialised
   log::Logging::Instance().InitialiseVlog("Visualiser log test", "128.199.223.97", 8080, "/log");
@@ -88,18 +88,18 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   VLOG(TestAction::kGet, target);
   VLOG(TestAction::kGet, 99);
 
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
-  CHECK_THROWS_AS(VLOG(TestAction::kGet, Identity{}), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), target), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), 99), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
+  EXPECT_THROW(VLOG(TestAction::kGet, Identity{}), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestAction>(-1), target), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestAction>(-1), 99), common_error);
 
   // Try to initialise again
-  CHECK_THROWS_AS(log::Logging::Instance().InitialiseVlog("1", "128.199.223.97", 8080, "/log"),
-                  common_error);
+  EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", "128.199.223.97", 8080, "/log"),
+               common_error);
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
 #endif
 }
