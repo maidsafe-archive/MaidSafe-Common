@@ -33,16 +33,15 @@ namespace maidsafe {
 
 namespace test {
 
-
 class CliTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
-  test_value_ = 0;
-  input_ = nullptr;
-  original_cin_ = std::cin.rdbuf();
-  } 
+    test_value_ = 0;
+    input_ = nullptr;
+    original_cin_ = std::cin.rdbuf();
+  }
   virtual void TearDown() {
-    std::cin.rdbuf(original_cin_); 
+    std::cin.rdbuf(original_cin_);
   }
 
   void SendToCin(std::string input) {

@@ -42,7 +42,7 @@ class UserCredentialsTest : public testing::Test {
   const std::string kPasswordStr{ RandomAlphaNumericString((RandomUint32() % 100) + 1) };
 };
 
-TEST_F(UserCredentialsTest, BEH_CreateSecurePassword) { 
+TEST_F(UserCredentialsTest, BEH_CreateSecurePassword) {
   const crypto::SecurePassword kSecurePassword{ CreateSecurePassword(user_credentials) };
   ASSERT_TRUE(kSecurePassword->IsInitialised());
   EXPECT_TRUE(kSecurePassword->string() != kPasswordStr);
@@ -77,7 +77,7 @@ TEST_F(UserCredentialsTest, BEH_CreateSecurePassword) {
   EXPECT_THROW(CreateSecurePassword(user_credentials), common_error);
 }
 
-TEST_F(UserCredentialsTest, BEH_ObfuscateData) {  // Timeout 10  // NOLINT
+TEST_F(UserCredentialsTest, FUNC_ObfuscateData) {
   const NonEmptyString kData{ RandomString(1024 * 1024) };
   const NonEmptyString kObfuscated{ Obfuscate(user_credentials, kData) };
   ASSERT_TRUE(kObfuscated.IsInitialised());
@@ -128,7 +128,7 @@ TEST_F(UserCredentialsTest, BEH_ObfuscateData) {  // Timeout 10  // NOLINT
   EXPECT_THROW(Obfuscate(user_credentials, kData), common_error);
 }
 
-TEST_F(UserCredentialsTest, BEH_DerivesymmetricencryptionkeyandIV) {
+TEST_F(UserCredentialsTest, BEH_DeriveSymmetricEncryptionKeyAndIv) {
   const crypto::SecurePassword kSecurePassword{ CreateSecurePassword(user_credentials) };
   const crypto::AES256Key kKey{ DeriveSymmEncryptKey(kSecurePassword) };
   const crypto::AES256InitialisationVector kIv{ DeriveSymmEncryptIv(kSecurePassword) };

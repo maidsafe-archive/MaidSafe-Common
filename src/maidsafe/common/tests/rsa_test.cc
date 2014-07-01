@@ -31,10 +31,10 @@ namespace rsa {
 
 namespace test {
 
-class RSATest : public testing::Test {
+class RsaTest : public testing::Test {
  public:
-  RSATest() : keys_() {}
-  ~RSATest() {}
+  RsaTest() : keys_() {}
+  ~RsaTest() {}
 
  protected:
   Keys keys_;
@@ -44,7 +44,7 @@ class RSATest : public testing::Test {
   }
 };
 
-TEST_F(RSATest, BEH_RsaEncodeKeys) {
+TEST_F(RsaTest, BEH_RsaEncodeKeys) {
   Keys keys = GenerateKeyPair();
   maidsafe::test::RunInParallel(100, [&] {
     EncodedPrivateKey encoded_private_key(EncodeKey(keys.private_key));
@@ -58,7 +58,7 @@ TEST_F(RSATest, BEH_RsaEncodeKeys) {
   EXPECT_THROW(DecodeKey(EncodedPublicKey()), std::exception);
 }
 
-TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
+TEST_F(RsaTest, BEH_AsymEncryptDecrypt) {
   maidsafe::test::RunInParallel(6, [&] {
     const PlainText kSmallData(RandomString(21));
     const PlainText kLargeData(RandomString(1024 * 1024));
@@ -72,7 +72,7 @@ TEST_F(RSATest, BEH_AsymEncryptDecrypt) {
   });
 }
 
-TEST_F(RSATest, FUNC_SignValidate) {
+TEST_F(RsaTest, FUNC_SignValidate) {
   maidsafe::test::RunInParallel(10, [&] {
     EXPECT_NO_THROW(Keys keys(GenerateKeyPair()));
     Keys keys(GenerateKeyPair());
@@ -92,7 +92,7 @@ TEST_F(RSATest, FUNC_SignValidate) {
   });
 }
 
-TEST_F(RSATest, FUNC_SignFileValidate) {
+TEST_F(RsaTest, FUNC_SignFileValidate) {
   maidsafe::test::RunInParallel(3, [&] {
     Keys keys;
     EXPECT_NO_THROW(keys = GenerateKeyPair());
@@ -119,7 +119,7 @@ TEST_F(RSATest, FUNC_SignFileValidate) {
   });
 }
 
-TEST_F(RSATest, BEH_RsaKeysComparing) {
+TEST_F(RsaTest, BEH_RsaKeysComparing) {
   maidsafe::test::RunInParallel(6, [&] {
     Keys k1, k2, k3;
     EXPECT_TRUE(MatchingKeys(k1.public_key, k2.public_key));
@@ -138,7 +138,7 @@ TEST_F(RSATest, BEH_RsaKeysComparing) {
   });
 }
 
-TEST_F(RSATest, BEH_SignatureSize) {
+TEST_F(RsaTest, BEH_SignatureSize) {
   maidsafe::test::RunInParallel(6, [&] {
     Keys k1;
     EXPECT_NO_THROW(k1 = GenerateKeyPair());

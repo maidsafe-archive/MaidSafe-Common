@@ -242,7 +242,7 @@ TEST(UtilsTest, BEH_BytesToBinarySiUnits) {
   EXPECT_TRUE("16.00 EiB" == BytesToBinarySiUnits(18446744073709551615U));
 }
 
-TEST(UtilsTest, BEH_RandomStringMultiThread) {  // Timeout 60
+TEST(UtilsTest, FUNC_RandomStringMultiThread) {
   std::vector<std::thread> threads;
   for (int i(0); i != 20; ++i)
     threads.push_back(std::move(std::thread([] {
@@ -251,7 +251,6 @@ TEST(UtilsTest, BEH_RandomStringMultiThread) {  // Timeout 60
     })));
   for (std::thread& thread : threads)
     thread.join();
-  EXPECT_TRUE(true); 
 }
 
 TEST(UtilsTest, BEH_RandomStringGenerator) {
@@ -267,7 +266,7 @@ TEST(UtilsTest, BEH_RandomStringGenerator) {
   }
 }
 
-TEST(UtilsTest, BEH_RandomStringSingleThread) {  // Timeout 10
+TEST(UtilsTest, BEH_RandomStringSingleThread) {
   const size_t kStringSize = 4096;
   std::string test1 = RandomAlphaNumericString(kStringSize);
   std::string test2 = RandomAlphaNumericString(kStringSize);
@@ -310,7 +309,7 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
   EXPECT_THROW(HexDecode("{"), common_error);
 }
 
-TEST(UtilsTest, BEH_Base64EncodeDecode) {  // Timeout 10
+TEST(UtilsTest, BEH_Base64EncodeDecode) {
   bool expected_sizes_ok{ true }, decoded_ok{ true };
 
   maidsafe::test::RunInParallel(100, [&] {
@@ -408,12 +407,10 @@ TEST(UtilsTest, BEH_WstringToString) {
     auto old_method(WstringToStringOldMethod(input));
     try {
       auto new_method(WstringToString(input));
-      REQUIRE(new_method == old_method);
+      ASSERT_EQ(new_method, old_method);
     }
     catch(const common_error&) {}
   }
-#else
-  EXPECT_TRUE(true);
 #endif
 }
 
@@ -435,15 +432,11 @@ TEST(UtilsTest, BEH_StringToWstring) {
     auto old_method(StringToWstringOldMethod(input));
     try {
       auto new_method(StringToWstring(input));
-      if (input[0] != '\0') {
-        CAPTURE(static_cast<int>(input[0]));
-        REQUIRE(new_method == old_method);
-      }
+      if (input[0] != '\0')
+        ASSERT_EQ(new_method, old_method) << static_cast<int>(input[0]);
     }
     catch(const common_error&) {}
   }
-#else
-  EXPECT_TRUE(true);
 #endif
 }
 
@@ -454,7 +447,7 @@ TEST(UtilsTest, BEH_TimeFunctions) {
   EXPECT_TRUE((now - from_timestamp) <= bptime::milliseconds(1));
 }
 
-TEST(UtilsTest, BEH_RandomNumberGen) {  // Timeout 20
+TEST(UtilsTest, FUNC_RandomNumberGen) {
   bool within_threshold{ true };
   maidsafe::test::RunInParallel(10, [&] {
     std::set<int32_t> random_ints;

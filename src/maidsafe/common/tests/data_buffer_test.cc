@@ -598,47 +598,44 @@ TEST_F(DataBufferTest, BEH_RandomAsync) {
 namespace {
 
 struct DataBufferUsage {
-DataBufferUsage(int64_t memory_usage, int64_t disk_usage) 
-  : memory_usage(memory_usage), disk_usage(disk_usage) {} 
+  DataBufferUsage(int64_t memory_usage, int64_t disk_usage)
+      : memory_usage(memory_usage), disk_usage(disk_usage) {}
 
-int64_t memory_usage;
-int64_t disk_usage;
+  int64_t memory_usage;
+  int64_t disk_usage;
 };
+
 }  // unnamed namespace
 
 
 class DataBufferValueParameterisedTest : public testing::TestWithParam<DataBufferUsage> {
-  protected:
-    typedef DataNameVariant KeyType;
-    typedef DataBuffer<KeyType> DataBufferType;
-    typedef DataBufferType::PopFunctor PopFunctorType;
-    typedef std::unique_ptr<DataBufferType> DataBufferPtr;
+ protected:
+  typedef DataNameVariant KeyType;
+  typedef DataBuffer<KeyType> DataBufferType;
+  typedef DataBufferType::PopFunctor PopFunctorType;
+  typedef std::unique_ptr<DataBufferType> DataBufferPtr;
 
-    DataBufferValueParameterisedTest()
-      : pop_functor_(),
-      data_buffer_() {}
+  DataBufferValueParameterisedTest() : pop_functor_(), data_buffer_() {}
 
+  virtual void SetUp() override {
+    auto buf = GetParam();
+    memory_usage = buf.memory_usage;
+    disk_usage = buf.disk_usage;
+    total_usage = disk_usage + memory_usage;
+  }
 
-    virtual void SetUp() override { 
-      auto buf = GetParam(); 
-      memory_usage = buf.memory_usage;
-      disk_usage = buf.disk_usage;
-      total_usage = disk_usage + memory_usage;
-    }
-
-    uint64_t memory_usage;
-    uint64_t disk_usage;
-    uint64_t total_usage;
-    PopFunctorType pop_functor_;
-    DataBufferPtr data_buffer_;
+  uint64_t memory_usage;
+  uint64_t disk_usage;
+  uint64_t total_usage;
+  PopFunctorType pop_functor_;
+  DataBufferPtr data_buffer_;
 };
 
-
 TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
+  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage),
+                                        pop_functor_));
 
-  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage), pop_functor_));
-
-  while (total_usage != 0) {
+  while (total_usage) {
     NonEmptyString value(std::string(RandomAlphaNumericString(
                       static_cast<uint32_t>(memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
@@ -646,7 +643,7 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
     NonEmptyString recovered;
     EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
     EXPECT_TRUE(value == recovered);
-    if (disk_usage != 0) {
+    if (disk_usage) {
       disk_usage -= memory_usage;
       total_usage -= memory_usage;
     } else {
@@ -656,10 +653,11 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
 }
 
 TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
-  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage), pop_functor_));
+  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage),
+                                        pop_functor_));
 
   std::map<KeyType, NonEmptyString> key_value_pairs;
-  while (total_usage != 0) {
+  while (total_usage) {
     NonEmptyString value(
         std::string(RandomAlphaNumericString(static_cast<uint32_t>(memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
@@ -672,7 +670,7 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
   #endif
 
     EXPECT_NO_THROW(data_buffer_->Store(key, value));
-    if (disk_usage != 0) {
+    if (disk_usage) {
       disk_usage -= memory_usage;
       total_usage -= memory_usage;
     } else {
@@ -689,18 +687,16 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(BufferValueParam, DataBufferValueParameterisedTest, ::testing::Values(
-DataBufferUsage{1, 2}, 
-DataBufferUsage{1, 1024},
-DataBufferUsage{8, 1024},
-DataBufferUsage{1024, 2048},
-DataBufferUsage{1024, 1024},
-DataBufferUsage{16, 16 * 1024},
-DataBufferUsage{32, 32},
-DataBufferUsage{1000, 10000},
-DataBufferUsage{10000, 1000000}
-));
-
+INSTANTIATE_TEST_CASE_P(BufferValueParam, DataBufferValueParameterisedTest, testing::Values(
+    DataBufferUsage(1, 2),
+    DataBufferUsage(1, 1024),
+    DataBufferUsage(8, 1024),
+    DataBufferUsage(1024, 2048),
+    DataBufferUsage(1024, 1024),
+    DataBufferUsage(16, 16 * 1024),
+    DataBufferUsage(32, 32),
+    DataBufferUsage(1000, 10000),
+    DataBufferUsage(10000, 1000000)));
 
 }  // namespace test
 

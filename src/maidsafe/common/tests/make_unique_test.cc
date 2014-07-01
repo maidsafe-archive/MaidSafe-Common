@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(MakeUnique, BEH_make_unique) {
+TEST(MakeUniqueTest, BEH_MakeUnique) {
   EXPECT_TRUE((*make_unique<int>()) == 0);
   EXPECT_TRUE((*make_unique<int>(1314)) == 1314);
   EXPECT_TRUE(make_unique<std::string>()->empty());

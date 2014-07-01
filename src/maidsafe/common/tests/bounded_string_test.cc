@@ -175,7 +175,7 @@ TEST(BoundedStringTest, BEH_CopyAssignment) {
   EXPECT_FALSE(f.IsInitialised());
 }
 
-TEST(BoundedStringTesti, BEH_concatonation) {
+TEST(BoundedStringTest, BEH_Concatenation) {
   OneOne a(RandomString(1));
   std::string a_before_throw = a.string();
   OneTwo b(RandomString(1));

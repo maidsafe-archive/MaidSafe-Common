@@ -66,7 +66,7 @@ class VisualiserLogTest : public ::testing::Test {
   Identity this_vault_id_;
 };
 
-TEST_F(VisualiserLogTest, BEH_VisualiserLog) {  // Timeout 10
+TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   EXPECT_TRUE(IsValid(TestPersona::kMaidNode));
   EXPECT_TRUE(IsValid(TestPersona::kDataGetter));
   EXPECT_TRUE(IsValid(TestPersona::kCacheHandler));
@@ -106,7 +106,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {  // Timeout 10
 
 // This test outputs the URL-encoded version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {  // Timeout 9
+TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
@@ -141,8 +141,6 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {  // Timeout 9
 
   Sleep(std::chrono::milliseconds(100));  // To avoid Catch output getting mixed in with TLOGs.
 #endif
-
-  EXPECT_TRUE(true);
 }
 
 }  // namespace test

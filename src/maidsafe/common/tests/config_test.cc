@@ -76,3 +76,17 @@ TEST(ConfigTest, BEH_ThisExecutableDir) {
 }  // namespace test
 
 }  // namespace maidsafe
+
+int main(int argc, char** argv) {
+  maidsafe::test::g_argv = argv;
+#if defined(__clang__) || defined(__GNUC__)
+  // To allow Clang and GCC advanced diagnostics to work properly.
+  testing::FLAGS_gtest_catch_exceptions = true;
+#else
+  testing::FLAGS_gtest_catch_exceptions = false;
+#endif
+  testing::InitGoogleTest(&argc, argv);
+  int result(RUN_ALL_TESTS());
+  int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
+  return (test_count == 0) ? -1 : result;
+}

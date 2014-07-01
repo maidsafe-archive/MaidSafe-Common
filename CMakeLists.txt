@@ -60,8 +60,7 @@ set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
-list(APPEND CommonTestsAllFiles ${TestsMain})
-list(APPEND ConfigTestFile ${TestsMain} ${CommonSourcesDir}/test.cc)
+
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #

@@ -30,7 +30,7 @@ namespace detail {
 
 namespace test {
 
-TEST(ErrorTest, BEH_ErrorCodeErrorCondition) {
+TEST(ErrorsTest, BEH_ErrorCodeErrorCondition) {
   common_error null_pointer_error(MakeError(CommonErrors::null_pointer));
   asymm_error data_empty_error(MakeError(AsymmErrors::data_empty));
   EXPECT_TRUE(null_pointer_error.code() != data_empty_error.code());
@@ -47,7 +47,8 @@ TEST(ErrorTest, BEH_ErrorCodeErrorCondition) {
       GetAsymmCategory().default_error_condition(data_empty_error.code().value()));
   EXPECT_TRUE(null_pointer_default_error_condition == data_empty_default_error_condition);
 
-  EXPECT_TRUE(GetCommonCategory().equivalent(null_pointer_error.code(), null_pointer_condition.value()));
+  EXPECT_TRUE(GetCommonCategory().equivalent(null_pointer_error.code(),
+                                             null_pointer_condition.value()));
   EXPECT_FALSE(GetCommonCategory().equivalent(null_pointer_error.code().value(),
                                              null_pointer_condition));
   EXPECT_FALSE(GetCommonCategory().equivalent(data_empty_error.code(),
@@ -56,7 +57,7 @@ TEST(ErrorTest, BEH_ErrorCodeErrorCondition) {
                                              null_pointer_condition));
 }
 
-TEST(ErrorTest, BEH_ErrorCodesThrownAsBoostExceptions) {
+TEST(ErrorsTest, BEH_ErrorCodesThrownAsBoostExceptions) {
   // Catch as specific error type
   try {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
@@ -108,11 +109,9 @@ TEST(ErrorTest, BEH_ErrorCodesThrownAsBoostExceptions) {
     LOG(kWarning) << e.what();
     LOG(kError) << boost::diagnostic_information(e);
   }
-
-  EXPECT_TRUE(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
-TEST(ErrorTest, BEH_SerialisingAndParsingErrors) {
+TEST(ErrorsTest, BEH_SerialisingAndParsingErrors) {
   common_error hashing_error{ MakeError(CommonErrors::hashing_error) };
   maidsafe_error::serialised_type serialised{ Serialise(hashing_error) };
   EXPECT_TRUE(hashing_error.code() == Parse(serialised).code());

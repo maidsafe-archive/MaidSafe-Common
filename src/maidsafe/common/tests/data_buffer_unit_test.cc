@@ -38,7 +38,7 @@ TEST(DataBufferUnitTest, BEH_ZeroSizeMemory) {
   EXPECT_NO_THROW(DataBuffer<std::string>(MemoryUsage(0), DiskUsage(100), nullptr));
 }
 
-TEST(DataBufferUnitTest, BEH_MaxMemoryLessmaxDiskUsage) {
+TEST(DataBufferUnitTest, BEH_MaxMemoryLessMaxDiskUsage) {
   EXPECT_THROW(DataBuffer<std::string>(MemoryUsage(1), DiskUsage(0), nullptr), std::exception);
 }
 
@@ -46,12 +46,12 @@ TEST(DataBufferUnitTest, BEH_ZeroSizeDiskAndMemory) {
   EXPECT_NO_THROW(DataBuffer<std::string>(MemoryUsage(0), DiskUsage(0), nullptr));
 }
 
-TEST(DataBufferUnitTest, BEH_ConstructWithComplexkey) {
+TEST(DataBufferUnitTest, BEH_ConstructWithComplexKey) {
   typedef std::pair<std::string, std::string> Key;
   EXPECT_NO_THROW(DataBuffer<Key>(MemoryUsage(0), DiskUsage(100), nullptr));
 }
 
-TEST(DataBufferUnitTest, BEH_DiskonlyInsertAndDelete) {
+TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDelete) {
   DataBuffer<std::string> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
   EXPECT_NO_THROW(data_buffer.Store("a", NonEmptyString("b")));
   EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get("a"));

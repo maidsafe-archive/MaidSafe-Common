@@ -49,7 +49,6 @@ TEST(AsioServiceTest, BEH_StartAndStop) {
 
   EXPECT_THROW(AsioService(0), std::exception);
 
-
   AsioService asio_service(2);
   EXPECT_EQ(asio_service.ThreadCount(), 2U);
   asio_service.service().post(task);

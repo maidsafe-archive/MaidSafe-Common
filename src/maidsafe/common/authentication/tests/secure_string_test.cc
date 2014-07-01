@@ -38,7 +38,7 @@ namespace test {
 typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1, PasswordTag> Password;
 typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1, PinTag> Pin;
 
-TEST(SecureString, BEH_Construct) {
+TEST(SecureStringTest, BEH_Construct) {
   SecureString secure_string;
 
   EXPECT_NO_THROW(secure_string.Append('p'));
@@ -54,14 +54,14 @@ TEST(SecureString, BEH_Construct) {
   ASSERT_TRUE(SafeString("password") == secure_string.string());
 }
 
-TEST(SecureString, BEH_Hash) {
+TEST(SecureStringTest, BEH_Hash) {
 //  typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE>
 //      BoundedString;
   SafeString string("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   EXPECT_NO_THROW(crypto::Hash<crypto::SHA512>(string));
 }
 
-TEST(SecureString, BEH_CreatePassword) {
+TEST(SecureStringTest, BEH_CreatePassword) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -84,7 +84,7 @@ TEST(SecureString, BEH_CreatePassword) {
   ASSERT_TRUE(SafeString("payload") == password.string());
 }
 
-TEST(SecureString, BEH_CreatePasswordString) {
+TEST(SecureStringTest, BEH_CreatePasswordString) {
   SafeString safe_password("password");
   EXPECT_NO_THROW(Password password(safe_password));
   std::string std_password("drowssap");
@@ -113,15 +113,15 @@ TEST(SecureString, BEH_CreatePasswordString) {
 }
 
 
-TEST(SecureString, BEH_PassEmptyPasswordString) {
-  // Password's are currently defined to have length at least 1 character.
+TEST(SecureStringTest, BEH_PassEmptyPasswordString) {
+  // Passwords are currently defined to have length at least 1 character.
   SafeString safe_password;
   EXPECT_THROW(Password password(safe_password), std::exception);
   std::string std_password;
   EXPECT_THROW(Password password(std_password), std::exception);
 }
 
-TEST(SecureString, BEH_RemoveFirstPasswordCharacter) {
+TEST(SecureStringTest, BEH_RemoveFirstPasswordCharacter) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -140,7 +140,7 @@ TEST(SecureString, BEH_RemoveFirstPasswordCharacter) {
   ASSERT_TRUE(SafeString("assword") == password.string());
 }
 
-TEST(SecureString, BEH_RemoveLastPasswordCharacter) {
+TEST(SecureStringTest, BEH_RemoveLastPasswordCharacter) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -159,7 +159,7 @@ TEST(SecureString, BEH_RemoveLastPasswordCharacter) {
   ASSERT_TRUE(SafeString("passwor") == password.string());
 }
 
-TEST(SecureString, BEH_InsertAndAemoveAfterPasswordFinalised) {
+TEST(SecureStringTest, BEH_InsertAndRemoveAfterPasswordFinalised) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -181,7 +181,7 @@ TEST(SecureString, BEH_InsertAndAemoveAfterPasswordFinalised) {
   ASSERT_TRUE(SafeString("password") == password.string());
 }
 
-TEST(SecureString, BEH_CreatePasswordWithMissingIndex) {
+TEST(SecureStringTest, BEH_CreatePasswordWithMissingIndex) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -194,21 +194,17 @@ TEST(SecureString, BEH_CreatePasswordWithMissingIndex) {
   EXPECT_NO_THROW(password.Insert(6, 'o'));
 
   EXPECT_THROW(password.Finalise(), std::exception);
-
   EXPECT_NO_THROW(password.Insert(4, 'D'));
-
   EXPECT_NO_THROW(password.Finalise());
-
   ASSERT_TRUE(SafeString("passDword") == password.string());
 }
 
-TEST(SecureString, BEH_CreateInvalidLengthPassword) {
+TEST(SecureStringTest, BEH_CreateInvalidLengthPassword) {
   Password password;
-
   EXPECT_THROW(password.Finalise(), std::exception);
 }
 
-TEST(SecureString, BEH_ClearPasswordThenRedo) {
+TEST(SecureStringTest, BEH_ClearPasswordThenRedo) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -256,7 +252,7 @@ TEST(SecureString, BEH_ClearPasswordThenRedo) {
   ASSERT_TRUE(SafeString("password") == password.string());
 }
 
-TEST(SecureString, BEH_ClearPasswordAfterFinalised) {
+TEST(SecureStringTest, BEH_ClearPasswordAfterFinalised) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -276,7 +272,7 @@ TEST(SecureString, BEH_ClearPasswordAfterFinalised) {
   EXPECT_THROW(password.string(), std::exception);
 }
 
-TEST(SecureString, BEH_GetPasswordTextBeforefinalised) {
+TEST(SecureStringTest, BEH_GetPasswordTextBeforeFinalised) {
   Password password;
 
   EXPECT_NO_THROW(password.Insert(3, 's'));
@@ -295,7 +291,7 @@ TEST(SecureString, BEH_GetPasswordTextBeforefinalised) {
   ASSERT_TRUE(SafeString("password") == password.string());
 }
 
-TEST(SecureString, BEH_CheckPasswordIsvalidForAllChars) {
+TEST(SecureStringTest, BEH_CheckPasswordIsValidForAllChars) {
   Password password;
   for (size_t i(0); i != 23; ++i)
     EXPECT_NO_THROW(password.Insert(i, static_cast<char>(RandomInt32())));
@@ -305,7 +301,7 @@ TEST(SecureString, BEH_CheckPasswordIsvalidForAllChars) {
   EXPECT_NO_THROW(password.Finalise());
 }
 
-TEST(SecureString, BEH_CreatePin) {
+TEST(SecureStringTest, BEH_CreatePin) {
   Pin pin;
 
   EXPECT_NO_THROW(pin.Insert(1, '1'));
@@ -319,7 +315,7 @@ TEST(SecureString, BEH_CreatePin) {
   ASSERT_TRUE(123 == pin.Value());
 }
 
-TEST(SecureString, BEH_CreateInvalidLengthPIN) {
+TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {
   Pin pin;
 
   EXPECT_THROW(pin.Finalise(), std::exception);
@@ -331,7 +327,7 @@ TEST(SecureString, BEH_CreateInvalidLengthPIN) {
   ASSERT_TRUE(SafeString("0") == pin.string());
 }
 
-TEST(SecureString, BEH_InsertInvalidPINValue) {
+TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
   Pin pin;
 
   EXPECT_NO_THROW(pin.Insert(1, '1'));

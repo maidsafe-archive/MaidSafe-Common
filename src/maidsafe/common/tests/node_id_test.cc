@@ -113,7 +113,7 @@ TEST(NodeIdTest, BEH_DefaultConstructor) {
   EXPECT_TRUE(zero_id == NodeId(std::string(NodeId::kSize, 0)));
 }
 
-TEST(NodeIdTest, BEH_DistanceCheck) {  // Timeout 10
+TEST(NodeIdTest, BEH_DistanceCheck) {
   for (size_t i(0); i < 10000; ++i) {
     NodeId one(NodeId::IdType::kRandomId);
     NodeId two(NodeId::IdType::kRandomId);
@@ -308,7 +308,7 @@ TEST(NodeIdTest, BEH_OperatorGreaterThanOrEqualTo) {
   ASSERT_TRUE(kadid3 >= kadid1);
 }
 
-TEST(NodeIdTest, BEH_OperatorLessthanOrEqualTo) {
+TEST(NodeIdTest, BEH_OperatorLessThanOrEqualTo) {
   NodeId kadid1(NodeId::IdType::kRandomId);
   while (kadid1 == NodeId(NodeId::IdType::kMaxId))
     kadid1 = NodeId(NodeId::IdType::kRandomId);
@@ -347,7 +347,7 @@ TEST(NodeIdTest, BEH_OperatorXOR) {
     ASSERT_TRUE('\0' == zero[i]);
 }
 
-TEST(NodeIdTest, BEH_Collision) {  // Timeout 10
+TEST(NodeIdTest, BEH_Collision) {
   // Ensure we don't get a duplicate random ID.
   std::set<NodeId> node_ids;
   bool success(true);

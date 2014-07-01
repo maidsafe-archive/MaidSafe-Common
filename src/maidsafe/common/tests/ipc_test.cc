@@ -49,7 +49,7 @@ namespace test {
 namespace bi = boost::interprocess;
 namespace bp = boost::process;
 
-TEST(IPCTest, BEH_IPCcreate) {
+TEST(IpcTest, BEH_IpcCreate) {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -63,7 +63,7 @@ TEST(IPCTest, BEH_IPCcreate) {
   EXPECT_NO_THROW(CreateSharedMemory("test", test_vec));
 }
 
-TEST(IPCTest, BEH_IPCread) {
+TEST(IpcTest, BEH_IpcRead) {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -78,13 +78,13 @@ TEST(IPCTest, BEH_IPCread) {
   EXPECT_TRUE(test_vec == ReadSharedMemory("test", 4));
 }
 
-TEST(IPCTest, BEH_IpcDelete) {
+TEST(IpcTest, BEH_IpcDelete) {
   // always passes, even if SHM noexists
   EXPECT_NO_THROW(RemoveSharedMemory("test"));
   EXPECT_NO_THROW(RemoveSharedMemory("test"));
 }
 
-TEST(IPCTest, FUNC_IpcFunctionsThreaded) {
+TEST(IpcTest, FUNC_IpcFunctionsThreaded) {
   const std::string kTestName(RandomString(8));
   // Add scoped cleanup mechanism.
   struct Clean {
@@ -141,7 +141,7 @@ TEST(IPCTest, FUNC_IpcFunctionsThreaded) {
   RemoveSharedMemory(kTestName);
 }
 
-TEST(IPCTest, FUNC_IpcFunctionsUsingBoostProcess) {
+TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
   const std::string kTestName(RandomString(8));
   struct Clean {
     explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
