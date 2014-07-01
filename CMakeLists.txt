@@ -80,7 +80,7 @@ target_include_directories(maidsafe_common
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSourceDir})
+ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir})
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()

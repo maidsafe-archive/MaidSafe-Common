@@ -23,10 +23,6 @@
 
 #include "boost/filesystem/operations.hpp"
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
-#include "gtest/gtest.h"
-
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -117,22 +113,6 @@ int ExecuteGTestMain(int argc, char* argv[]) {
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
   return (test_count == 0) ? -1 : result;
-}
-
-int ExecuteCatchMain(int argc, char* argv[]) {
-  auto unused_options(log::Logging::Instance().Initialise(argc, argv));
-
-  std::vector<char*> unused_chars;
-  for (auto& unused_option : unused_options)
-    unused_chars.push_back(&unused_option[0]);
-
-  Catch::Session session;
-  auto command_line_result(
-      session.applyCommandLine(static_cast<int>(unused_options.size()), &unused_chars[0],
-                               Catch::Session::OnUnusedOptions::Ignore));
-  if (command_line_result != 0)
-    LOG(kWarning) << "Catch command line parsing error: " << command_line_result;
-  return session.run();
 }
 
 }  // namespace detail

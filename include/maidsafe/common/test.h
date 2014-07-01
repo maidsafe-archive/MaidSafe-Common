@@ -24,16 +24,7 @@
 #include <string>
 
 #include "boost/filesystem/path.hpp"
-
-#if defined USE_GTEST
-
 #include "gtest/gtest.h"
-
-#elif defined USE_CATCH
-
-#include "catch.hpp"
-
-#endif
 
 #include "maidsafe/common/log.h"
 
@@ -61,23 +52,12 @@ uint16_t GetRandomPort();
 namespace detail {
 
 int ExecuteGTestMain(int argc, char* argv[]);
-int ExecuteCatchMain(int argc, char* argv[]);
 
 }  // namespace detail
-
-#if defined USE_GTEST
 
 inline int ExecuteMain(int argc, char* argv[]) {
   return detail::ExecuteGTestMain(argc, argv);
 }
-
-#elif defined USE_CATCH
-
-inline int ExecuteMain(int argc, char* argv[]) {
-  return detail::ExecuteCatchMain(argc, argv);
-}
-
-#endif
 
 }  // namespace test
 
