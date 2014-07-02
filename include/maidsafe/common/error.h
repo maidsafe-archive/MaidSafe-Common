@@ -352,6 +352,9 @@ template <>
 struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
 
 template <>
+struct is_error_code_enum<maidsafe::VaultManagerErrors> : public true_type {};
+
+template <>
 struct is_error_code_enum<maidsafe::ApiErrors> : public true_type {};
 
 }  // namespace std
