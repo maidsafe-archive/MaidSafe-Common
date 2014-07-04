@@ -129,6 +129,90 @@ TEST(ErrorsTest, BEH_SerialisingAndParsingErrors) {
   EXPECT_TRUE(ErrorToInt(MakeError(CommonErrors::success)) == -100000);
 }
 
+template <typename ErrorType>
+class MaidSafeErrorTest : public testing::Test {};
+
+template <typename ErrorType>
+struct EnumClass;
+
+template <>
+struct EnumClass<common_error> { typedef CommonErrors type; };
+
+template <>
+struct EnumClass<asymm_error> { typedef AsymmErrors type; };
+
+template <>
+struct EnumClass<passport_error> { typedef PassportErrors type; };
+
+template <>
+struct EnumClass<encrypt_error> { typedef EncryptErrors type; };
+
+template <>
+struct EnumClass<routing_error> { typedef RoutingErrors type; };
+
+template <>
+struct EnumClass<nfs_error> { typedef NfsErrors type; };
+
+template <>
+struct EnumClass<drive_error> { typedef DriveErrors type; };
+
+template <>
+struct EnumClass<vault_error> { typedef VaultErrors type; };
+
+template <>
+struct EnumClass<vault_manager_error> { typedef VaultManagerErrors type; };
+
+template <>
+struct EnumClass<api_error> { typedef ApiErrors type; };
+
+typedef testing::Types<common_error,
+                       asymm_error,
+                       passport_error,
+                       encrypt_error,
+                       routing_error,
+                       nfs_error,
+                       drive_error,
+                       vault_error,
+                       vault_manager_error,
+                       api_error> AllErrorTypes;
+
+TYPED_TEST_CASE(MaidSafeErrorTest, AllErrorTypes);
+
+TYPED_TEST(MaidSafeErrorTest, BEH_ConstructorsAndHelpers) {
+  const std::error_code kCode{ make_error_code(typename EnumClass<TypeParam>::type(1)) };
+  const std::error_condition kCondition{
+      make_error_condition(typename EnumClass<TypeParam>::type(1)) };
+  const std::string kWhat{ RandomAlphaNumericString(10) };
+
+  TypeParam error(kCode, kWhat);
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(kCode, kWhat.c_str());
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(kCode);
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_EQ(kCode.message(), error.what());
+
+  error = TypeParam(1, kCode.category(), kWhat);
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(1, kCode.category(), kWhat.c_str());
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(1, kCode.category());
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_EQ(kCode.message(), error.what());
+
+  EXPECT_EQ(error.code(), MakeError(typename EnumClass<TypeParam>::type(1)).code());
+
+  EXPECT_TRUE(std::is_error_code_enum<typename EnumClass<TypeParam>::type>::value);
+}
+
 }  // namespace test
 
 }  // namespace detail
