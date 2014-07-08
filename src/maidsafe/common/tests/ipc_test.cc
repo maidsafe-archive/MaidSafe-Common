@@ -49,7 +49,7 @@ namespace test {
 namespace bi = boost::interprocess;
 namespace bp = boost::process;
 
-TEST_CASE("IPC create", "[ipc][Unit]") {
+TEST(IpcTest, BEH_IpcCreate) {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -60,10 +60,10 @@ TEST_CASE("IPC create", "[ipc][Unit]") {
   test_vec.push_back(b);
   test_vec.push_back(c);
   test_vec.push_back(a);
-  CHECK_NOTHROW(CreateSharedMemory("test", test_vec));
+  EXPECT_NO_THROW(CreateSharedMemory("test", test_vec));
 }
 
-TEST_CASE("IPC read", "[ipc][Unit]") {
+TEST(IpcTest, BEH_IpcRead) {
   std::string a = "test string 1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string b = "test string 2xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
   std::string c = "test string 3xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -74,17 +74,17 @@ TEST_CASE("IPC read", "[ipc][Unit]") {
   test_vec.push_back(b);
   test_vec.push_back(c);
   test_vec.push_back(a);
-  REQUIRE_NOTHROW(ReadSharedMemory("test", 4));
-  CHECK(test_vec == ReadSharedMemory("test", 4));
+  ASSERT_NO_THROW(ReadSharedMemory("test", 4));
+  EXPECT_TRUE(test_vec == ReadSharedMemory("test", 4));
 }
 
-TEST_CASE("IPC delete", "[ipc][Unit]") {
+TEST(IpcTest, BEH_IpcDelete) {
   // always passes, even if SHM noexists
-  CHECK_NOTHROW(RemoveSharedMemory("test"));
-  CHECK_NOTHROW(RemoveSharedMemory("test"));
+  EXPECT_NO_THROW(RemoveSharedMemory("test"));
+  EXPECT_NO_THROW(RemoveSharedMemory("test"));
 }
 
-TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
+TEST(IpcTest, FUNC_IpcFunctionsThreaded) {
   const std::string kTestName(RandomString(8));
   // Add scoped cleanup mechanism.
   struct Clean {
@@ -110,10 +110,10 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
   });
   std::thread reader_before_creation(all_should_throw);
   reader_before_creation.join();
-  CHECK(all_threw);
+  EXPECT_TRUE(all_threw);
 
   // Create the shared memory segments.
-  CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
+  EXPECT_NO_THROW(CreateSharedMemory(kTestName, test1_vec));
 
   // Check reading works.
   bool all_match{ false };
@@ -122,26 +122,26 @@ TEST_CASE("IPC functions threaded", "[ipc][Unit]") {
   });
   std::thread reader(all_should_match);
   reader.join();
-  CHECK(all_match);
+  EXPECT_TRUE(all_match);
 
   // Check modifying the original objects doesn't affect reading from shared memory
   test1_vec.clear();
-  CHECK(test1_vec.empty());
+  EXPECT_TRUE(test1_vec.empty());
   all_match = false;
   std::thread another_reader(all_should_match);
   another_reader.join();
-  CHECK(all_match);
+  EXPECT_TRUE(all_match);
 
   // Check deleting works.  Always passes, even if named shared memory doesn't exist.
-  CHECK_NOTHROW(RemoveSharedMemory(kTestName));
+  EXPECT_NO_THROW(RemoveSharedMemory(kTestName));
   all_threw = false;
   std::thread reader_after_deletion(all_should_throw);
   reader_after_deletion.join();
-  CHECK(all_threw);
+  EXPECT_TRUE(all_threw);
   RemoveSharedMemory(kTestName);
 }
 
-TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
+TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
   const std::string kTestName(RandomString(8));
   struct Clean {
     explicit Clean(std::string test_name) : kTestName(test_name) { RemoveSharedMemory(kTestName); }
@@ -170,24 +170,24 @@ TEST_CASE("IPC functions using boost process", "[ipc][Unit]") {
 
   int exit_code(99);
 
-  CHECK_NOTHROW(CreateSharedMemory(kTestName, test1_vec));
+  EXPECT_NO_THROW(CreateSharedMemory(kTestName, test1_vec));
   bp::child child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
                               bp::initializers::set_cmd_line(kCommandLine),
                               bp::initializers::set_on_error(error_code)));
-  REQUIRE_FALSE(error_code);
+  ASSERT_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
-  REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 0);
+  ASSERT_FALSE(error_code);
+  EXPECT_TRUE(exit_code == 0);
   exit_code = 99;
     // Check modifying the original objects doesn't affect reading from shared memory
   test1_vec.clear();
   child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
                                 bp::initializers::set_cmd_line(kCommandLine),
                                 bp::initializers::set_on_error(error_code)));
-  REQUIRE_FALSE(error_code);
+  EXPECT_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
-  REQUIRE_FALSE(error_code);
-  CHECK(exit_code == 0);
+  ASSERT_FALSE(error_code);
+  EXPECT_TRUE(exit_code == 0);
   RemoveSharedMemory(kTestName);
 }
 

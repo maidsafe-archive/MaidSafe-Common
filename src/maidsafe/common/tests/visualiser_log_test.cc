@@ -40,7 +40,7 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(TestAction, uint64_t,
     (AccountTransfer)
     (IncrementReferenceCount))
 
-class VisualiserLogTest {
+class VisualiserLogTest : public ::testing::Test {
  protected:
   VisualiserLogTest() : this_vault_id_(InitId()) {}
   std::string GetPostRequestBody(const log::VisualiserLogMessage& vlog) {
@@ -66,18 +66,18 @@ class VisualiserLogTest {
   Identity this_vault_id_;
 };
 
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeout 10
-  CHECK(IsValid(TestPersona::kMaidNode));
-  CHECK(IsValid(TestPersona::kDataGetter));
-  CHECK(IsValid(TestPersona::kCacheHandler));
-  CHECK(!IsValid(static_cast<TestPersona>(-1)));
-  CHECK(!IsValid(static_cast<TestPersona>(3)));
+TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
+  EXPECT_TRUE(IsValid(TestPersona::kMaidNode));
+  EXPECT_TRUE(IsValid(TestPersona::kDataGetter));
+  EXPECT_TRUE(IsValid(TestPersona::kCacheHandler));
+  EXPECT_TRUE(!IsValid(static_cast<TestPersona>(-1)));
+  EXPECT_TRUE(!IsValid(static_cast<TestPersona>(3)));
 
 #ifdef USE_VLOGGING
   Identity target{ RandomString(64) };
   // Call before VlogPrefix has been set
-  CHECK_THROWS_AS(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
-                  common_error);
+  EXPECT_THROW(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
+               common_error);
 
   // Call after VLOG has been initialised
   log::Logging::Instance().InitialiseVlog("Visualiser log test", "128.199.223.97", 8080, "/log");
@@ -88,25 +88,25 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeo
   VLOG(TestAction::kGet, target);
   VLOG(TestAction::kGet, 99);
 
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
-  CHECK_THROWS_AS(VLOG(TestAction::kGet, Identity{}), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), target), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), 99), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
+  EXPECT_THROW(VLOG(TestAction::kGet, Identity{}), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestAction>(-1), target), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestAction>(-1), 99), common_error);
 
   // Try to initialise again
-  CHECK_THROWS_AS(log::Logging::Instance().InitialiseVlog("1", "128.199.223.97", 8080, "/log"),
-                  common_error);
+  EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", "128.199.223.97", 8080, "/log"),
+               common_error);
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
 #endif
 }
 
 // This test outputs the URL-encoded version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Unit]") {  // Timeout 9
+TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
@@ -141,8 +141,6 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
 
   Sleep(std::chrono::milliseconds(100));  // To avoid Catch output getting mixed in with TLOGs.
 #endif
-
-  CHECK(true);
 }
 
 }  // namespace test

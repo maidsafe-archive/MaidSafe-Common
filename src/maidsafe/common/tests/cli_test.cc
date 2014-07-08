@@ -33,42 +33,41 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("TokenTest", "[cli][Unit]") {
-  CLI cli;
-  std::string test_str{ "this is five small tokens" };
-  CHECK((cli.TokeniseLine(test_str).size()) == 5);
-}
-
-class CliTest {
+class CliTest : public ::testing::Test {
  protected:
-  CliTest() : original_cin_(std::cin.rdbuf()) {}
-  ~CliTest() { std::cin.rdbuf(original_cin_); }
+  virtual void SetUp() {
+    test_value_ = 0;
+    input_ = nullptr;
+    original_cin_ = std::cin.rdbuf();
+  }
+  virtual void TearDown() {
+    std::cin.rdbuf(original_cin_);
+  }
 
   void SendToCin(std::string input) {
     input_ = maidsafe::make_unique<std::istringstream>(std::move(input));
     std::cin.rdbuf(input_->rdbuf());
   }
 
-  int test_value_ = 0;
+  int test_value_;
 
- private:
   std::streambuf* original_cin_;
-  std::unique_ptr<std::istringstream> input_ = nullptr;
+  std::unique_ptr<std::istringstream> input_;
 };
 
-TEST_CASE_METHOD(CliTest, "GetTest", "[cli][Unit]") {
+TEST_F(CliTest, BEH_GetTest) {
   SendToCin("input\n");
   CLI cli;
   std::string result{ cli.Get<std::string>("test") };
-  CHECK(result == "input");
+  EXPECT_TRUE(result == "input");
   result.clear();
 
   SendToCin("badinput\n");
   result = cli.Get<std::string>("test");
-  CHECK(result != "input");
+  EXPECT_TRUE(result != "input");
 }
 
-TEST_CASE_METHOD(CliTest, "MenuFunctions", "[cli][Unit]") {
+TEST_F(CliTest, BEH_MenuFunctions) {
   auto inc = [&] { ++test_value_; };
   auto dec = [&] { --test_value_; };
 
@@ -78,19 +77,19 @@ TEST_CASE_METHOD(CliTest, "MenuFunctions", "[cli][Unit]") {
   menu.AddItem("Dec three", dec);
 
   SendToCin("1\n0\n");
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 1);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 1);
 
   SendToCin("1\n1\n0\n");
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 3);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 3);
 
   SendToCin("3\n3\n0\n");
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 1);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 1);
 }
 
-TEST_CASE_METHOD(CliTest, "MenuHierarchy", "[cli][Unit]") {
+TEST_F(CliTest, BEH_MenuHierarchy) {
   Menu menu{ "Main" };
   menu.AddItem("Top level increment by 1", [&] { ++test_value_; });     // Action A
   menu.AddItem("Top level increment by 2", [&] { test_value_ += 2; });  // Action B
@@ -105,29 +104,35 @@ TEST_CASE_METHOD(CliTest, "MenuHierarchy", "[cli][Unit]") {
   sub_sub_item->AddChildItem("Sub-sub-menu decrement by 3,000", [&] { test_value_ -= 3000; });      // Action G  NOLINT
 
   SendToCin("1\n0\n");  // A, Quit
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 1);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 1);
 
   SendToCin("1\n1\n0\n");  // A, A, Quit
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 3);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 3);
 
   SendToCin("1\n2\n3\n3\n0\n");  // A, B, C, C, Quit
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 4);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 4);
 
   SendToCin("4\n2\n99\n99\n0\n");  // Sub, Sub-sub, Back to Sub, Back to Main, Quit
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 4);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 4);
 
   // Sub, D, Sub-sub, E, F, G, Back to Sub, Back to Main, Quit
   SendToCin("4\n1\n2\n1\n2\n3\n99\n99\n0\n");
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 207104);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 207104);
 
   SendToCin("0\n");  // Quit
-  CHECK(menu.Run() == 0);
-  CHECK(test_value_ == 207104);
+  EXPECT_TRUE(menu.Run() == 0);
+  EXPECT_TRUE(test_value_ == 207104);
+}
+
+TEST(CliTokenTest, BEH_TokenTest) {
+  CLI cli;
+  std::string test_str{ "this is five small tokens" };
+  EXPECT_TRUE((cli.TokeniseLine(test_str).size()) == 5);
 }
 
 }  // namespace test

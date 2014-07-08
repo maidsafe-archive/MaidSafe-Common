@@ -30,7 +30,6 @@
 
 namespace asio = boost::asio;
 namespace ip = asio::ip;
-namespace args = std::placeholders;
 
 namespace maidsafe {
 
@@ -67,14 +66,18 @@ TcpConnection::TcpConnection(AsioService& asio_service, Port remote_port)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 
-  boost::system::error_code ec;
+  boost::system::error_code connect_error;
   // Try IPv6 first.
-  socket_.connect(ip::tcp::endpoint{ ip::address_v6::loopback(), remote_port }, ec);
-  if (ec && ec == asio::error::make_error_code(asio::error::address_family_not_supported))
+  socket_.connect(ip::tcp::endpoint{ ip::address_v6::loopback(), remote_port }, connect_error);
+  if (connect_error && connect_error ==
+      asio::error::make_error_code(asio::error::address_family_not_supported)) {
     // Try IPv4 now.
-    socket_.connect(ip::tcp::endpoint{ ip::address_v4::loopback(), remote_port }, ec);
-  if (!socket_.is_open()) {
-    LOG(kError) << "Failed to connect to " << remote_port << ": " << ec.message();
+    socket_.connect(ip::tcp::endpoint{ ip::address_v4::loopback(), remote_port }, connect_error);
+  }
+  boost::system::error_code remote_endpoint_error;
+  socket_.remote_endpoint(remote_endpoint_error);
+  if (connect_error || remote_endpoint_error) {
+    LOG(kError) << "Failed to connect to " << remote_port << ": " << connect_error.message();
     BOOST_THROW_EXCEPTION(MakeError(VaultManagerErrors::failed_to_connect));
   }
 }
@@ -83,8 +86,7 @@ TcpConnectionPtr TcpConnection::MakeShared(AsioService& asio_service) {
   return TcpConnectionPtr{ new TcpConnection{ asio_service } };
 }
 
-TcpConnectionPtr TcpConnection::MakeShared(AsioService& asio_service,
-                                                          Port remote_port) {
+TcpConnectionPtr TcpConnection::MakeShared(AsioService& asio_service, Port remote_port) {
   return TcpConnectionPtr{ new TcpConnection{ asio_service, remote_port } };
 }
 

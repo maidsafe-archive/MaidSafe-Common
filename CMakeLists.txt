@@ -43,7 +43,7 @@ set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 ms_glob_dir(Common ${CommonSourcesDir} Common)
 set(TestLibAllFiles ${CommonSourcesDir}/test.cc ${PROJECT_SOURCE_DIR}/include/maidsafe/common/test.h)
 list(REMOVE_ITEM CommonAllFiles ${TestLibAllFiles})
-ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
+ms_glob_dir(CommonTests ${CommonSourcesDir}/tests "Tests")
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
 ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authentication")
@@ -60,23 +60,9 @@ ms_glob_dir(CommonTransport ${CommonSourcesDir}/transport "Transport")
 ms_glob_dir(CommonTransportTests ${CommonSourcesDir}/transport/tests "Transport Tests")
 
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
-set(CommonGTestsAllFiles ${CommonTestsAllFiles} ${CommonTransportTestsAllFiles})
-set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
-                        ${CommonSourcesDir}/tests/bounded_string_test.cc
-                        ${CommonSourcesDir}/tests/errors_test.cc
-                        ${CommonSourcesDir}/tests/ipc_test.cc
-                        ${CommonSourcesDir}/tests/make_unique_test.cc
-                        ${CommonSourcesDir}/tests/node_id_test.cc
-                        ${CommonSourcesDir}/tests/on_scope_exit_test.cc
-                        ${CommonSourcesDir}/tests/utils_test.cc
-                        ${CommonSourcesDir}/tests/cli_test.cc
-                        ${CommonSourcesDir}/tests/visualiser_log_test.cc
-                        ${CommonSourcesDir}/tests/data_buffer_unit_test.cc
-                        ${CommonSourcesDir}/tests/data_buffer_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
-list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
-list(APPEND CommonTestsAllFiles ${TestsMain})
+list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
 
 
 #==================================================================================================#
@@ -87,9 +73,11 @@ ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
+    ${CommonDataStoresAllFiles}
     ${CommonDataTypesAllFiles}
     ${CommonTransportAllFiles})
-add_dependencies(maidsafe_common boost_process catch)
+add_dependencies(maidsafe_common boost_process)
+
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -97,18 +85,18 @@ target_include_directories(maidsafe_common
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSourceDir})
+ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir})
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
 if(MSVC12 AND CMAKE_CL_64)
-  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved.")
+  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved (probably in Boost v1.56).")
   set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
-    protobuf
+    protobuf_lite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
@@ -157,31 +145,16 @@ if(MaidsafeTesting)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
-  target_link_libraries(test_common maidsafe_test)
+  ms_add_executable(TESTconfig "Tests/Common" ${ConfigTestFile})
+  target_link_libraries(TESTconfig maidsafe_common)
 
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTransportTestsAllFiles})
+  target_link_libraries(TESTcommon maidsafe_test)
+  
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
-  add_dependencies(test_common ipc_child_process)
+  add_dependencies(TESTcommon ipc_child_process)
 
-  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
-  target_link_libraries(test_config maidsafe_common)
-
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
-  target_link_libraries(TESTcommon maidsafe_test)
-
-  macro(CommonTests Group)
-    foreach(TestSource ${ARGN})
-      get_filename_component(Exe ${TestSource} NAME_WE)
-      string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
-      set(TestSources ${TestSource} ${TestsMain})
-      ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
-      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_test)
-      ms_add_catch_tests(${Exe})
-    endforeach()
-  endmacro()
-
-  CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
 endif()
 
 ms_rename_outdated_built_exes()
@@ -199,8 +172,7 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_style_test()
-  ms_add_catch_tests(test_common)
-  ms_add_catch_tests(test_config)
+  ms_add_gtests(TESTconfig)
   ms_add_gtests(TESTcommon)
   ms_add_project_experimental()
   ms_test_summary_output()
@@ -216,6 +188,6 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
 if(MaidsafeTesting)
-  install(TARGETS test_common ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS test_common ipc_child_process test_config TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS ipc_child_process TESTconfig TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS ipc_child_process TESTconfig TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
