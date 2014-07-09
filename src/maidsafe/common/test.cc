@@ -75,15 +75,11 @@ TestPath CreateTestPath(std::string test_prefix) {
 
 void RunInParallel(int thread_count, std::function<void()> functor) {
   functor();
-#ifdef MAIDSAFE_WIN32
   std::vector<std::future<void>> futures;
   for (int i = 0; i < thread_count; ++i)
     futures.push_back(std::async(std::launch::async, functor));
   for (auto& future : futures)
     future.get();
-#else  // until catch handles threaded tests on Linux
-  static_cast<void>(thread_count);
-#endif
 }
 
 uint16_t GetRandomPort() {
