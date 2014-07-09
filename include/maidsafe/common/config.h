@@ -70,6 +70,8 @@ boost::filesystem::path ThisExecutablePath();
 // been called.
 boost::filesystem::path ThisExecutableDir();
 
+const uint32_t kMaxChunkSize(1024 * 1024);  // bytes
+
 namespace transport {
 
 extern const unsigned kMaxRangeAboveDefaultPort;
