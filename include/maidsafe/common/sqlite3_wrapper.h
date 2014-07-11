@@ -24,34 +24,47 @@
 
 #include "boost/filesystem/path.hpp"
 
+struct sqlite3;
+struct sqlite3_stmt;
+
 namespace maidsafe {
 
-namespace sqlite3 {
+namespace sqlite {
 
 struct Statement;
 
-struct Database {
-  Database(const boost::filesystem::path& filename, int flags);
-  ~Database();
-
-  void Execute(const std::string& query);
-  friend class Sqlite3Statement;
-
- private:
-  sqlite3 *database;  // FIXME  consider unique_ptr , delete constructors
+// Modes for file open operations
+enum class Mode {
+  kReadOnly = 0x00000001,  // SQLITE_OPEN_READONLY
+  kReadWrite = 0x00000002,  // SQLITE_OPEN_READWRITE
+  kReadWriteCreate = 0x00000002 | 0x00000004  // SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
 };
 
+struct Database {
+  Database(const boost::filesystem::path& filename, Mode mode);
+  ~Database();
+  Database(const Database&) = delete;
+  Database(Database&&) = delete;
+  Database& operator=(Database) = delete;
 
-// Tranasction
+
+  void Execute(const std::string& query);
+  friend class Statement;
+
+ private:
+  sqlite3 *database;
+};
+
 struct Tranasction {
   Tranasction(Database& database_in);
   ~Tranasction();
+  Tranasction(const Tranasction&) = delete;
+  Tranasction(Tranasction&&) = delete;
+  Tranasction& operator=(Tranasction) = delete;
+
   void Commit();
 
  private:
-  Tranasction(const Tranasction&);
-  Tranasction(Tranasction&&);
-  Tranasction& operator=(Tranasction);
 
   const int kAttempts;
   bool committed;
@@ -60,14 +73,18 @@ struct Tranasction {
 
 
 enum class StepResult {
-  kSqliteRow = SQLITE_ROW,
-  kSqliteDone = SQLITE_DONE
+  kSqliteRow = 100,  // SQLITE_ROW
+  kSqliteDone = 101  // SQLITE_DONE
 };
 
 struct Statement {
 
   Statement(Database& database_in, const std::string& query);
   ~Statement();
+  Statement(const Statement&) = delete;
+  Statement(Statement&&) = delete;
+  Statement& operator=(Statement) = delete;
+
   void BindText(int index, const std::string& text);
   StepResult Step();
   void Reset();
@@ -76,11 +93,10 @@ struct Statement {
 
  private :
   Database& database;
-  sqlite3_stmt* statement;  // FIXME  consider unique_ptr
+  sqlite3_stmt* statement;
 };
 
-
-}  // namespace sqlite3
+}  // namespace sqlite
 
 }  // namespace maidsafe
 

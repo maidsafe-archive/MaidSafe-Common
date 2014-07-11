@@ -31,10 +31,11 @@ namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-namespace sqlite3 {
+namespace sqlite {
 
-Database::Database(const boost::filesystem::path& filename, int flags)
+Database::Database(const boost::filesystem::path& filename, Mode mode)
     : database(nullptr) {
+  auto flags = static_cast<int>(mode);
   if (sqlite3_open_v2(filename.string().c_str(), &database, flags, NULL) != SQLITE_OK) {
     LOG(kError) << "Could not open db at : " << filename
                 << ". Error : " << sqlite3_errmsg(database);
@@ -125,7 +126,7 @@ Statement::~Statement() {
     LOG(kError) << " sqlite3_finalize returned : " << return_value;
 }
 
-void Sqlite3Statement::BindText(int row_index, const std::string& text) {
+void Statement::BindText(int row_index, const std::string& text) {
   auto return_value = sqlite3_bind_text(statement, row_index, text.c_str(),
                                         static_cast<int>(text.size()), 0);
   if(return_value != SQLITE_OK) {
@@ -158,6 +159,6 @@ void Statement::Reset() {
 }
 
 
-}  // namespace sqlite3
+}  // namespace sqlite
 
 }  // namespace maidsafe
