@@ -97,6 +97,7 @@ target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
     protobuf_lite
+    sqlite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
@@ -150,7 +151,7 @@ if(MaidsafeTesting)
 
   ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTransportTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_test)
-  
+
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
   add_dependencies(TESTcommon ipc_child_process)

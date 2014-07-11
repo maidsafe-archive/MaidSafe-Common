@@ -74,7 +74,9 @@ enum class CommonErrors {
   no_such_element,
   serialisation_error,
   parsing_error,
-  not_a_directory
+  not_a_directory,
+  db_busy,
+  db_error
 };
 
 class common_error : public maidsafe_error {
