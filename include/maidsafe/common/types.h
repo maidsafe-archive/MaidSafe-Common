@@ -20,6 +20,9 @@
 #define MAIDSAFE_COMMON_TYPES_H_
 
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
 

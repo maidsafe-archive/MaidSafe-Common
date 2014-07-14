@@ -35,10 +35,8 @@ TestPath CreateTestPath(std::string test_prefix) {
   if (test_prefix.empty())
     test_prefix = "MaidSafe_Test";
 
-  if (test_prefix.substr(0, 13) != "MaidSafe_Test" && test_prefix.substr(0, 12) != "Sigmoid_Test") {
-    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional"
-                  << " test name>\" or \"Sigmoid_Test<optional test name>\".";
-  }
+  if (test_prefix.substr(0, 13) != "MaidSafe_Test")
+    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional test name>\".";
 
   test_prefix += "_%%%%-%%%%-%%%%";
 
