@@ -35,10 +35,8 @@ TestPath CreateTestPath(std::string test_prefix) {
   if (test_prefix.empty())
     test_prefix = "MaidSafe_Test";
 
-  if (test_prefix.substr(0, 13) != "MaidSafe_Test" && test_prefix.substr(0, 12) != "Sigmoid_Test") {
-    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional"
-                  << " test name>\" or \"Sigmoid_Test<optional test name>\".";
-  }
+  if (test_prefix.substr(0, 13) != "MaidSafe_Test")
+    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional test name>\".";
 
   test_prefix += "_%%%%-%%%%-%%%%";
 
@@ -75,15 +73,11 @@ TestPath CreateTestPath(std::string test_prefix) {
 
 void RunInParallel(int thread_count, std::function<void()> functor) {
   functor();
-#ifdef MAIDSAFE_WIN32
   std::vector<std::future<void>> futures;
   for (int i = 0; i < thread_count; ++i)
     futures.push_back(std::async(std::launch::async, functor));
   for (auto& future : futures)
     future.get();
-#else  // until catch handles threaded tests on Linux
-  static_cast<void>(thread_count);
-#endif
 }
 
 uint16_t GetRandomPort() {

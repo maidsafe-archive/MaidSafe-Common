@@ -56,6 +56,9 @@ ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Type
 ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
+ms_glob_dir(CommonTransport ${CommonSourcesDir}/transport "Transport")
+ms_glob_dir(CommonTransportTests ${CommonSourcesDir}/transport/tests "Transport Tests")
+
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
@@ -71,8 +74,10 @@ ms_add_static_library(maidsafe_common
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
-    ${CommonDataTypesAllFiles})
+    ${CommonDataTypesAllFiles}
+    ${CommonTransportAllFiles})
 add_dependencies(maidsafe_common boost_process)
+
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -143,7 +148,7 @@ if(MaidsafeTesting)
   ms_add_executable(TESTconfig "Tests/Common" ${ConfigTestFile})
   target_link_libraries(TESTconfig maidsafe_common)
 
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTransportTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_test)
   
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})

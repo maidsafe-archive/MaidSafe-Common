@@ -82,4 +82,10 @@ boost::filesystem::path ThisExecutableDir() {
   return ThisExecutablePath().parent_path();
 }
 
+namespace transport {
+
+const unsigned kMaxRangeAboveDefaultPort(100);
+
+}  // namespace transport
+
 }  // namespace maidsafe
