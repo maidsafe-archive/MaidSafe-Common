@@ -27,8 +27,6 @@ extern "C" {
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-namespace fs = boost::filesystem;
-
 namespace maidsafe {
 
 namespace sqlite {
