@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_TRANSPORT_TCP_LISTENER_H_
-#define MAIDSAFE_COMMON_TRANSPORT_TCP_LISTENER_H_
+#ifndef MAIDSAFE_COMMON_TCP_LISTENER_H_
+#define MAIDSAFE_COMMON_TCP_LISTENER_H_
 
 #include <functional>
 #include <memory>
@@ -30,25 +30,25 @@
 
 namespace maidsafe {
 
-namespace transport {
+namespace tcp {
 
-class TcpListener : public std::enable_shared_from_this<TcpListener> {
+class Listener : public std::enable_shared_from_this<Listener> {
  public:
-  static TcpListenerPtr MakeShared(AsioService &asio_service,
-                                   NewConnectionFunctor on_new_connection, Port desired_port);
+  Listener(const Listener&) = delete;
+  Listener(Listener&&) = delete;
+  Listener& operator=(Listener) = delete;
+
+  static ListenerPtr MakeShared(AsioService &asio_service,
+                                NewConnectionFunctor on_new_connection, Port desired_port);
   Port ListeningPort() const;
   void StopListening();
 
  private:
-  TcpListener(AsioService &asio_service, NewConnectionFunctor on_new_connection);
-
-  TcpListener(const TcpListener&) = delete;
-  TcpListener(TcpListener&&) = delete;
-  TcpListener& operator=(TcpListener) = delete;
+  Listener(AsioService &asio_service, NewConnectionFunctor on_new_connection);
 
   void StartListening(Port desired_port);
   void DoStartListening(Port port);
-  void HandleAccept(TcpConnectionPtr accepted_connection, const boost::system::error_code& ec);
+  void HandleAccept(ConnectionPtr accepted_connection, const boost::system::error_code& ec);
   void DoStopListening();
 
   AsioService& asio_service_;
@@ -57,8 +57,8 @@ class TcpListener : public std::enable_shared_from_this<TcpListener> {
   boost::asio::ip::tcp::acceptor acceptor_;
 };
 
-}  // namespace transport
+}  // namespace tcp
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_TRANSPORT_TCP_LISTENER_H_
+#endif  // MAIDSAFE_COMMON_TCP_LISTENER_H_

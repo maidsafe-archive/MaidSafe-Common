@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_TRANSPORT_TCP_CONNECTION_H_
-#define MAIDSAFE_COMMON_TRANSPORT_TCP_CONNECTION_H_
+#ifndef MAIDSAFE_COMMON_TCP_CONNECTION_H_
+#define MAIDSAFE_COMMON_TCP_CONNECTION_H_
 
 #include <array>
 #include <cstdint>
@@ -38,16 +38,20 @@
 
 namespace maidsafe {
 
-namespace transport {
+namespace tcp {
 
-class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
+class Connection : public std::enable_shared_from_this<Connection> {
  public:
   typedef uint32_t DataSize;
 
+  Connection(const Connection&) = delete;
+  Connection(Connection&&) = delete;
+  Connection& operator=(Connection) = delete;
+
   // Used when accepting an incoming connection.
-  static TcpConnectionPtr MakeShared(AsioService &asio_service);
+  static ConnectionPtr MakeShared(AsioService &asio_service);
   // Used to attempt to connect to 'remote_port' on loopback address.
-  static TcpConnectionPtr MakeShared(AsioService &asio_service, Port remote_port);
+  static ConnectionPtr MakeShared(AsioService &asio_service, Port remote_port);
 
   void Start(MessageReceivedFunctor on_message_received,
              ConnectionClosedFunctor on_connection_closed);
@@ -61,12 +65,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
   static size_t MaxMessageSize() { return 1024 * 1024; }  // bytes
 
  private:
-  explicit TcpConnection(AsioService &asio_service);
-  TcpConnection(AsioService &asio_service, Port remote_port);
-
-  TcpConnection(const TcpConnection&) = delete;
-  TcpConnection(TcpConnection&&) = delete;
-  TcpConnection& operator=(TcpConnection) = delete;
+  explicit Connection(AsioService &asio_service);
+  Connection(AsioService &asio_service, Port remote_port);
 
   struct ReceivingMessage {
     std::array<unsigned char, 4> size_buffer;
@@ -95,8 +95,8 @@ class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
   std::deque<SendingMessage> send_queue_;
 };
 
-}  // namespace transport
+}  // namespace tcp
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_TRANSPORT_TCP_CONNECTION_H_
+#endif  // MAIDSAFE_COMMON_TCP_CONNECTION_H_
