@@ -49,7 +49,7 @@ struct Database {
 
 
   void Execute(const std::string& query);
-  friend class Statement;
+  friend struct Statement;
 
  private:
   sqlite3 *database;
