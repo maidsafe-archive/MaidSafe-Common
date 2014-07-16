@@ -182,6 +182,18 @@ std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "No data";
     case EncryptErrors::invalid_encryption_version:
       return "Invalid version of encryption algorithm";
+    case EncryptErrors::failed_to_write:
+      return "Failed to write";
+    case EncryptErrors::failed_to_prepare_for_write:
+      return "Failed to prepare for write";
+    case EncryptErrors::failed_to_get_chunk:
+      return "Failed to get chunk";
+    case EncryptErrors::failed_to_flush:
+      return "Failed to flush";
+    case EncryptErrors::failed_to_decrypt:
+      return "Failed to decrypt";
+    case EncryptErrors::failed_to_read:
+      return "Failed to read";
     default:
       return "Unknown error in Encrypt";
   }

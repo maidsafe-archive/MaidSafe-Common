@@ -150,7 +150,13 @@ passport_error MakeError(PassportErrors code);
 enum class EncryptErrors {
   bad_sequence = 1,
   no_data,
-  invalid_encryption_version
+  invalid_encryption_version,
+  failed_to_write,
+  failed_to_prepare_for_write,
+  failed_to_get_chunk,
+  failed_to_flush,
+  failed_to_decrypt,
+  failed_to_read
 };
 
 class encrypt_error : public maidsafe_error {

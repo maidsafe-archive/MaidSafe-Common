@@ -56,6 +56,9 @@ ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Type
 ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
+ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
+ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
+
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
@@ -71,8 +74,10 @@ ms_add_static_library(maidsafe_common
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
-    ${CommonDataTypesAllFiles})
+    ${CommonDataTypesAllFiles}
+    ${CommonTcpAllFiles})
 add_dependencies(maidsafe_common boost_process)
+
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -85,13 +90,13 @@ if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
 if(MSVC12 AND CMAKE_CL_64)
-  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved.")
+  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved (probably in Boost v1.56).")
   set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
-    protobuf
+    protobuf_lite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
@@ -143,7 +148,7 @@ if(MaidsafeTesting)
   ms_add_executable(TESTconfig "Tests/Common" ${ConfigTestFile})
   target_link_libraries(TESTconfig maidsafe_common)
 
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
+  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
   target_link_libraries(TESTcommon maidsafe_test)
   
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})

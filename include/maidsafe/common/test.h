@@ -39,8 +39,7 @@ typedef std::shared_ptr<boost::filesystem::path> TestPath;
 // directory cannot be found, the method returns a pointer to an empty path.  If
 // a directory is successfully created, an attempt to delete it is made when the
 // shared_ptr is destroyed by using CleanupTest (below) as a custom deleter.
-// The test_prefix should preferably be "MaidSafe_Test<optional test name>" or
-// "Sigmoid_Test<optional test name>".
+// The test_prefix should preferably be "MaidSafe_Test<optional test name>".
 TestPath CreateTestPath(std::string test_prefix = "");
 
 // Executes "functor" asynchronously "thread_count" times.

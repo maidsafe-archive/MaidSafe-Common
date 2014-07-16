@@ -41,6 +41,14 @@ namespace test { class VisualiserLogTest; }
 
 namespace log {
 
+template<typename T>
+struct is_string : public std::integral_constant<
+    bool, std::is_same<char*, typename std::decay<T>::type>::value ||
+          std::is_same<const char*, typename std::decay<T>::type>::value> {};
+
+template<>
+struct is_string<std::string> : std::true_type {};
+
 class VisualiserLogMessage {
  public:
   template <typename PersonaEnum, typename ActionEnum>
@@ -69,6 +77,16 @@ class VisualiserLogMessage {
         kVaultId_(Logging::Instance().VlogPrefix()),
         kValue1_(value1.string()),
         kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
+        kPersonaId_(),
+        kActionId_(action) {}
+
+  template <typename ActionEnum, typename T,
+            typename std::enable_if<is_string<T>::value>::type* = nullptr>
+  VisualiserLogMessage(ActionEnum action, Identity value1, T value2)
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kValue1_(value1.string()),
+        kValue2_(value2),
         kPersonaId_(),
         kActionId_(action) {}
 
