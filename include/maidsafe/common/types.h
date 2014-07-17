@@ -53,19 +53,19 @@ struct is_payable : public std::true_type {};
 template <typename T>
 struct is_unique_on_network : public std::true_type {};
 
-namespace transport {
+namespace tcp {
 
-class TcpConnection;
-class TcpListener;
+class Connection;
+class Listener;
 
-typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
-typedef std::shared_ptr<TcpListener> TcpListenerPtr;
+typedef std::shared_ptr<Connection> ConnectionPtr;
+typedef std::shared_ptr<Listener> ListenerPtr;
 typedef std::function<void(std::string)> MessageReceivedFunctor;
 typedef std::function<void()> ConnectionClosedFunctor;
-typedef std::function<void(TcpConnectionPtr)> NewConnectionFunctor;
+typedef std::function<void(ConnectionPtr)> NewConnectionFunctor;
 typedef uint16_t Port;
 
-}  // namespace transport
+}  // namespace tcp
 
 }  // namespace maidsafe
 

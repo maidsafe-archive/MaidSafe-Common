@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/transport/tcp_connection.h"
+#include "maidsafe/common/tcp/connection.h"
 
 #include <condition_variable>
 
@@ -33,9 +33,9 @@ namespace ip = asio::ip;
 
 namespace maidsafe {
 
-namespace transport {
+namespace tcp {
 
-TcpConnection::TcpConnection(AsioService& asio_service)
+Connection::Connection(AsioService& asio_service)
     : io_service_(asio_service.service()),
       start_flag_(),
       socket_close_flag_(),
@@ -52,7 +52,7 @@ TcpConnection::TcpConnection(AsioService& asio_service)
   }
 }
 
-TcpConnection::TcpConnection(AsioService& asio_service, Port remote_port)
+Connection::Connection(AsioService& asio_service, Port remote_port)
     : io_service_(asio_service.service()),
       start_flag_(),
       socket_close_flag_(),
@@ -82,30 +82,30 @@ TcpConnection::TcpConnection(AsioService& asio_service, Port remote_port)
   }
 }
 
-TcpConnectionPtr TcpConnection::MakeShared(AsioService& asio_service) {
-  return TcpConnectionPtr{ new TcpConnection{ asio_service } };
+ConnectionPtr Connection::MakeShared(AsioService& asio_service) {
+  return ConnectionPtr{ new Connection{ asio_service } };
 }
 
-TcpConnectionPtr TcpConnection::MakeShared(AsioService& asio_service, Port remote_port) {
-  return TcpConnectionPtr{ new TcpConnection{ asio_service, remote_port } };
+ConnectionPtr Connection::MakeShared(AsioService& asio_service, Port remote_port) {
+  return ConnectionPtr{ new Connection{ asio_service, remote_port } };
 }
 
-void TcpConnection::Start(MessageReceivedFunctor on_message_received,
-                          ConnectionClosedFunctor on_connection_closed) {
+void Connection::Start(MessageReceivedFunctor on_message_received,
+                       ConnectionClosedFunctor on_connection_closed) {
   std::call_once(start_flag_, [=] {
     on_message_received_ = on_message_received;
     on_connection_closed_ = on_connection_closed;
-    TcpConnectionPtr this_ptr{ shared_from_this() };
+    ConnectionPtr this_ptr{ shared_from_this() };
     io_service_.dispatch([this_ptr] { this_ptr->ReadSize(); });
   });
 }
 
-void TcpConnection::Close() {
-  TcpConnectionPtr this_ptr{ shared_from_this() };
+void Connection::Close() {
+  ConnectionPtr this_ptr{ shared_from_this() };
   io_service_.post([this_ptr] { this_ptr->DoClose(); });
 }
 
-void TcpConnection::DoClose() {
+void Connection::DoClose() {
   std::call_once(socket_close_flag_, [this] {
     boost::system::error_code ignored_ec;
     socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ignored_ec);
@@ -115,8 +115,8 @@ void TcpConnection::DoClose() {
   });
 }
 
-void TcpConnection::ReadSize() {
-  TcpConnectionPtr this_ptr{ shared_from_this() };
+void Connection::ReadSize() {
+  ConnectionPtr this_ptr{ shared_from_this() };
   asio::async_read(socket_, asio::buffer(receiving_message_.size_buffer),
                    [this_ptr](const boost::system::error_code& ec, size_t bytes_transferred) {
     if (ec) {
@@ -143,8 +143,8 @@ void TcpConnection::ReadSize() {
   });
 }
 
-void TcpConnection::ReadData() {
-  TcpConnectionPtr this_ptr{ shared_from_this() };
+void Connection::ReadData() {
+  ConnectionPtr this_ptr{ shared_from_this() };
   asio::async_read(socket_, asio::buffer(receiving_message_.data_buffer), io_service_.wrap(
                    [this_ptr](const boost::system::error_code& ec, size_t bytes_transferred) {
     if (ec) {
@@ -162,9 +162,9 @@ void TcpConnection::ReadData() {
   }));
 }
 
-void TcpConnection::Send(std::string data) {
+void Connection::Send(std::string data) {
   SendingMessage message(EncodeData(std::move(data)));
-  TcpConnectionPtr this_ptr{ shared_from_this() };
+  ConnectionPtr this_ptr{ shared_from_this() };
   io_service_.post([this_ptr, message] {
     bool currently_sending{ !this_ptr->send_queue_.empty() };
     this_ptr->send_queue_.emplace_back(std::move(message));
@@ -173,11 +173,11 @@ void TcpConnection::Send(std::string data) {
   });
 }
 
-void TcpConnection::DoSend() {
+void Connection::DoSend() {
   std::array<asio::const_buffer, 2> buffers;
   buffers[0] = asio::buffer(send_queue_.front().size_buffer);
   buffers[1] = asio::buffer(send_queue_.front().data.data(), send_queue_.front().data.size());
-  TcpConnectionPtr this_ptr{ shared_from_this() };
+  ConnectionPtr this_ptr{ shared_from_this() };
   asio::async_write(socket_, buffers, io_service_.wrap(
                     [this_ptr](const boost::system::error_code& ec, size_t bytes_transferred) {
     if (ec) {
@@ -194,7 +194,7 @@ void TcpConnection::DoSend() {
   }));
 }
 
-TcpConnection::SendingMessage TcpConnection::EncodeData(std::string data) const {
+Connection::SendingMessage Connection::EncodeData(std::string data) const {
   if (data.empty())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
   if (data.size() > MaxMessageSize())
@@ -208,6 +208,6 @@ TcpConnection::SendingMessage TcpConnection::EncodeData(std::string data) const 
   return message;
 }
 
-}  // namespace transport
+}  // namespace tcp
 
 }  // namespace maidsafe

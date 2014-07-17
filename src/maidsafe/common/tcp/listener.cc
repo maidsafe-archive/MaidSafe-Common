@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/transport/tcp_listener.h"
+#include "maidsafe/common/tcp/listener.h"
 
 #include <condition_variable>
 #include <limits>
@@ -25,15 +25,15 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/on_scope_exit.h"
 
-#include "maidsafe/common/transport/tcp_connection.h"
+#include "maidsafe/common/tcp/connection.h"
 
 namespace asio = boost::asio;
 
 namespace maidsafe {
 
-namespace transport {
+namespace tcp {
 
-TcpListener::TcpListener(AsioService &asio_service, NewConnectionFunctor on_new_connection)
+Listener::Listener(AsioService &asio_service, NewConnectionFunctor on_new_connection)
     : asio_service_(asio_service),
       stop_listening_flag_(),
       on_new_connection_(on_new_connection),
@@ -44,19 +44,18 @@ TcpListener::TcpListener(AsioService &asio_service, NewConnectionFunctor on_new_
   }
 }
 
-TcpListenerPtr TcpListener::MakeShared(
-    AsioService &asio_service,
-    NewConnectionFunctor on_new_connection, Port desired_port) {
-  std::shared_ptr<TcpListener> listener{ new TcpListener{ asio_service, on_new_connection } };
+ListenerPtr Listener::MakeShared(AsioService &asio_service, NewConnectionFunctor on_new_connection,
+                                 Port desired_port) {
+  ListenerPtr listener{ new Listener{ asio_service, on_new_connection } };
   listener->StartListening(desired_port);
   return listener;
 }
 
-Port TcpListener::ListeningPort() const {
+Port Listener::ListeningPort() const {
   return acceptor_.local_endpoint().port();
 }
 
-void TcpListener::StartListening(Port desired_port) {
+void Listener::StartListening(Port desired_port) {
   unsigned attempts{ 0 };
   while (attempts <= kMaxRangeAboveDefaultPort &&
     desired_port + attempts <= std::numeric_limits<Port>::max() && !acceptor_.is_open()) {
@@ -76,7 +75,7 @@ void TcpListener::StartListening(Port desired_port) {
   }
 }
 
-void TcpListener::DoStartListening(Port port) {
+void Listener::DoStartListening(Port port) {
   // Try IPv6 first.
   asio::ip::tcp::endpoint endpoint{ asio::ip::address_v6::loopback(), port };
   on_scope_exit cleanup_on_error([&] {
@@ -112,8 +111,8 @@ void TcpListener::DoStartListening(Port port) {
   acceptor_.listen(asio::socket_base::max_connections);
 
   // The connection object is kept alive in the acceptor handler until HandleAccept() is called.
-  TcpConnectionPtr connection{ TcpConnection::MakeShared(asio_service_) };
-  TcpListenerPtr this_ptr{ shared_from_this() };
+  ConnectionPtr connection{ Connection::MakeShared(asio_service_) };
+  ListenerPtr this_ptr{ shared_from_this() };
   acceptor_.async_accept(connection->Socket(), asio_service_.service().wrap(
       [this_ptr, connection](const boost::system::error_code& error) {
         this_ptr->HandleAccept(connection, error);
@@ -122,8 +121,8 @@ void TcpListener::DoStartListening(Port port) {
   cleanup_on_error.Release();
 }
 
-void TcpListener::HandleAccept(TcpConnectionPtr accepted_connection,
-                               const boost::system::error_code& ec) {
+void Listener::HandleAccept(ConnectionPtr accepted_connection,
+                            const boost::system::error_code& ec) {
   if (!acceptor_.is_open() || asio_service_.service().stopped())
     return;
 
@@ -133,19 +132,19 @@ void TcpListener::HandleAccept(TcpConnectionPtr accepted_connection,
     on_new_connection_(accepted_connection);
 
   // The connection object is kept alive in the acceptor handler until HandleAccept() is called.
-  TcpConnectionPtr connection{ TcpConnection::MakeShared(asio_service_) };
-  TcpListenerPtr this_ptr{ shared_from_this() };
+  ConnectionPtr connection{ Connection::MakeShared(asio_service_) };
+  ListenerPtr this_ptr{ shared_from_this() };
   acceptor_.async_accept(connection->Socket(), asio_service_.service().wrap(
       [this_ptr, connection](const boost::system::error_code& error) {
         this_ptr->HandleAccept(connection, error);
       }));
 }
 
-void TcpListener::StopListening() {
+void Listener::StopListening() {
   asio_service_.service().post([this] { DoStopListening(); });
 }
 
-void TcpListener::DoStopListening() {
+void Listener::DoStopListening() {
   std::call_once(stop_listening_flag_, [this] {
     boost::system::error_code ec;
     if (acceptor_.is_open())
@@ -155,6 +154,6 @@ void TcpListener::DoStopListening() {
   });
 }
 
-}  // namespace transport
+}  // namespace tcp
 
 }  // namespace maidsafe
