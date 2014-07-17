@@ -45,9 +45,6 @@
 #include "boost/config.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/format.hpp"
-#include "boost/random/mersenne_twister.hpp"
-#include "boost/random/uniform_int.hpp"
-#include "boost/random/variate_generator.hpp"
 #include "boost/token_functions.hpp"
 #include "boost/variant/apply_visitor.hpp"
 
@@ -65,10 +62,6 @@ namespace po = boost::program_options;
 namespace maidsafe {
 
 namespace {
-
-boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
-    bptime::microsec_clock::universal_time().time_of_day().total_microseconds()));
-std::mutex g_random_number_generator_mutex;
 
 struct BinaryUnit;
 struct DecimalUnit;
@@ -146,12 +139,45 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
   return output;
 }
 
+uint32_t& rng_seed() {
+  static uint32_t seed(static_cast<uint32_t>(
+      std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+  return seed;
+}
+
+template <typename IntType>
+IntType RandomInt() {
+  static std::uniform_int_distribution<IntType> distribution(std::numeric_limits<IntType>::min(),
+                                                             std::numeric_limits<IntType>::max());
+  std::lock_guard<std::mutex> lock(detail::random_number_generator_mutex());
+  return distribution(detail::random_number_generator());
+}
+
 }  // unnamed namespace
 
 namespace detail {
 
-boost::mt19937& random_number_generator() { return g_random_number_generator; }
-std::mutex& random_number_generator_mutex() { return g_random_number_generator_mutex; }
+std::mt19937& random_number_generator() {
+  static std::mt19937 random_number_generator(rng_seed());
+  return random_number_generator;
+}
+
+std::mutex& random_number_generator_mutex() {
+  static std::mutex random_number_generator_mutex;
+  return random_number_generator_mutex;
+}
+
+#ifdef TESTING
+
+uint32_t random_number_generator_seed() { return rng_seed(); }
+
+void set_random_number_generator_seed(uint32_t seed) {
+  std::lock_guard<std::mutex> lock(random_number_generator_mutex());
+  rng_seed() = seed;
+  random_number_generator().seed(seed);
+}
+
+#endif
 
 fs::path GetFileName(const DataNameVariant& data_name_variant) {
   auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), data_name_variant));
@@ -229,16 +255,9 @@ std::string BytesToDecimalSiUnits(uint64_t num) { return BytesToSiUnits<DecimalU
 
 std::string BytesToBinarySiUnits(uint64_t num) { return BytesToSiUnits<BinaryUnit>(num); }
 
-int32_t RandomInt32() {
-  boost::uniform_int<> uniform_distribution(boost::integer_traits<int32_t>::const_min,
-                                            boost::integer_traits<int32_t>::const_max);
-  std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
-  boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(g_random_number_generator,
-                                                                      uniform_distribution);
-  return uni();
-}
+int32_t RandomInt32() { return RandomInt<int32_t>(); }
 
-uint32_t RandomUint32() { return static_cast<uint32_t>(RandomInt32()); }
+uint32_t RandomUint32() { return RandomInt<uint32_t>(); }
 
 std::string RandomString(size_t size) { return GetRandomString<std::string>(size); }
 

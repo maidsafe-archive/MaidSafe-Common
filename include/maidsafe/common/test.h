@@ -48,6 +48,30 @@ void RunInParallel(int thread_count, std::function<void()> functor);
 // Returns a random port in the range [1025, 65535].
 uint16_t GetRandomPort();
 
+#ifdef TESTING
+
+// Allows:
+// * the random number generator in 'utils.cc' to be seeded via the command line (makes the
+//   functions 'RandomInt32', 'RandomUint32', 'RandomString', and 'RandomAlphaNmericString' produce
+//   deterministic output).
+// * an initial delay to be invoked at the start of 'main' (useful for pausing a process which
+//   is started as a child of another, but which needs to be attached to a debugger as soon as
+//   possible).
+void HandleTestOptions(int argc, char* argv[]);
+
+// This GTest listener seeds the random number generator in 'utils.cc', and outputs the current seed
+// for any failing test.
+class RandomNumberSeeder : public testing::EmptyTestEventListener {
+ public:
+  RandomNumberSeeder();
+ private:
+  virtual void OnTestStart(const testing::TestInfo& test_info);
+  virtual void OnTestEnd(const testing::TestInfo& test_info);
+  uint32_t current_seed_;
+};
+
+#endif
+
 namespace detail {
 
 int ExecuteGTestMain(int argc, char* argv[]);
