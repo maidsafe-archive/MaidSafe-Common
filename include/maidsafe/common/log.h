@@ -134,8 +134,9 @@ class Logging {
   // Returns unused options
   template <typename Char>
   std::vector<std::vector<Char>> Initialise(int argc, Char** argv);
-  void InitialiseVlog(const std::string& prefix, const std::string& server_name,
-                      uint16_t server_port, const std::string& server_dir);
+  void InitialiseVlog(const std::string& prefix, const std::string& session_id,
+                      const std::string& server_name, uint16_t server_port,
+                      const std::string& server_dir);
   void Send(std::function<void()> message_functor);
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToVisualiserLogfile(const std::string& message);
@@ -146,6 +147,7 @@ class Logging {
   bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
   std::string VlogPrefix() const;
+  std::string VlogSessionId() const;
   void Flush();
 
  private:
@@ -155,9 +157,10 @@ class Logging {
     std::mutex mutex;
   };
   struct Visualiser {
-    Visualiser() : prefix("Vault ID uninitialised"), logfile(), server_stream(), server_name(),
-                   server_dir(), server_port(0), initialised(false), initialised_once_flag() {}
-    std::string prefix;
+    Visualiser() : prefix("Vault ID uninitialised"), session_id(), logfile(), server_stream(),
+                   server_name(), server_dir(), server_port(0), initialised(false),
+                   initialised_once_flag() {}
+    std::string prefix, session_id;
     LogFile logfile;
     boost::asio::ip::tcp::iostream server_stream;
     std::string server_name, server_dir;

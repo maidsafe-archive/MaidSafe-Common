@@ -73,6 +73,7 @@ std::string VisualiserLogMessage::GetPostRequestBody() const {
   return std::string {
       "ts=" + UrlEncode(kTimestamp_) +
       "&vault_id=" + kVaultId_ +
+      "&session_id=" + kSessionId_ +
       (kPersonaId_.name.empty() ? "" : "&persona_id=" + kPersonaId_.value) +
       "&action_id=" + kActionId_.value +
       "&value1=" + EncodeIdentityOrInt(kValue1_, false) +
@@ -95,6 +96,7 @@ void VisualiserLogMessage::WriteToFile() const {
     std::string log_entry{
         kTimestamp_ + ',' +
         kVaultId_ + ',' +
+        kSessionId_ + ',' +
         (kPersonaId_.name.empty() ? "" : kPersonaId_.name + ',') +
         kActionId_.name + ',' +
         EncodeIdentityOrInt(kValue1_, true) +

@@ -56,6 +56,7 @@ class VisualiserLogMessage {
                        Identity value2 = Identity{})
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(value1.string()),
         kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
         kPersonaId_(persona),
@@ -66,6 +67,7 @@ class VisualiserLogMessage {
   VisualiserLogMessage(PersonaEnum persona, ActionEnum action, T value)
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(std::to_string(value)),
         kValue2_(),
         kPersonaId_(persona),
@@ -75,6 +77,7 @@ class VisualiserLogMessage {
   VisualiserLogMessage(ActionEnum action, Identity value1, Identity value2 = Identity{})
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(value1.string()),
         kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
         kPersonaId_(),
@@ -85,6 +88,7 @@ class VisualiserLogMessage {
   VisualiserLogMessage(ActionEnum action, Identity value1, T value2)
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(value1.string()),
         kValue2_(value2),
         kPersonaId_(),
@@ -95,6 +99,7 @@ class VisualiserLogMessage {
   VisualiserLogMessage(ActionEnum action, T value)
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(std::to_string(value)),
         kValue2_(),
         kPersonaId_(),
@@ -129,7 +134,7 @@ class VisualiserLogMessage {
   void SendToServer() const;
   void WriteToFile() const;
 
-  const std::string kTimestamp_, kVaultId_, kValue1_, kValue2_;
+  const std::string kTimestamp_, kVaultId_, kSessionId_, kValue1_, kValue2_;
   const Enum kPersonaId_, kActionId_;
 };
 
