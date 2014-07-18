@@ -51,6 +51,8 @@
 
 namespace maidsafe {
 
+namespace test { class VisualiserLogTest; }
+
 namespace log {
 
 typedef std::map<std::string, int> FilterMap;
@@ -149,6 +151,8 @@ class Logging {
   std::string VlogPrefix() const;
   std::string VlogSessionId() const;
   void Flush();
+
+  friend class test::VisualiserLogTest;
 
  private:
   struct LogFile {

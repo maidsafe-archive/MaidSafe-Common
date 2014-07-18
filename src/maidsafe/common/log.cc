@@ -530,6 +530,8 @@ void Logging::InitialiseVlog(const std::string& prefix, const std::string& sessi
     visualiser_.initialised = true;
     visualiser_.prefix = prefix;
     visualiser_.session_id = session_id;
+    if (visualiser_.session_id.empty())
+      LOG(kWarning) << "VLOG messages disabled since Vlog Session ID is empty.";
     visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
     visualiser_.server_name = server_name;
     visualiser_.server_port = server_port;

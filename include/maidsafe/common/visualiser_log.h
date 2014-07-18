@@ -107,6 +107,11 @@ class VisualiserLogMessage {
 
   ~VisualiserLogMessage();
 
+  // Nasty workaround to allow VaultManager to pretend to be a given crashed vault in order to send
+  // a VLOG kVaultStopped message.  Assumes kVaultStopped has value of 18.
+  static void SendVaultStoppedMessage(const std::string& vault_debug_id,
+                                      const std::string& session_id, int exit_code);
+
   friend class test::VisualiserLogTest;
 
  private:

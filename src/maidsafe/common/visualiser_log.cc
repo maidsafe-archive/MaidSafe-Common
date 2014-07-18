@@ -65,8 +65,23 @@ std::string EncodeIdentityOrInt(const std::string& value, bool debug_format) {
 }  // unnamed namespace
 
 VisualiserLogMessage::~VisualiserLogMessage() {
+  if (kSessionId_.empty())
+    return;
   SendToServer();
   WriteToFile();
+}
+
+void VisualiserLogMessage::SendVaultStoppedMessage(const std::string& vault_debug_id,
+                                                   const std::string& session_id, int exit_code) {
+  try {
+    std::string message{ "ts=" + UrlEncode(detail::GetUTCTime()) + "&vault_id=" + vault_debug_id +
+        "&session_id=" + session_id + "&action_id=18&value1=" + std::to_string(exit_code) };
+    auto post_functor([message] { Logging::Instance().WriteToVisualiserServer(message); });
+    Logging::Instance().Send(post_functor);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Error writing VLOG to file: " << boost::diagnostic_information(e);
+  }
 }
 
 std::string VisualiserLogMessage::GetPostRequestBody() const {
