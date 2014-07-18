@@ -74,7 +74,7 @@ DataNameVariant GenerateKeyFromValue<DataNameVariant>(const NonEmptyString& valu
 
 }  // unnamed namespace
 
-class DataBufferTest  : public ::testing::Test {
+class DataBufferTest : public testing::Test {
  protected:
   typedef DataNameVariant KeyType;
   typedef DataBuffer<KeyType> DataBufferType;
