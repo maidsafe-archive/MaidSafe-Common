@@ -521,13 +521,17 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
   return unused_options;
 }
 
-void Logging::InitialiseVlog(const std::string& prefix, const std::string& server_name,
-                             uint16_t server_port, const std::string& server_dir) {
+void Logging::InitialiseVlog(const std::string& prefix, const std::string& session_id,
+                             const std::string& server_name, uint16_t server_port,
+                             const std::string& server_dir) {
   if (visualiser_.initialised)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
   std::call_once(visualiser_.initialised_once_flag, [&] {
     visualiser_.initialised = true;
     visualiser_.prefix = prefix;
+    visualiser_.session_id = session_id;
+    if (visualiser_.session_id.empty())
+      LOG(kWarning) << "VLOG messages disabled since Vlog Session ID is empty.";
     visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
     visualiser_.server_name = server_name;
     visualiser_.server_port = server_port;
@@ -669,6 +673,12 @@ std::string Logging::VlogPrefix() const {
   if (!visualiser_.initialised)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
   return visualiser_.prefix;
+}
+
+std::string Logging::VlogSessionId() const {
+  if (!visualiser_.initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
+  return visualiser_.session_id;
 }
 
 namespace detail {

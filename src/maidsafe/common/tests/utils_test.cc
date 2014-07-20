@@ -444,7 +444,7 @@ TEST(UtilsTest, BEH_TimeFunctions) {
   uint64_t ms_since_epoch(GetTimeStamp());
   auto now(bptime::microsec_clock::universal_time());
   auto from_timestamp(TimeStampToPtime(ms_since_epoch));
-  EXPECT_TRUE((now - from_timestamp) <= bptime::milliseconds(1));
+  EXPECT_LE((now - from_timestamp), bptime::milliseconds(1));
 }
 
 TEST(UtilsTest, FUNC_RandomNumberGen) {
