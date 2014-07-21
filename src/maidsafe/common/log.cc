@@ -226,7 +226,7 @@ std::string GetColouredLogEntry(char log_level) {
 #else
   oss << ' ';
 #endif
-  oss << detail::GetLocalTime();
+  oss << detail::GetUTCTime();
   return oss.str();
 }
 
