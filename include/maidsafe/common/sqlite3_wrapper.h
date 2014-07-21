@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_SQLITE3_WRAPPER_H_
-#define MAIDSAFE_SQLITE3_WRAPPER_H_
+#ifndef MAIDSAFE_COMMON_SQLITE3_WRAPPER_H_
+#define MAIDSAFE_COMMON_SQLITE3_WRAPPER_H_
 
 #include <string>
 #include <memory>
@@ -56,7 +56,7 @@ struct Database {
 };
 
 struct Tranasction {
-  Tranasction(Database& database_in);
+  explicit Tranasction(Database& database_in);
   ~Tranasction();
   Tranasction(const Tranasction&) = delete;
   Tranasction(Tranasction&&) = delete;
@@ -65,7 +65,6 @@ struct Tranasction {
   void Commit();
 
  private:
-
   const int kAttempts;
   bool committed;
   Database& database;
@@ -78,7 +77,6 @@ enum class StepResult {
 };
 
 struct Statement {
-
   Statement(Database& database_in, const std::string& query);
   ~Statement();
   Statement(const Statement&) = delete;
@@ -100,4 +98,4 @@ struct Statement {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_SQLITE3_WRAPPER_H_
+#endif  // MAIDSAFE_COMMON_SQLITE3_WRAPPER_H_

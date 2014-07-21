@@ -112,7 +112,7 @@ Statement::Statement(Database& database_in, const std::string& query)
       statement() {
   auto return_value = sqlite3_prepare_v2(database.database, query.c_str(), query.size(),
                                          &statement, 0);
-  if(return_value != SQLITE_OK) {
+  if (return_value != SQLITE_OK) {
     LOG(kError) << " sqlite3_prepare_v2 returned : " << return_value;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
   }
@@ -127,7 +127,7 @@ Statement::~Statement() {
 void Statement::BindText(int row_index, const std::string& text) {
   auto return_value = sqlite3_bind_text(statement, row_index, text.c_str(),
                                         static_cast<int>(text.size()), 0);
-  if(return_value != SQLITE_OK) {
+  if (return_value != SQLITE_OK) {
     LOG(kError) << " sqlite3_bind_text returned : " << return_value;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
   }
@@ -144,7 +144,8 @@ StepResult Statement::Step() {
 }
 
 std::string Statement::ColumnText(int col_index) {
-  std::string column_text((char*)sqlite3_column_text(statement, col_index));
+  std::string column_text(std::string(reinterpret_cast<const char*>(
+                                          sqlite3_column_text(statement, col_index))));
   return column_text;
 }
 
