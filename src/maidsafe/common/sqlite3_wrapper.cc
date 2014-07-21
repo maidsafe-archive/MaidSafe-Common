@@ -110,8 +110,8 @@ void Tranasction::Commit() {
 Statement::Statement(Database& database_in, const std::string& query)
     : database(database_in),
       statement() {
-  auto return_value = sqlite3_prepare_v2(database.database, query.c_str(), query.size(),
-                                         &statement, 0);
+  auto return_value = sqlite3_prepare_v2(database.database, query.c_str(),
+                                         static_cast<int>(query.size()), &statement, 0);
   if (return_value != SQLITE_OK) {
     LOG(kError) << " sqlite3_prepare_v2 returned : " << return_value;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
