@@ -58,6 +58,7 @@ uint16_t GetRandomPort();
 // * an initial delay to be invoked at the start of 'main' (useful for pausing a process which
 //   is started as a child of another, but which needs to be attached to a debugger as soon as
 //   possible).
+// * passing an override bootstrap file path to allow tests to join a testnet.
 void HandleTestOptions(int argc, char* argv[]);
 
 // This GTest listener seeds the random number generator in 'utils.cc', and outputs the current seed
