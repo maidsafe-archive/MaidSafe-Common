@@ -226,7 +226,7 @@ std::string GetColouredLogEntry(char log_level) {
 #else
   oss << ' ';
 #endif
-  oss << detail::GetLocalTime();
+  oss << detail::GetUTCTime();
   return oss.str();
 }
 
@@ -440,9 +440,11 @@ TestLogMessage::~TestLogMessage() {
   auto print_functor([colour, log_entry, filter] {
 //     if (Logging::Instance().LogToConsole())
     ColouredPrint(colour, log_entry);
-    for (auto& entry : filter)
-      Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
-    if (filter.size() != 1)
+//     for (auto& entry : filter)
+//       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
+    if (filter.size() == 1)
+      Logging::Instance().WriteToProjectLogfile(filter.begin()->first, log_entry);
+    else
       Logging::Instance().WriteToCombinedLogfile(log_entry);
   });
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
