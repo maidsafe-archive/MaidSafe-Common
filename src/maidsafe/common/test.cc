@@ -26,6 +26,10 @@
 #include "boost/filesystem/operations.hpp"
 #include "boost/program_options.hpp"
 
+#include "maidsafe/common/config.h"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
@@ -37,11 +41,19 @@ namespace test {
 
 namespace {
 
+boost::optional<fs::path> BootstrapFilePath(const fs::path& bootstrap_file_path = fs::path{ "" }) {
+  static boost::optional<fs::path> bootstrap_file;
+  if (!bootstrap_file_path.empty())
+    bootstrap_file = bootstrap_file_path;
+  return bootstrap_file;
+}
+
 po::options_description AvailableOptions() {
   po::options_description test_options("Test options");
   test_options.add_options()
-  ("seed", po::value<uint32_t>(), "Seed for main psuedo random number generator.")
-  ("delay", po::value<uint32_t>(), "Initial delay at start of execution of 'main' (in seconds).");
+    ("seed", po::value<uint32_t>(), "Seed for main psuedo random number generator.")
+    ("delay", po::value<uint32_t>(), "Initial delay at start of execution of 'main' (in seconds).")
+    ("bootstrap_file", po::value<std::string>(), "Path to bootstrap file.");
   return test_options;
 }
 
@@ -75,6 +87,11 @@ void HandleSeed(const po::variables_map& variables_map) {
 void HandleDelay(const po::variables_map& variables_map) {
   if (variables_map.count("delay"))
     Sleep(std::chrono::seconds(variables_map["delay"].as<uint32_t>()));
+}
+
+void HandleBootstrapFile(const po::variables_map& variables_map) {
+  if (variables_map.count("bootstrap_file"))
+    BootstrapFilePath(variables_map["bootstrap_file"].as<std::string>());
 }
 
 }  // unnamed namespace
@@ -151,6 +168,7 @@ void HandleTestOptions(int argc, char* argv[]) {
     HandleHelp(variables_map);
     HandleSeed(variables_map);
     HandleDelay(variables_map);
+    HandleBootstrapFile(variables_map);
   }
   catch (const maidsafe::maidsafe_error& error) {
     // Success is thrown when Help option is invoked.
@@ -181,6 +199,26 @@ void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
   ++current_seed_;
 }
 
+boost::optional<fs::path> GetBootstrapFilePath() { return BootstrapFilePath(); }
+
+void PrepareBootstrapFile(fs::path bootstrap_file) {
+  try {
+    if (bootstrap_file.is_relative())
+      bootstrap_file = fs::current_path() / bootstrap_file;
+    fs::copy_file(bootstrap_file, ThisExecutableDir() / "bootstrap_override.dat",
+                  fs::copy_option::overwrite_if_exists);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to copy bootstrap override file: " << e.what();
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
+  }
+}
+
+void BootstrapFileHandler::OnTestStart(const testing::TestInfo& /*test_info*/) {
+  if (GetBootstrapFilePath())
+    PrepareBootstrapFile(*GetBootstrapFilePath());
+}
+
 #endif
 
 namespace detail {
@@ -188,13 +226,9 @@ namespace detail {
 int ExecuteGTestMain(int argc, char* argv[]) {
   HandleTestOptions(argc, argv);
   log::Logging::Instance().Initialise(argc, argv);
-// #if defined(__clang__) || defined(__GNUC__)
-//   // To allow Clang and GCC advanced diagnostics to work properly.
-//   testing::FLAGS_gtest_catch_exceptions = true;
-// #else
   testing::FLAGS_gtest_catch_exceptions = false;
-// #endif
   testing::InitGoogleTest(&argc, argv);
+  testing::UnitTest::GetInstance()->listeners().Append(new BootstrapFileHandler);
   testing::UnitTest::GetInstance()->listeners().Append(new RandomNumberSeeder);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
