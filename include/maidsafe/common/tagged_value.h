@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_COMMON_TAGGED_VALUE_H_
 #define MAIDSAFE_COMMON_TAGGED_VALUE_H_
 
+#include <utility>
+
 namespace maidsafe {
 
 template <typename T, typename Tag>
