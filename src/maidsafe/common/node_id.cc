@@ -47,8 +47,6 @@ NodeId& NodeId::operator=(NodeId other) {
 NodeId::NodeId(IdType type)
     : raw_id_([type]()->std::string {
         switch (type) {
-          case IdType::kMaxId:
-            return std::string(kSize, -1);
           case IdType::kRandomId:
             return RandomString(kSize);
           default:

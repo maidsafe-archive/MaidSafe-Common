@@ -45,6 +45,10 @@ NodeId IncreaseId(const NodeId& kad_id) {
   return NodeId(raw);
 }
 
+NodeId MaxNodeId() {
+  return NodeId(std::string(NodeId::kSize, -1));
+}
+
 const std::string ToBinary(const std::string& raw_id) {
   std::string hex_encoded(HexEncode(raw_id));
   std::string result;
@@ -171,7 +175,7 @@ TEST(NodeIdTest, BEH_KademliaIdTypeConstructor) {
   ASSERT_TRUE(NodeId::kSize == min_id.size());
   for (int i = 0; i < NodeId::kSize; ++i)
     ASSERT_TRUE(min_id[i] == '\0');
-  NodeId max_id(NodeId::IdType::kMaxId);
+  NodeId max_id(MaxNodeId());
   ASSERT_TRUE(NodeId::kSize == max_id.string().size());
   for (int i = 0; i < NodeId::kSize; ++i)
     ASSERT_TRUE(char(-1) == max_id.string()[i]);
@@ -278,7 +282,7 @@ TEST(NodeIdTest, BEH_OperatorDifferent) {
 
 TEST(NodeIdTest, BEH_OperatorGreaterThan) {
   NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+  while (kadid1 == MaxNodeId())
     kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   ASSERT_FALSE(kadid1 > kadid2);
@@ -289,7 +293,7 @@ TEST(NodeIdTest, BEH_OperatorGreaterThan) {
 
 TEST(NodeIdTest, BEH_OperatorLessThan) {
   NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+  while (kadid1 == MaxNodeId())
     kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   ASSERT_FALSE(kadid1 < kadid2);
@@ -300,7 +304,7 @@ TEST(NodeIdTest, BEH_OperatorLessThan) {
 
 TEST(NodeIdTest, BEH_OperatorGreaterThanOrEqualTo) {
   NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+  while (kadid1 == MaxNodeId())
     kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   ASSERT_TRUE(kadid1 >= kadid2);
@@ -310,7 +314,7 @@ TEST(NodeIdTest, BEH_OperatorGreaterThanOrEqualTo) {
 
 TEST(NodeIdTest, BEH_OperatorLessThanOrEqualTo) {
   NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == NodeId(NodeId::IdType::kMaxId))
+  while (kadid1 == MaxNodeId())
     kadid1 = NodeId(NodeId::IdType::kRandomId);
   NodeId kadid2(kadid1);
   ASSERT_TRUE(kadid1 <= kadid2);
