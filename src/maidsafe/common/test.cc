@@ -203,13 +203,17 @@ boost::optional<fs::path> GetBootstrapFilePath() { return BootstrapFilePath(); }
 
 void PrepareBootstrapFile(fs::path bootstrap_file) {
   try {
+    if (bootstrap_file.string() == "none") {
+      fs::remove(ThisExecutableDir() / "bootstrap_override.dat");
+      return;
+    }
     if (bootstrap_file.is_relative())
       bootstrap_file = fs::current_path() / bootstrap_file;
     fs::copy_file(bootstrap_file, ThisExecutableDir() / "bootstrap_override.dat",
                   fs::copy_option::overwrite_if_exists);
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed to copy bootstrap override file: " << e.what();
+    LOG(kError) << "Failed to handle bootstrap override file: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   }
 }
