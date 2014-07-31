@@ -58,9 +58,9 @@ TEST(ConfigTest, BEH_ThisExecutableDir) {
   EXPECT_FALSE(this_exe_path.empty());
   EXPECT_FALSE(this_exe_dir.empty());
 #ifdef MAIDSAFE_WIN32
-  EXPECT_TRUE(this_exe_path.filename() == boost::filesystem::path("TESTconfig.exe"));
+  EXPECT_TRUE(this_exe_path.filename() == boost::filesystem::path("test_common_config.exe"));
 #else
-  EXPECT_TRUE(this_exe_path.filename() == boost::filesystem::path("TESTconfig"));
+  EXPECT_TRUE(this_exe_path.filename() == boost::filesystem::path("test_common_config"));
 #endif
   std::cout << "This executable's full path is " << this_exe_path << '\n';
   std::cout << "This executable's directory is " << this_exe_dir << '\n';

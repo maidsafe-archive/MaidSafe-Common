@@ -96,7 +96,7 @@ TEST(UtilsTest, BEH_VersionInfo) {
 
 TEST(UtilsTest, BEH_Names) {
   EXPECT_TRUE(kCompanyName() == "MaidSafe");
-  EXPECT_TRUE(kApplicationName() == "TESTcommon");
+  EXPECT_TRUE(kApplicationName() == "test_common");
 }
 
 TEST(UtilsTest, BEH_Ratios) {
