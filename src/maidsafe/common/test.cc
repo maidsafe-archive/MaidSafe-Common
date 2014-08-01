@@ -185,8 +185,8 @@ RandomNumberSeeder::RandomNumberSeeder()
 
 void RandomNumberSeeder::OnTestStart(const testing::TestInfo& /*test_info*/) {
   // We need to set the seed at the start of every test so that when we run all tests (e.g. if we
-  // just run ./test_encrypt rather than using CTest where each test is run as a standalone process),
-  // they don't all use the first test's seed.
+  // just run ./test_encrypt rather than using CTest where each test is run as a standalone
+  // process), they don't all use the first test's seed.
   maidsafe::detail::set_random_number_generator_seed(current_seed_);
 }
 
