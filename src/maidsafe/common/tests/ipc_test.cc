@@ -75,7 +75,7 @@ TEST(IpcTest, BEH_IpcRead) {
   test_vec.push_back(c);
   test_vec.push_back(a);
   ASSERT_NO_THROW(ReadSharedMemory("test", 4));
-  EXPECT_TRUE(test_vec == ReadSharedMemory("test", 4));
+  EXPECT_EQ(test_vec, ReadSharedMemory("test", 4));
 }
 
 TEST(IpcTest, BEH_IpcDelete) {
@@ -177,7 +177,7 @@ TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
   ASSERT_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
   ASSERT_FALSE(error_code);
-  EXPECT_TRUE(exit_code == 0);
+  EXPECT_EQ(exit_code, 0);
   exit_code = 99;
     // Check modifying the original objects doesn't affect reading from shared memory
   test1_vec.clear();
@@ -187,7 +187,7 @@ TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
   EXPECT_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
   ASSERT_FALSE(error_code);
-  EXPECT_TRUE(exit_code == 0);
+  EXPECT_EQ(exit_code, 0);
   RemoveSharedMemory(kTestName);
 }
 

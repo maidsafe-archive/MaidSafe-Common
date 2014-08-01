@@ -27,14 +27,14 @@ namespace maidsafe {
 namespace test {
 
 TEST(MakeUniqueTest, BEH_MakeUnique) {
-  EXPECT_TRUE((*make_unique<int>()) == 0);
-  EXPECT_TRUE((*make_unique<int>(1314)) == 1314);
+  EXPECT_EQ((*make_unique<int>()), 0);
+  EXPECT_EQ((*make_unique<int>(1314)), 1314);
   EXPECT_TRUE(make_unique<std::string>()->empty());
-  EXPECT_TRUE((*make_unique<std::string>("Caol Ila")) == "Caol Ila");
-  EXPECT_TRUE((*make_unique<std::string>(6, 'z')) == "zzzzzz");
+  EXPECT_EQ((*make_unique<std::string>("Caol Ila")), "Caol Ila");
+  EXPECT_EQ((*make_unique<std::string>(6, 'z')), "zzzzzz");
   auto up(make_unique<int[]>(5));
   for (int i = 0; i < 5; ++i)
-    EXPECT_TRUE(up[i] == 0);
+    EXPECT_EQ(up[i], 0);
 }
 
 }  // namespace test

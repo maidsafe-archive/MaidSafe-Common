@@ -45,27 +45,27 @@ class UserCredentialsTest : public testing::Test {
 TEST_F(UserCredentialsTest, BEH_CreateSecurePassword) {
   const crypto::SecurePassword kSecurePassword{ CreateSecurePassword(user_credentials) };
   ASSERT_TRUE(kSecurePassword->IsInitialised());
-  EXPECT_TRUE(kSecurePassword->string() != kPasswordStr);
+  EXPECT_NE(kSecurePassword->string(), kPasswordStr);
 
   // Modify keyword and check secure password is same
   user_credentials.keyword = maidsafe::make_unique<UserCredentials::Keyword>(kKeywordStr + 'a');
   crypto::SecurePassword copy_of_password{ CreateSecurePassword(user_credentials) };
   ASSERT_TRUE(copy_of_password->IsInitialised());
-  EXPECT_TRUE(copy_of_password == kSecurePassword);
+  EXPECT_EQ(copy_of_password, kSecurePassword);
 
   // Modify pin and check secure password is different
   user_credentials.pin = maidsafe::make_unique<UserCredentials::Pin>(std::to_string(kPinValue + 1));
   crypto::SecurePassword modified_password0{ CreateSecurePassword(user_credentials) };
   ASSERT_TRUE(modified_password0->IsInitialised());
-  EXPECT_TRUE(modified_password0 != kSecurePassword);
+  EXPECT_NE(modified_password0, kSecurePassword);
 
   // Modify password and check secure password is different
   user_credentials.pin = maidsafe::make_unique<UserCredentials::Pin>(std::to_string(kPinValue));
   user_credentials.password = maidsafe::make_unique<UserCredentials::Password>(kPasswordStr + 'c');
   crypto::SecurePassword modified_password1{ CreateSecurePassword(user_credentials) };
   ASSERT_TRUE(modified_password1->IsInitialised());
-  EXPECT_TRUE(modified_password1 != kSecurePassword);
-  EXPECT_TRUE(modified_password1 != modified_password0);
+  EXPECT_NE(modified_password1, kSecurePassword);
+  EXPECT_NE(modified_password1, modified_password0);
 
   // Check validation of inputs
   user_credentials.keyword.reset();
@@ -81,41 +81,41 @@ TEST_F(UserCredentialsTest, FUNC_ObfuscateData) {
   const NonEmptyString kData{ RandomString(1024 * 1024) };
   const NonEmptyString kObfuscated{ Obfuscate(user_credentials, kData) };
   ASSERT_TRUE(kObfuscated.IsInitialised());
-  EXPECT_TRUE(kObfuscated.string().size() == kData.string().size());
-  EXPECT_TRUE(kObfuscated != kData);
-  EXPECT_TRUE(Obfuscate(user_credentials, kObfuscated) == kData);
+  EXPECT_EQ(kObfuscated.string().size(), kData.string().size());
+  EXPECT_NE(kObfuscated, kData);
+  EXPECT_EQ(Obfuscate(user_credentials, kObfuscated), kData);
 
   // Modify keyword and check obfuscated data is different
   user_credentials.keyword = maidsafe::make_unique<UserCredentials::Keyword>(kKeywordStr + 'a');
   NonEmptyString modified_obfuscated0{ Obfuscate(user_credentials, kData) };
   ASSERT_TRUE(modified_obfuscated0.IsInitialised());
-  EXPECT_TRUE(modified_obfuscated0.string().size() == kData.string().size());
-  EXPECT_TRUE(modified_obfuscated0 != kData);
-  EXPECT_TRUE(Obfuscate(user_credentials, modified_obfuscated0) == kData);
-  EXPECT_TRUE(modified_obfuscated0 != kObfuscated);
+  EXPECT_EQ(modified_obfuscated0.string().size(), kData.string().size());
+  EXPECT_NE(modified_obfuscated0, kData);
+  EXPECT_EQ(Obfuscate(user_credentials, modified_obfuscated0), kData);
+  EXPECT_NE(modified_obfuscated0, kObfuscated);
 
   // Modify pin and check obfuscated data is different
   user_credentials.keyword = maidsafe::make_unique<UserCredentials::Keyword>(kKeywordStr);
   user_credentials.pin = maidsafe::make_unique<UserCredentials::Pin>(std::to_string(kPinValue + 1));
   NonEmptyString modified_obfuscated1{ Obfuscate(user_credentials, kData) };
   ASSERT_TRUE(modified_obfuscated1.IsInitialised());
-  EXPECT_TRUE(modified_obfuscated1.string().size() == kData.string().size());
-  EXPECT_TRUE(modified_obfuscated1 != kData);
-  EXPECT_TRUE(Obfuscate(user_credentials, modified_obfuscated1) == kData);
-  EXPECT_TRUE(modified_obfuscated1 != kObfuscated);
-  EXPECT_TRUE(modified_obfuscated1 != modified_obfuscated0);
+  EXPECT_EQ(modified_obfuscated1.string().size(), kData.string().size());
+  EXPECT_NE(modified_obfuscated1, kData);
+  EXPECT_EQ(Obfuscate(user_credentials, modified_obfuscated1), kData);
+  EXPECT_NE(modified_obfuscated1, kObfuscated);
+  EXPECT_NE(modified_obfuscated1, modified_obfuscated0);
 
   // Modify password and check obfuscated data is different
   user_credentials.pin = maidsafe::make_unique<UserCredentials::Pin>(std::to_string(kPinValue));
   user_credentials.password = maidsafe::make_unique<UserCredentials::Password>(kPasswordStr + 'c');
   NonEmptyString modified_obfuscated2{ Obfuscate(user_credentials, kData) };
   ASSERT_TRUE(modified_obfuscated2.IsInitialised());
-  EXPECT_TRUE(modified_obfuscated2.string().size() == kData.string().size());
-  EXPECT_TRUE(modified_obfuscated2 != kData);
-  EXPECT_TRUE(Obfuscate(user_credentials, modified_obfuscated2) == kData);
-  EXPECT_TRUE(modified_obfuscated2 != kObfuscated);
-  EXPECT_TRUE(modified_obfuscated2 != modified_obfuscated0);
-  EXPECT_TRUE(modified_obfuscated2 != modified_obfuscated1);
+  EXPECT_EQ(modified_obfuscated2.string().size(), kData.string().size());
+  EXPECT_NE(modified_obfuscated2, kData);
+  EXPECT_EQ(Obfuscate(user_credentials, modified_obfuscated2), kData);
+  EXPECT_NE(modified_obfuscated2, kObfuscated);
+  EXPECT_NE(modified_obfuscated2, modified_obfuscated0);
+  EXPECT_NE(modified_obfuscated2, modified_obfuscated1);
 
   // Check validation of inputs
   user_credentials.keyword.reset();
@@ -138,8 +138,8 @@ TEST_F(UserCredentialsTest, BEH_DeriveSymmetricEncryptionKeyAndIv) {
   crypto::SecurePassword modified_password{ CreateSecurePassword(user_credentials) };
   crypto::AES256Key modified_key{ DeriveSymmEncryptKey(modified_password) };
   crypto::AES256InitialisationVector modified_iv{ DeriveSymmEncryptIv(modified_password) };
-  EXPECT_TRUE(modified_key != kKey);
-  EXPECT_TRUE(modified_iv != kIv);
+  EXPECT_NE(modified_key, kKey);
+  EXPECT_NE(modified_iv, kIv);
 }
 
 }  // namespace test

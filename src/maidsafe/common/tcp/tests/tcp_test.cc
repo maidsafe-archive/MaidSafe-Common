@@ -247,8 +247,8 @@ TEST_F(TcpTest, BEH_InvalidMessageSizes) {
   ASSERT_TRUE(bad_socket.is_open());
 
   to_server_messages_.erase(std::begin(to_server_messages_));
-  ASSERT_TRUE(to_server_messages_.size() == 1U);
-  ASSERT_TRUE(to_server_messages_.front().size() > Connection::MaxMessageSize());
+  ASSERT_EQ(to_server_messages_.size(), 1U);
+  ASSERT_GT(to_server_messages_.front().size(), Connection::MaxMessageSize());
   InitialiseMessagesToServer();
   const std::string& large_data{ to_server_messages_.front() };
 

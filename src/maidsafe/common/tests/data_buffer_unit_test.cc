@@ -54,7 +54,7 @@ TEST(DataBufferUnitTest, BEH_ConstructWithComplexKey) {
 TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDelete) {
   DataBuffer<std::string> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
   EXPECT_NO_THROW(data_buffer.Store("a", NonEmptyString("b")));
-  EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get("a"));
+  EXPECT_EQ(NonEmptyString("b"), data_buffer.Get("a"));
   EXPECT_NO_THROW(data_buffer.Delete(std::string("a")));
   EXPECT_THROW(data_buffer.Delete(std::string("a")), std::exception);
 }
@@ -63,7 +63,7 @@ TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteComplexKey) {
   typedef std::pair<std::string, std::string> Key;
   DataBuffer<Key> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
   EXPECT_NO_THROW(data_buffer.Store(std::make_pair("a", "b"), NonEmptyString("b")));
-  EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get(std::make_pair("a", "b")));
+  EXPECT_EQ(NonEmptyString("b"), data_buffer.Get(std::make_pair("a", "b")));
   EXPECT_NO_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))));
   EXPECT_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
       std::exception);
@@ -74,7 +74,7 @@ TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteRange) {
   DataBuffer<Key> data_buffer(MemoryUsage(0), DiskUsage(100), nullptr);
   EXPECT_NO_THROW(data_buffer.Store(std::make_pair("a", "b"), NonEmptyString("b")));
   EXPECT_NO_THROW(data_buffer.Store(std::make_pair("b", "b"), NonEmptyString("b")));
-  EXPECT_TRUE(NonEmptyString("b") == data_buffer.Get(std::make_pair("a", "b")));
+  EXPECT_EQ(NonEmptyString("b"), data_buffer.Get(std::make_pair("a", "b")));
   std::function<bool(const Key&)> predicate([](const Key& key) { return key.second == "b"; });
   EXPECT_NO_THROW(data_buffer.Delete(predicate));
   EXPECT_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
