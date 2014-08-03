@@ -156,7 +156,8 @@ enum class EncryptErrors {
   failed_to_get_chunk,
   failed_to_flush,
   failed_to_decrypt,
-  failed_to_read
+  failed_to_read,
+  encryptor_closed
 };
 
 class encrypt_error : public maidsafe_error {
