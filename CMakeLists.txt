@@ -97,6 +97,7 @@ target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
     protobuf_lite
+    sqlite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
@@ -145,16 +146,15 @@ if(MaidsafeTesting)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(TESTconfig "Tests/Common" ${ConfigTestFile})
-  target_link_libraries(TESTconfig maidsafe_common)
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
+  target_link_libraries(test_common maidsafe_test)
 
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
-  target_link_libraries(TESTcommon maidsafe_test)
-  
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
-  add_dependencies(TESTcommon ipc_child_process)
+  add_dependencies(test_common ipc_child_process)
 
+  ms_add_executable(test_common_config "Tests/Common" ${ConfigTestFile})
+  target_link_libraries(test_common_config maidsafe_common)
 endif()
 
 ms_rename_outdated_built_exes()
@@ -172,8 +172,8 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_default_tests()
-  ms_add_gtests(TESTconfig)
-  ms_add_gtests(TESTcommon)
+  ms_add_gtests(test_common)
+  ms_add_gtests(test_common_config)
   ms_test_summary_output()
 endif()
 
@@ -187,6 +187,6 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
 if(MaidsafeTesting)
-  install(TARGETS ipc_child_process TESTconfig TESTcommon COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS ipc_child_process TESTconfig TESTcommon COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()

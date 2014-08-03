@@ -42,20 +42,20 @@ TEST(OnScopeExitTest, BEH_RevertValue) {
   {
     on_scope_exit strong_guarantee(on_scope_exit::RevertValue(before));
     Increment(before);
-    EXPECT_TRUE(before.size() == 101);
+    EXPECT_EQ(before.size(), 101);
     strong_guarantee.Release();
-    EXPECT_TRUE(before.size() == 101);
+    EXPECT_EQ(before.size(), 101);
   }
-  EXPECT_TRUE(before.size() == 101);
+  EXPECT_EQ(before.size(), 101);
 
   try {
     on_scope_exit strong_guarantee(on_scope_exit::RevertValue(before));
     IncrementAndThrow(before);
   }
   catch (const maidsafe_error&) {
-    EXPECT_TRUE(before.size() == 101);
+    EXPECT_EQ(before.size(), 101);
   }
-  EXPECT_TRUE(before.size() == 101);
+  EXPECT_EQ(before.size(), 101);
 }
 
 TEST(OnScopeExitTest, BEH_SetAction) {
@@ -65,11 +65,11 @@ TEST(OnScopeExitTest, BEH_SetAction) {
   {
     on_scope_exit strong_guarantee([&before]() { before.clear(); });
     Increment(before);
-    EXPECT_TRUE(before.size() == 101);
+    EXPECT_EQ(before.size(), 101);
     strong_guarantee.Release();
-    EXPECT_TRUE(before.size() == 101);
+    EXPECT_EQ(before.size(), 101);
   }
-  EXPECT_TRUE(before.size() == 101);
+  EXPECT_EQ(before.size(), 101);
 
   try {
     on_scope_exit strong_guarantee([&before]() { before.clear(); });

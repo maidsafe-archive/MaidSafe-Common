@@ -24,6 +24,7 @@
 #include <string>
 
 #include "boost/filesystem/path.hpp"
+#include "boost/optional.hpp"
 #include "gtest/gtest.h"
 
 #include "maidsafe/common/log.h"
@@ -57,6 +58,7 @@ uint16_t GetRandomPort();
 // * an initial delay to be invoked at the start of 'main' (useful for pausing a process which
 //   is started as a child of another, but which needs to be attached to a debugger as soon as
 //   possible).
+// * passing an override bootstrap file path to allow tests to join a testnet.
 void HandleTestOptions(int argc, char* argv[]);
 
 // This GTest listener seeds the random number generator in 'utils.cc', and outputs the current seed
@@ -68,6 +70,23 @@ class RandomNumberSeeder : public testing::EmptyTestEventListener {
   virtual void OnTestStart(const testing::TestInfo& test_info);
   virtual void OnTestEnd(const testing::TestInfo& test_info);
   uint32_t current_seed_;
+};
+
+// Copies 'bootstrap_file' to location of Routing's override_bootstrap.dat, allowing all Routing
+// objects to bootstrap from the contacts provided in 'bootstrap_file'.  Throws if the file can't be
+// copied.
+void PrepareBootstrapFile(boost::filesystem::path bootstrap_file);
+
+// If '--bootstrap_file <path>' has been passed, returns the path, otherwise the optional returned
+// is false (uninitialised).  The function is not thread-safe.
+boost::optional<boost::filesystem::path> GetBootstrapFilePath();
+
+// This GTest listener calls 'PrepareBootstrapFile' (see above) at the start of every test if
+// GetBootstrapFilePath()'s optional return is true (i.e. if '--bootstrap_file <path>' has been
+// passed).
+class BootstrapFileHandler : public testing::EmptyTestEventListener {
+ private:
+  virtual void OnTestStart(const testing::TestInfo& test_info);
 };
 
 #endif
