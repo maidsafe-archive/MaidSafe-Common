@@ -180,6 +180,7 @@ encrypt_error MakeError(EncryptErrors code);
 
 enum class RoutingErrors {
   timed_out = 1,
+  timer_cancelled,
   not_in_range,
   not_connected
 };

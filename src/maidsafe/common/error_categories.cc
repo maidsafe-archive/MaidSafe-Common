@@ -217,6 +217,8 @@ std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<RoutingErrors>(error_value)) {
     case RoutingErrors::timed_out:
       return "Timed out";
+    case RoutingErrors::timer_cancelled:
+      return "Timer cancelled";
     case RoutingErrors::not_in_range:
       return "Not in range";
     case RoutingErrors::not_connected:
