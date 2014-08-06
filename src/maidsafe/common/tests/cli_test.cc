@@ -59,12 +59,12 @@ TEST_F(CliTest, BEH_GetTest) {
   SendToCin("input\n");
   CLI cli;
   std::string result{ cli.Get<std::string>("test") };
-  EXPECT_TRUE(result == "input");
+  EXPECT_EQ(result, "input");
   result.clear();
 
   SendToCin("badinput\n");
   result = cli.Get<std::string>("test");
-  EXPECT_TRUE(result != "input");
+  EXPECT_NE(result, "input");
 }
 
 TEST_F(CliTest, BEH_MenuFunctions) {
@@ -77,16 +77,16 @@ TEST_F(CliTest, BEH_MenuFunctions) {
   menu.AddItem("Dec three", dec);
 
   SendToCin("1\n0\n");
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 1);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 1);
 
   SendToCin("1\n1\n0\n");
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 3);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 3);
 
   SendToCin("3\n3\n0\n");
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 1);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 1);
 }
 
 TEST_F(CliTest, BEH_MenuHierarchy) {
@@ -104,35 +104,35 @@ TEST_F(CliTest, BEH_MenuHierarchy) {
   sub_sub_item->AddChildItem("Sub-sub-menu decrement by 3,000", [&] { test_value_ -= 3000; });      // Action G  NOLINT
 
   SendToCin("1\n0\n");  // A, Quit
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 1);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 1);
 
   SendToCin("1\n1\n0\n");  // A, A, Quit
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 3);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 3);
 
   SendToCin("1\n2\n3\n3\n0\n");  // A, B, C, C, Quit
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 4);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 4);
 
   SendToCin("4\n2\n99\n99\n0\n");  // Sub, Sub-sub, Back to Sub, Back to Main, Quit
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 4);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 4);
 
   // Sub, D, Sub-sub, E, F, G, Back to Sub, Back to Main, Quit
   SendToCin("4\n1\n2\n1\n2\n3\n99\n99\n0\n");
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 207104);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 207104);
 
   SendToCin("0\n");  // Quit
-  EXPECT_TRUE(menu.Run() == 0);
-  EXPECT_TRUE(test_value_ == 207104);
+  EXPECT_EQ(menu.Run(), 0);
+  EXPECT_EQ(test_value_, 207104);
 }
 
 TEST(CliTokenTest, BEH_TokenTest) {
   CLI cli;
   std::string test_str{ "this is five small tokens" };
-  EXPECT_TRUE((cli.TokeniseLine(test_str).size()) == 5);
+  EXPECT_EQ((cli.TokeniseLine(test_str).size()), 5);
 }
 
 }  // namespace test

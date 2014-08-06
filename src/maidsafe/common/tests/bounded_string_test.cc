@@ -54,7 +54,7 @@ TEST(BoundedStringTest, BEH_Getters) {
     std::string random(RandomString((RandomUint32() % 1024) + 1));
     OneMax b(random);
     EXPECT_TRUE(b.IsInitialised());
-    EXPECT_TRUE(random == b.string());
+    EXPECT_EQ(random, b.string());
   }
 }
 
@@ -64,7 +64,7 @@ TEST(BoundedStringTest, BEH_StringConstructor) {
   // Valid
   std::string random(RandomString(1));
   OneOne b(random);
-  EXPECT_TRUE(random == b.string());
+  EXPECT_EQ(random, b.string());
   // Too big
   EXPECT_THROW(OneOne c(RandomString(2)), std::exception);
 
@@ -73,7 +73,7 @@ TEST(BoundedStringTest, BEH_StringConstructor) {
   // Valid
   random = RandomString((RandomUint32() % 1024) + 1);
   OneMax e(random);
-  EXPECT_TRUE(random == e.string());
+  EXPECT_EQ(random, e.string());
 }
 
 TEST(BoundedStringTest, BEH_Swap) {
@@ -83,14 +83,14 @@ TEST(BoundedStringTest, BEH_Swap) {
   OneTwo a(random1);
   OneTwo b(random2);
   swap(a, b);
-  EXPECT_TRUE(random2 == a.string());
-  EXPECT_TRUE(random1 == b.string());
+  EXPECT_EQ(random2, a.string());
+  EXPECT_EQ(random1, b.string());
 
   // Swap with uninitialised
   OneTwo c;
   swap(a, c);
   EXPECT_FALSE(a.IsInitialised());
-  EXPECT_TRUE(random2 == c.string());
+  EXPECT_EQ(random2, c.string());
 }
 
 TEST(BoundedStringTest, BEH_Copy) {
@@ -98,8 +98,8 @@ TEST(BoundedStringTest, BEH_Copy) {
   std::string random(RandomString((RandomUint32() % 1024) + 1));
   OneMax a(random);
   OneMax b(a);
-  EXPECT_TRUE(random == a.string());
-  EXPECT_TRUE(random == b.string());
+  EXPECT_EQ(random, a.string());
+  EXPECT_EQ(random, b.string());
 
   // Copy from uninitialised
   OneMax c;
@@ -111,7 +111,7 @@ TEST(BoundedStringTest, BEH_Move) {
   // Move from initialised
   std::string random(RandomString((RandomUint32() % 1024) + 1));
   OneMax a(std::move(OneMax(random)));
-  EXPECT_TRUE(random == a.string());
+  EXPECT_EQ(random, a.string());
 
   // Move from uninitialised
   OneMax b(std::move(OneMax()));
@@ -124,12 +124,12 @@ TEST(BoundedStringTest, BEH_Assignment) {
   OneMax a(random);
   OneMax b("1");
   b = a;
-  EXPECT_TRUE(random == a.string());
-  EXPECT_TRUE(random == b.string());
+  EXPECT_EQ(random, a.string());
+  EXPECT_EQ(random, b.string());
 
   // Assign from self
   b = b;
-  EXPECT_TRUE(random == b.string());
+  EXPECT_EQ(random, b.string());
 
   // Assign from uninitialised
   OneMax c;
@@ -142,9 +142,9 @@ TEST(BoundedStringTest, BEH_CopyConstructor) {
   std::string random(RandomString(2));
   TwoThree a(random);
   OneMax b(a);
-  EXPECT_TRUE(random == b.string());
+  EXPECT_EQ(random, b.string());
   TwoFour c(a);
-  EXPECT_TRUE(random == c.string());
+  EXPECT_EQ(random, c.string());
 
   // Copy from uninitialised
   TwoThree d;
@@ -160,10 +160,10 @@ TEST(BoundedStringTest, BEH_CopyAssignment) {
   TwoThree a(random);
   OneMax b("1");
   b = a;
-  EXPECT_TRUE(random == b.string());
+  EXPECT_EQ(random, b.string());
   TwoFour c("02");
   c = a;
-  EXPECT_TRUE(random == c.string());
+  EXPECT_EQ(random, c.string());
 
   // Assign from uninitialised
   TwoThree d;
@@ -182,74 +182,74 @@ TEST(BoundedStringTest, BEH_Concatenation) {
   std::string b_before_throw = b.string();
 
   EXPECT_THROW(a + b, std::exception);
-  EXPECT_TRUE(a_before_throw == a.string());
-  EXPECT_TRUE(b_before_throw == b.string());
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
 
   EXPECT_THROW(a += b, std::exception);
-  EXPECT_TRUE(a_before_throw == a.string());
-  EXPECT_TRUE(b_before_throw == b.string());
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
 
   EXPECT_THROW(a + a, std::exception);
-  EXPECT_TRUE(a_before_throw == a.string());
+  EXPECT_EQ(a_before_throw, a.string());
 
   EXPECT_THROW(a += a, std::exception);
-  EXPECT_TRUE(a_before_throw == a.string());
+  EXPECT_EQ(a_before_throw, a.string());
 
   OneTwo c(b + a);
-  EXPECT_TRUE(a_before_throw == a.string());
-  EXPECT_TRUE(b_before_throw == b.string());
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
   auto concat(b_before_throw + a_before_throw);
-  EXPECT_TRUE(concat == c.string());
+  EXPECT_EQ(concat, c.string());
 
   b += a;
-  EXPECT_TRUE(a_before_throw == a.string());
-  EXPECT_TRUE(c.string() == b.string());
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(c.string(), b.string());
 
   b = OneTwo(b_before_throw);
 
   OneTwo d(b + b);
-  EXPECT_TRUE(b_before_throw == b.string());
+  EXPECT_EQ(b_before_throw, b.string());
   concat = b_before_throw + b_before_throw;
-  EXPECT_TRUE(concat == d.string());
+  EXPECT_EQ(concat, d.string());
 
   b += b;
-  EXPECT_TRUE(d.string() == b.string());
+  EXPECT_EQ(d.string(), b.string());
 
   b = OneTwo(b_before_throw);
   OneThree e(RandomString(1));
   std::string e_before_throw = e.string();
 
   OneThree f(e + b + b);
-  EXPECT_TRUE(b_before_throw == b.string());
+  EXPECT_EQ(b_before_throw, b.string());
   concat = e_before_throw + b_before_throw + b_before_throw;
-  EXPECT_TRUE(concat == f.string());
+  EXPECT_EQ(concat, f.string());
 
   e += (b + b);
-  EXPECT_TRUE(b_before_throw == b.string());
-  EXPECT_TRUE(f.string() == e.string());
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(f.string(), e.string());
 
   e = OneThree(e_before_throw);
 
   EXPECT_THROW(e + b + b + a, std::exception);
-  EXPECT_TRUE(a_before_throw == a.string());
-  EXPECT_TRUE(b_before_throw == b.string());
-  EXPECT_TRUE(e_before_throw == e.string());
+  EXPECT_EQ(a_before_throw, a.string());
+  EXPECT_EQ(b_before_throw, b.string());
+  EXPECT_EQ(e_before_throw, e.string());
 
   OneOne g;
   EXPECT_THROW(e + g, std::exception);
-  EXPECT_TRUE(e_before_throw == e.string());
+  EXPECT_EQ(e_before_throw, e.string());
   EXPECT_FALSE(g.IsInitialised());
 
   EXPECT_THROW(g + e, std::exception);
-  EXPECT_TRUE(e_before_throw == e.string());
+  EXPECT_EQ(e_before_throw, e.string());
   EXPECT_FALSE(g.IsInitialised());
 
   EXPECT_THROW(e += g, std::exception);
-  EXPECT_TRUE(e_before_throw == e.string());
+  EXPECT_EQ(e_before_throw, e.string());
   EXPECT_FALSE(g.IsInitialised());
 
   EXPECT_THROW(g += e, std::exception);
-  EXPECT_TRUE(e_before_throw == e.string());
+  EXPECT_EQ(e_before_throw, e.string());
   EXPECT_FALSE(g.IsInitialised());
 }
 

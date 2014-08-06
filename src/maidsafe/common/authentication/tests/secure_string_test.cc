@@ -51,7 +51,7 @@ TEST(SecureStringTest, BEH_Construct) {
   EXPECT_NO_THROW(secure_string.Append('d'));
   EXPECT_NO_THROW(secure_string.Finalise());
 
-  ASSERT_TRUE(SafeString("password") == secure_string.string());
+  ASSERT_EQ(SafeString("password"), secure_string.string());
 }
 
 TEST(SecureStringTest, BEH_Hash) {
@@ -81,7 +81,7 @@ TEST(SecureStringTest, BEH_CreatePassword) {
 
   EXPECT_NO_THROW(password.Finalise());
 
-  ASSERT_TRUE(SafeString("payload") == password.string());
+  ASSERT_EQ(SafeString("payload"), password.string());
 }
 
 TEST(SecureStringTest, BEH_CreatePasswordString) {
@@ -92,13 +92,13 @@ TEST(SecureStringTest, BEH_CreatePasswordString) {
 
   {
     Password password(safe_password);
-    ASSERT_TRUE(SafeString("password") == password.string());
+    ASSERT_EQ(SafeString("password"), password.string());
 
     EXPECT_NO_THROW(password.Insert(safe_password.size(), std_password));
 
     EXPECT_NO_THROW(password.Finalise());
 
-    ASSERT_TRUE(SafeString("passworddrowssap") == password.string());
+    ASSERT_EQ(SafeString("passworddrowssap"), password.string());
   }
 
   {
@@ -108,7 +108,7 @@ TEST(SecureStringTest, BEH_CreatePasswordString) {
 
     EXPECT_NO_THROW(password.Finalise());
 
-    ASSERT_TRUE(SafeString("passworddrowssap") == password.string());
+    ASSERT_EQ(SafeString("passworddrowssap"), password.string());
   }
 }
 
@@ -137,7 +137,7 @@ TEST(SecureStringTest, BEH_RemoveFirstPasswordCharacter) {
 
   EXPECT_NO_THROW(password.Finalise());
 
-  ASSERT_TRUE(SafeString("assword") == password.string());
+  ASSERT_EQ(SafeString("assword"), password.string());
 }
 
 TEST(SecureStringTest, BEH_RemoveLastPasswordCharacter) {
@@ -156,7 +156,7 @@ TEST(SecureStringTest, BEH_RemoveLastPasswordCharacter) {
 
   EXPECT_NO_THROW(password.Finalise());
 
-  ASSERT_TRUE(SafeString("passwor") == password.string());
+  ASSERT_EQ(SafeString("passwor"), password.string());
 }
 
 TEST(SecureStringTest, BEH_InsertAndRemoveAfterPasswordFinalised) {
@@ -178,7 +178,7 @@ TEST(SecureStringTest, BEH_InsertAndRemoveAfterPasswordFinalised) {
 
   EXPECT_NO_THROW(password.Finalise());
 
-  ASSERT_TRUE(SafeString("password") == password.string());
+  ASSERT_EQ(SafeString("password"), password.string());
 }
 
 TEST(SecureStringTest, BEH_CreatePasswordWithMissingIndex) {
@@ -196,7 +196,7 @@ TEST(SecureStringTest, BEH_CreatePasswordWithMissingIndex) {
   EXPECT_THROW(password.Finalise(), std::exception);
   EXPECT_NO_THROW(password.Insert(4, 'D'));
   EXPECT_NO_THROW(password.Finalise());
-  ASSERT_TRUE(SafeString("passDword") == password.string());
+  ASSERT_EQ(SafeString("passDword"), password.string());
 }
 
 TEST(SecureStringTest, BEH_CreateInvalidLengthPassword) {
@@ -249,7 +249,7 @@ TEST(SecureStringTest, BEH_ClearPasswordThenRedo) {
 
   EXPECT_NO_THROW(password.Finalise());
 
-  ASSERT_TRUE(SafeString("password") == password.string());
+  ASSERT_EQ(SafeString("password"), password.string());
 }
 
 TEST(SecureStringTest, BEH_ClearPasswordAfterFinalised) {
@@ -288,7 +288,7 @@ TEST(SecureStringTest, BEH_GetPasswordTextBeforeFinalised) {
 
   EXPECT_NO_THROW(password.Finalise());
 
-  ASSERT_TRUE(SafeString("password") == password.string());
+  ASSERT_EQ(SafeString("password"), password.string());
 }
 
 TEST(SecureStringTest, BEH_CheckPasswordIsValidForAllChars) {
@@ -311,8 +311,8 @@ TEST(SecureStringTest, BEH_CreatePin) {
 
   EXPECT_NO_THROW(pin.Finalise());
 
-  ASSERT_TRUE(SafeString("0123") == pin.string());
-  ASSERT_TRUE(123 == pin.Value());
+  ASSERT_EQ(SafeString("0123"), pin.string());
+  ASSERT_EQ(123, pin.Value());
 }
 
 TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {
@@ -324,7 +324,7 @@ TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {
 
   EXPECT_NO_THROW(pin.Finalise());
 
-  ASSERT_TRUE(SafeString("0") == pin.string());
+  ASSERT_EQ(SafeString("0"), pin.string());
 }
 
 TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
@@ -337,7 +337,7 @@ TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
 
   EXPECT_NO_THROW(pin.Finalise());
 
-  ASSERT_TRUE(SafeString("a123") == pin.string());
+  ASSERT_EQ(SafeString("a123"), pin.string());
   EXPECT_TRUE(pin.IsValid(boost::regex(".")));
   EXPECT_THROW(pin.Value(), std::exception);
 
@@ -347,7 +347,7 @@ TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
   EXPECT_TRUE(pin.IsValid(boost::regex(".")));
 
   EXPECT_NO_THROW(pin.Finalise());
-  ASSERT_TRUE(123 == pin.Value());
+  ASSERT_EQ(123, pin.Value());
 }
 
 }  // namespace test

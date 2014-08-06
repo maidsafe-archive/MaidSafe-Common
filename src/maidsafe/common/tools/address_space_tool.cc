@@ -75,7 +75,8 @@ std::vector<NodeId> GetUniformlyDistributedTargetPoints() {
   std::vector<NodeId> steps;
   steps.reserve(kStepCount);
   crypto::BigInt step_size(
-    (NodeId(NodeId::IdType::kMaxId).ToStringEncoded(NodeId::EncodingType::kHex) + "h").c_str());
+      (NodeId(std::string(NodeId::kSize, -1)).ToStringEncoded(
+          NodeId::EncodingType::kHex) + "h").c_str());
   step_size /= kStepCount;
   crypto::BigInt step(0l);
   for (size_t i(0); i < kStepCount; ++i) {

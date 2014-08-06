@@ -32,7 +32,6 @@ namespace maidsafe {
 class NodeId {
  public:
   enum class IdType : int64_t {
-    kMaxId,
     kRandomId
   };
   enum class EncodingType {

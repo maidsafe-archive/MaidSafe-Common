@@ -185,8 +185,8 @@ RandomNumberSeeder::RandomNumberSeeder()
 
 void RandomNumberSeeder::OnTestStart(const testing::TestInfo& /*test_info*/) {
   // We need to set the seed at the start of every test so that when we run all tests (e.g. if we
-  // just run ./TESTencrypt rather than using CTest where each test is run as a standalone process),
-  // they don't all use the first test's seed.
+  // just run ./test_encrypt rather than using CTest where each test is run as a standalone
+  // process), they don't all use the first test's seed.
   maidsafe::detail::set_random_number_generator_seed(current_seed_);
 }
 
@@ -203,13 +203,17 @@ boost::optional<fs::path> GetBootstrapFilePath() { return BootstrapFilePath(); }
 
 void PrepareBootstrapFile(fs::path bootstrap_file) {
   try {
+    if (bootstrap_file.string() == "none") {
+      fs::remove(ThisExecutableDir() / "bootstrap_override.dat");
+      return;
+    }
     if (bootstrap_file.is_relative())
       bootstrap_file = fs::current_path() / bootstrap_file;
     fs::copy_file(bootstrap_file, ThisExecutableDir() / "bootstrap_override.dat",
                   fs::copy_option::overwrite_if_exists);
   }
   catch (const std::exception& e) {
-    LOG(kError) << "Failed to copy bootstrap override file: " << e.what();
+    LOG(kError) << "Failed to handle bootstrap override file: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   }
 }

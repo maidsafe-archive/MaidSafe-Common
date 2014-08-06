@@ -198,6 +198,8 @@ std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Failed to decrypt";
     case EncryptErrors::failed_to_read:
       return "Failed to read";
+    case EncryptErrors::encryptor_closed:
+      return "Encryptor closed";
     default:
       return "Unknown error in Encrypt";
   }
@@ -336,9 +338,9 @@ std::error_condition VaultCategory::default_error_condition(int error_value) con
   }
 }
 
-const char* VaultManagerCategory::name() const MAIDSAFE_NOEXCEPT{ return "MaidSafe VaultManager"; }
+const char* VaultManagerCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe VaultManager"; }
 
-std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCEPT{
+std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultManagerErrors>(error_value)) {
     case VaultManagerErrors::connection_not_found:
       return "IPC connection not found";
@@ -364,7 +366,7 @@ std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCE
 }
 
 std::error_condition VaultManagerCategory::default_error_condition(int error_value) const
-    MAIDSAFE_NOEXCEPT{
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultManagerErrors>(error_value)) {
     case VaultManagerErrors::connection_not_found:
       return std::errc::not_connected;
@@ -381,7 +383,7 @@ std::error_condition VaultManagerCategory::default_error_condition(int error_val
   }
 }
 
-const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT{ return "Client"; }
+const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
 
 std::string ApiCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<ApiErrors>(error_value)) {

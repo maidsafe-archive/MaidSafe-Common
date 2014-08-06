@@ -99,7 +99,7 @@ class DataBufferTest : public testing::Test {
       GetIdentityVisitor get_identity;
       EXPECT_TRUE(boost::apply_visitor(get_identity, popped_key) ==
             boost::apply_visitor(get_identity, key));
-      EXPECT_TRUE(popped_value == value);
+      EXPECT_EQ(popped_value, value);
       ++index;
     }
     cond_var.notify_one();
@@ -132,9 +132,9 @@ class DataBufferTest : public testing::Test {
     KeyType key;
 
     EXPECT_TRUE(fs::create_directories(data_buffer_path_, error_code));
-    EXPECT_TRUE(0 == error_code.value());
+    EXPECT_EQ(0, error_code.value());
     EXPECT_TRUE(fs::exists(data_buffer_path_, error_code));
-    EXPECT_TRUE(0 == error_code.value());
+    EXPECT_EQ(0, error_code.value());
 
     for (size_t i = 0; i < num_entries; ++i) {
       value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
@@ -147,7 +147,7 @@ class DataBufferTest : public testing::Test {
     for (auto key_value : key_value_pairs) {
       EXPECT_NO_THROW(data_buffer_->Store(key_value.first, key_value.second));
       EXPECT_NO_THROW(recovered = data_buffer_->Get(key_value.first));
-      EXPECT_TRUE(key_value.second == recovered);
+      EXPECT_EQ(key_value.second, recovered);
     }
     return key_value_pairs;
   }
@@ -249,7 +249,7 @@ TEST_F(DataBufferTest, BEH_RemoveDiskBuffer) {
   NonEmptyString small_value(std::string(kMemorySize, 'a'));
   ASSERT_NO_THROW(data_buffer_->Store(key, small_value));
   ASSERT_NO_THROW(data_buffer_->Delete(key));
-  EXPECT_TRUE(1 == fs::remove_all(data_buffer_path, error_code));
+  EXPECT_EQ(1, fs::remove_all(data_buffer_path, error_code));
   ASSERT_FALSE(fs::exists(data_buffer_path, error_code));
   // Fits into memory buffer successfully.  Background thread in future should throw, causing other
   // API functions to throw on next execution.
@@ -264,7 +264,7 @@ TEST_F(DataBufferTest, BEH_RemoveDiskBuffer) {
   NonEmptyString large_value(std::string(kDiskSize, 'a'));
   ASSERT_NO_THROW(data_buffer_->Store(key, large_value));
   ASSERT_NO_THROW(data_buffer_->Delete(key));
-  EXPECT_TRUE(1 == fs::remove_all(data_buffer_path, error_code));
+  EXPECT_EQ(1, fs::remove_all(data_buffer_path, error_code));
   ASSERT_FALSE(fs::exists(data_buffer_path, error_code));
   // Skips memory buffer and goes straight to disk, causing exception.  Background thread in future
   // should finish, causing other API functions to throw on next execution.
@@ -283,9 +283,9 @@ TEST_F(DataBufferTest, BEH_SuccessfulStore) {
   ASSERT_NO_THROW(data_buffer_->Store(key1, value1));
   ASSERT_NO_THROW(data_buffer_->Store(key2, value2));
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key1));
-  EXPECT_TRUE(recovered == value1);
+  EXPECT_EQ(recovered, value1);
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key2));
-  EXPECT_TRUE(recovered == value2);
+  EXPECT_EQ(recovered, value2);
 }
 
 TEST_F(DataBufferTest, BEH_UnsuccessfulStore) {
@@ -312,12 +312,12 @@ TEST_F(DataBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   ASSERT_THROW(recovered = data_buffer_->Get(key), common_error);
   Sleep(std::chrono::milliseconds(200));
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
-  EXPECT_TRUE(recovered == value);
+  EXPECT_EQ(recovered, value);
   ASSERT_NO_THROW(data_buffer_->Delete(first_key));
   ASSERT_NO_THROW(data_buffer_->Delete(second_key));
   ASSERT_NO_THROW(async.wait());
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
-  EXPECT_TRUE(recovered == value);
+  EXPECT_EQ(recovered, value);
   EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
@@ -333,7 +333,7 @@ TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
                                        test_path, pop_functor);
-  EXPECT_TRUE(0 == index);
+  EXPECT_EQ(0, index);
 
   NonEmptyString value, recovered;
   value = NonEmptyString(RandomAlphaNumericString(static_cast<uint32_t>(OneKB)));
@@ -341,14 +341,14 @@ TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
   // Trigger pop.
   ASSERT_NO_THROW(data_buffer_->Store(key, value));
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
-  EXPECT_TRUE(recovered == value);
+  EXPECT_EQ(recovered, value);
   {
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(lock, std::chrono::seconds(1),
                                             [&]()->bool { return index == 1; }));
     EXPECT_TRUE(result);
   }
-  EXPECT_TRUE(1 == index);
+  EXPECT_EQ(1, index);
 
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = GenerateKeyFromValue<KeyType>(value);
@@ -360,9 +360,9 @@ TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
                                             [&]()->bool { return index == 3; }));
     EXPECT_TRUE(result);
   }
-  EXPECT_TRUE(3 == index);
+  EXPECT_EQ(3, index);
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
-  EXPECT_TRUE(recovered == value);
+  EXPECT_EQ(recovered, value);
   EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
@@ -392,7 +392,7 @@ TEST_F(DataBufferTest, BEH_AsyncDeleteOnDiskBufferOverfill) {
   // Check the new Store attempts all block pending some Deletes
   for (auto& async_store : async_stores) {
     auto status(async_store.wait_for(std::chrono::milliseconds(250)));
-    EXPECT_TRUE(std::future_status::timeout == status);
+    EXPECT_EQ(std::future_status::timeout, status);
   }
 
   std::vector<std::future<NonEmptyString>> async_gets;
@@ -405,7 +405,7 @@ TEST_F(DataBufferTest, BEH_AsyncDeleteOnDiskBufferOverfill) {
   // Check Get attempts for the new Store values don't block pending the Store attempts completing
   for (auto& async_get : async_gets) {
     auto status(async_get.wait_for(std::chrono::milliseconds(100)));
-    EXPECT_TRUE(std::future_status::ready == status);
+    EXPECT_EQ(std::future_status::ready, status);
   }
 
   // Delete the last new Store attempt before it has completed
@@ -417,9 +417,9 @@ TEST_F(DataBufferTest, BEH_AsyncDeleteOnDiskBufferOverfill) {
 
   for (size_t i(0); i != num_entries; ++i) {
     auto status(async_gets[i].wait_for(std::chrono::milliseconds(200)));
-    EXPECT_TRUE(std::future_status::ready == status);
+    EXPECT_EQ(std::future_status::ready, status);
     EXPECT_NO_THROW(recovered = async_gets[i].get());
-    EXPECT_TRUE(new_key_value_pairs[i].second == recovered);
+    EXPECT_EQ(new_key_value_pairs[i].second, recovered);
   }
 
   // Check the last store value which was cancelled is now unavailable
@@ -439,7 +439,7 @@ TEST_F(DataBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   old_key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
                                            test_path, pop_functor);
-  EXPECT_TRUE(0 == index);
+  EXPECT_EQ(0, index);
 
   NonEmptyString value, recovered;
   KeyType key;
@@ -464,9 +464,9 @@ TEST_F(DataBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   }
   for (auto key_value : new_key_value_pairs) {
     EXPECT_NO_THROW(recovered = this->data_buffer_->Get(key_value.first));
-    EXPECT_TRUE(key_value.second == recovered);
+    EXPECT_EQ(key_value.second, recovered);
   }
-  EXPECT_TRUE(num_entries == index);
+  EXPECT_EQ(num_entries, index);
   EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
@@ -488,7 +488,7 @@ TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
   EXPECT_TRUE(async.valid());
   EXPECT_NO_THROW(async.get());
   EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
-  EXPECT_TRUE(recovered == value);
+  EXPECT_EQ(recovered, value);
 
   uint32_t events((RandomUint32() % 100) + 10);
   for (uint32_t i = 0; i != events; ++i) {
@@ -504,8 +504,8 @@ TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
   }
   Sleep(std::chrono::milliseconds(100));
   EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
-  EXPECT_TRUE(value != recovered);
-  EXPECT_TRUE(last_value == recovered);
+  EXPECT_NE(value, recovered);
+  EXPECT_EQ(last_value, recovered);
   data_buffer_.reset();
   EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
@@ -584,7 +584,7 @@ TEST_F(DataBufferTest, BEH_RandomAsync) {
       auto it = std::find_if(
           key_value_pairs.begin(), key_value_pairs.end(),
           [this, &value](const value_type & key_value) { return key_value.second == value; });
-      EXPECT_TRUE(key_value_pairs.end() != it);
+      EXPECT_NE(key_value_pairs.end(), it);
     }
     catch (const common_error& e) {
       LOG(kInfo) << boost::diagnostic_information(e);
@@ -642,7 +642,7 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
     EXPECT_NO_THROW(data_buffer_->Store(key, value));
     NonEmptyString recovered;
     EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
-    EXPECT_TRUE(value == recovered);
+    EXPECT_EQ(value, recovered);
     if (disk_usage) {
       disk_usage -= memory_usage;
       total_usage -= memory_usage;
@@ -681,7 +681,7 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
   for (auto key_value : key_value_pairs) {
     KeyType key(key_value.first);
     EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
-    EXPECT_TRUE(key_value.second == recovered);
+    EXPECT_EQ(key_value.second, recovered);
     EXPECT_NO_THROW(data_buffer_->Delete(key));
     EXPECT_THROW(recovered = data_buffer_->Get(key), common_error);
   }
