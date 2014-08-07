@@ -577,7 +577,7 @@ void Logging::HandleFilterOptions() {
 
 fs::path Logging::GetLogfileName(const std::string& project) const {
   char mbstr[100];
-  std::strftime(mbstr, 100, "%Y-%m-%d_%H-%M-%S_", std::localtime(&start_time_));  // NOLINT (Fraser)
+  std::strftime(mbstr, 100, "%Y-%m-%d_%H-%M-%S_", std::gmtime(&start_time_));  // NOLINT (Fraser)
   fs::path name(log_folder_ / mbstr);
   name += project + ".log";
   return name;
