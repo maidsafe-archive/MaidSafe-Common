@@ -488,9 +488,12 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
       ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
       if (IsHelpOption(log_config))
         return;
+#if USE_LOGGING
+      background_ = maidsafe::make_unique<Active>();
       DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
       HandleFilterOptions();
       SetStreams();
+#endif
     }
     catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
@@ -512,9 +515,12 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
       ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
       if (IsHelpOption(log_config))
         return;
+#if USE_LOGGING
+      background_ = maidsafe::make_unique<Active>();
       DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
       HandleFilterOptions();
       SetStreams();
+#endif
     }
     catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
@@ -597,7 +603,13 @@ void Logging::SetStreams() {
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
 }
 
-void Logging::Send(std::function<void()> message_functor) { background_.Send(message_functor); }
+void Logging::Send(std::function<void()> message_functor) {
+#if USE_LOGGING
+  background_->Send(message_functor);
+#else
+  message_functor();
+#endif
+}
 
 void Logging::WriteToLogfile(const std::string& message, LogFile& log_file) {
   std::lock_guard<std::mutex> lock(log_file.mutex);

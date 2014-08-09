@@ -188,7 +188,7 @@ class Logging {
   LogFile combined_logfile_stream_;
   std::map<std::string, std::unique_ptr<LogFile>> project_logfile_streams_;
   Visualiser visualiser_;
-  Active background_;
+  std::unique_ptr<Active> background_;
 };
 
 namespace detail {
