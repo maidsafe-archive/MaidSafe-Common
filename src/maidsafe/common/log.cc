@@ -316,6 +316,7 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
     unused_options.emplace_back(unused.c_str(), unused.c_str() + unused.size() + 1u);
 }
 
+#if USE_LOGGING
 void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mode,
              fs::path& log_folder_path) {
   if (col_mode != -1) {
@@ -327,6 +328,7 @@ void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mod
   }
   log_folder_path = log_folder;
 }
+#endif
 
 int GetLogLevel(std::string level) {
   boost::to_lower(level);
