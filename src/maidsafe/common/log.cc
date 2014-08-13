@@ -531,9 +531,7 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
   return unused_options;
 }
 
-void Logging::InitialiseVlog(const std::string& prefix, const std::string& session_id,
-                             const std::string& server_name, uint16_t server_port,
-                             const std::string& server_dir) {
+void Logging::InitialiseVlog(const std::string& prefix, const std::string& session_id) {
   if (visualiser_.initialised)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
   std::call_once(visualiser_.initialised_once_flag, [&] {
@@ -543,10 +541,8 @@ void Logging::InitialiseVlog(const std::string& prefix, const std::string& sessi
     if (visualiser_.session_id.empty())
       LOG(kWarning) << "VLOG messages disabled since Vlog Session ID is empty.";
     visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
-    visualiser_.server_name = server_name;
-    visualiser_.server_port = server_port;
-    visualiser_.server_dir = server_dir;
-    visualiser_.server_stream.connect(server_name, std::to_string(server_port));
+    visualiser_.server_stream.connect(visualiser_.server_name,
+                                      std::to_string(visualiser_.server_port));
     if (!visualiser_.server_stream) {
       LOG(kError) << "Failed to connect to VLOG server: "
                   << visualiser_.server_stream.error().message();
