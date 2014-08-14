@@ -541,11 +541,11 @@ void Logging::InitialiseVlog(const std::string& prefix, const std::string& sessi
     if (visualiser_.session_id.empty())
       LOG(kWarning) << "VLOG messages disabled since Vlog Session ID is empty.";
     visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
-    visualiser_.server_stream.connect(visualiser_.server_name,
-                                      std::to_string(visualiser_.server_port));
-    if (!visualiser_.server_stream) {
+    visualiser_.server_stream->connect(visualiser_.server_name,
+                                       std::to_string(visualiser_.server_port));
+    if (!(*visualiser_.server_stream)) {
       LOG(kError) << "Failed to connect to VLOG server: "
-                  << visualiser_.server_stream.error().message();
+                  << visualiser_.server_stream->error().message();
     }
   });
 }
@@ -617,6 +617,10 @@ void Logging::WriteToLogfile(const std::string& message, LogFile& log_file) {
   }
 }
 
+void Logging::ResetVisualiserServerStream() {
+  visualiser_.server_stream.reset();
+}
+
 void Logging::WriteToCombinedLogfile(const std::string& message) {
   WriteToLogfile(message, combined_logfile_stream_);
 }
@@ -627,24 +631,23 @@ void Logging::WriteToVisualiserLogfile(const std::string& message) {
 
 void Logging::WriteToVisualiserServer(const std::string& message) {
   if (!visualiser_.server_stream) {
-    visualiser_.server_stream.clear();
-    visualiser_.server_stream.connect(visualiser_.server_name,
-                                      std::to_string(visualiser_.server_port));
-    if (!visualiser_.server_stream) {
+    visualiser_.server_stream.reset(new boost::asio::ip::tcp::iostream());
+    visualiser_.server_stream->connect(visualiser_.server_name,
+                                       std::to_string(visualiser_.server_port));
+    if (!(*visualiser_.server_stream)) {
       LOG(kError) << "Failed to re-connect to VLOG server: "
-                  << visualiser_.server_stream.error().message();
+                  << visualiser_.server_stream->error().message();
       return;
     }
   }
-
-  visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
+  *visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
       << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
       << "Content-Type: application/x-www-form-urlencoded\r\n"
       << "Content-Length: " << std::to_string(message.size()) << "\r\n"
       << "\r\n" << message << "\r\n" << std::flush;
   auto read_response([&](char delimiter)->std::string {
     std::string response;
-    if (!std::getline(visualiser_.server_stream, response, delimiter)) {
+    if (!std::getline(*visualiser_.server_stream, response, delimiter)) {
       LOG(kWarning) << "Failed to read VLOG server response.";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
     }
@@ -663,7 +666,7 @@ void Logging::WriteToVisualiserServer(const std::string& message) {
     LOG(kWarning) << e.what();
   }
   std::array<char, 100> discarded;
-  while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
+  while (visualiser_.server_stream->readsome(&discarded[0], discarded.size())) {}
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {

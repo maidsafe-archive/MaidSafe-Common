@@ -138,6 +138,7 @@ class Logging {
   std::vector<std::vector<Char>> Initialise(int argc, Char** argv);
   void InitialiseVlog(const std::string& prefix, const std::string& session_id);
   void Send(std::function<void()> message_functor);
+  void ResetVisualiserServerStream();
   void WriteToCombinedLogfile(const std::string& message);
   void WriteToVisualiserLogfile(const std::string& message);
   void WriteToVisualiserServer(const std::string& message);
@@ -159,12 +160,13 @@ class Logging {
     std::mutex mutex;
   };
   struct Visualiser {
-    Visualiser() : prefix("Vault ID uninitialised"), session_id(), logfile(), server_stream(),
+    Visualiser() : prefix("Vault ID uninitialised"), session_id(), logfile(),
+                   server_stream(new boost::asio::ip::tcp::iostream()),
                    server_name("visualiser.maidsafe.net"), server_dir("/log"), server_port(8080),
                    initialised(false), initialised_once_flag() {}
     std::string prefix, session_id;
     LogFile logfile;
-    boost::asio::ip::tcp::iostream server_stream;
+    std::unique_ptr<boost::asio::ip::tcp::iostream> server_stream;
     std::string server_name, server_dir;
     uint16_t server_port;
     std::atomic<bool> initialised;
