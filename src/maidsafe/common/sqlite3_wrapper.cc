@@ -80,7 +80,7 @@ Tranasction::Tranasction(Database& database_in)
     } catch (const std::exception& e) {
       LOG(kWarning) << "Tranasction::Constructor FAILED in Attempt " << i << " with error "
                     << boost::diagnostic_information(e);
-      std::this_thread::sleep_for(std::chrono::milliseconds(((RandomUint32() % 250) + 10) * i));
+    std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
@@ -106,7 +106,7 @@ void Tranasction::Commit() {
     } catch (const std::exception& e) {
       LOG(kWarning) << "Tranasction::Commit FAILED in Attempt " << i << " with error "
                     << boost::diagnostic_information(e);
-      std::this_thread::sleep_for(std::chrono::milliseconds(((RandomUint32() % 250) + 10) * i));
+    std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
