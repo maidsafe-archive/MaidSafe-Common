@@ -20,6 +20,8 @@
 
 #include <mutex>
 
+#include "maidsafe/common/make_unique.h"
+#include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/type_macros.h"
 #include "maidsafe/common/types.h"
@@ -40,15 +42,23 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(TestAction, uint64_t,
     (AccountTransfer)
     (IncrementReferenceCount))
 
-class VisualiserLogTest {
+class VisualiserLogTest : public ::testing::Test {
  protected:
-  VisualiserLogTest() : this_vault_id_(InitId()) {}
+  VisualiserLogTest()
+      : kThisVaultId_(InitId()),
+        kTestSessionId_("54ca73ce-0c3c-4155-c9e3-c89d74ad5602"),
+        kServerName_("visualiser.maidsafe.net"),
+        kServerDir_("/testlog"),
+        kServerPort_(8080) {}
+
   std::string GetPostRequestBody(const log::VisualiserLogMessage& vlog) {
     return vlog.GetPostRequestBody();
   }
+
   void DebugPrint(const log::VisualiserLogMessage& vlog) {
     LOG(kVerbose) << "\tts:                   \"" << vlog.kTimestamp_ << '\"';
     LOG(kVerbose) << "\tvault_id:             \"" << vlog.kVaultId_ << '\"';
+    LOG(kVerbose) << "\tsession_id:           \"" << vlog.kSessionId_ << '\"';
     LOG(kVerbose) << "\tpersona_id:           \"" << vlog.kPersonaId_.value << '\"';
     LOG(kVerbose) << "\taction_id:            \"" << vlog.kActionId_.value << '\"';
     if (vlog.kValue1_.size() == crypto::SHA512::DIGESTSIZE)
@@ -63,24 +73,40 @@ class VisualiserLogTest {
     return id;
   }
 
-  Identity this_vault_id_;
+  std::unique_ptr<on_scope_exit> GetScopedSessionIdInvalidator() {
+    const std::string kOriginalSessionId{ log::Logging::Instance().VlogSessionId() };
+    auto scoped_invalidator(maidsafe::make_unique<on_scope_exit>([kOriginalSessionId] {
+      log::Logging::Instance().visualiser_.session_id = kOriginalSessionId;
+    }));
+    log::Logging::Instance().visualiser_.session_id[0] = '6';
+    return std::move(scoped_invalidator);
+  }
+
+  const Identity kThisVaultId_;
+  const std::string kTestSessionId_, kServerName_, kServerDir_;
+  const uint16_t kServerPort_;
 };
 
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeout 10
-  CHECK(IsValid(TestPersona::kMaidNode));
-  CHECK(IsValid(TestPersona::kDataGetter));
-  CHECK(IsValid(TestPersona::kCacheHandler));
-  CHECK(!IsValid(static_cast<TestPersona>(-1)));
-  CHECK(!IsValid(static_cast<TestPersona>(3)));
+TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
+  EXPECT_TRUE(IsValid(TestPersona::kMaidNode));
+  EXPECT_TRUE(IsValid(TestPersona::kDataGetter));
+  EXPECT_TRUE(IsValid(TestPersona::kCacheHandler));
+  EXPECT_TRUE(!IsValid(static_cast<TestPersona>(-1)));
+  EXPECT_TRUE(!IsValid(static_cast<TestPersona>(3)));
 
 #ifdef USE_VLOGGING
   Identity target{ RandomString(64) };
   // Call before VlogPrefix has been set
-  CHECK_THROWS_AS(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
-                  common_error);
-
+  EXPECT_THROW(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
+               common_error);
+  EXPECT_NO_THROW(log::VisualiserLogMessage::SendVaultStoppedMessage(kThisVaultId_.string(),
+                                                                     kTestSessionId_, -1));
   // Call after VLOG has been initialised
-  log::Logging::Instance().InitialiseVlog("Visualiser log test", "128.199.223.97", 8080, "/log");
+  log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_);
+
+  EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
+  EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
+
   VLOG(TestPersona::kDataGetter, TestAction::kGet, target, target);
   VLOG(TestPersona::kDataGetter, TestAction::kGet, target);
   VLOG(TestPersona::kDataGetter, TestAction::kGet, 99);
@@ -88,25 +114,39 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log", "[Log][Unit]") {  // Timeo
   VLOG(TestAction::kGet, target);
   VLOG(TestAction::kGet, 99);
 
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
-  CHECK_THROWS_AS(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
-  CHECK_THROWS_AS(VLOG(TestAction::kGet, Identity{}), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), target), common_error);
-  CHECK_THROWS_AS(VLOG(static_cast<TestAction>(-1), 99), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);
+  EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), 99), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, target), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestPersona>(-1), TestAction::kGet, 99), common_error);
+  EXPECT_THROW(VLOG(TestAction::kGet, Identity{}), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestAction>(-1), target), common_error);
+  EXPECT_THROW(VLOG(static_cast<TestAction>(-1), 99), common_error);
 
   // Try to initialise again
-  CHECK_THROWS_AS(log::Logging::Instance().InitialiseVlog("1", "128.199.223.97", 8080, "/log"),
-                  common_error);
+  EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", kTestSessionId_), common_error);
+  EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
+  EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
+
+  // Emulate VLOG macro being called where an invalid Session ID has been provided to logging.
+  {
+    auto scoped_session_id_invalidator(GetScopedSessionIdInvalidator());
+    ASSERT_NE(kTestSessionId_, log::Logging::Instance().VlogSessionId());
+    VLOG(TestPersona::kDataGetter, TestAction::kGet, target, target);  // Should fail
+  }
+
+  EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
+  // Sleep to allow error LOG messages caused by errors returned from the server to execute before
+  // the logger's destructor causes them to be ditched.  This is non-critical; just good to see
+  // errors where possible.
+  Sleep(std::chrono::seconds(8));
 #endif
 }
 
 // This test outputs the URL-encoded version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Unit]") {  // Timeout 9
+TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
@@ -118,8 +158,7 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
 #ifdef USE_VLOGGING
   // Set VLOG prefix in case this test isn't run after the previous one.
   try {
-    log::Logging::Instance().InitialiseVlog(DebugId(this_vault_id_), "128.199.223.97", 8080,
-                                            "/log");
+    log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_);
   }
   catch (const std::exception&) {}
 
@@ -138,11 +177,11 @@ TEST_CASE_METHOD(VisualiserLogTest, "Visualiser Log Check UrlEncode", "[Log][Uni
   auto vlog3 = VLOG(TestAction::kGet, identities[3]);
   LOG(kVerbose) << '\t' << GetPostRequestBody(vlog3);
   DebugPrint(vlog3);
-
-  Sleep(std::chrono::milliseconds(100));  // To avoid Catch output getting mixed in with TLOGs.
+  // Sleep to allow error LOG messages caused by errors returned from the server to execute before
+  // the logger's destructor causes them to be ditched.  This is non-critical; just good to see
+  // errors where possible.
+  Sleep(std::chrono::seconds(8));
 #endif
-
-  CHECK(true);
 }
 
 }  // namespace test

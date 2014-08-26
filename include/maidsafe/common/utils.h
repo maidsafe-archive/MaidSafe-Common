@@ -24,6 +24,8 @@
 #include <future>
 #include <functional>
 #include <memory>
+#include <mutex>
+#include <random>
 #include <ratio>
 #include <string>
 
@@ -32,10 +34,8 @@
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
-#include "boost/random/mersenne_twister.hpp"
-#include "boost/random/uniform_int.hpp"
-#include "boost/random/variate_generator.hpp"
 
+#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
 
@@ -43,8 +43,14 @@ namespace maidsafe {
 
 namespace detail {
 
-boost::mt19937& random_number_generator();
+std::mt19937& random_number_generator();
 std::mutex& random_number_generator_mutex();
+#ifdef TESTING
+uint32_t random_number_generator_seed();
+void set_random_number_generator_seed(uint32_t seed);
+#endif
+boost::filesystem::path GetFileName(const DataNameVariant& data_name_variant);
+DataNameVariant GetDataNameVariant(const boost::filesystem::path& file_name);
 
 }  // namespace detail
 
@@ -80,6 +86,32 @@ std::string BytesToDecimalSiUnits(uint64_t num);
 // Converts num bytes to nearest integral binary SI value.
 std::string BytesToBinarySiUnits(uint64_t num);
 
+// Borrowed from http://burtleburtle.net/bob/rand/smallprng.html
+// Useful for a wait free very fast prng which passes DIEHARD
+namespace smallprng {
+  typedef uint32_t  u4;
+  typedef struct ranctx { u4 a; u4 b; u4 c; u4 d; } ranctx;
+
+#define smallprng_rot(x, k) (((x) << (k))|((x) >> (32 - (k))))
+  inline u4 ranval(ranctx *x) {
+    u4 e = x->a - smallprng_rot(x->b, 27);
+    x->a = x->b ^ smallprng_rot(x->c, 17);
+    x->b = x->c + x->d;
+    x->c = x->d + e;
+    x->d = e + x->a;
+    return x->d;
+  }
+#undef smallprng_rot
+
+  inline void raninit(ranctx *x, u4 seed) {
+    u4 i;
+    x->a = 0xf1ea5eed, x->b = x->c = x->d = seed;
+    for (i = 0; i < 20; ++i) {
+        (void) ranval(x);
+    }
+  }
+}  // namespace smallprng
+
 // Generates a non-cryptographically-secure 32bit signed integer.
 int32_t RandomInt32();
 
@@ -92,13 +124,12 @@ std::string RandomString(size_t size);
 // Generates a non-cryptographically-secure random string.
 template <typename String>
 String GetRandomString(size_t size) {
-  boost::uniform_int<> uniform_distribution(0, 255);
+  std::uniform_int_distribution<> distribution(0, 255);
   String random_string(size, 0);
   {
     std::lock_guard<std::mutex> lock(detail::random_number_generator_mutex());
-    boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
-        detail::random_number_generator(), uniform_distribution);
-    std::generate(random_string.begin(), random_string.end(), uni);
+    std::generate(random_string.begin(), random_string.end(),
+                  [&] { return distribution(detail::random_number_generator()); });
   }
   return random_string;
 }
@@ -111,14 +142,12 @@ template <typename String>
 String GetRandomAlphaNumericString(size_t size) {
   static const char alpha_numerics[] =
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-  boost::uniform_int<> uniform_distribution(0, 61);
+  static std::uniform_int_distribution<> distribution(0, 61);
   String random_string(size, 0);
   {
     std::lock_guard<std::mutex> lock(detail::random_number_generator_mutex());
-    boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(
-        detail::random_number_generator(), uniform_distribution);
     for (auto it = random_string.begin(); it != random_string.end(); ++it)
-      *it = alpha_numerics[uni()];
+      *it = alpha_numerics[distribution(detail::random_number_generator())];
   }
   return random_string;
 }

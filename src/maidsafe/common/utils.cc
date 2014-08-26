@@ -44,10 +44,9 @@
 
 #include "boost/config.hpp"
 #include "boost/filesystem/operations.hpp"
-#include "boost/random/mersenne_twister.hpp"
-#include "boost/random/uniform_int.hpp"
-#include "boost/random/variate_generator.hpp"
+#include "boost/format.hpp"
 #include "boost/token_functions.hpp"
+#include "boost/variant/apply_visitor.hpp"
 
 #include "cryptopp/base32.h"
 #include "cryptopp/base64.h"
@@ -64,10 +63,6 @@ namespace maidsafe {
 
 namespace {
 
-boost::mt19937 g_random_number_generator(static_cast<unsigned int>(
-    bptime::microsec_clock::universal_time().time_of_day().total_microseconds()));
-std::mutex g_random_number_generator_mutex;
-
 struct BinaryUnit;
 struct DecimalUnit;
 
@@ -77,7 +72,7 @@ struct UnitType {};
 template <>
 struct UnitType<BinaryUnit> {
   static const uint64_t kKilo = 1024;
-  static const uint64_t kExaThreshold = 11529215046068469760U;
+  // static const uint64_t kExaThreshold = 11529215046068469760U;
   static std::array<std::string, 7> Qualifier() {
     std::array<std::string, 7> temp = {{" B", " KiB", " MiB", " GiB", " TiB", " PiB", " EiB"}};
     return temp;
@@ -87,7 +82,7 @@ struct UnitType<BinaryUnit> {
 template <>
 struct UnitType<DecimalUnit> {
   static const uint64_t kKilo = 1000;
-  static const uint64_t kExaThreshold = 9500000000000000000U;
+  // static const uint64_t kExaThreshold = 9500000000000000000U;
   static std::array<std::string, 7> Qualifier() {
     std::array<std::string, 7> temp = {{" B", " kB", " MB", " GB", " TB", " PB", " EB"}};
     return temp;
@@ -96,6 +91,7 @@ struct UnitType<DecimalUnit> {
 
 template <typename Units>
 std::string BytesToSiUnits(uint64_t num) {
+  static const auto to_string = [](double d) { return (boost::format("%.2f") % d).str(); };
   const uint64_t kKilo(UnitType<Units>::kKilo);
   std::array<std::string, 7> qualifier = UnitType<Units>::Qualifier();
 
@@ -107,12 +103,10 @@ std::string BytesToSiUnits(uint64_t num) {
   for (; count != 6; midpoint *= kKilo, divisor *= kKilo, ++count) {
     threshold = (divisor * kKilo) - midpoint;
     if (num < threshold)
-      return std::to_string((num + midpoint) / divisor) + qualifier[count];
+      return to_string(double(num) / divisor) + qualifier[count];
   }
 
-  threshold = UnitType<Units>::kExaThreshold;
-  return num < threshold ? (std::to_string((num + midpoint) / divisor) + qualifier[6])
-                         : (std::to_string(((num - midpoint) / divisor) + 1) + qualifier[6]);
+  return to_string(double(num) / divisor) + qualifier[6];
 }
 
 const char kHexAlphabet[] = "0123456789abcdef";
@@ -145,12 +139,58 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
   return output;
 }
 
+uint32_t& rng_seed() {
+  static uint32_t seed(static_cast<uint32_t>(
+      std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+  return seed;
+}
+
+template <typename IntType>
+IntType RandomInt() {
+  static std::uniform_int_distribution<IntType> distribution(std::numeric_limits<IntType>::min(),
+                                                             std::numeric_limits<IntType>::max());
+  std::lock_guard<std::mutex> lock(detail::random_number_generator_mutex());
+  return distribution(detail::random_number_generator());
+}
+
 }  // unnamed namespace
 
 namespace detail {
 
-boost::mt19937& random_number_generator() { return g_random_number_generator; }
-std::mutex& random_number_generator_mutex() { return g_random_number_generator_mutex; }
+std::mt19937& random_number_generator() {
+  static std::mt19937 random_number_generator(rng_seed());
+  return random_number_generator;
+}
+
+std::mutex& random_number_generator_mutex() {
+  static std::mutex random_number_generator_mutex;
+  return random_number_generator_mutex;
+}
+
+#ifdef TESTING
+
+uint32_t random_number_generator_seed() { return rng_seed(); }
+
+void set_random_number_generator_seed(uint32_t seed) {
+  std::lock_guard<std::mutex> lock(random_number_generator_mutex());
+  rng_seed() = seed;
+  random_number_generator().seed(seed);
+}
+
+#endif
+
+fs::path GetFileName(const DataNameVariant& data_name_variant) {
+  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), data_name_variant));
+  return (HexEncode(result.second) + '_' + std::to_string(static_cast<uint32_t>(result.first)));
+}
+
+DataNameVariant GetDataNameVariant(const fs::path& file_name) {
+  std::string file_name_str(file_name.string());
+  size_t index(file_name_str.rfind('_'));
+  auto id(static_cast<DataTagValue>(std::stoul(file_name_str.substr(index + 1))));
+  Identity key_id(HexDecode(file_name_str.substr(0, index)));
+  return GetDataNameVariant(id, key_id);
+}
 
 }  // namespace detail
 
@@ -215,15 +255,9 @@ std::string BytesToDecimalSiUnits(uint64_t num) { return BytesToSiUnits<DecimalU
 
 std::string BytesToBinarySiUnits(uint64_t num) { return BytesToSiUnits<BinaryUnit>(num); }
 
-int32_t RandomInt32() {
-  boost::uniform_int<> uniform_distribution(0, boost::integer_traits<int32_t>::const_max);
-  std::lock_guard<std::mutex> lock(g_random_number_generator_mutex);
-  boost::variate_generator<boost::mt19937&, boost::uniform_int<>> uni(g_random_number_generator,
-                                                                      uniform_distribution);
-  return uni();
-}
+int32_t RandomInt32() { return RandomInt<int32_t>(); }
 
-uint32_t RandomUint32() { return static_cast<uint32_t>(RandomInt32()); }
+uint32_t RandomUint32() { return RandomInt<uint32_t>(); }
 
 std::string RandomString(size_t size) { return GetRandomString<std::string>(size); }
 
@@ -305,7 +339,7 @@ std::string Base64Decode(const std::string& base64_input) {
   // Setup a vector to hold the result
   std::string decoded_bytes;
   decoded_bytes.reserve(((base64_input.size() / 4) * 3) - padding);
-  int32_t temp = 0;  // Holds decoded quanta
+  uint32_t temp = 0;  // Holds decoded quanta
   auto cursor = std::begin(base64_input);
   while (cursor < std::end(base64_input)) {
     for (size_t quantum_position = 0; quantum_position < 4; ++quantum_position) {
@@ -519,5 +553,8 @@ fs::path GetPathFromProgramOptions(const std::string& option_name,
 }
 
 unsigned int Concurrency() { return std::max(std::thread::hardware_concurrency(), 2U); }
+
+
+
 
 }  // namespace maidsafe

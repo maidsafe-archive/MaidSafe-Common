@@ -30,33 +30,34 @@ namespace detail {
 
 namespace test {
 
-TEST_CASE("Error codes and conditions", "[ErrorCode][ErrorCondition][Unit]") {
+TEST(ErrorsTest, BEH_ErrorCodeErrorCondition) {
   common_error null_pointer_error(MakeError(CommonErrors::null_pointer));
   asymm_error data_empty_error(MakeError(AsymmErrors::data_empty));
-  CHECK(null_pointer_error.code() != data_empty_error.code());
-  CHECK(null_pointer_error.code() == make_error_code(CommonErrors::null_pointer));
+  EXPECT_NE(null_pointer_error.code(), data_empty_error.code());
+  EXPECT_EQ(null_pointer_error.code(), make_error_code(CommonErrors::null_pointer));
 
   std::error_condition null_pointer_condition(make_error_condition(CommonErrors::null_pointer));
   std::error_condition data_empty_condition(make_error_condition(AsymmErrors::data_empty));
-  CHECK(null_pointer_condition != data_empty_condition);
-  CHECK(null_pointer_condition == make_error_condition(CommonErrors::null_pointer));
+  EXPECT_NE(null_pointer_condition, data_empty_condition);
+  EXPECT_EQ(null_pointer_condition, make_error_condition(CommonErrors::null_pointer));
 
   std::error_condition null_pointer_default_error_condition(
       GetCommonCategory().default_error_condition(null_pointer_error.code().value()));
   std::error_condition data_empty_default_error_condition(
       GetAsymmCategory().default_error_condition(data_empty_error.code().value()));
-  CHECK(null_pointer_default_error_condition == data_empty_default_error_condition);
+  EXPECT_EQ(null_pointer_default_error_condition, data_empty_default_error_condition);
 
-  CHECK(GetCommonCategory().equivalent(null_pointer_error.code(), null_pointer_condition.value()));
-  CHECK_FALSE(GetCommonCategory().equivalent(null_pointer_error.code().value(),
-                                             null_pointer_condition));
-  CHECK_FALSE(GetCommonCategory().equivalent(data_empty_error.code(),
+  EXPECT_TRUE(GetCommonCategory().equivalent(null_pointer_error.code(),
                                              null_pointer_condition.value()));
-  CHECK_FALSE(GetCommonCategory().equivalent(data_empty_error.code().value(),
+  EXPECT_FALSE(GetCommonCategory().equivalent(null_pointer_error.code().value(),
+                                             null_pointer_condition));
+  EXPECT_FALSE(GetCommonCategory().equivalent(data_empty_error.code(),
+                                             null_pointer_condition.value()));
+  EXPECT_FALSE(GetCommonCategory().equivalent(data_empty_error.code().value(),
                                              null_pointer_condition));
 }
 
-TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
+TEST(ErrorsTest, BEH_ErrorCodesThrownAsBoostExceptions) {
   // Catch as specific error type
   try {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
@@ -108,26 +109,107 @@ TEST_CASE("Error codes thrown as boost exceptions", "[ErrorCode][Unit]") {
     LOG(kWarning) << e.what();
     LOG(kError) << boost::diagnostic_information(e);
   }
-
-  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
-TEST_CASE("Serialising and parsing errors", "[ErrorCode][Unit]") {
+TEST(ErrorsTest, BEH_SerialisingAndParsingErrors) {
   common_error hashing_error{ MakeError(CommonErrors::hashing_error) };
   maidsafe_error::serialised_type serialised{ Serialise(hashing_error) };
-  CHECK(hashing_error.code() == Parse(serialised).code());
-  CHECK(std::string{ hashing_error.what() } == std::string{ Parse(serialised).what() });
+  EXPECT_EQ(hashing_error.code(), Parse(serialised).code());
+  EXPECT_EQ(std::string{ hashing_error.what() }, std::string{ Parse(serialised).what() });
 
   vault_manager_error listening_error{ MakeError(VaultManagerErrors::failed_to_listen) };
   serialised = Serialise(listening_error);
-  CHECK(listening_error.code() == Parse(serialised).code());
-  CHECK(std::string{ listening_error.what() } == std::string{ Parse(serialised).what() });
-  CHECK(hashing_error.code() != Parse(serialised).code());
-  CHECK(std::string{ hashing_error.what() } != std::string{ Parse(serialised).what() });
+  EXPECT_EQ(listening_error.code(), Parse(serialised).code());
+  EXPECT_EQ(std::string{ listening_error.what() }, std::string{ Parse(serialised).what() });
+  EXPECT_NE(hashing_error.code(), Parse(serialised).code());
+  EXPECT_NE(std::string{ hashing_error.what() }, std::string{ Parse(serialised).what() });
 
-  CHECK_THROWS_AS(IntToError(0), maidsafe_error);
-  CHECK(IntToError(-100000).code() == MakeError(CommonErrors::success).code());
-  CHECK(ErrorToInt(MakeError(CommonErrors::success)) == -100000);
+  EXPECT_THROW(IntToError(0), maidsafe_error);
+  EXPECT_EQ(IntToError(-100000).code(), MakeError(CommonErrors::success).code());
+  EXPECT_EQ(ErrorToInt(MakeError(CommonErrors::success)), -100000);
+}
+
+template <typename ErrorType>
+class MaidSafeErrorTest : public testing::Test {};
+
+template <typename ErrorType>
+struct EnumClass;
+
+template <>
+struct EnumClass<common_error> { typedef CommonErrors type; };
+
+template <>
+struct EnumClass<asymm_error> { typedef AsymmErrors type; };
+
+template <>
+struct EnumClass<passport_error> { typedef PassportErrors type; };
+
+template <>
+struct EnumClass<encrypt_error> { typedef EncryptErrors type; };
+
+template <>
+struct EnumClass<routing_error> { typedef RoutingErrors type; };
+
+template <>
+struct EnumClass<nfs_error> { typedef NfsErrors type; };
+
+template <>
+struct EnumClass<drive_error> { typedef DriveErrors type; };
+
+template <>
+struct EnumClass<vault_error> { typedef VaultErrors type; };
+
+template <>
+struct EnumClass<vault_manager_error> { typedef VaultManagerErrors type; };
+
+template <>
+struct EnumClass<api_error> { typedef ApiErrors type; };
+
+typedef testing::Types<common_error,
+                       asymm_error,
+                       passport_error,
+                       encrypt_error,
+                       routing_error,
+                       nfs_error,
+                       drive_error,
+                       vault_error,
+                       vault_manager_error,
+                       api_error> AllErrorTypes;
+
+TYPED_TEST_CASE(MaidSafeErrorTest, AllErrorTypes);
+
+TYPED_TEST(MaidSafeErrorTest, BEH_ConstructorsAndHelpers) {
+  const std::error_code kCode{ make_error_code(typename EnumClass<TypeParam>::type(1)) };
+  make_error_condition(typename EnumClass<TypeParam>::type(1));
+  const std::string kWhat{ RandomAlphaNumericString(10) };
+
+  TypeParam error(kCode, kWhat);
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(kCode, kWhat.c_str());
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(kCode);
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_EQ(kCode.message(), error.what());
+
+  error = TypeParam(1, kCode.category(), kWhat);
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(1, kCode.category(), kWhat.c_str());
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_NE(std::string::npos, std::string{ error.what() }.find_first_of(kWhat));
+
+  error = TypeParam(1, kCode.category());
+  EXPECT_EQ(kCode, error.code());
+  EXPECT_EQ(kCode.message(), error.what());
+
+  EXPECT_EQ(error.code(), MakeError(typename EnumClass<TypeParam>::type(1)).code());
+
+  EXPECT_TRUE(std::is_error_code_enum<typename EnumClass<TypeParam>::type>::value);
 }
 
 }  // namespace test

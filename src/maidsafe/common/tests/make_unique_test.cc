@@ -26,15 +26,15 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("make_unique", "[make_unique][Unit]") {
-  CHECK((*make_unique<int>()) == 0);
-  CHECK((*make_unique<int>(1314)) == 1314);
-  CHECK(make_unique<std::string>()->empty());
-  CHECK((*make_unique<std::string>("Caol Ila")) == "Caol Ila");
-  CHECK((*make_unique<std::string>(6, 'z')) == "zzzzzz");
+TEST(MakeUniqueTest, BEH_MakeUnique) {
+  EXPECT_EQ((*make_unique<int>()), 0);
+  EXPECT_EQ((*make_unique<int>(1314)), 1314);
+  EXPECT_TRUE(make_unique<std::string>()->empty());
+  EXPECT_EQ((*make_unique<std::string>("Caol Ila")), "Caol Ila");
+  EXPECT_EQ((*make_unique<std::string>(6, 'z')), "zzzzzz");
   auto up(make_unique<int[]>(5));
   for (int i = 0; i < 5; ++i)
-    CHECK(up[i] == 0);
+    EXPECT_EQ(up[i], 0);
 }
 
 }  // namespace test

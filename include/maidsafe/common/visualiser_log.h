@@ -41,6 +41,14 @@ namespace test { class VisualiserLogTest; }
 
 namespace log {
 
+template<typename T>
+struct is_string : public std::integral_constant<
+    bool, std::is_same<char*, typename std::decay<T>::type>::value ||
+          std::is_same<const char*, typename std::decay<T>::type>::value> {};
+
+template<>
+struct is_string<std::string> : std::true_type {};
+
 class VisualiserLogMessage {
  public:
   template <typename PersonaEnum, typename ActionEnum>
@@ -48,6 +56,7 @@ class VisualiserLogMessage {
                        Identity value2 = Identity{})
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(value1.string()),
         kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
         kPersonaId_(persona),
@@ -58,6 +67,7 @@ class VisualiserLogMessage {
   VisualiserLogMessage(PersonaEnum persona, ActionEnum action, T value)
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(std::to_string(value)),
         kValue2_(),
         kPersonaId_(persona),
@@ -67,8 +77,20 @@ class VisualiserLogMessage {
   VisualiserLogMessage(ActionEnum action, Identity value1, Identity value2 = Identity{})
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(value1.string()),
         kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
+        kPersonaId_(),
+        kActionId_(action) {}
+
+  template <typename ActionEnum, typename T,
+            typename std::enable_if<is_string<T>::value>::type* = nullptr>
+  VisualiserLogMessage(ActionEnum action, Identity value1, T value2)
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
+        kValue1_(value1.string()),
+        kValue2_(value2),
         kPersonaId_(),
         kActionId_(action) {}
 
@@ -77,12 +99,18 @@ class VisualiserLogMessage {
   VisualiserLogMessage(ActionEnum action, T value)
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
         kValue1_(std::to_string(value)),
         kValue2_(),
         kPersonaId_(),
         kActionId_(action) {}
 
   ~VisualiserLogMessage();
+
+  // Nasty workaround to allow VaultManager to pretend to be a given crashed vault in order to send
+  // a VLOG kVaultStopped message.  Assumes kVaultStopped has value of 18.
+  static void SendVaultStoppedMessage(const std::string& vault_debug_id,
+                                      const std::string& session_id, int exit_code);
 
   friend class test::VisualiserLogTest;
 
@@ -111,7 +139,7 @@ class VisualiserLogMessage {
   void SendToServer() const;
   void WriteToFile() const;
 
-  const std::string kTimestamp_, kVaultId_, kValue1_, kValue2_;
+  const std::string kTimestamp_, kVaultId_, kSessionId_, kValue1_, kValue2_;
   const Enum kPersonaId_, kActionId_;
 };
 

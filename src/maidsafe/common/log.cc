@@ -226,7 +226,7 @@ std::string GetColouredLogEntry(char log_level) {
 #else
   oss << ' ';
 #endif
-  oss << detail::GetLocalTime();
+  oss << detail::GetUTCTime();
   return oss.str();
 }
 
@@ -316,6 +316,7 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
     unused_options.emplace_back(unused.c_str(), unused.c_str() + unused.size() + 1u);
 }
 
+#if USE_LOGGING
 void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mode,
              fs::path& log_folder_path) {
   if (col_mode != -1) {
@@ -327,6 +328,7 @@ void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mod
   }
   log_folder_path = log_folder;
 }
+#endif
 
 int GetLogLevel(std::string level) {
   boost::to_lower(level);
@@ -438,11 +440,13 @@ TestLogMessage::~TestLogMessage() {
   std::string log_entry(stream_.str());
   FilterMap filter(Logging::Instance().Filter());
   auto print_functor([colour, log_entry, filter] {
-    if (Logging::Instance().LogToConsole())
-      ColouredPrint(colour, log_entry);
-    for (auto& entry : filter)
-      Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
-    if (filter.size() != 1)
+//     if (Logging::Instance().LogToConsole())
+    ColouredPrint(colour, log_entry);
+//     for (auto& entry : filter)
+//       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
+    if (filter.size() == 1)
+      Logging::Instance().WriteToProjectLogfile(filter.begin()->first, log_entry);
+    else
       Logging::Instance().WriteToCombinedLogfile(log_entry);
   });
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
@@ -486,9 +490,12 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
       ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
       if (IsHelpOption(log_config))
         return;
+#if USE_LOGGING
+      background_ = maidsafe::make_unique<Active>();
       DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
       HandleFilterOptions();
       SetStreams();
+#endif
     }
     catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
@@ -510,9 +517,12 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
       ParseProgramOptions(log_config, config_file, argc, argv, log_variables_, unused_options);
       if (IsHelpOption(log_config))
         return;
+#if USE_LOGGING
+      background_ = maidsafe::make_unique<Active>();
       DoCasts(colour_mode, log_folder, colour_mode_, log_folder_);
       HandleFilterOptions();
       SetStreams();
+#endif
     }
     catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
@@ -521,21 +531,21 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
   return unused_options;
 }
 
-void Logging::InitialiseVlog(const std::string& prefix, const std::string& server_name,
-                             uint16_t server_port, const std::string& server_dir) {
+void Logging::InitialiseVlog(const std::string& prefix, const std::string& session_id) {
   if (visualiser_.initialised)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::already_initialised));
   std::call_once(visualiser_.initialised_once_flag, [&] {
     visualiser_.initialised = true;
     visualiser_.prefix = prefix;
+    visualiser_.session_id = session_id;
+    if (visualiser_.session_id.empty())
+      LOG(kWarning) << "VLOG messages disabled since Vlog Session ID is empty.";
     visualiser_.logfile.stream.open(GetLogfileName("visualiser").c_str(), std::ios_base::trunc);
-    visualiser_.server_name = server_name;
-    visualiser_.server_port = server_port;
-    visualiser_.server_dir = server_dir;
-    visualiser_.server_stream.connect(server_name, std::to_string(server_port));
-    if (!visualiser_.server_stream) {
+    visualiser_.server_stream->connect(visualiser_.server_name,
+                                       std::to_string(visualiser_.server_port));
+    if (!(*visualiser_.server_stream)) {
       LOG(kError) << "Failed to connect to VLOG server: "
-                  << visualiser_.server_stream.error().message();
+                  << visualiser_.server_stream->error().message();
     }
   });
 }
@@ -571,7 +581,7 @@ void Logging::HandleFilterOptions() {
 
 fs::path Logging::GetLogfileName(const std::string& project) const {
   char mbstr[100];
-  std::strftime(mbstr, 100, "%Y-%m-%d_%H-%M-%S_", std::localtime(&start_time_));  // NOLINT (Fraser)
+  std::strftime(mbstr, 100, "%Y-%m-%d_%H-%M-%S_", std::gmtime(&start_time_));  // NOLINT (Fraser)
   fs::path name(log_folder_ / mbstr);
   name += project + ".log";
   return name;
@@ -591,7 +601,13 @@ void Logging::SetStreams() {
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
 }
 
-void Logging::Send(std::function<void()> message_functor) { background_.Send(message_functor); }
+void Logging::Send(std::function<void()> message_functor) {
+#if USE_LOGGING
+  background_->Send(message_functor);
+#else
+  message_functor();
+#endif
+}
 
 void Logging::WriteToLogfile(const std::string& message, LogFile& log_file) {
   std::lock_guard<std::mutex> lock(log_file.mutex);
@@ -599,6 +615,10 @@ void Logging::WriteToLogfile(const std::string& message, LogFile& log_file) {
     log_file.stream.write(message.c_str(), message.size());
     log_file.stream.flush();
   }
+}
+
+void Logging::ResetVisualiserServerStream() {
+  visualiser_.server_stream.reset();
 }
 
 void Logging::WriteToCombinedLogfile(const std::string& message) {
@@ -610,37 +630,43 @@ void Logging::WriteToVisualiserLogfile(const std::string& message) {
 }
 
 void Logging::WriteToVisualiserServer(const std::string& message) {
-  if (visualiser_.server_stream) {
-    visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
-        << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
-        << "Content-Type: application/x-www-form-urlencoded\r\n"
-        << "Content-Length: " << std::to_string(message.size()) << "\r\n"
-        << "\r\n" << message << "\r\n" << std::flush;
-    auto read_response([&](char delimiter)->std::string {
-      std::string response;
-      if (!std::getline(visualiser_.server_stream, response, delimiter)) {
-        LOG(kWarning) << "Failed to read VLOG server response.";
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-      }
-      return response;
-    });
-    try {
-      read_response(' ');  // "HTTP/1.1"
-      unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
-      if (http_code != 200) {
-        std::string http_code_message{ read_response('\r') };
-        LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
-                      << http_code_message << "\" to request \"" << message << "\"";
-      }
+  if (!visualiser_.server_stream) {
+    visualiser_.server_stream.reset(new boost::asio::ip::tcp::iostream());
+    visualiser_.server_stream->connect(visualiser_.server_name,
+                                       std::to_string(visualiser_.server_port));
+    if (!(*visualiser_.server_stream)) {
+      LOG(kError) << "Failed to re-connect to VLOG server: "
+                  << visualiser_.server_stream->error().message();
+      return;
     }
-    catch (const std::exception& e) {
-      LOG(kWarning) << e.what();
-    }
-    std::array<char, 100> discarded;
-    while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
-  } else {
-    LOG(kWarning) << "Not connected to VLOG server.";
   }
+  *visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
+      << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
+      << "Content-Type: application/x-www-form-urlencoded\r\n"
+      << "Content-Length: " << std::to_string(message.size()) << "\r\n"
+      << "\r\n" << message << "\r\n" << std::flush;
+  auto read_response([&](char delimiter)->std::string {
+    std::string response;
+    if (!std::getline(*visualiser_.server_stream, response, delimiter)) {
+      LOG(kWarning) << "Failed to read VLOG server response.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
+    }
+    return response;
+  });
+  try {
+    read_response(' ');  // "HTTP/1.1"
+    unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
+    if (http_code != 200) {
+      std::string http_code_message{ read_response('\r') };
+      LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
+                    << http_code_message << "\" to request \"" << message << "\"";
+    }
+  }
+  catch (const std::exception& e) {
+    LOG(kWarning) << e.what();
+  }
+  std::array<char, 100> discarded;
+  while (visualiser_.server_stream->readsome(&discarded[0], discarded.size())) {}
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
@@ -662,6 +688,12 @@ std::string Logging::VlogPrefix() const {
   if (!visualiser_.initialised)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
   return visualiser_.prefix;
+}
+
+std::string Logging::VlogSessionId() const {
+  if (!visualiser_.initialised)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
+  return visualiser_.session_id;
 }
 
 namespace detail {

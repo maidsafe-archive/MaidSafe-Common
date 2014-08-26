@@ -74,7 +74,9 @@ enum class CommonErrors {
   no_such_element,
   serialisation_error,
   parsing_error,
-  not_a_directory
+  not_a_directory,
+  db_busy,
+  db_error
 };
 
 class common_error : public maidsafe_error {
@@ -150,7 +152,14 @@ passport_error MakeError(PassportErrors code);
 enum class EncryptErrors {
   bad_sequence = 1,
   no_data,
-  invalid_encryption_version
+  invalid_encryption_version,
+  failed_to_write,
+  failed_to_prepare_for_write,
+  failed_to_get_chunk,
+  failed_to_flush,
+  failed_to_decrypt,
+  failed_to_read,
+  encryptor_closed
 };
 
 class encrypt_error : public maidsafe_error {
@@ -172,6 +181,7 @@ encrypt_error MakeError(EncryptErrors code);
 
 enum class RoutingErrors {
   timed_out = 1,
+  timer_cancelled,
   not_in_range,
   not_connected
 };
@@ -220,7 +230,8 @@ enum class DriveErrors {
   failed_to_mount,
   permission_denied,
   no_such_file,
-  file_exists
+  file_exists,
+  driver_not_installed
 };
 
 class drive_error : public maidsafe_error {
@@ -349,6 +360,9 @@ struct is_error_code_enum<maidsafe::DriveErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::VaultErrors> : public true_type {};
+
+template <>
+struct is_error_code_enum<maidsafe::VaultManagerErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::ApiErrors> : public true_type {};

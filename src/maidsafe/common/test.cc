@@ -18,31 +18,90 @@
 
 #include "maidsafe/common/test.h"
 
+#include <cstdint>
 #include <future>
+#include <iostream>
 #include <vector>
 
 #include "boost/filesystem/operations.hpp"
+#include "boost/program_options.hpp"
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
-#include "gtest/gtest.h"
-
+#include "maidsafe/common/config.h"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
+namespace po = boost::program_options;
 
 namespace maidsafe {
 
 namespace test {
 
+namespace {
+
+boost::optional<fs::path> BootstrapFilePath(const fs::path& bootstrap_file_path = fs::path{ "" }) {
+  static boost::optional<fs::path> bootstrap_file;
+  if (!bootstrap_file_path.empty())
+    bootstrap_file = bootstrap_file_path;
+  return bootstrap_file;
+}
+
+po::options_description AvailableOptions() {
+  po::options_description test_options("Test options");
+  test_options.add_options()
+    ("seed", po::value<uint32_t>(), "Seed for main psuedo random number generator.")
+    ("delay", po::value<uint32_t>(), "Initial delay at start of execution of 'main' (in seconds).")
+    ("bootstrap_file", po::value<std::string>(), "Path to bootstrap file.");
+  return test_options;
+}
+
+po::variables_map ParseOptions(int argc, char* argv[],
+                               const po::options_description& test_options) {
+  po::variables_map variables_map;
+  try {
+    po::store(po::command_line_parser(argc, argv).options(test_options).allow_unregistered().run(),
+              variables_map);
+    po::notify(variables_map);
+  }
+  catch (const std::exception& e) {
+    std::cout << "Parser error:\n " << e.what() << "\nRun with -h to see all options.\n";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  }
+  return variables_map;
+}
+
+void HandleHelp(const po::variables_map& variables_map) {
+  if (variables_map.count("help")) {
+    std::cout << AvailableOptions() << "\n\n";
+    throw MakeError(CommonErrors::success);
+  }
+}
+
+void HandleSeed(const po::variables_map& variables_map) {
+  if (variables_map.count("seed"))
+    maidsafe::detail::set_random_number_generator_seed(variables_map["seed"].as<uint32_t>());
+}
+
+void HandleDelay(const po::variables_map& variables_map) {
+  if (variables_map.count("delay"))
+    Sleep(std::chrono::seconds(variables_map["delay"].as<uint32_t>()));
+}
+
+void HandleBootstrapFile(const po::variables_map& variables_map) {
+  if (variables_map.count("bootstrap_file"))
+    BootstrapFilePath(variables_map["bootstrap_file"].as<std::string>());
+}
+
+}  // unnamed namespace
+
 TestPath CreateTestPath(std::string test_prefix) {
   if (test_prefix.empty())
     test_prefix = "MaidSafe_Test";
 
-  if (test_prefix.substr(0, 13) != "MaidSafe_Test" && test_prefix.substr(0, 12) != "Sigmoid_Test") {
-    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional"
-                  << " test name>\" or \"Sigmoid_Test<optional test name>\".";
-  }
+  if (test_prefix.substr(0, 13) != "MaidSafe_Test")
+    LOG(kWarning) << "Test prefix should preferably be \"MaidSafe_Test<optional test name>\".";
 
   test_prefix += "_%%%%-%%%%-%%%%";
 
@@ -79,15 +138,11 @@ TestPath CreateTestPath(std::string test_prefix) {
 
 void RunInParallel(int thread_count, std::function<void()> functor) {
   functor();
-#ifdef MAIDSAFE_WIN32
   std::vector<std::future<void>> futures;
   for (int i = 0; i < thread_count; ++i)
     futures.push_back(std::async(std::launch::async, functor));
   for (auto& future : futures)
     future.get();
-#else  // until catch handles threaded tests on Linux
-  static_cast<void>(thread_count);
-#endif
 }
 
 uint16_t GetRandomPort() {
@@ -103,36 +158,85 @@ uint16_t GetRandomPort() {
   return port;
 }
 
+#ifdef TESTING
+
+void HandleTestOptions(int argc, char* argv[]) {
+  try {
+    auto test_options(AvailableOptions());
+    test_options.add_options()("help,h", "");
+    auto variables_map(ParseOptions(argc, argv, test_options));
+    HandleHelp(variables_map);
+    HandleSeed(variables_map);
+    HandleDelay(variables_map);
+    HandleBootstrapFile(variables_map);
+  }
+  catch (const maidsafe::maidsafe_error& error) {
+    // Success is thrown when Help option is invoked.
+    if (error.code() != maidsafe::make_error_code(maidsafe::CommonErrors::success))
+      std::cout << "Exception: " << error.what() << '\n';
+  }
+  catch (const std::exception& e) {
+    std::cout << "Exception: " << e.what() << '\n';
+  }
+}
+
+RandomNumberSeeder::RandomNumberSeeder()
+    : current_seed_(maidsafe::detail::random_number_generator_seed()) {}
+
+void RandomNumberSeeder::OnTestStart(const testing::TestInfo& /*test_info*/) {
+  // We need to set the seed at the start of every test so that when we run all tests (e.g. if we
+  // just run ./test_encrypt rather than using CTest where each test is run as a standalone
+  // process), they don't all use the first test's seed.
+  maidsafe::detail::set_random_number_generator_seed(current_seed_);
+}
+
+void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
+  if (test_info.result()->Failed()) {
+    TLOG(kRed) << "To potentially replicate the failure, try re-running with:\n   --gtest_filter="
+               << test_info.test_case_name() << '.' << test_info.name() << " --seed "
+               << current_seed_ << '\n';
+  }
+  ++current_seed_;
+}
+
+boost::optional<fs::path> GetBootstrapFilePath() { return BootstrapFilePath(); }
+
+void PrepareBootstrapFile(fs::path bootstrap_file) {
+  try {
+    if (bootstrap_file.string() == "none") {
+      fs::remove(ThisExecutableDir() / "bootstrap_override.dat");
+      return;
+    }
+    if (bootstrap_file.is_relative())
+      bootstrap_file = fs::current_path() / bootstrap_file;
+    fs::copy_file(bootstrap_file, ThisExecutableDir() / "bootstrap_override.dat",
+                  fs::copy_option::overwrite_if_exists);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to handle bootstrap override file: " << e.what();
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
+  }
+}
+
+void BootstrapFileHandler::OnTestStart(const testing::TestInfo& /*test_info*/) {
+  if (GetBootstrapFilePath())
+    PrepareBootstrapFile(*GetBootstrapFilePath());
+}
+
+#endif
+
 namespace detail {
 
 int ExecuteGTestMain(int argc, char* argv[]) {
+  HandleTestOptions(argc, argv);
   log::Logging::Instance().Initialise(argc, argv);
-#if defined(__clang__) || defined(__GNUC__)
-  // To allow Clang and GCC advanced diagnostics to work properly.
-  testing::FLAGS_gtest_catch_exceptions = true;
-#else
   testing::FLAGS_gtest_catch_exceptions = false;
-#endif
   testing::InitGoogleTest(&argc, argv);
+  testing::UnitTest::GetInstance()->listeners().Append(new BootstrapFileHandler);
+  testing::UnitTest::GetInstance()->listeners().Append(new RandomNumberSeeder);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
   return (test_count == 0) ? -1 : result;
-}
-
-int ExecuteCatchMain(int argc, char* argv[]) {
-  auto unused_options(log::Logging::Instance().Initialise(argc, argv));
-
-  std::vector<char*> unused_chars;
-  for (auto& unused_option : unused_options)
-    unused_chars.push_back(&unused_option[0]);
-
-  Catch::Session session;
-  auto command_line_result(
-      session.applyCommandLine(static_cast<int>(unused_options.size()), &unused_chars[0],
-                               Catch::Session::OnUnusedOptions::Ignore));
-  if (command_line_result != 0)
-    LOG(kWarning) << "Catch command line parsing error: " << command_line_result;
-  return session.run();
 }
 
 }  // namespace detail

@@ -1,20 +1,20 @@
 /*  Copyright 2014 MaidSafe.net limited
 
-This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
-version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
-licence you accepted on initial access to the Software (the "Licences").
+    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+    licence you accepted on initial access to the Software (the "Licences").
 
-By contributing code to the MaidSafe Software, or to this project generally, you agree to be
-bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
-directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
-available at: http://www.maidsafe.net/licenses
+    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+    available at: http://www.maidsafe.net/licenses
 
-Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
-under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
-OF ANY KIND, either express or implied.
+    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied.
 
-See the Licences for the specific language governing permissions and limitations relating to
-use of the MaidSafe Software.                                                                 */
+    See the Licences for the specific language governing permissions and limitations relating to
+    use of the MaidSafe Software.                                                                 */
 
 #include <algorithm>
 #include <string>
@@ -65,7 +65,7 @@ void GetValues() {
 void InitialiseNetwork() {
   all_nodes.reserve(g_good_count);
   for (size_t i(0); i < g_good_count; ++i)
-    all_nodes.emplace_back(std::make_pair(NodeId(NodeId::kRandomId), true));
+    all_nodes.emplace_back(std::make_pair(NodeId(NodeId::IdType::kRandomId), true));
   TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes.\n";
 }
 
@@ -75,7 +75,8 @@ std::vector<NodeId> GetUniformlyDistributedTargetPoints() {
   std::vector<NodeId> steps;
   steps.reserve(kStepCount);
   crypto::BigInt step_size(
-    (NodeId(NodeId::kMaxId).ToStringEncoded(NodeId::EncodingType::kHex) + "h").c_str());
+      (NodeId(std::string(NodeId::kSize, -1)).ToStringEncoded(
+          NodeId::EncodingType::kHex) + "h").c_str());
   step_size /= kStepCount;
   crypto::BigInt step(0l);
   for (size_t i(0); i < kStepCount; ++i) {
@@ -117,7 +118,7 @@ std::vector<BadGroup> InjectBadGroups(std::vector<Node>& all_nodes,
   std::vector<BadGroup> bad_groups;
   while (bad_groups.size() < g_bad_group_count) {
     bad_groups.clear();
-    all_nodes.emplace_back(std::make_pair(NodeId(NodeId::kRandomId), false));
+    all_nodes.emplace_back(std::make_pair(NodeId(NodeId::IdType::kRandomId), false));
     // Iterate through evenly-spread target IDs
     for (const auto& target_id : steps) {
       auto new_bad_group(GetBadGroup(target_id));
@@ -143,7 +144,6 @@ std::vector<BadGroup> InjectBadGroups(std::vector<Node>& all_nodes,
 }
 
 void ReportBadGroups(const std::vector<BadGroup>& bad_groups) {
-  std::string output;
   for (size_t i(0); i < bad_groups.size(); ++i) {
     TLOG(kDefaultColour) << "Bad group " << i << " close to target "
                          << DebugId(bad_groups[i].first) << ":\n";
@@ -163,7 +163,7 @@ void CheckLinkedAddresses() {
   while (attempts < g_total_random_attempts) {
     bad_groups.clear();
     ++attempts;
-    NodeId target_id(NodeId::kRandomId);
+    NodeId target_id(NodeId::IdType::kRandomId);
     for (size_t i(0); i < g_bad_group_count; ++i) {
       if (i > 0)  // Hash previous target to get new linked one
         target_id = NodeId(crypto::Hash<crypto::SHA512>(target_id.string()).string());

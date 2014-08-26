@@ -41,19 +41,14 @@ include(../../cmake_modules/standard_setup.cmake)
 #==================================================================================================#
 set(CommonSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/common)
 ms_glob_dir(Common ${CommonSourcesDir} Common)
-ms_glob_dir(CommonTests ${CommonSourcesDir}/tests Tests)
+set(TestLibAllFiles ${CommonSourcesDir}/test.cc ${PROJECT_SOURCE_DIR}/include/maidsafe/common/test.h)
+list(REMOVE_ITEM CommonAllFiles ${TestLibAllFiles})
+ms_glob_dir(CommonTests ${CommonSourcesDir}/tests "Tests")
 ms_glob_dir(BoostTests ${CommonSourcesDir}/tests/boost "Boost Tests")
 
 ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authentication")
 ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
 ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
-
-ms_glob_dir(CommonDataStores ${CommonSourcesDir}/data_stores "Data Stores")
-ms_glob_dir(CommonDataStoresTests ${CommonSourcesDir}/data_stores/tests "Data Stores Tests")
-set(CommonDataStoresTestsUtilsFiles
-    ${CommonSourcesDir}/data_stores/tests/test_utils.cc
-    ${CommonSourcesDir}/data_stores/tests/test_utils.h)
-list(REMOVE_ITEM CommonDataStoresTestsAllFiles ${CommonDataStoresTestsUtilsFiles})
 
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
@@ -61,22 +56,13 @@ ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Type
 ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
+ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
+ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
+
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
-set(CommonGTestsAllFiles ${CommonTestsAllFiles})
-set(CommonTestsAllFiles ${CommonSourcesDir}/tests/asio_service_test.cc
-                        ${CommonSourcesDir}/tests/bounded_string_test.cc
-                        ${CommonSourcesDir}/tests/errors_test.cc
-                        ${CommonSourcesDir}/tests/ipc_test.cc
-                        ${CommonSourcesDir}/tests/make_unique_test.cc
-                        ${CommonSourcesDir}/tests/node_id_test.cc
-                        ${CommonSourcesDir}/tests/on_scope_exit_test.cc
-                        ${CommonSourcesDir}/tests/utils_test.cc
-                        ${CommonSourcesDir}/tests/cli_test.cc
-                        ${CommonSourcesDir}/tests/visualiser_log_test.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
-list(REMOVE_ITEM CommonGTestsAllFiles ${CommonTestsAllFiles} ${IpcChildProcess} ${ConfigTestFile})
-list(APPEND CommonTestsAllFiles ${TestsMain})
+list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
 
 
 #==================================================================================================#
@@ -88,8 +74,10 @@ ms_add_static_library(maidsafe_common
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
-    ${CommonDataTypesAllFiles})
-add_dependencies(maidsafe_common boost_process catch)
+    ${CommonDataTypesAllFiles}
+    ${CommonTcpAllFiles})
+add_dependencies(maidsafe_common boost_process)
+
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
@@ -97,19 +85,19 @@ target_include_directories(maidsafe_common
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
-ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir} ${CatchSourceDir})
+ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir})
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
 if(MSVC12 AND CMAKE_CL_64)
-  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved.")
+  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved (probably in Boost v1.56).")
   set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
     cryptopp
-    protobuf
-    gtest
+    protobuf_lite
+    sqlite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
     ${BoostFilesystemLibs}
@@ -155,40 +143,18 @@ target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
 if(MaidsafeTesting)
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles})
-  target_link_libraries(test_common maidsafe_common)
+  ms_add_static_library(maidsafe_test ${TestLibAllFiles})
+  target_link_libraries(maidsafe_test maidsafe_common gtest)
+
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
+  target_link_libraries(test_common maidsafe_test)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
   add_dependencies(test_common ipc_child_process)
 
-  ms_add_executable(test_config "Tests/Common" ${ConfigTestFile})
-  target_link_libraries(test_config maidsafe_common)
-
-  ms_add_executable(TESTcommon "Tests/Common" ${CommonGTestsAllFiles})
-  target_link_libraries(TESTcommon maidsafe_common)
-
-  macro(CommonTests Group)
-    foreach(TestSource ${ARGN})
-      get_filename_component(Exe ${TestSource} NAME_WE)
-      string(REGEX REPLACE "(.*)_test" "test_\\1" Exe ${Exe})
-      set(TestSources ${TestSource} ${TestsMain})
-      ms_add_executable(${Exe} "Tests/Common/${Group}" ${TestSources})
-      target_link_libraries(${Exe} ${${Exe}AdditionalLibs} maidsafe_common)
-      ms_add_catch_tests(${Exe})
-    endforeach()
-  endmacro()
-
-  ms_add_static_library(maidsafe_data_stores_test_utils ${CommonDataStoresTestsUtilsFiles})
-  set_target_properties(maidsafe_data_stores_test_utils PROPERTIES FOLDER "MaidSafe/Executables/Tests/Common/Data Store Tests")
-  target_include_directories(maidsafe_data_stores_test_utils PUBLIC ${PROJECT_SOURCE_DIR}/src)
-  target_link_libraries(maidsafe_data_stores_test_utils maidsafe_common)
-  foreach(TestExe test_data_store test_memory_buffer test_permanent_store)
-    set(${TestExe}AdditionalLibs maidsafe_data_stores_test_utils)
-  endforeach()
-  CommonTests("Data Store Tests" ${CommonDataStoresTestsAllFiles})
-
-  CommonTests("Data Types Tests" ${CommonDataTypesTestsAllFiles})
+  ms_add_executable(test_common_config "Tests/Common" ${ConfigTestFile})
+  target_link_libraries(test_common_config maidsafe_common)
 endif()
 
 ms_rename_outdated_built_exes()
@@ -205,11 +171,9 @@ include(standard_flags)
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
-  ms_add_style_test()
-  ms_add_catch_tests(test_common)
-  ms_add_catch_tests(test_config)
-  ms_add_gtests(TESTcommon)
-  ms_add_project_experimental()
+  ms_add_default_tests()
+  ms_add_gtests(test_common)
+  ms_add_gtests(test_common_config)
   ms_test_summary_output()
 endif()
 
@@ -217,22 +181,12 @@ endif()
 #==================================================================================================#
 # Package                                                                                          #
 #==================================================================================================#
-set(EXPORT_NAME maidsafe_common)
-install(TARGETS maidsafe_common EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME maidsafe_network_viewer)
-install(TARGETS maidsafe_network_viewer EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-set(EXPORT_NAME signing_tool)
-install(TARGETS signing_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
-set(EXPORT_NAME qa_tool)
-install(TARGETS qa_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
-set(EXPORT_NAME bootstrap_file_tool)
-install(TARGETS bootstrap_file_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
-set(EXPORT_NAME address_space_tool)
-install(TARGETS address_space_tool EXPORT ${EXPORT_NAME} RUNTIME DESTINATION bin)
+install(TARGETS maidsafe_common maidsafe_network_viewer COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
+install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Release RUNTIME DESTINATION bin)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-install(FILES ${CommonApi} DESTINATION include/maidsafe/common)
-install(FILES ${CommonAuthenticationApi} DESTINATION include/maidsafe/common/authentication)
-install(FILES ${CommonAuthenticationDetailApi} DESTINATION include/maidsafe/common/authentication/detail)
-install(FILES ${CommonDataStoresApi} DESTINATION include/maidsafe/common/data_stores)
-install(FILES ${CommonDataTypesApi} DESTINATION include/maidsafe/common/data_types)
-install(FILES ${CommonToolsApi} DESTINATION include/maidsafe/common/tools)
+if(MaidsafeTesting)
+  install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+endif()

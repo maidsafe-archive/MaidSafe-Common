@@ -76,6 +76,10 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Error parsing from protocol buffer";
     case CommonErrors::not_a_directory:
       return "Path is not a directory";
+    case CommonErrors::db_busy:
+      return "The database file is locked";
+    case CommonErrors::db_error:
+      return "SQL error";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";
@@ -182,6 +186,20 @@ std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "No data";
     case EncryptErrors::invalid_encryption_version:
       return "Invalid version of encryption algorithm";
+    case EncryptErrors::failed_to_write:
+      return "Failed to write";
+    case EncryptErrors::failed_to_prepare_for_write:
+      return "Failed to prepare for write";
+    case EncryptErrors::failed_to_get_chunk:
+      return "Failed to get chunk";
+    case EncryptErrors::failed_to_flush:
+      return "Failed to flush";
+    case EncryptErrors::failed_to_decrypt:
+      return "Failed to decrypt";
+    case EncryptErrors::failed_to_read:
+      return "Failed to read";
+    case EncryptErrors::encryptor_closed:
+      return "Encryptor closed";
     default:
       return "Unknown error in Encrypt";
   }
@@ -201,6 +219,8 @@ std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<RoutingErrors>(error_value)) {
     case RoutingErrors::timed_out:
       return "Timed out";
+    case RoutingErrors::timer_cancelled:
+      return "Timer cancelled";
     case RoutingErrors::not_in_range:
       return "Not in range";
     case RoutingErrors::not_connected:
@@ -256,6 +276,8 @@ std::string DriveCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "No such file";
     case DriveErrors::file_exists:
       return "File already exists";
+    case DriveErrors::driver_not_installed:
+      return "CbFs driver is not installed";
     default:
       return "Unknown error in Drive";
   }
@@ -316,9 +338,9 @@ std::error_condition VaultCategory::default_error_condition(int error_value) con
   }
 }
 
-const char* VaultManagerCategory::name() const MAIDSAFE_NOEXCEPT{ return "MaidSafe VaultManager"; }
+const char* VaultManagerCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe VaultManager"; }
 
-std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCEPT{
+std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultManagerErrors>(error_value)) {
     case VaultManagerErrors::connection_not_found:
       return "IPC connection not found";
@@ -344,7 +366,7 @@ std::string VaultManagerCategory::message(int error_value) const MAIDSAFE_NOEXCE
 }
 
 std::error_condition VaultManagerCategory::default_error_condition(int error_value) const
-    MAIDSAFE_NOEXCEPT{
+    MAIDSAFE_NOEXCEPT {
   switch (static_cast<VaultManagerErrors>(error_value)) {
     case VaultManagerErrors::connection_not_found:
       return std::errc::not_connected;
@@ -361,7 +383,7 @@ std::error_condition VaultManagerCategory::default_error_condition(int error_val
   }
 }
 
-const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT{ return "Client"; }
+const char* ApiCategory::name() const MAIDSAFE_NOEXCEPT { return "Client"; }
 
 std::string ApiCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<ApiErrors>(error_value)) {

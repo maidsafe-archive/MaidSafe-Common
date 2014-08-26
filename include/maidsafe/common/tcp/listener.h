@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,52 +16,49 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_STORES_MEMORY_BUFFER_H_
-#define MAIDSAFE_COMMON_DATA_STORES_MEMORY_BUFFER_H_
+#ifndef MAIDSAFE_COMMON_TCP_LISTENER_H_
+#define MAIDSAFE_COMMON_TCP_LISTENER_H_
 
+#include <functional>
+#include <memory>
 #include <mutex>
-#include <utility>
 
-#include "boost/circular_buffer.hpp"
+#include "boost/asio/ip/tcp.hpp"
 
+#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/data_types/data_name_variant.h"
 
 namespace maidsafe {
 
-namespace data_stores {
+namespace tcp {
 
-namespace test {
-
-class MemoryBufferTest;
-
-}  // namespace test
-
-class MemoryBuffer {
+class Listener : public std::enable_shared_from_this<Listener> {
  public:
-  typedef DataNameVariant KeyType;
-  typedef boost::circular_buffer<std::pair<KeyType, NonEmptyString>> MemoryBufferType;
+  Listener(const Listener&) = delete;
+  Listener(Listener&&) = delete;
+  Listener& operator=(Listener) = delete;
 
-  explicit MemoryBuffer(MemoryUsage max_memory_usage);
-
-  ~MemoryBuffer();
-
-  void Store(const KeyType& key, const NonEmptyString& value);
-  NonEmptyString Get(const KeyType& key);
-  void Delete(const KeyType& key);
+  static ListenerPtr MakeShared(AsioService &asio_service,
+                                NewConnectionFunctor on_new_connection, Port desired_port);
+  Port ListeningPort() const;
+  void StopListening();
 
  private:
-  MemoryBuffer(const MemoryBuffer&);
-  MemoryBuffer& operator=(const MemoryBuffer&);
+  Listener(AsioService &asio_service, NewConnectionFunctor on_new_connection);
 
-  MemoryBufferType::iterator Find(const KeyType& key);
+  void StartListening(Port desired_port);
+  void DoStartListening(Port port);
+  void HandleAccept(ConnectionPtr accepted_connection, const boost::system::error_code& ec);
+  void DoStopListening();
 
-  MemoryBufferType memory_buffer_;
-  mutable std::mutex mutex_;
+  AsioService& asio_service_;
+  std::once_flag stop_listening_flag_;
+  NewConnectionFunctor on_new_connection_;
+  boost::asio::ip::tcp::acceptor acceptor_;
 };
 
-}  // namespace data_stores
+}  // namespace tcp
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DATA_STORES_MEMORY_BUFFER_H_
+#endif  // MAIDSAFE_COMMON_TCP_LISTENER_H_

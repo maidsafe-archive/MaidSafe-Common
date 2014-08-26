@@ -20,6 +20,9 @@
 #define MAIDSAFE_COMMON_TYPES_H_
 
 #include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -49,6 +52,20 @@ struct is_payable : public std::true_type {};
 
 template <typename T>
 struct is_unique_on_network : public std::true_type {};
+
+namespace tcp {
+
+class Connection;
+class Listener;
+
+typedef std::shared_ptr<Connection> ConnectionPtr;
+typedef std::shared_ptr<Listener> ListenerPtr;
+typedef std::function<void(std::string)> MessageReceivedFunctor;
+typedef std::function<void()> ConnectionClosedFunctor;
+typedef std::function<void(ConnectionPtr)> NewConnectionFunctor;
+typedef uint16_t Port;
+
+}  // namespace tcp
 
 }  // namespace maidsafe
 

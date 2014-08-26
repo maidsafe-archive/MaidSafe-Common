@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/data_stores/data_buffer.h"
+#include "maidsafe/common/data_buffer.h"
 
 #include <memory>
 
@@ -32,8 +32,6 @@ namespace fs = boost::filesystem;
 namespace mpl = boost::mpl;
 
 namespace maidsafe {
-
-namespace data_stores {
 
 namespace test {
 
@@ -76,7 +74,7 @@ DataNameVariant GenerateKeyFromValue<DataNameVariant>(const NonEmptyString& valu
 
 }  // unnamed namespace
 
-class DataBufferTest {
+class DataBufferTest : public testing::Test {
  protected:
   typedef DataNameVariant KeyType;
   typedef DataBuffer<KeyType> DataBufferType;
@@ -99,9 +97,9 @@ class DataBufferTest {
       KeyType popped_key(key_value_pairs[index].first);
       NonEmptyString popped_value(key_value_pairs[index].second);
       GetIdentityVisitor get_identity;
-      CHECK(boost::apply_visitor(get_identity, popped_key) ==
+      EXPECT_TRUE(boost::apply_visitor(get_identity, popped_key) ==
             boost::apply_visitor(get_identity, key));
-      CHECK(popped_value == value);
+      EXPECT_EQ(popped_value, value);
       ++index;
     }
     cond_var.notify_one();
@@ -133,10 +131,10 @@ class DataBufferTest {
     NonEmptyString value, recovered;
     KeyType key;
 
-    REQUIRE(fs::create_directories(data_buffer_path_, error_code));
-    REQUIRE(0 == error_code.value());
-    REQUIRE(fs::exists(data_buffer_path_, error_code));
-    REQUIRE(0 == error_code.value());
+    EXPECT_TRUE(fs::create_directories(data_buffer_path_, error_code));
+    EXPECT_EQ(0, error_code.value());
+    EXPECT_TRUE(fs::exists(data_buffer_path_, error_code));
+    EXPECT_EQ(0, error_code.value());
 
     for (size_t i = 0; i < num_entries; ++i) {
       value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(OneKB))));
@@ -147,9 +145,9 @@ class DataBufferTest {
                                           DiskUsage(num_disk_entries * OneKB), pop_functor,
                                           data_buffer_path_));
     for (auto key_value : key_value_pairs) {
-      CHECK_NOTHROW(data_buffer_->Store(key_value.first, key_value.second));
-      CHECK_NOTHROW(recovered = data_buffer_->Get(key_value.first));
-      CHECK(key_value.second == recovered);
+      EXPECT_NO_THROW(data_buffer_->Store(key_value.first, key_value.second));
+      EXPECT_NO_THROW(recovered = data_buffer_->Get(key_value.first));
+      EXPECT_EQ(key_value.second, recovered);
     }
     return key_value_pairs;
   }
@@ -167,79 +165,79 @@ class DataBufferTest {
   DataBufferPtr data_buffer_;
 };
 
-TEST_CASE_METHOD(DataBufferTest, "Constructor", "[DataBuffer][Behavioural]") {
-  CHECK_NOTHROW(DataBufferType(MemoryUsage(0), DiskUsage(0), pop_functor_));
-  CHECK_NOTHROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_));
-  CHECK_THROWS_AS(DataBufferType(MemoryUsage(1), DiskUsage(0), pop_functor_), common_error);
-  CHECK_THROWS_AS(DataBufferType(MemoryUsage(2), DiskUsage(1), pop_functor_), common_error);
-  CHECK_THROWS_AS(DataBufferType(MemoryUsage(200001), DiskUsage(200000), pop_functor_),
+TEST_F(DataBufferTest, BEH_Constructor){
+  EXPECT_NO_THROW(DataBufferType(MemoryUsage(0), DiskUsage(0), pop_functor_));
+  EXPECT_NO_THROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_));
+  EXPECT_THROW(DataBufferType(MemoryUsage(1), DiskUsage(0), pop_functor_), common_error);
+  EXPECT_THROW(DataBufferType(MemoryUsage(2), DiskUsage(1), pop_functor_), common_error);
+  EXPECT_THROW(DataBufferType(MemoryUsage(200001), DiskUsage(200000), pop_functor_),
                   common_error);
-  CHECK_NOTHROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_));
+  EXPECT_NO_THROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_));
 
   // Create a path to a file, and check that it can't be used as the disk buffer path.
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
-  REQUIRE(!test_path->empty());
+  EXPECT_TRUE(!test_path->empty());
   boost::filesystem::path file_path(*test_path / "File");
-  REQUIRE(WriteFile(file_path, " "));
-  CHECK_THROWS_AS(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_, file_path),
+  EXPECT_TRUE(WriteFile(file_path, " "));
+  EXPECT_THROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_, file_path),
                   common_error);
-  CHECK_THROWS_AS(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
+  EXPECT_THROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
                                  file_path / "Directory"), common_error);
 
   // Create a path to a directory, and check that it can be used as the disk buffer path.
   boost::filesystem::path directory_path(*test_path / "Directory");
-  CHECK_NOTHROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_, directory_path));
-  CHECK(fs::exists(directory_path));
+  EXPECT_NO_THROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_, directory_path));
+  EXPECT_TRUE(fs::exists(directory_path));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "Destructor", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_Destructor) {
   boost::filesystem::path data_buffer_path;
   {
     DataBufferType data_buffer(MemoryUsage(1), DiskUsage(1), pop_functor_);
     data_buffer_path = GetkDiskBuffer(data_buffer);
-    REQUIRE(fs::exists(data_buffer_path));
+    EXPECT_TRUE(fs::exists(data_buffer_path));
   }
-  REQUIRE(!fs::exists(data_buffer_path));
+  EXPECT_TRUE(!fs::exists(data_buffer_path));
 
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
-  REQUIRE(!test_path->empty());
+  EXPECT_TRUE(!test_path->empty());
   data_buffer_path = *test_path / "Directory";
   {
     DataBufferType data_buffer(MemoryUsage(1), DiskUsage(1), pop_functor_, data_buffer_path);
-    REQUIRE(fs::exists(data_buffer_path));
+    EXPECT_TRUE(fs::exists(data_buffer_path));
   }
-  REQUIRE(fs::exists(data_buffer_path));
-  REQUIRE(DeleteDirectory(*test_path));
-  REQUIRE(!fs::exists(data_buffer_path));
+  EXPECT_TRUE(fs::exists(data_buffer_path));
+  EXPECT_TRUE(DeleteDirectory(*test_path));
+  EXPECT_TRUE(!fs::exists(data_buffer_path));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "SetMaxDiskMemoryUsage", "[DataBuffer][Behavioural]") {
-  REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ - 1)));
-  REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_)));
-  REQUIRE_THROWS_AS(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ + 1)),
+TEST_F(DataBufferTest, BEH_SetMaxDiskMemoryUsage) {
+  ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ - 1)));
+  ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_)));
+  ASSERT_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ + 1)),
                     common_error);
-  REQUIRE_THROWS_AS(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ - 1)),
+  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ - 1)),
                     common_error);
-  REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_)));
-  REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
-  REQUIRE_THROWS_AS(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
+  ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_)));
+  ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
+  ASSERT_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
                     common_error);
-  REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(1))));
-  REQUIRE_THROWS_AS(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
+  ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(1))));
+  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
                     common_error);
-  REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(1))));
-  REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(0))));
-  REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))));
-  REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(std::numeric_limits<uint64_t>().max())));
+  ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(1))));
+  ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(0))));
+  ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))));
+  ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(std::numeric_limits<uint64_t>().max())));
   MemoryUsage memory_usage(std::numeric_limits<uint64_t>().max());
-  REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(memory_usage)));
-  REQUIRE_THROWS_AS(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
+  ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(memory_usage)));
+  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
                     common_error);
-  REQUIRE_NOTHROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
-  REQUIRE_NOTHROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
+  ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
+  ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "RemoveDiskBuffer", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_RemoveDiskBuffer) {
   boost::system::error_code error_code;
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   fs::path data_buffer_path(*test_path / "data_buffer");
@@ -249,54 +247,54 @@ TEST_CASE_METHOD(DataBufferTest, "RemoveDiskBuffer", "[DataBuffer][Behavioural]"
                                         pop_functor_, data_buffer_path));
   auto key(GenerateRandomKey<KeyType>());
   NonEmptyString small_value(std::string(kMemorySize, 'a'));
-  REQUIRE_NOTHROW(data_buffer_->Store(key, small_value));
-  REQUIRE_NOTHROW(data_buffer_->Delete(key));
-  REQUIRE(1 == fs::remove_all(data_buffer_path, error_code));
-  REQUIRE_FALSE(fs::exists(data_buffer_path, error_code));
+  ASSERT_NO_THROW(data_buffer_->Store(key, small_value));
+  ASSERT_NO_THROW(data_buffer_->Delete(key));
+  EXPECT_EQ(1, fs::remove_all(data_buffer_path, error_code));
+  ASSERT_FALSE(fs::exists(data_buffer_path, error_code));
   // Fits into memory buffer successfully.  Background thread in future should throw, causing other
   // API functions to throw on next execution.
-  REQUIRE_NOTHROW(data_buffer_->Store(key, small_value));
+  ASSERT_NO_THROW(data_buffer_->Store(key, small_value));
   Sleep(std::chrono::seconds(1));
-  REQUIRE_THROWS_AS(data_buffer_->Store(key, small_value), common_error);
-  REQUIRE_THROWS_AS(data_buffer_->Get(key), common_error);
-  REQUIRE_THROWS_AS(data_buffer_->Delete(key), common_error);
+  ASSERT_THROW(data_buffer_->Store(key, small_value), common_error);
+  ASSERT_THROW(data_buffer_->Get(key), common_error);
+  ASSERT_THROW(data_buffer_->Delete(key), common_error);
 
   data_buffer_.reset(new DataBufferType(MemoryUsage(kMemorySize), DiskUsage(kDiskSize),
                                         pop_functor_, data_buffer_path));
   NonEmptyString large_value(std::string(kDiskSize, 'a'));
-  REQUIRE_NOTHROW(data_buffer_->Store(key, large_value));
-  REQUIRE_NOTHROW(data_buffer_->Delete(key));
-  REQUIRE(1 == fs::remove_all(data_buffer_path, error_code));
-  REQUIRE_FALSE(fs::exists(data_buffer_path, error_code));
+  ASSERT_NO_THROW(data_buffer_->Store(key, large_value));
+  ASSERT_NO_THROW(data_buffer_->Delete(key));
+  EXPECT_EQ(1, fs::remove_all(data_buffer_path, error_code));
+  ASSERT_FALSE(fs::exists(data_buffer_path, error_code));
   // Skips memory buffer and goes straight to disk, causing exception.  Background thread in future
   // should finish, causing other API functions to throw on next execution.
-  REQUIRE_THROWS_AS(data_buffer_->Store(key, large_value), common_error);
-  REQUIRE_THROWS_AS(data_buffer_->Get(key), common_error);
-  REQUIRE_THROWS_AS(data_buffer_->Delete(key), common_error);
+  ASSERT_THROW(data_buffer_->Store(key, large_value), common_error);
+  ASSERT_THROW(data_buffer_->Get(key), common_error);
+  ASSERT_THROW(data_buffer_->Delete(key), common_error);
 }
 
-TEST_CASE_METHOD(DataBufferTest, "SuccessfulStore", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_SuccessfulStore) {
   NonEmptyString value1(RandomAlphaNumericString(static_cast<uint32_t>(max_memory_usage_)));
   auto key1(GenerateKeyFromValue<KeyType>(value1));
   NonEmptyString value2(RandomAlphaNumericString(static_cast<uint32_t>(max_memory_usage_)));
   auto key2(GenerateKeyFromValue<KeyType>(value2));
   NonEmptyString recovered;
 
-  REQUIRE_NOTHROW(data_buffer_->Store(key1, value1));
-  REQUIRE_NOTHROW(data_buffer_->Store(key2, value2));
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key1));
-  REQUIRE(recovered == value1);
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key2));
-  REQUIRE(recovered == value2);
+  ASSERT_NO_THROW(data_buffer_->Store(key1, value1));
+  ASSERT_NO_THROW(data_buffer_->Store(key2, value2));
+  ASSERT_NO_THROW(recovered = data_buffer_->Get(key1));
+  EXPECT_EQ(recovered, value1);
+  ASSERT_NO_THROW(recovered = data_buffer_->Get(key2));
+  EXPECT_EQ(recovered, value2);
 }
 
-TEST_CASE_METHOD(DataBufferTest, "UnsuccessfulStore", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_UnsuccessfulStore) {
   NonEmptyString value(std::string(static_cast<uint32_t>(max_disk_usage_ + 1), 'a'));
   auto key(GenerateKeyFromValue<KeyType>(value));
-  REQUIRE_THROWS_AS(data_buffer_->Store(key, value), common_error);
+  ASSERT_THROW(data_buffer_->Store(key, value), common_error);
 }
 
-TEST_CASE_METHOD(DataBufferTest, "DeleteOnDiskBufferOverfill", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   const size_t num_entries(4), num_memory_entries(1), num_disk_entries(4);
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   KeyValueVector key_value_pairs(PopulateDataBuffer(num_entries, num_memory_entries,
@@ -311,19 +309,19 @@ TEST_CASE_METHOD(DataBufferTest, "DeleteOnDiskBufferOverfill", "[DataBuffer][Beh
                             Sleep(std::chrono::milliseconds(100));
                             data_buffer_->Store(key, value);
                           });
-  REQUIRE_THROWS_AS(recovered = data_buffer_->Get(key), common_error);
+  ASSERT_THROW(recovered = data_buffer_->Get(key), common_error);
   Sleep(std::chrono::milliseconds(200));
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-  REQUIRE(recovered == value);
-  REQUIRE_NOTHROW(data_buffer_->Delete(first_key));
-  REQUIRE_NOTHROW(data_buffer_->Delete(second_key));
-  REQUIRE_NOTHROW(async.wait());
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-  REQUIRE(recovered == value);
-  REQUIRE(DeleteDirectory(data_buffer_path_));
+  ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
+  ASSERT_NO_THROW(data_buffer_->Delete(first_key));
+  ASSERT_NO_THROW(data_buffer_->Delete(second_key));
+  ASSERT_NO_THROW(async.wait());
+  ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
+  EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "PopOnDiskBufferOverfill", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
   size_t index(0);
   std::mutex mutex;
   std::condition_variable condition_variable;
@@ -335,40 +333,40 @@ TEST_CASE_METHOD(DataBufferTest, "PopOnDiskBufferOverfill", "[DataBuffer][Behavi
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
                                        test_path, pop_functor);
-  REQUIRE(0 == index);
+  EXPECT_EQ(0, index);
 
   NonEmptyString value, recovered;
   value = NonEmptyString(RandomAlphaNumericString(static_cast<uint32_t>(OneKB)));
   auto key(GenerateKeyFromValue<KeyType>(value));
   // Trigger pop.
-  REQUIRE_NOTHROW(data_buffer_->Store(key, value));
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-  REQUIRE(recovered == value);
+  ASSERT_NO_THROW(data_buffer_->Store(key, value));
+  ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
   {
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(lock, std::chrono::seconds(1),
                                             [&]()->bool { return index == 1; }));
-    REQUIRE(result);
+    EXPECT_TRUE(result);
   }
-  REQUIRE(1 == index);
+  EXPECT_EQ(1, index);
 
   value = NonEmptyString(std::string(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB))));
   key = GenerateKeyFromValue<KeyType>(value);
   // Trigger pop.
-  REQUIRE_NOTHROW(data_buffer_->Store(key, value));
+  ASSERT_NO_THROW(data_buffer_->Store(key, value));
   {
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(lock, std::chrono::seconds(2),
                                             [&]()->bool { return index == 3; }));
-    REQUIRE(result);
+    EXPECT_TRUE(result);
   }
-  REQUIRE(3 == index);
-  REQUIRE_NOTHROW(recovered = data_buffer_->Get(key));
-  REQUIRE(recovered == value);
-  REQUIRE(DeleteDirectory(data_buffer_path_));
+  EXPECT_EQ(3, index);
+  ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
+  EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "AsyncDeleteOnDiskBufferOverfill", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_AsyncDeleteOnDiskBufferOverfill) {
   KeyValueVector old_key_value_pairs, new_key_value_pairs;
   const size_t num_entries(6), num_memory_entries(0), num_disk_entries(6);
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
@@ -394,7 +392,7 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncDeleteOnDiskBufferOverfill", "[DataBuffer
   // Check the new Store attempts all block pending some Deletes
   for (auto& async_store : async_stores) {
     auto status(async_store.wait_for(std::chrono::milliseconds(250)));
-    CHECK(std::future_status::timeout == status);
+    EXPECT_EQ(std::future_status::timeout, status);
   }
 
   std::vector<std::future<NonEmptyString>> async_gets;
@@ -407,29 +405,29 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncDeleteOnDiskBufferOverfill", "[DataBuffer
   // Check Get attempts for the new Store values don't block pending the Store attempts completing
   for (auto& async_get : async_gets) {
     auto status(async_get.wait_for(std::chrono::milliseconds(100)));
-    CHECK(std::future_status::ready == status);
+    EXPECT_EQ(std::future_status::ready, status);
   }
 
   // Delete the last new Store attempt before it has completed
-  CHECK_NOTHROW(data_buffer_->Delete(new_key_value_pairs.back().first));
+  EXPECT_NO_THROW(data_buffer_->Delete(new_key_value_pairs.back().first));
   // Delete the old values to allow the new Store attempts to complete
   for (auto key_value : old_key_value_pairs) {
-    CHECK_NOTHROW(data_buffer_->Delete(key_value.first));
+    EXPECT_NO_THROW(data_buffer_->Delete(key_value.first));
   }
 
   for (size_t i(0); i != num_entries; ++i) {
     auto status(async_gets[i].wait_for(std::chrono::milliseconds(200)));
-    CHECK(std::future_status::ready == status);
-    CHECK_NOTHROW(recovered = async_gets[i].get());
-    CHECK(new_key_value_pairs[i].second == recovered);
+    EXPECT_EQ(std::future_status::ready, status);
+    EXPECT_NO_THROW(recovered = async_gets[i].get());
+    EXPECT_EQ(new_key_value_pairs[i].second, recovered);
   }
 
   // Check the last store value which was cancelled is now unavailable
-  CHECK_THROWS_AS(data_buffer_->Get(new_key_value_pairs.back().first), common_error);
-  CHECK(DeleteDirectory(this->data_buffer_path_));
+  EXPECT_THROW(data_buffer_->Get(new_key_value_pairs.back().first), common_error);
+  EXPECT_TRUE(DeleteDirectory(this->data_buffer_path_));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "AsyncPopOnDiskBufferOverfill", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   size_t index(0);
   std::mutex mutex;
   std::condition_variable condition_variable;
@@ -441,7 +439,7 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncPopOnDiskBufferOverfill", "[DataBuffer][B
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   old_key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
                                            test_path, pop_functor);
-  CHECK(0 == index);
+  EXPECT_EQ(0, index);
 
   NonEmptyString value, recovered;
   KeyType key;
@@ -462,17 +460,17 @@ TEST_CASE_METHOD(DataBufferTest, "AsyncPopOnDiskBufferOverfill", "[DataBuffer][B
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(
         lock, std::chrono::seconds(2), [&]()->bool { return index == num_entries; }));
-    CHECK(result);
+    EXPECT_TRUE(result);
   }
   for (auto key_value : new_key_value_pairs) {
-    CHECK_NOTHROW(recovered = this->data_buffer_->Get(key_value.first));
-    CHECK(key_value.second == recovered);
+    EXPECT_NO_THROW(recovered = this->data_buffer_->Get(key_value.first));
+    EXPECT_EQ(key_value.second, recovered);
   }
-  CHECK(num_entries == index);
-  CHECK(DeleteDirectory(data_buffer_path_));
+  EXPECT_EQ(num_entries, index);
+  EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   data_buffer_path_ = fs::path(*test_path / "data_buffer");
   PopFunctor pop_functor([this](const KeyType& key, const NonEmptyString & value) {
@@ -486,13 +484,13 @@ TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Be
   auto key(GenerateKeyFromValue<KeyType>(value));
   auto async = std::async(std::launch::async,
                           [this, key, value] { data_buffer_->Store(key, value); });
-  CHECK_NOTHROW(async.wait());
-  REQUIRE(async.valid());
-  CHECK_NOTHROW(async.get());
-  CHECK_NOTHROW(recovered = data_buffer_->Get(key));
-  CHECK(recovered == value);
+  EXPECT_NO_THROW(async.wait());
+  EXPECT_TRUE(async.valid());
+  EXPECT_NO_THROW(async.get());
+  EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
+  EXPECT_EQ(recovered, value);
 
-  uint32_t events(RandomUint32() % 100);
+  uint32_t events((RandomUint32() % 100) + 10);
   for (uint32_t i = 0; i != events; ++i) {
     last_value = value;
     while (last_value == value)
@@ -500,19 +498,19 @@ TEST_CASE_METHOD(DataBufferTest, "RepeatedlyStoreUsingSameKey", "[DataBuffer][Be
     auto async =
         std::async(std::launch::async,
                    [this, key, last_value] { data_buffer_->Store(key, last_value); });
-    CHECK_NOTHROW(async.wait());
-    CHECK(async.valid());
-    CHECK_NOTHROW(async.get());
+    EXPECT_NO_THROW(async.wait());
+    EXPECT_TRUE(async.valid());
+    EXPECT_NO_THROW(async.get());
   }
   Sleep(std::chrono::milliseconds(100));
-  CHECK_NOTHROW(recovered = data_buffer_->Get(key));
-  CHECK(value != recovered);
-  CHECK(last_value == recovered);
+  EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
+  EXPECT_NE(value, recovered);
+  EXPECT_EQ(last_value, recovered);
   data_buffer_.reset();
-  CHECK(DeleteDirectory(data_buffer_path_));
+  EXPECT_TRUE(DeleteDirectory(data_buffer_path_));
 }
 
-TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
+TEST_F(DataBufferTest, BEH_RandomAsync) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   data_buffer_path_ = fs::path(*test_path / "data_buffer");
   PopFunctor pop_functor([this](const KeyType& key, const NonEmptyString & value) {
@@ -524,7 +522,7 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
                                         data_buffer_path_));
 
   KeyValueVector key_value_pairs;
-  uint32_t events(RandomUint32() % 500);
+  uint32_t events((RandomUint32() % 400) + 100);
   std::vector<std::future<void>> future_stores, future_deletes;
   std::vector<std::future<NonEmptyString>> future_gets;
 
@@ -569,7 +567,7 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
   }
 
   for (auto& future_store : future_stores) {
-    CHECK_NOTHROW(future_store.get());
+    EXPECT_NO_THROW(future_store.get());
   }
 
   for (auto& future_delete : future_deletes) {
@@ -586,7 +584,7 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
       auto it = std::find_if(
           key_value_pairs.begin(), key_value_pairs.end(),
           [this, &value](const value_type & key_value) { return key_value.second == value; });
-      CHECK(key_value_pairs.end() != it);
+      EXPECT_NE(key_value_pairs.end(), it);
     }
     catch (const common_error& e) {
       LOG(kInfo) << boost::diagnostic_information(e);
@@ -597,72 +595,71 @@ TEST_CASE_METHOD(DataBufferTest, "RandomAsync", "[DataBuffer][Behavioural]") {
 }
 
 
-class DataBufferValueParameterisedTest {
+namespace {
+
+struct DataBufferUsage {
+  DataBufferUsage(int64_t memory_usage, int64_t disk_usage)
+      : memory_usage(memory_usage), disk_usage(disk_usage) {}
+
+  int64_t memory_usage;
+  int64_t disk_usage;
+};
+
+}  // unnamed namespace
+
+
+class DataBufferValueParameterisedTest : public testing::TestWithParam<DataBufferUsage> {
  protected:
   typedef DataNameVariant KeyType;
   typedef DataBuffer<KeyType> DataBufferType;
   typedef DataBufferType::PopFunctor PopFunctorType;
   typedef std::unique_ptr<DataBufferType> DataBufferPtr;
 
-  DataBufferValueParameterisedTest()
-      : pop_functor_(),
-        data_buffer_() {}
+  DataBufferValueParameterisedTest() : pop_functor_(), data_buffer_() {}
 
+  virtual void SetUp() override {
+    auto buf = GetParam();
+    memory_usage = buf.memory_usage;
+    disk_usage = buf.disk_usage;
+    total_usage = disk_usage + memory_usage;
+  }
+
+  uint64_t memory_usage;
+  uint64_t disk_usage;
+  uint64_t total_usage;
   PopFunctorType pop_functor_;
   DataBufferPtr data_buffer_;
 };
 
-namespace {
+TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
+  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage),
+                                        pop_functor_));
 
-struct MaxDataBufferUsage { uint64_t memory_usage, disk_usage; };
-MaxDataBufferUsage max_data_buffer_usage[] = {{1, 2}, {1, 1024}, {8, 1024}, {1024, 2048},
-                                              {1024, 1024}, {16, 16 * 1024}, {32, 32},
-                                              {1000, 10000}, {10000, 1000000}};
-}  // unnamed namespace
-
-TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Store", "[DataBuffer][Behavioural]") {
-  MaxDataBufferUsage* resource_usage = Catch::Generators::GENERATE(between(max_data_buffer_usage,
-      &max_data_buffer_usage[sizeof(max_data_buffer_usage)/sizeof(MaxDataBufferUsage)-1]));
-
-  uint64_t memory_usage(resource_usage->memory_usage), disk_usage(resource_usage->disk_usage),
-           total_usage(disk_usage + memory_usage);
-
-  MemoryUsage max_memory_usage(memory_usage);
-  DiskUsage max_disk_usage(disk_usage);
-  data_buffer_.reset(new DataBufferType(max_memory_usage, max_disk_usage, pop_functor_));
-
-  while (total_usage != 0) {
+  while (total_usage) {
     NonEmptyString value(std::string(RandomAlphaNumericString(
-                      static_cast<uint32_t>(resource_usage->memory_usage))));
+                      static_cast<uint32_t>(memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
-    CHECK_NOTHROW(data_buffer_->Store(key, value));
+    EXPECT_NO_THROW(data_buffer_->Store(key, value));
     NonEmptyString recovered;
-    CHECK_NOTHROW(recovered = data_buffer_->Get(key));
-    CHECK(value == recovered);
-    if (disk_usage != 0) {
-      disk_usage -= resource_usage->memory_usage;
-      total_usage -= resource_usage->memory_usage;
+    EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
+    EXPECT_EQ(value, recovered);
+    if (disk_usage) {
+      disk_usage -= memory_usage;
+      total_usage -= memory_usage;
     } else {
-      total_usage -= resource_usage->memory_usage;
+      total_usage -= memory_usage;
     }
   }
 }
 
-TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behavioural]") {
-  MaxDataBufferUsage* resource_usage = Catch::Generators::GENERATE(between(max_data_buffer_usage,
-      &max_data_buffer_usage[sizeof(max_data_buffer_usage)/sizeof(MaxDataBufferUsage)-1]));
-
-  uint64_t memory_usage(resource_usage->memory_usage), disk_usage(resource_usage->disk_usage),
-           total_usage(disk_usage + memory_usage);
-
-  MemoryUsage max_memory_usage(memory_usage);
-  DiskUsage max_disk_usage(disk_usage);
-  data_buffer_.reset(new DataBufferType(max_memory_usage, max_disk_usage, pop_functor_));
+TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
+  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage),
+                                        pop_functor_));
 
   std::map<KeyType, NonEmptyString> key_value_pairs;
-  while (total_usage != 0) {
+  while (total_usage) {
     NonEmptyString value(
-        std::string(RandomAlphaNumericString(static_cast<uint32_t>(resource_usage->memory_usage))));
+        std::string(RandomAlphaNumericString(static_cast<uint32_t>(memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
   #if defined(__GNUC__) && !defined(__clang__)
     auto ret_val = key_value_pairs.insert(std::make_pair(key, value));
@@ -672,26 +669,35 @@ TEST_CASE_METHOD(DataBufferValueParameterisedTest, "Delete", "[DataBuffer][Behav
     key_value_pairs[key] = value;
   #endif
 
-    CHECK_NOTHROW(data_buffer_->Store(key, value));
-    if (disk_usage != 0) {
-      disk_usage -= resource_usage->memory_usage;
-      total_usage -= resource_usage->memory_usage;
+    EXPECT_NO_THROW(data_buffer_->Store(key, value));
+    if (disk_usage) {
+      disk_usage -= memory_usage;
+      total_usage -= memory_usage;
     } else {
-      total_usage -= resource_usage->memory_usage;
+      total_usage -= memory_usage;
     }
   }
   NonEmptyString recovered;
   for (auto key_value : key_value_pairs) {
     KeyType key(key_value.first);
-    CHECK_NOTHROW(recovered = data_buffer_->Get(key));
-    CHECK(key_value.second == recovered);
-    CHECK_NOTHROW(data_buffer_->Delete(key));
-    CHECK_THROWS_AS(recovered = data_buffer_->Get(key), common_error);
+    EXPECT_NO_THROW(recovered = data_buffer_->Get(key));
+    EXPECT_EQ(key_value.second, recovered);
+    EXPECT_NO_THROW(data_buffer_->Delete(key));
+    EXPECT_THROW(recovered = data_buffer_->Get(key), common_error);
   }
 }
 
-}  // namespace test
+INSTANTIATE_TEST_CASE_P(BufferValueParam, DataBufferValueParameterisedTest, testing::Values(
+    DataBufferUsage(1, 2),
+    DataBufferUsage(1, 1024),
+    DataBufferUsage(8, 1024),
+    DataBufferUsage(1024, 2048),
+    DataBufferUsage(1024, 1024),
+    DataBufferUsage(16, 16 * 1024),
+    DataBufferUsage(32, 32),
+    DataBufferUsage(1000, 10000),
+    DataBufferUsage(10000, 1000000)));
 
-}  // namespace data_stores
+}  // namespace test
 
 }  // namespace maidsafe

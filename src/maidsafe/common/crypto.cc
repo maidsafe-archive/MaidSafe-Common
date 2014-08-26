@@ -199,6 +199,18 @@ std::string SecretRecoverData(int32_t threshold,
   return data;
 }
 
+CipherText ObfuscateData(const Identity& name, const PlainText& plain_text) {
+  AES256Key key(name.string().substr(0, AES256_KeySize));
+  AES256InitialisationVector iv(name.string().substr(AES256_KeySize, AES256_IVSize));
+  return SymmEncrypt(plain_text, key, iv);
+}
+
+PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text) {
+  AES256Key key(name.string().substr(0, AES256_KeySize));
+  AES256InitialisationVector iv(name.string().substr(AES256_KeySize, AES256_IVSize));
+  return SymmDecrypt(cipher_text, key, iv);
+}
+
 }  // namespace crypto
 
 }  // namespace maidsafe
