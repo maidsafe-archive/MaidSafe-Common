@@ -235,7 +235,8 @@ TEST_F(TcpTest, BEH_InvalidMessageSizes) {
   // Try to make server receive a message which shows its size as too large
   AsioService bad_asio_service{ 1 };
   boost::asio::ip::tcp::socket bad_socket(bad_asio_service.service());
-  if (client_connection_and_closer.first->Socket().local_endpoint().address().is_v6()) {
+  bool is_v6{ client_connection_and_closer.first->Socket().local_endpoint().address().is_v6() };
+  if (is_v6) {
     bad_socket.connect(
         boost::asio::ip::tcp::endpoint{ boost::asio::ip::address_v6::loopback(),
                                         listener_and_closer.first->ListeningPort() });
@@ -270,8 +271,13 @@ TEST_F(TcpTest, BEH_InvalidMessageSizes) {
   // Try to make server receive a message which is too large by lying about its size
   InitialiseMessagesToServer();
   bad_socket = boost::asio::ip::tcp::socket(bad_asio_service.service());
-  bad_socket.connect(boost::asio::ip::tcp::endpoint{ boost::asio::ip::address_v6::loopback(),
-                     listener_and_closer.first->ListeningPort() });
+  if (is_v6) {
+    bad_socket.connect(boost::asio::ip::tcp::endpoint{ boost::asio::ip::address_v6::loopback(),
+                       listener_and_closer.first->ListeningPort() });
+  } else {
+    bad_socket.connect(boost::asio::ip::tcp::endpoint{ boost::asio::ip::address_v4::loopback(),
+                       listener_and_closer.first->ListeningPort() });
+  }
   ASSERT_TRUE(bad_socket.is_open());
   --size_buffer[3];
   buffers[0] = boost::asio::buffer(size_buffer);
