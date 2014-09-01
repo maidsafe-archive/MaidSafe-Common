@@ -19,6 +19,7 @@
 #include <cstring>
 #include <iostream>
 #include "boost/filesystem/path.hpp"
+#include "gtest/gtest.h"
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/config.h"
@@ -46,11 +47,14 @@ TEST(ConfigTest, BEH_TargetArchitecture) {
 }
 
 TEST(ConfigTest, BEH_ThisExecutableDir) {
-  // Before calling SetThisExecutablePath
-#ifdef MAIDSAFE_WIN32
-  EXPECT_THROW(maidsafe::ThisExecutablePath(), maidsafe::common_error);
-  EXPECT_THROW(maidsafe::ThisExecutableDir(), maidsafe::common_error);
-#endif
+  // Accommodate running with '--gtest_repeat' != 0 or 1.
+  static bool has_run{ false };
+  if (!has_run) {
+    // Before calling SetThisExecutablePath
+    EXPECT_THROW(maidsafe::ThisExecutablePath(), maidsafe::common_error);
+    EXPECT_THROW(maidsafe::ThisExecutableDir(), maidsafe::common_error);
+    has_run = true;
+  }
   // Call SetThisExecutablePath
   maidsafe::SetThisExecutablePath(g_argv);
   auto this_exe_path(maidsafe::ThisExecutablePath());
@@ -79,12 +83,7 @@ TEST(ConfigTest, BEH_ThisExecutableDir) {
 
 int main(int argc, char** argv) {
   maidsafe::test::g_argv = argv;
-#if defined(__clang__) || defined(__GNUC__)
-  // To allow Clang and GCC advanced diagnostics to work properly.
-  testing::FLAGS_gtest_catch_exceptions = true;
-#else
   testing::FLAGS_gtest_catch_exceptions = false;
-#endif
   testing::InitGoogleTest(&argc, argv);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
