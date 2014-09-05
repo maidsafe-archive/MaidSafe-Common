@@ -31,15 +31,19 @@ namespace test {
 
 class UserCredentialsTest : public testing::Test {
  protected:
-  UserCredentialsTest() : user_credentials() {
+  UserCredentialsTest()
+      : user_credentials(),
+        kKeywordStr(RandomAlphaNumericString((RandomUint32() % 100) + 1)),
+        kPinValue(RandomUint32()),
+        kPasswordStr(RandomAlphaNumericString((RandomUint32() % 100) + 1)) {
     user_credentials.keyword = maidsafe::make_unique<UserCredentials::Keyword>(kKeywordStr);
     user_credentials.pin = maidsafe::make_unique<UserCredentials::Pin>(std::to_string(kPinValue));
     user_credentials.password = maidsafe::make_unique<UserCredentials::Password>(kPasswordStr);
   }
   UserCredentials user_credentials;
-  const std::string kKeywordStr{ RandomAlphaNumericString((RandomUint32() % 100) + 1) };
-  const uint32_t kPinValue{ RandomUint32() };
-  const std::string kPasswordStr{ RandomAlphaNumericString((RandomUint32() % 100) + 1) };
+  const std::string kKeywordStr;
+  const uint32_t kPinValue;
+  const std::string kPasswordStr;
 };
 
 TEST_F(UserCredentialsTest, BEH_CreateSecurePassword) {
