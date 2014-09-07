@@ -230,6 +230,9 @@ namespace detail {
 int ExecuteGTestMain(int argc, char* argv[]) {
   HandleTestOptions(argc, argv);
   log::Logging::Instance().Initialise(argc, argv);
+#ifdef USE_VLOGGING
+  log::Logging::Instance().InitialiseVlog("", "", "", 0, "");
+#endif
   testing::FLAGS_gtest_catch_exceptions = false;
   testing::InitGoogleTest(&argc, argv);
   testing::UnitTest::GetInstance()->listeners().Append(new BootstrapFileHandler);
