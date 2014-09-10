@@ -22,6 +22,9 @@
 #include <functional>
 #include <memory>
 #include <string>
+#ifndef MAIDSAFE_WIN32
+#include <ulimit.h>
+#endif
 
 #include "boost/filesystem/path.hpp"
 #include "boost/optional.hpp"
@@ -71,7 +74,20 @@ class RandomNumberSeeder : public testing::EmptyTestEventListener {
   virtual void OnTestEnd(const testing::TestInfo& test_info);
   uint32_t current_seed_;
 };
-
+#ifndef MAIDSAFE_WIN32
+// This GTest listener check the ulimit configurations.
+class UlimitConfigurer : public testing::EmptyTestEventListener {
+ public:
+  UlimitConfigurer();
+ private:
+  virtual void OnTestProgramStart(const testing::UnitTest& uinit_test);
+  virtual void OnTestProgramEnd(const testing::UnitTest& uint_testinfo);
+  uint32_t prev_open_files_;
+  uint32_t prev_file_size_;
+  uint32_t kLimitsOpenFiles;
+  uint32_t kLimitsFileSize;
+};
+#endif
 // Copies 'bootstrap_file' to location of Routing's override_bootstrap.dat, allowing all Routing
 // objects to bootstrap from the contacts provided in 'bootstrap_file'.  Throws if the file can't be
 // copied.
