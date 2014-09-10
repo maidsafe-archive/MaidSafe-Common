@@ -37,7 +37,7 @@ Database::Database(const boost::filesystem::path& filename, Mode mode)
   if (sqlite3_open_v2(filename.string().c_str(), &database, flags, NULL) != SQLITE_OK) {
     LOG(kError) << "Could not open db at : " << filename
                 << ". Error : " << sqlite3_errmsg(database);
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
   }
   sqlite3_busy_timeout(database, 250);
 }
@@ -59,6 +59,9 @@ void Database::Execute(const std::string& query) {
       LOG(kWarning) << "SQL busy : " << error_message << " . Query :" << query;
       sqlite3_free(error_message);
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_busy));
+    } else if (result == SQLITE_NOTADB) {
+      LOG(kError) << "database not presented";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
     } else {
       LOG(kError) << "SQL error : " << error_message  << ". return value : " << result
                   << " . Query :" << query;
@@ -77,10 +80,13 @@ Tranasction::Tranasction(Database& database_in)
     try {
       database.Execute(query);
       return;
-    } catch (const std::exception& e) {
+    } catch (const maidsafe_error& error) {
       LOG(kWarning) << "Tranasction::Constructor FAILED in Attempt " << i << " with error "
-                    << boost::diagnostic_information(e);
-    std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
+                    << boost::diagnostic_information(error);
+      if (error.code() == make_error_code(CommonErrors::db_not_presented))
+        throw;
+      else
+        std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
@@ -121,7 +127,10 @@ Statement::Statement(Database& database_in, const std::string& query)
                                          static_cast<int>(query.size()), &statement, 0);
   if (return_value != SQLITE_OK) {
     LOG(kError) << " sqlite3_prepare_v2 returned : " << return_value;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+    if (return_value == SQLITE_NOTADB)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    else
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
   }
 }
 
