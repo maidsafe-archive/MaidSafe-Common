@@ -78,6 +78,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Path is not a directory";
     case CommonErrors::db_busy:
       return "The database file is locked";
+    case CommonErrors::db_not_presented:
+      return "database not presented for SQL";
     case CommonErrors::db_error:
       return "SQL error";
     case CommonErrors::unknown:
