@@ -52,10 +52,27 @@ Database::~Database() {
     LOG(kError) << "Failed to close DB. Error : " << result;
 }
 
-void Database::CheckPoint() {
-  if (sqlite3_wal_checkpoint(database, NULL) != SQLITE_OK)
-    LOG(kError) << "CheckPoint error " << sqlite3_errmsg(database);
-  //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+
+void Database::Execute(const std::string& query) {
+  char *error_message = 0;
+  int result = sqlite3_exec(database, query.c_str(), NULL, 0, &error_message);
+  assert(result != SQLITE_ROW);
+
+  if (result != SQLITE_OK) {
+    if (result == SQLITE_BUSY) {
+      LOG(kWarning) << "SQL busy : " << error_message << " . Query :" << query;
+      sqlite3_free(error_message);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_busy));
+    } else if (result == SQLITE_NOTADB) {
+      LOG(kError) << "database not presented";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    } else {
+      LOG(kError) << "SQL error : " << error_message  << ". return value : " << result
+                  << " . Query :" << query;
+      sqlite3_free(error_message);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+    }
+  }
 }
 
 
