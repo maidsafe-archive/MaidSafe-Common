@@ -42,7 +42,6 @@ Database::Database(const boost::filesystem::path& filename, Mode mode) : databas
   char* error_message = 0;
   sqlite3_exec(database, "PRAGMA synchronous = OFF", NULL, 0, &error_message);
   sqlite3_exec(database, "PRAGMA journal_mode = WAL", NULL, 0, &error_message);
-  sqlite3_exec(database, "PRAGMA wal_autocheckpoint = 0", NULL, 0, &error_message);
   sqlite3_busy_timeout(database, 250);
 }
 
