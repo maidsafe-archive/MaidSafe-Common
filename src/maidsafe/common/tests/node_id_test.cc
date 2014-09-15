@@ -19,6 +19,7 @@
 #include "maidsafe/common/node_id.h"
 
 #include <algorithm>
+#include <bitset>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -358,6 +359,25 @@ TEST(NodeIdTest, BEH_Collision) {
   for (int i(0); i < 100000; ++i)
     success &= node_ids.emplace(NodeId::IdType::kRandomId).second;
   ASSERT_TRUE(success);
+}
+
+TEST(NodeIdTest, BEH_CommonLeadingBits) {
+  const NodeId kThisNode{ NodeId::IdType::kRandomId };
+
+  // Check for two equal IDs
+  NodeId other{ kThisNode };
+  EXPECT_EQ(NodeId::kSize * 8, kThisNode.CommonLeadingBits(other));
+
+  // Iterate through a copy of ID starting at the least significant bit, flipping a bit each time,
+  // checking the function, then flipping the bit back.
+  std::bitset<NodeId::kSize * 8> id_as_binary{
+      kThisNode.ToStringEncoded(NodeId::EncodingType::kBinary) };
+  for (size_t i(0); i != id_as_binary.size(); ++i) {
+    id_as_binary.flip(i);
+    NodeId modified_id{ id_as_binary.to_string(), NodeId::EncodingType::kBinary };
+    EXPECT_EQ((NodeId::kSize * 8) - i - 1, kThisNode.CommonLeadingBits(modified_id));
+    id_as_binary.flip(i);
+  }
 }
 
 }  // namespace test

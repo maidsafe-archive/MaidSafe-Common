@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/node_id.h"
 
+#include <algorithm>
 #include <bitset>
 
 #include "maidsafe/common/error_categories.h"
@@ -27,9 +28,9 @@
 namespace maidsafe {
 
 #ifdef NDEBUG
-#define INIT_DEBUG_NODE_ID
+# define INIT_DEBUG_NODE_ID
 #else
-#define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
+# define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
 #endif
 
 NodeId::NodeId() : raw_id_(kSize, 0) INIT_DEBUG_NODE_ID {}
@@ -136,23 +137,32 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
   }
 }
 
-int NodeId::LeadingBits(NodeId node) {
-  for (int i(0); i < kSize; ++i) {
-    std::bitset<8> us(static_cast<int>(raw_id_[i]));
-    std::bitset<8> them(static_cast<int>(node.raw_id_[i]));
-    for(int j(7); j  >=  0; --j )
-      if (us[j] != them[j])
-      return (8 * i) + (8 - j);
-  }
-  return std::numeric_limits<int>::max();
-}
-
 bool NodeId::IsZero() const {
   for (auto i : raw_id_) {
     if (i != 0)
       return false;
   }
   return true;
+}
+
+int NodeId::CommonLeadingBits(const NodeId& other) const {
+  // Find first mismatching char between the two IDs
+  auto mismatch(std::mismatch(std::begin(raw_id_), std::end(raw_id_), std::begin(other.raw_id_)));
+
+  // If there's no mismatch, the IDs are equal
+  if (mismatch.first == std::end(raw_id_))
+    return 8 * kSize;
+
+  // Turn mismatch chars to bitsets
+  std::bitset<8> our_mismatch_char(static_cast<int>(*mismatch.first));
+  std::bitset<8> their_mismatch_char(static_cast<int>(*mismatch.second));
+
+  // Find position of most significant bit mismatch
+  int bit_index{ 7 };
+  while (bit_index >= 0 && our_mismatch_char[bit_index] == their_mismatch_char[bit_index])
+    --bit_index;
+
+  return static_cast<int>(8 * std::distance(std::begin(raw_id_), mismatch.first)) + 7 - bit_index;
 }
 
 NodeId& NodeId::operator^=(const NodeId& rhs) {
