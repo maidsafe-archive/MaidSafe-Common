@@ -221,9 +221,8 @@ void UlimitConfigurer::OnTestProgramStart(const testing::UnitTest& /*unit_test*/
     getrlimit(RLIMIT_NOFILE, &limit);
     limit.rlim_cur = kLimitsOpenFiles;
     if (setrlimit(RLIMIT_NOFILE, &limit) != 0)
-      LOG(kError) << "error in changing max open files" << std::endl;
+      LOG(kError) << "error in changing max open files";
   }
-
 }
 
 void UlimitConfigurer::OnTestProgramEnd(const testing::UnitTest& unit_test) {

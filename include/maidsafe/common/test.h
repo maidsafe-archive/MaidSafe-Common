@@ -19,12 +19,12 @@
 #ifndef MAIDSAFE_COMMON_TEST_H_
 #define MAIDSAFE_COMMON_TEST_H_
 
-#include <functional>
-#include <memory>
-#include <string>
 #ifndef MAIDSAFE_WIN32
 #include <ulimit.h>
 #endif
+#include <functional>
+#include <memory>
+#include <string>
 
 #include "boost/filesystem/path.hpp"
 #include "boost/optional.hpp"
