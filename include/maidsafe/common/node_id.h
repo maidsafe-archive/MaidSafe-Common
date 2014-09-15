@@ -31,17 +31,9 @@ namespace maidsafe {
 
 class NodeId {
  public:
-  enum class IdType : int64_t {
-    kRandomId
-  };
-  enum class EncodingType {
-    kBinary = 0,
-    kHex,
-    kBase64
-  };
-  enum {
-    kSize = crypto::SHA512::DIGESTSIZE
-  };
+  enum class IdType : int64_t { kRandomId };
+  enum class EncodingType { kBinary = 0, kHex, kBase64 };
+  enum { kSize = crypto::SHA512::DIGESTSIZE };
 
   // Creates an ID equal to 0.
   NodeId();
@@ -73,7 +65,9 @@ class NodeId {
 
   bool IsZero() const;
 
-  int LeadingBits(NodeId node);
+  // Number of most significant bits which are common to this ID and 'other'.
+  int CommonLeadingBits(const NodeId& other) const;
+
   // XOR distance between two IDs.  XOR bit to bit.
   NodeId& operator^=(const NodeId& rhs);
 
