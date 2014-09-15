@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/test.h"
 
+#include <sys/resource.h>
 #include <cstdint>
 #include <future>
 #include <iostream>
@@ -201,16 +202,28 @@ void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
 
 #ifndef MAIDSAFE_WIN32
 UlimitConfigurer::UlimitConfigurer()
-  : prev_open_files_(ulimit(__UL_GETOPENMAX)), prev_file_size_(ulimit(UL_GETFSIZE)),
-    kLimitsOpenFiles(1024), kLimitsFileSize(2048) {}
+  : prev_open_files_(0), prev_file_size_(ulimit(UL_GETFSIZE)),
+    kLimitsOpenFiles(1024), kLimitsFileSize(2048) {
+  struct rlimit rlp;
+  getrlimit(RLIMIT_NOFILE, &rlp);
+  prev_open_files_ = rlp.rlim_cur;
+}
 
 void UlimitConfigurer::OnTestProgramStart(const testing::UnitTest& /*unit_test*/) {
   // We need to set the ulimit at the start of test
   if (prev_file_size_ < kLimitsFileSize)
     ulimit(UL_SETFSIZE, kLimitsFileSize);
-  if (prev_open_files_ < kLimitsOpenFiles)
+
+  if (prev_open_files_ < kLimitsOpenFiles) {
     LOG(kWarning) << "not enough max open files, currently is " << prev_open_files_
                   << " , however expected to be sudo " << kLimitsOpenFiles;
+    struct rlimit limit;
+    getrlimit(RLIMIT_NOFILE, &limit);
+    limit.rlim_cur = kLimitsOpenFiles;
+    if (setrlimit(RLIMIT_NOFILE, &limit) != 0)
+      LOG(kError) << "error in changing max open files" << std::endl;
+  }
+
 }
 
 void UlimitConfigurer::OnTestProgramEnd(const testing::UnitTest& unit_test) {
@@ -220,11 +233,10 @@ void UlimitConfigurer::OnTestProgramEnd(const testing::UnitTest& unit_test) {
   if (prev_file_size_ < kLimitsFileSize)
     ulimit(UL_SETFSIZE, prev_file_size_);
 */
-  if (unit_test.Failed() && (prev_open_files_ < kLimitsOpenFiles)) {
-    std::cout << "Failing tests may caused by not having enough max open files" << std::endl;
+// setrlimit can only affect current session, so no need to restore
+  if (unit_test.Failed() && (prev_open_files_ < kLimitsOpenFiles))
     LOG(kError) << "Failing tests may caused by current max open files ( "
-                << prev_open_files_ << " ) is not enough";
-  }
+                << prev_open_files_ << " ) is not enough and failed to change";
 }
 #endif
 
