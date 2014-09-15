@@ -42,6 +42,7 @@ Database::Database(const boost::filesystem::path& filename, Mode mode) : databas
   char* error_message = 0;
   sqlite3_exec(database, "PRAGMA synchronous = OFF", NULL, 0, &error_message);
   sqlite3_exec(database, "PRAGMA journal_mode = WAL", NULL, 0, &error_message);
+  sqlite3_exec(database, "PRAGMA wal_autocheckpoint = 0", NULL, 0, &error_message);
   sqlite3_busy_timeout(database, 250);
 }
 
@@ -55,7 +56,7 @@ Database::~Database() {
 Tranasction::Tranasction(Database& database_in)
     : kAttempts(100),
       database(database_in) {
-  std::string query("BEGIN IMMEDIATE TRANSACTION");  // FIXME consider immediate transaction
+  std::string query("BEGIN EXCLUSIVE TRANSACTION");  // FIXME consider immediate transaction
   for (int i(0); i != kAttempts; ++i) {
     try {
       Execute(query);
