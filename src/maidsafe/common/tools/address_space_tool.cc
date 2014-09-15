@@ -27,16 +27,16 @@
 
 namespace maidsafe {
 
-typedef std::pair<NodeId, bool> Node;  // Good node has .second == true.
+using Node = std::pair<NodeId, bool>;  // Good node has .second == true.
 typedef std::pair<NodeId, std::vector<Node>> BadGroup;
 
 size_t g_good_count(1000), g_group_size(4), g_majority_size(3), g_bad_group_count(2),
-       g_total_random_attempts(1000000);
+    g_total_random_attempts(1000000);
 std::vector<Node> all_nodes;
 
 void GetChoice(std::string input_text, size_t& value) {
   input_text = "\nEnter " + input_text + " (default " + std::to_string(value) +
-    " - hit enter to use default): ";
+               " - hit enter to use default): ";
   std::string input;
   int choice(-1);
   for (;;) {
@@ -47,7 +47,8 @@ void GetChoice(std::string input_text, size_t& value) {
     try {
       choice = std::stoi(input);
     }
-    catch (const std::exception&) {}
+    catch (const std::exception&) {
+    }
 
     if (choice > 0)
       break;
@@ -62,10 +63,44 @@ void GetValues() {
   GetChoice("target number of compromised groups", g_bad_group_count);
 }
 
+
+void AddNode(bool good) {
+  if (all_nodes.empty()) {
+    NodeId node(NodeId::IdType::kRandomId);
+    all_nodes.push_back(std::make_pair(node, good));
+    return;
+  }
+
+  auto count(0);
+  while (true) {
+    ++count;
+    auto node(NodeId::IdType::kRandomId);
+    if (all_nodes.size() > 1)
+      std::partial_sort(std::begin(all_nodes), std::begin(all_nodes) + 2, std::end(all_nodes),
+                        [&node](const Node& lhs, const Node& rhs) {
+        return NodeId::CloserToTarget(lhs.first, rhs.first, node);
+      });
+    if (all_nodes.size() < 2) {
+      if (all_nodes[0].first.LeadingBits(node) == 1) {
+        all_nodes.emplace_back(std::make_pair(node, good));
+        break;
+      }
+    } else if (all_nodes[0].first.LeadingBits(all_nodes[1].first) + 0 >
+               all_nodes[0].first.LeadingBits(node)) {
+      all_nodes.emplace_back(std::make_pair(node, good));
+
+      TLOG(kCyan) << "Created  node in " << count << " attempts.\n";
+      break;
+    }
+  }
+}
+
 void InitialiseNetwork() {
   all_nodes.reserve(g_good_count);
-  for (size_t i(0); i < g_good_count; ++i)
-    all_nodes.emplace_back(std::make_pair(NodeId(NodeId::IdType::kRandomId), true));
+  for (size_t i(0); i < g_good_count; ++i) {
+    AddNode(true);
+    TLOG(kCyan) << "\nAdded a good node.\n";
+  }
   TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes.\n";
 }
 
@@ -75,8 +110,8 @@ std::vector<NodeId> GetUniformlyDistributedTargetPoints() {
   std::vector<NodeId> steps;
   steps.reserve(kStepCount);
   crypto::BigInt step_size(
-      (NodeId(std::string(NodeId::kSize, -1)).ToStringEncoded(
-          NodeId::EncodingType::kHex) + "h").c_str());
+      (NodeId(std::string(NodeId::kSize, -1)).ToStringEncoded(NodeId::EncodingType::kHex) + "h")
+          .c_str());
   step_size /= kStepCount;
   crypto::BigInt step(0l);
   for (size_t i(0); i < kStepCount; ++i) {
@@ -102,8 +137,7 @@ BadGroup GetBadGroup(const NodeId& target_id) {
   });
   auto is_bad([](const Node& node) { return !node.second; });
   // Count bad nodes in close group and return the group if majority are bad
-  if (static_cast<size_t>(std::count_if(std::begin(all_nodes),
-                                        std::begin(all_nodes) + g_group_size,
+  if (static_cast<size_t>(std::count_if(std::begin(all_nodes), std::begin(all_nodes) + g_group_size,
                                         is_bad)) >= g_majority_size) {
     bad_group.assign(std::begin(all_nodes), std::begin(all_nodes) + g_group_size);
     std::sort(std::begin(bad_group), std::end(bad_group));
@@ -112,13 +146,13 @@ BadGroup GetBadGroup(const NodeId& target_id) {
 }
 
 // Add bad nodes until we have 'g_bad_group_count' entirely separate bad close groups
-std::vector<BadGroup> InjectBadGroups(std::vector<Node>& all_nodes,
-                                      const std::vector<NodeId>& steps) {
+std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps) {
   TLOG(kCyan) << "Adding bad nodes and checking for compromised groups...\n";
   std::vector<BadGroup> bad_groups;
   while (bad_groups.size() < g_bad_group_count) {
     bad_groups.clear();
-    all_nodes.emplace_back(std::make_pair(NodeId(NodeId::IdType::kRandomId), false));
+
+    AddNode(false);
     // Iterate through evenly-spread target IDs
     for (const auto& target_id : steps) {
       auto new_bad_group(GetBadGroup(target_id));
@@ -145,8 +179,8 @@ std::vector<BadGroup> InjectBadGroups(std::vector<Node>& all_nodes,
 
 void ReportBadGroups(const std::vector<BadGroup>& bad_groups) {
   for (size_t i(0); i < bad_groups.size(); ++i) {
-    TLOG(kDefaultColour) << "Bad group " << i << " close to target "
-                         << DebugId(bad_groups[i].first) << ":\n";
+    TLOG(kDefaultColour) << "Bad group " << i << " close to target " << DebugId(bad_groups[i].first)
+                         << ":\n";
     for (const auto& id : bad_groups[i].second) {
       if (id.second)
         TLOG(kGreen) << DebugId(id.first) << " (good node)\n";
@@ -179,7 +213,8 @@ void CheckLinkedAddresses() {
       ReportBadGroups(bad_groups);
     }
   }
-  std::string output("\n" + std::to_string(compromised_attempts) + " out of " +
+  std::string output(
+      "\n" + std::to_string(compromised_attempts) + " out of " +
       std::to_string(g_total_random_attempts) +
       " linked random addresses were fully managed by compromised close groups.\n\n");
   if (compromised_attempts)
@@ -191,7 +226,7 @@ void CheckLinkedAddresses() {
 void RunTest() {
   InitialiseNetwork();
   auto steps(GetUniformlyDistributedTargetPoints());
-  auto bad_groups(InjectBadGroups(all_nodes, steps));
+  auto bad_groups(InjectBadGroups(steps));
   ReportBadGroups(bad_groups);
   CheckLinkedAddresses();
 }

@@ -73,6 +73,7 @@ class NodeId {
 
   bool IsZero() const;
 
+  int LeadingBits(NodeId node);
   // XOR distance between two IDs.  XOR bit to bit.
   NodeId& operator^=(const NodeId& rhs);
 

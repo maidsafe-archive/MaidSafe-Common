@@ -27,9 +27,9 @@
 namespace maidsafe {
 
 #ifdef NDEBUG
-# define INIT_DEBUG_NODE_ID
+#define INIT_DEBUG_NODE_ID
 #else
-# define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
+#define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
 #endif
 
 NodeId::NodeId() : raw_id_(kSize, 0) INIT_DEBUG_NODE_ID {}
@@ -134,6 +134,17 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
     default:
       return raw_id_;
   }
+}
+
+int NodeId::LeadingBits(NodeId node) {
+  for (int i(0); i < kSize; ++i) {
+    std::bitset<8> us(static_cast<int>(raw_id_[i]));
+    std::bitset<8> them(static_cast<int>(node.raw_id_[i]));
+    for(int j(7); j  >=  0; --j )
+      if (us[j] != them[j])
+      return (8 * i) + (8 - j);
+  }
+  return std::numeric_limits<int>::max();
 }
 
 bool NodeId::IsZero() const {
