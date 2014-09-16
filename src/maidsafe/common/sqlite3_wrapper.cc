@@ -62,7 +62,7 @@ void Database::CheckPoint() {
 Tranasction::Tranasction(Database& database_in)
     : kAttempts(100),
       database(database_in) {
-  std::string query("BEGIN EXCLUSIVE TRANSACTION");  // FIXME consider immediate transaction
+  std::string query("BEGIN IMMEDIATE TRANSACTION");  // FIXME consider immediate transaction
   for (int i(0); i != kAttempts; ++i) {
     try {
       Execute(query);
