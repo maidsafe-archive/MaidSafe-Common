@@ -34,7 +34,7 @@ typedef std::pair<NodeId, std::vector<Node>> BadGroup;
 enum class CommonLeadingBitsAlgorithm { kHighest, kLowest, kMean };
 
 size_t g_good_count{ 1000 }, g_group_size{ 4 }, g_majority_size{ 3 }, g_bad_group_count{ 2 },
-    g_total_random_attempts{ 1000000};
+    g_total_random_attempts{ 1000000 }, g_leeway{ 2 };
 std::vector<Node> all_nodes;
 CommonLeadingBitsAlgorithm g_algorithm{ CommonLeadingBitsAlgorithm::kHighest };
 
@@ -65,6 +65,7 @@ void GetValues() {
   GetChoice("majority size", g_majority_size);
   GetChoice("target number of compromised groups", g_bad_group_count);
   GetChoice("number of random attempts", g_total_random_attempts);
+  GetChoice("leeway of common leading bits", g_leeway);
 }
 
 int Accumulate(std::vector<Node>::iterator first, std::vector<Node>::iterator last,
@@ -129,9 +130,10 @@ void AddNode(bool good) {
 
     int group_common_leading_bits{ GroupCommonLeadingBits(group_size) };
     int candidate_common_leading_bits{ CandidateCommonLeadingBits(node, group_size) };
-    if (candidate_common_leading_bits < group_common_leading_bits + 1) {
+    if (candidate_common_leading_bits < group_common_leading_bits + g_leeway) {
       all_nodes.emplace_back(std::make_pair(node, good));
-      TLOG(kCyan) << "Created  node in " << count << " attempts.\n";
+      TLOG(kCyan) << "Added a " << (good ? "good" : "bad") << " node after " << count
+                  << " attempts.\n";
       break;
     }
   }
@@ -142,10 +144,8 @@ void InitialiseNetwork() {
   // Add first node
   all_nodes.push_back(std::make_pair(NodeId(NodeId::IdType::kRandomId), true));
   // Add others
-  for (size_t i(1); i < g_good_count; ++i) {
+  for (size_t i(1); i < g_good_count; ++i)
     AddNode(true);
-    TLOG(kCyan) << "\nAdded a good node.\n";
-  }
   TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes.\n";
 }
 
