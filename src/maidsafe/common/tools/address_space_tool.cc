@@ -47,15 +47,19 @@ void GetChoice(std::string input_text, size_t& value) {
   for (;;) {
     TLOG(kDefaultColour) << input_text;
     std::getline(std::cin, input);
-    if (input.empty())
+    if (input.empty()) {
+      TLOG(kDefaultColour) << value;
       return;
+    }
     try {
       choice = std::stoi(input);
     }
     catch (const std::exception&) {}
 
-    if (choice > 0)
+    if (choice > 0) {
+      TLOG(kDefaultColour) << choice;
       break;
+    }
   }
   value = static_cast<size_t>(choice);
 }
@@ -67,6 +71,7 @@ void GetValues() {
   GetChoice("target number of compromised groups", g_bad_group_count);
   GetChoice("number of random attempts", g_total_random_attempts);
   GetChoice("leeway of common leading bits", g_leeway);
+  TLOG(kDefaultColour) << '\n';
 }
 
 int Accumulate(std::vector<Node>::iterator first, std::vector<Node>::iterator last,
