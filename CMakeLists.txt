@@ -127,8 +127,9 @@ ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing
 target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
 
 # Qa tool
-ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc")
-target_link_libraries(qa_tool maidsafe_common maidsafe_passport)
+ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc"
+                                         "${CommonSourcesDir}/tools/tests/sqlite3_wrapper_benchmark.cc")
+target_link_libraries(qa_tool maidsafe_common maidsafe_passport maidsafe_test)
 
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
