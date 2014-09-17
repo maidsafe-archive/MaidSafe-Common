@@ -37,6 +37,7 @@ size_t g_good_count{ 1000 }, g_group_size{ 4 }, g_majority_size{ 3 }, g_bad_grou
     g_total_random_attempts{ 1000000 }, g_leeway{ 2 };
 std::vector<Node> all_nodes;
 CommonLeadingBitsAlgorithm g_algorithm{ CommonLeadingBitsAlgorithm::kHighest };
+size_t g_total_attempts{ 0 };
 
 void GetChoice(std::string input_text, size_t& value) {
   input_text = "\nEnter " + input_text + " (default " + std::to_string(value) +
@@ -46,15 +47,19 @@ void GetChoice(std::string input_text, size_t& value) {
   for (;;) {
     TLOG(kDefaultColour) << input_text;
     std::getline(std::cin, input);
-    if (input.empty())
+    if (input.empty()) {
+      TLOG(kDefaultColour) << value;
       return;
+    }
     try {
       choice = std::stoi(input);
     }
     catch (const std::exception&) {}
 
-    if (choice > 0)
+    if (choice > 0) {
+      TLOG(kDefaultColour) << choice;
       break;
+    }
   }
   value = static_cast<size_t>(choice);
 }
@@ -66,6 +71,7 @@ void GetValues() {
   GetChoice("target number of compromised groups", g_bad_group_count);
   GetChoice("number of random attempts", g_total_random_attempts);
   GetChoice("leeway of common leading bits", g_leeway);
+  TLOG(kDefaultColour) << '\n';
 }
 
 int Accumulate(std::vector<Node>::iterator first, std::vector<Node>::iterator last,
@@ -117,10 +123,10 @@ int CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) 
 }
 
 void AddNode(bool good) {
-  int count{ 0 };
+  int attempts{ 0 };
   size_t group_size{ std::min(g_group_size, all_nodes.size()) };
   for (;;) {
-    ++count;
+    ++attempts;
     NodeId node(NodeId::IdType::kRandomId);
     std::partial_sort(std::begin(all_nodes), std::begin(all_nodes) + group_size,
                       std::end(all_nodes),
@@ -132,8 +138,9 @@ void AddNode(bool good) {
     int candidate_common_leading_bits{ CandidateCommonLeadingBits(node, group_size) };
     if (candidate_common_leading_bits < group_common_leading_bits + g_leeway) {
       all_nodes.emplace_back(std::make_pair(node, good));
-      TLOG(kCyan) << "Added a " << (good ? "good" : "bad") << " node after " << count
-                  << " attempts.\n";
+      TLOG(kCyan) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
+                  << " attempt(s) in a network of size " << all_nodes.size() << ".\n";
+      g_total_attempts += attempts;
       break;
     }
   }
@@ -146,7 +153,9 @@ void InitialiseNetwork() {
   // Add others
   for (size_t i(1); i < g_good_count; ++i)
     AddNode(true);
-  TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes.\n";
+  TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes, averaging "
+              << static_cast<double>(g_total_attempts) / all_nodes.size() << " attempt(s) each.\n";
+  g_total_attempts = 0;
 }
 
 // Constructs a series of NodeIds spread evenly across address space
@@ -218,7 +227,8 @@ std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps) {
     }
   }
   TLOG(kRed) << "Got " << g_bad_group_count << " bad groups after adding " << BadCount()
-             << " bad nodes.\n";
+             << " bad nodes, averaging " << static_cast<double>(g_total_attempts) / BadCount()
+             << " attempt(s) each.\n";
   return bad_groups;
 }
 
