@@ -18,7 +18,9 @@
 
 #include "maidsafe/common/test.h"
 
+#ifndef MAIDSAFE_WIN32
 #include <sys/resource.h>
+#endif
 #include <cstdint>
 #include <future>
 #include <iostream>
