@@ -53,36 +53,13 @@ Database::~Database() {
 }
 
 
-void Database::Execute(const std::string& query) {
-  char *error_message = 0;
-  int result = sqlite3_exec(database, query.c_str(), NULL, 0, &error_message);
-  assert(result != SQLITE_ROW);
-
-  if (result != SQLITE_OK) {
-    if (result == SQLITE_BUSY) {
-      LOG(kWarning) << "SQL busy : " << error_message << " . Query :" << query;
-      sqlite3_free(error_message);
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_busy));
-    } else if (result == SQLITE_NOTADB) {
-      LOG(kError) << "database not presented";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
-    } else {
-      LOG(kError) << "SQL error : " << error_message  << ". return value : " << result
-                  << " . Query :" << query;
-      sqlite3_free(error_message);
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
-    }
-  }
-}
-
-
 Tranasction::Tranasction(Database& database_in)
     : kAttempts(100),
       database(database_in) {
   std::string query("BEGIN IMMEDIATE TRANSACTION");  // FIXME consider immediate transaction
   for (int i(0); i != kAttempts; ++i) {
     try {
-      database.Execute(query);
+      Execute(query);
       return;
     } catch (const maidsafe_error& error) {
       LOG(kWarning) << "Tranasction::Constructor FAILED in Attempt " << i << " with error "
@@ -101,7 +78,7 @@ Tranasction::~Tranasction() {
   if (committed)
     return;
   try {
-    database.Execute("ROLLBACK TRANSACTION");
+    Execute("ROLLBACK TRANSACTION");
   } catch (const std::exception& error) {
     LOG(kError) << "Error on ROLLBACK TRANSACTION" << error.what();
   }
@@ -110,7 +87,7 @@ Tranasction::~Tranasction() {
 void Tranasction::Commit() {
   for (int i(0); i != kAttempts; ++i) {
     try {
-      database.Execute("COMMIT TRANSACTION");
+      Execute("COMMIT TRANSACTION");
       committed = true;
       return;
     } catch (const std::exception& e) {
@@ -123,6 +100,27 @@ void Tranasction::Commit() {
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
 }
 
+void Tranasction::Execute(const std::string& query) {
+  char *error_message = 0;
+  int result = sqlite3_exec(database.database, query.c_str(), NULL, 0, &error_message);
+  assert(result != SQLITE_ROW);
+
+  if (result != SQLITE_OK) {
+    if (result == SQLITE_BUSY) {
+      LOG(kWarning) << "SQL busy : " << error_message << " . Query :" << query;
+      sqlite3_free(error_message);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_busy));
+    } else if (result == SQLITE_NOTADB) {
+      LOG(kError) << "database not presented";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    } else {
+      LOG(kError) << "SQL error : " << error_message  << ". return value : " << result
+                  << " . Query :" << query;
+      sqlite3_free(error_message);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+    }
+  }
+}
 
 Statement::Statement(Database& database_in, const std::string& query)
     : database(database_in),
