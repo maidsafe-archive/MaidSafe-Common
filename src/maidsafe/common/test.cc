@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/test.h"
 
+#include <sys/resource.h>
 #include <cstdint>
 #include <future>
 #include <iostream>
@@ -199,6 +200,45 @@ void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
   ++current_seed_;
 }
 
+#ifndef MAIDSAFE_WIN32
+UlimitConfigurer::UlimitConfigurer()
+  : prev_open_files_(0), prev_file_size_(ulimit(UL_GETFSIZE)),
+    kLimitsOpenFiles(1024), kLimitsFileSize(2048) {
+  struct rlimit rlp;
+  getrlimit(RLIMIT_NOFILE, &rlp);
+  prev_open_files_ = rlp.rlim_cur;
+}
+
+void UlimitConfigurer::OnTestProgramStart(const testing::UnitTest& /*unit_test*/) {
+  // We need to set the ulimit at the start of test
+  if (prev_file_size_ < kLimitsFileSize)
+    ulimit(UL_SETFSIZE, kLimitsFileSize);
+
+  if (prev_open_files_ < kLimitsOpenFiles) {
+    LOG(kWarning) << "not enough max open files, currently is " << prev_open_files_
+                  << " , however expected to be sudo " << kLimitsOpenFiles;
+    struct rlimit limit;
+    getrlimit(RLIMIT_NOFILE, &limit);
+    limit.rlim_cur = kLimitsOpenFiles;
+    if (setrlimit(RLIMIT_NOFILE, &limit) != 0)
+      LOG(kError) << "error in changing max open files";
+  }
+}
+
+void UlimitConfigurer::OnTestProgramEnd(const testing::UnitTest& unit_test) {
+// Once the limit has been decreased, it seems the session doesn't allow the limit to be
+// increased again, so a Restore shall not be carried out
+/*  // Restore the ulimit configuration
+  if (prev_file_size_ < kLimitsFileSize)
+    ulimit(UL_SETFSIZE, prev_file_size_);
+*/
+// setrlimit can only affect current session, so no need to restore
+  if (unit_test.Failed() && (prev_open_files_ < kLimitsOpenFiles))
+    LOG(kError) << "Failing tests may caused by current max open files ( "
+                << prev_open_files_ << " ) is not enough and failed to change";
+}
+#endif
+
 boost::optional<fs::path> GetBootstrapFilePath() { return BootstrapFilePath(); }
 
 void PrepareBootstrapFile(fs::path bootstrap_file) {
@@ -236,6 +276,9 @@ int ExecuteGTestMain(int argc, char* argv[]) {
   testing::FLAGS_gtest_catch_exceptions = false;
   testing::InitGoogleTest(&argc, argv);
   testing::UnitTest::GetInstance()->listeners().Append(new BootstrapFileHandler);
+#ifndef MAIDSAFE_WIN32
+  testing::UnitTest::GetInstance()->listeners().Append(new UlimitConfigurer);
+#endif
   testing::UnitTest::GetInstance()->listeners().Append(new RandomNumberSeeder);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
