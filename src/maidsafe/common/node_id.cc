@@ -23,6 +23,7 @@
 
 #include "maidsafe/common/error_categories.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/node_id_common_bits_matrix.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -153,16 +154,9 @@ int NodeId::CommonLeadingBits(const NodeId& other) const {
   if (mismatch.first == std::end(raw_id_))
     return 8 * kSize;
 
-  // Turn mismatch chars to bitsets
-  std::bitset<8> our_mismatch_char(static_cast<int>(*mismatch.first));
-  std::bitset<8> their_mismatch_char(static_cast<int>(*mismatch.second));
-
-  // Find position of most significant bit mismatch
-  int bit_index{ 7 };
-  while (bit_index >= 0 && our_mismatch_char[bit_index] == their_mismatch_char[bit_index])
-    --bit_index;
-
-  return static_cast<int>(8 * std::distance(std::begin(raw_id_), mismatch.first)) + 7 - bit_index;
+  int common_bits{ detail::kCommonBits[static_cast<unsigned char>(*mismatch.first)]
+                                      [static_cast<unsigned char>(*mismatch.second)] };
+  return static_cast<int>(8 * std::distance(std::begin(raw_id_), mismatch.first)) + common_bits;
 }
 
 NodeId& NodeId::operator^=(const NodeId& rhs) {
