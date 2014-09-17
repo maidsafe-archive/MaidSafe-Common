@@ -47,9 +47,7 @@ struct Database {
   Database(Database&&) = delete;
   Database& operator=(Database) = delete;
 
-  void CheckPoint();
-
-  friend struct Transaction;
+  friend struct Tranasction;
   friend struct Statement;
  private:
   sqlite3 *database;
