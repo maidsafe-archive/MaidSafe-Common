@@ -56,6 +56,7 @@ class Sqlite3WrapperBenchmark {
                                       bool check_size = true);
 
   void KeyValueIndividualTransaction();
+  void KeyValueParallelTransaction();
 
   void InsertKeyValuePair(sqlite::Database& database,
                           std::pair<std::string, std::string> key_value_pair,

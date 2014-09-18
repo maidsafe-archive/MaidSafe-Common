@@ -44,10 +44,14 @@ void Sqlite3WrapperBenchmark::Run() {
   //                             and value length to be around 20
   // Datamanager use Db which have key length to be around 64, but the value is vector
   //             of IDs, miniumn to be 4, makes the value length to be at least 256
-  for (int i(0); i < 1000; ++i)
+  for (int i(0); i < 10000; ++i)
     key_value_pairs[RandomAlphaNumericString(130)] = RandomAlphaNumericString(512);
 
   KeyValueIndividualTransaction();
+  // When SQLite bing used for personas, each persona can has its own table or even database.
+  // So the concurrent situation depending on the program configuration only,
+  // the chance of high number of concurrency is low, so only tested with 4 threads.
+  KeyValueParallelTransaction();
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
@@ -94,7 +98,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
 // OK with 1000 and 5000 entries, getting missing entries with 10k entries,
 // but no corrupted entry in database (only missing)
 void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
-  TLOG(kGreen) << "\nInserting 10k endpoint strings with 20 parallel threads,"
+  TLOG(kGreen) << "\nInserting 10k endpoint strings with 20 concurrent threads,"
                << " and individual transaction for each string\n";
 
   ticking_clock.restart();
@@ -106,9 +110,9 @@ void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
 
   std::mutex mutex;
   size_t thread_count(20), index(0);
-  ::maidsafe::test::RunInParallel(thread_count, [&] {
-    std::vector<std::string> endpoint_string_vector;
+  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
     for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
+      std::vector<std::string> endpoint_string_vector;
       {
         std::lock_guard<std::mutex> lock{ mutex };
         endpoint_string_vector.push_back(ten_thousand_strings.at(index));
@@ -128,7 +132,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsParallelDelete() {
-  TLOG(kGreen) << "\nParallel Deletion (20 threads) from the database"
+  TLOG(kGreen) << "\nConcurrent Deletion (20 threads) from the database"
                << " containing 10k endpoint strings\n";
   sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
   std::string query(
@@ -146,11 +150,12 @@ void Sqlite3WrapperBenchmark::EndpointStringsParallelDelete() {
   ticking_clock.restart();
   std::mutex mutex;
   size_t thread_count(20), index(0);
-  ::maidsafe::test::RunInParallel(thread_count, [&] {
-    std::vector<std::string> endpoint_string_vector;
+  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
     for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
+      std::vector<std::string> endpoint_string_vector;
       {
         std::lock_guard<std::mutex> lock{ mutex };
+        LOG(kVerbose) << index;
         endpoint_string_vector.push_back(ten_thousand_strings.at(index));
         ++index;
       }
@@ -250,6 +255,39 @@ void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
   }
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
   CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueIndividualTransaction");
+}
+
+void Sqlite3WrapperBenchmark::KeyValueParallelTransaction() {
+  TLOG(kGreen) << "\nInserting 1000 key_value pairs with 4 concurrent threads,"
+               << " and individual transaction for each string\n";
+
+  ticking_clock.restart();
+  sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
+  std::string query(
+      "CREATE TABLE IF NOT EXISTS KeyValueParallelTransaction ("
+      "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
+  PrepareTable(database, query);
+
+  std::mutex mutex;
+  size_t thread_count(4), index(0);
+  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
+    for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
+      auto itr(key_value_pairs.begin());
+      {
+        std::lock_guard<std::mutex> lock{ mutex };
+        LOG(kVerbose) << index;
+        std::advance(itr, index);
+        ++index;
+      }
+      sqlite::Tranasction transaction{database};
+      InsertKeyValuePair(database, *itr,
+        "INSERT OR REPLACE INTO KeyValueParallelTransaction (KEY, VALUE) VALUES (?, ?)");
+      transaction.Commit();
+    }
+  });
+  LOG(kVerbose) << "index : " << index;
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+  CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueParallelTransaction");
 }
 
 void Sqlite3WrapperBenchmark::InsertKeyValuePair(sqlite::Database& database,
