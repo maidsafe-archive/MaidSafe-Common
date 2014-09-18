@@ -37,6 +37,7 @@ void Sqlite3WrapperBenchmark::Run() {
 
   EndpointStringsSingleTransaction();
   EndpointStringsIndividualTransaction();
+  EndpointStringsParallelTransaction();
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
@@ -57,7 +58,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
 
   std::vector<std::string> result;
   ReadEndpointStrings(result, "SELECT * from EndpointStringsSingleTransaction");
-  CheckEndpointStringsTestResult(ten_thousand_strings, result, true, true);
+  CheckEndpointStringsTestResult(ten_thousand_strings, result);
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
@@ -77,39 +78,81 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
       transaction.Commit();
     }
   }
-  auto time_taken(ticking_clock.elapsed());
-  TLOG(kGreen) << "test completed in " << time_taken << " seconds\n";
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
 
   std::vector<std::string> result;
   ReadEndpointStrings(result, "SELECT * from EndpointStringsIndividualTransaction");
-  CheckEndpointStringsTestResult(ten_thousand_strings, result, true, true);
+  CheckEndpointStringsTestResult(ten_thousand_strings, result);
+}
+
+// OK with 1000 and 5000 entries, getting missing entries with 10k entries,
+// but no corrupted entry in database (only missing)
+void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
+  TLOG(kGreen) << "\nInserting 10k endpoint strings with 20 parallel threads,"
+               << " and individual transaction for each string\n";
+
+  ticking_clock.restart();
+  sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
+  std::string query(
+      "CREATE TABLE IF NOT EXISTS EndpointStringsParallelTransaction ("
+      "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
+  PrepareTable(database, query);
+
+  std::mutex mutex;
+  size_t thread_count(20), index(0);
+  ::maidsafe::test::RunInParallel(thread_count, [&] {
+    std::vector<std::string> endpoint_string_vector;
+    for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
+      {
+        std::lock_guard<std::mutex> lock{ mutex };
+        endpoint_string_vector.push_back(ten_thousand_strings.at(index));
+        ++index;
+      }
+      sqlite::Tranasction transaction{database};
+      InsertEndpointStrings(database, endpoint_string_vector,
+        "INSERT OR REPLACE INTO EndpointStringsParallelTransaction (ENDPOINT) VALUES (?)");
+      transaction.Commit();
+    }
+  });
+  LOG(kVerbose) << "index : " << index;
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+
+  std::vector<std::string> result;
+  ReadEndpointStrings(result, "SELECT * from EndpointStringsParallelTransaction");
+  CheckEndpointStringsTestResult(ten_thousand_strings, result, false);
 }
 
 void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
     const std::vector<std::string>& expected_result,
     const std::vector<std::string>& result,
-    bool check_content, bool check_order) {
-  if (result.size() == expected_result.size()) {
-    if (check_content) {
-      if (check_order) {
-        for (size_t i(0); i < result.size(); ++i)
-          if (result.at(i) != ten_thousand_strings.at(i)) {
-            TLOG(kRed) << "entry stored with dis-order\n";
-            return;
-          }
-      } else {
-        for (auto& entry : expected_result) {
-          if (std::find(result.begin(), result.end(), entry) == result.end()) {
-            TLOG(kRed) << "cannot find " << entry << " in database\n";
-            return;
-          }
+    bool check_order, bool check_content, bool check_size) {
+  if (check_size)
+    if (result.size() != expected_result.size()) {
+      TLOG(kRed) << "inserted " << expected_result.size()
+                 << " endpoint strings, got " << result.size() << " in database\n";
+    }
+  if (check_content) {
+    if (check_order) {
+      for (size_t i(0); i < std::min(result.size(), expected_result.size()); ++i)
+        if (result.at(i) != ten_thousand_strings.at(i)) {
+          TLOG(kRed) << "entry stored with dis-order\n";
+          break;
+        }
+    } else {
+      for (auto& entry : expected_result) {
+        if (std::find(result.begin(), result.end(), entry) == result.end()) {
+          TLOG(kRed) << "cannot find " << entry << " in database\n";
+          break;
+        }
+      }
+      for (auto& entry : result) {
+        if (std::find(expected_result.begin(), expected_result.end(), entry) ==
+            expected_result.end()) {
+          TLOG(kRed) << "database has an entry " << entry << " not expected\n";
+          break;
         }
       }
     }
-  } else {
-    TLOG(kRed) << "inserted " << expected_result.size()
-               << " endpoint strings, only got "
-               << result.size() << " in database\n";
   }
 }
 
