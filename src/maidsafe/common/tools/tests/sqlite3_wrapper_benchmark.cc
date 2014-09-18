@@ -39,6 +39,15 @@ void Sqlite3WrapperBenchmark::Run() {
   EndpointStringsIndividualTransaction();
   EndpointStringsParallelTransaction();
   EndpointStringsParallelDelete();
+
+  // PmidManager and MaidManager use GroupDb which have key length to be around 130
+  //                             and value length to be around 20
+  // Datamanager use Db which have key length to be around 64, but the value is vector
+  //             of IDs, miniumn to be 4, makes the value length to be at least 256
+  for (int i(0); i < 1000; ++i)
+    key_value_pairs[RandomAlphaNumericString(130)] = RandomAlphaNumericString(512);
+
+  KeyValueIndividualTransaction();
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
@@ -163,10 +172,9 @@ void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
   std::vector<std::string> result;
   ReadEndpointStrings(result, query);
 
-  if ((check_size) && (result.size() != expected_result.size())) {
+  if ((check_size) && (result.size() != expected_result.size()))
     TLOG(kRed) << "inserted " << expected_result.size()
                << " endpoint strings, got " << result.size() << " in database\n";
-  }
 
   if (check_content) {
     if (check_order) {
@@ -217,15 +225,82 @@ void Sqlite3WrapperBenchmark::ReadEndpointStrings(std::vector<std::string>& resu
                                                   std::string query) {
   sqlite::Database database{database_path, sqlite::Mode::kReadOnly};
   sqlite::Statement statement{database, query};
-  for (;;) {
-    if (statement.Step() == sqlite::StepResult::kSqliteRow) {
-      std::string endpoint_string = statement.ColumnText(0);
-      result.push_back(endpoint_string);
-    } else {
+  for (;;)
+    if (statement.Step() == sqlite::StepResult::kSqliteRow)
+      result.push_back(statement.ColumnText(0));
+    else
+      break;
+}
+
+void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
+  TLOG(kGreen) << "\nInserting 1000 key_value_pairs, individual transaction for each\n";
+  {
+    ticking_clock.restart();
+    sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
+    std::string query(
+        "CREATE TABLE IF NOT EXISTS KeyValueIndividualTransaction ("
+        "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
+    PrepareTable(database, query);
+    for (const auto& key_value_pair : key_value_pairs) {
+      sqlite::Tranasction transaction{database};
+      InsertKeyValuePair(database, key_value_pair,
+        "INSERT OR REPLACE INTO KeyValueIndividualTransaction (KEY, VALUE) VALUES (?, ?)");
+      transaction.Commit();
+    }
+  }
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+  CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueIndividualTransaction");
+}
+
+void Sqlite3WrapperBenchmark::InsertKeyValuePair(sqlite::Database& database,
+    std::pair<std::string, std::string> key_value_pair, std::string query) {
+  sqlite::Statement statement{database, query};
+  statement.BindText(1, key_value_pair.first);
+  statement.BindText(2, key_value_pair.second);
+  statement.Step();
+  statement.Reset();
+}
+
+void Sqlite3WrapperBenchmark::ReadKeyValuePairs(
+    std::map<std::string, std::string>& result, std::string query) {
+  sqlite::Database database{database_path, sqlite::Mode::kReadOnly};
+  sqlite::Statement statement{database, query};
+  for (;;)
+    if (statement.Step() == sqlite::StepResult::kSqliteRow)
+      result[statement.ColumnText(0)] = statement.ColumnText(1);
+    else
+      break;
+}
+
+void Sqlite3WrapperBenchmark::CheckKeyValueTestResult(
+    const std::map<std::string, std::string>& expected_result, std::string query) {
+  std::map<std::string, std::string> result;
+  ReadKeyValuePairs(result, query);
+
+  if (result.size() != expected_result.size())
+    TLOG(kRed) << "inserted " << expected_result.size()
+               << " key_value pairs, got " << result.size() << " in database\n";
+
+  for (auto& entry : expected_result) {
+    auto itr(result.find(entry.first));
+    if (itr == result.end()) {
+      TLOG(kRed) << "cannot find " << HexSubstr(entry.first) << " in database\n";
+      break;
+    } else if (itr->second != entry.second) {
+      TLOG(kRed) << "value of " << HexSubstr(entry.first) << " expected to be "
+                 << HexSubstr(entry.second) << " in database, but turned out to be "
+                 << HexSubstr(itr->second) << "\n";
+      break;
+    }
+  }
+  for (auto& entry : result) {
+    if (expected_result.find(entry.first) == expected_result.end()) {
+      TLOG(kRed) << "database has an entry " << HexSubstr(entry.first) << " not expected\n";
       break;
     }
   }
 }
+
 
 }  // namespace benchmark
 

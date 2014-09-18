@@ -38,26 +38,37 @@ class Sqlite3WrapperBenchmark {
   void Run();
 
  private:
+  void PrepareTable(sqlite::Database& database, std::string query);
+
   void EndpointStringsSingleTransaction();
   void EndpointStringsIndividualTransaction();
   void EndpointStringsParallelTransaction();
   void EndpointStringsParallelDelete();
 
-  void PrepareTable(sqlite::Database& database, std::string query);
+  void UpdateEndpointStrings(sqlite::Database& database,
+                             const std::vector<std::string>& endpoint_strings,
+                             std::string query);
+  void ReadEndpointStrings(std::vector<std::string>& result, std::string query);
   void CheckEndpointStringsTestResult(const std::vector<std::string>& expected_result,
                                       std::string query,
                                       bool check_order = true,
                                       bool check_content = true,
                                       bool check_size = true);
 
-  void UpdateEndpointStrings(sqlite::Database& database,
-                             const std::vector<std::string>& endpoint_strings,
-                             std::string query);
-  void ReadEndpointStrings(std::vector<std::string>& result, std::string query);
+  void KeyValueIndividualTransaction();
+
+  void InsertKeyValuePair(sqlite::Database& database,
+                          std::pair<std::string, std::string> key_value_pair,
+                          std::string query);
+  void ReadKeyValuePairs(std::map<std::string, std::string>& result,
+                         std::string query);
+  void CheckKeyValueTestResult(const std::map<std::string, std::string>& expected_result,
+                               std::string query);
 
   boost::filesystem::path database_path;
   boost::progress_timer ticking_clock;
   std::vector<std::string> ten_thousand_strings;
+  std::map<std::string, std::string> key_value_pairs;
 };
 
 }  // namespace benchmark
