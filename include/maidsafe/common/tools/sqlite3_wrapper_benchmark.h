@@ -38,16 +38,22 @@ class Sqlite3WrapperBenchmark {
   void Run();
 
  private:
-  void TenThousandEndpointString();
+  void EndpointStringsSingleTransaction();
+  void EndpointStringsIndividualTransaction();
 
-  void PrepareTable(sqlite::Database& database, const std::string& query);
+  void PrepareTable(sqlite::Database& database, std::string query);
+  void CheckEndpointStringsTestResult(const std::vector<std::string>& expected_result,
+                                      const std::vector<std::string>& result,
+                                      bool check_content, bool check_order);
 
   void InsertEndpointStrings(sqlite::Database& database,
-                             const std::vector<std::string>& endpoint_strings);
-  void ReadEndpointStrings(std::vector<std::string>& result);
+                             const std::vector<std::string>& endpoint_strings,
+                             std::string query);
+  void ReadEndpointStrings(std::vector<std::string>& result, std::string query);
 
   boost::filesystem::path database_path;
   boost::progress_timer ticking_clock;
+  std::vector<std::string> ten_thousand_strings;
 };
 
 }  // namespace benchmark

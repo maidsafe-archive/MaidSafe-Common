@@ -27,58 +27,103 @@ namespace maidsafe {
 namespace benchmark {
 
 Sqlite3WrapperBenchmark::Sqlite3WrapperBenchmark()
-  : database_path(), ticking_clock() {}
+  : database_path(), ticking_clock(), ten_thousand_strings() {}
 
 void Sqlite3WrapperBenchmark::Run() {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   database_path = boost::filesystem::path(*test_path / "sqlite_wrapper_benchmark");
-  TenThousandEndpointString();
-}
-
-void Sqlite3WrapperBenchmark::TenThousandEndpointString() {
-  TLOG(kGreen) << "Inserting 10000 endpoint strings within one transaction\n";
-  std::vector<std::string> ten_thousand_strings;
   for (int i(0); i < 10000; ++i)
     ten_thousand_strings.push_back(RandomAlphaNumericString(20));
 
+  EndpointStringsSingleTransaction();
+  EndpointStringsIndividualTransaction();
+}
+
+void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
+  TLOG(kGreen) << "\nInserting 10k endpoint strings within one transaction\n";
   {
     ticking_clock.restart();
     sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
-    sqlite::Tranasction transaction(database);
     std::string query(
-        "CREATE TABLE IF NOT EXISTS BOOTSTRAP_CONTACTS("
+        "CREATE TABLE IF NOT EXISTS EndpointStringsSingleTransaction ("
         "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
     PrepareTable(database, query);
-    InsertEndpointStrings(database, ten_thousand_strings);
+    sqlite::Tranasction transaction{database};
+    InsertEndpointStrings(database, ten_thousand_strings,
+      "INSERT OR REPLACE INTO EndpointStringsSingleTransaction (ENDPOINT) VALUES (?)");
     transaction.Commit();
+  }
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+
+  std::vector<std::string> result;
+  ReadEndpointStrings(result, "SELECT * from EndpointStringsSingleTransaction");
+  CheckEndpointStringsTestResult(ten_thousand_strings, result, true, true);
+}
+
+void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
+  TLOG(kGreen) << "\nInserting 10k endpoint strings, individual transaction for each\n";
+  {
+    ticking_clock.restart();
+    sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
+    std::string query(
+        "CREATE TABLE IF NOT EXISTS EndpointStringsIndividualTransaction ("
+        "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
+    PrepareTable(database, query);
+    for (const auto& endpoint_string : ten_thousand_strings) {
+      sqlite::Tranasction transaction{database};
+      std::vector<std::string> endpoint_string_vector(1, endpoint_string);
+      InsertEndpointStrings(database, endpoint_string_vector,
+        "INSERT OR REPLACE INTO EndpointStringsIndividualTransaction (ENDPOINT) VALUES (?)");
+      transaction.Commit();
+    }
   }
   auto time_taken(ticking_clock.elapsed());
   TLOG(kGreen) << "test completed in " << time_taken << " seconds\n";
 
   std::vector<std::string> result;
-  ReadEndpointStrings(result);
-  if (result.size() == ten_thousand_strings.size()) {
-    for (int i(0); i < 10000; ++i)
-      if (result.at(i) != ten_thousand_strings.at(i)) {
-        TLOG(kRed) << "entry stored with dis-order\n";
-        return;
+  ReadEndpointStrings(result, "SELECT * from EndpointStringsIndividualTransaction");
+  CheckEndpointStringsTestResult(ten_thousand_strings, result, true, true);
+}
+
+void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
+    const std::vector<std::string>& expected_result,
+    const std::vector<std::string>& result,
+    bool check_content, bool check_order) {
+  if (result.size() == expected_result.size()) {
+    if (check_content) {
+      if (check_order) {
+        for (size_t i(0); i < result.size(); ++i)
+          if (result.at(i) != ten_thousand_strings.at(i)) {
+            TLOG(kRed) << "entry stored with dis-order\n";
+            return;
+          }
+      } else {
+        for (auto& entry : expected_result) {
+          if (std::find(result.begin(), result.end(), entry) == result.end()) {
+            TLOG(kRed) << "cannot find " << entry << " in database\n";
+            return;
+          }
+        }
       }
+    }
   } else {
-      TLOG(kRed) << "inserted 10000 strings, only got "
+    TLOG(kRed) << "inserted " << expected_result.size()
+               << " endpoint strings, only got "
                << result.size() << " in database\n";
   }
 }
 
 void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database,
-                                           const std::string& query) {
+                                           std::string query) {
+  sqlite::Tranasction transaction{database};
   sqlite::Statement statement{database, query};
   statement.Step();
   statement.Reset();
+  transaction.Commit();
 }
 
 void Sqlite3WrapperBenchmark::InsertEndpointStrings(sqlite::Database& database,
-    const std::vector<std::string>& endpoint_strings) {
-  std::string query("INSERT OR REPLACE INTO BOOTSTRAP_CONTACTS (ENDPOINT) VALUES (?)");
+    const std::vector<std::string>& endpoint_strings, std::string query) {
   sqlite::Statement statement{database, query};
   for (const auto& endpoint_string : endpoint_strings) {
     statement.BindText(1, endpoint_string);
@@ -87,9 +132,9 @@ void Sqlite3WrapperBenchmark::InsertEndpointStrings(sqlite::Database& database,
   }
 }
 
-void Sqlite3WrapperBenchmark::ReadEndpointStrings(std::vector<std::string>& result) {
-  sqlite::Database database(database_path, sqlite::Mode::kReadOnly);
-  std::string query("SELECT * from BOOTSTRAP_CONTACTS");
+void Sqlite3WrapperBenchmark::ReadEndpointStrings(std::vector<std::string>& result,
+                                                  std::string query) {
+  sqlite::Database database{database_path, sqlite::Mode::kReadOnly};
   sqlite::Statement statement{database, query};
   for (;;) {
     if (statement.Step() == sqlite::StepResult::kSqliteRow) {
