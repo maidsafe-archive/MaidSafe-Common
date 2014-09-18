@@ -38,6 +38,7 @@ void Sqlite3WrapperBenchmark::Run() {
   EndpointStringsSingleTransaction();
   EndpointStringsIndividualTransaction();
   EndpointStringsParallelTransaction();
+  EndpointStringsParallelDelete();
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
@@ -50,15 +51,13 @@ void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
         "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
     PrepareTable(database, query);
     sqlite::Tranasction transaction{database};
-    InsertEndpointStrings(database, ten_thousand_strings,
+    UpdateEndpointStrings(database, ten_thousand_strings,
       "INSERT OR REPLACE INTO EndpointStringsSingleTransaction (ENDPOINT) VALUES (?)");
     transaction.Commit();
   }
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
-
-  std::vector<std::string> result;
-  ReadEndpointStrings(result, "SELECT * from EndpointStringsSingleTransaction");
-  CheckEndpointStringsTestResult(ten_thousand_strings, result);
+  CheckEndpointStringsTestResult(ten_thousand_strings,
+                                 "SELECT * from EndpointStringsSingleTransaction");
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
@@ -73,16 +72,14 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
     for (const auto& endpoint_string : ten_thousand_strings) {
       sqlite::Tranasction transaction{database};
       std::vector<std::string> endpoint_string_vector(1, endpoint_string);
-      InsertEndpointStrings(database, endpoint_string_vector,
+      UpdateEndpointStrings(database, endpoint_string_vector,
         "INSERT OR REPLACE INTO EndpointStringsIndividualTransaction (ENDPOINT) VALUES (?)");
       transaction.Commit();
     }
   }
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
-
-  std::vector<std::string> result;
-  ReadEndpointStrings(result, "SELECT * from EndpointStringsIndividualTransaction");
-  CheckEndpointStringsTestResult(ten_thousand_strings, result);
+  CheckEndpointStringsTestResult(ten_thousand_strings,
+                                 "SELECT * from EndpointStringsIndividualTransaction");
 }
 
 // OK with 1000 and 5000 entries, getting missing entries with 10k entries,
@@ -109,28 +106,68 @@ void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
         ++index;
       }
       sqlite::Tranasction transaction{database};
-      InsertEndpointStrings(database, endpoint_string_vector,
+      UpdateEndpointStrings(database, endpoint_string_vector,
         "INSERT OR REPLACE INTO EndpointStringsParallelTransaction (ENDPOINT) VALUES (?)");
       transaction.Commit();
     }
   });
   LOG(kVerbose) << "index : " << index;
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+  CheckEndpointStringsTestResult(ten_thousand_strings,
+                                 "SELECT * from EndpointStringsParallelTransaction",
+                                 false);
+}
 
-  std::vector<std::string> result;
-  ReadEndpointStrings(result, "SELECT * from EndpointStringsParallelTransaction");
-  CheckEndpointStringsTestResult(ten_thousand_strings, result, false);
+void Sqlite3WrapperBenchmark::EndpointStringsParallelDelete() {
+  TLOG(kGreen) << "\nParallel Deletion (20 threads) from the database"
+               << " containing 10k endpoint strings\n";
+  sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
+  std::string query(
+      "CREATE TABLE IF NOT EXISTS EndpointStringsParallelDelete ("
+      "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
+  PrepareTable(database, query);
+  {
+    // populate the database with 10k entries
+    sqlite::Tranasction transaction{database};
+    UpdateEndpointStrings(database, ten_thousand_strings,
+      "INSERT OR REPLACE INTO EndpointStringsParallelDelete (ENDPOINT) VALUES (?)");
+    transaction.Commit();
+  }
+
+  ticking_clock.restart();
+  std::mutex mutex;
+  size_t thread_count(20), index(0);
+  ::maidsafe::test::RunInParallel(thread_count, [&] {
+    std::vector<std::string> endpoint_string_vector;
+    for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
+      {
+        std::lock_guard<std::mutex> lock{ mutex };
+        endpoint_string_vector.push_back(ten_thousand_strings.at(index));
+        ++index;
+      }
+      sqlite::Tranasction transaction{database};
+      UpdateEndpointStrings(database, endpoint_string_vector,
+        "DELETE From EndpointStringsParallelDelete WHERE ENDPOINT=?");
+      transaction.Commit();
+    }
+  });
+  LOG(kVerbose) << "index : " << index;
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+  CheckEndpointStringsTestResult(std::vector<std::string>(),
+                                 "SELECT * from EndpointStringsParallelDelete");
 }
 
 void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
-    const std::vector<std::string>& expected_result,
-    const std::vector<std::string>& result,
+    const std::vector<std::string>& expected_result, std::string query,
     bool check_order, bool check_content, bool check_size) {
-  if (check_size)
-    if (result.size() != expected_result.size()) {
-      TLOG(kRed) << "inserted " << expected_result.size()
-                 << " endpoint strings, got " << result.size() << " in database\n";
-    }
+  std::vector<std::string> result;
+  ReadEndpointStrings(result, query);
+
+  if ((check_size) && (result.size() != expected_result.size())) {
+    TLOG(kRed) << "inserted " << expected_result.size()
+               << " endpoint strings, got " << result.size() << " in database\n";
+  }
+
   if (check_content) {
     if (check_order) {
       for (size_t i(0); i < std::min(result.size(), expected_result.size()); ++i)
@@ -165,7 +202,8 @@ void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database,
   transaction.Commit();
 }
 
-void Sqlite3WrapperBenchmark::InsertEndpointStrings(sqlite::Database& database,
+// Insert or Delete
+void Sqlite3WrapperBenchmark::UpdateEndpointStrings(sqlite::Database& database,
     const std::vector<std::string>& endpoint_strings, std::string query) {
   sqlite::Statement statement{database, query};
   for (const auto& endpoint_string : endpoint_strings) {

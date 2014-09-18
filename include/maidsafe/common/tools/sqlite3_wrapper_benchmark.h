@@ -41,15 +41,16 @@ class Sqlite3WrapperBenchmark {
   void EndpointStringsSingleTransaction();
   void EndpointStringsIndividualTransaction();
   void EndpointStringsParallelTransaction();
+  void EndpointStringsParallelDelete();
 
   void PrepareTable(sqlite::Database& database, std::string query);
   void CheckEndpointStringsTestResult(const std::vector<std::string>& expected_result,
-                                      const std::vector<std::string>& result,
+                                      std::string query,
                                       bool check_order = true,
                                       bool check_content = true,
                                       bool check_size = true);
 
-  void InsertEndpointStrings(sqlite::Database& database,
+  void UpdateEndpointStrings(sqlite::Database& database,
                              const std::vector<std::string>& endpoint_strings,
                              std::string query);
   void ReadEndpointStrings(std::vector<std::string>& result, std::string query);
