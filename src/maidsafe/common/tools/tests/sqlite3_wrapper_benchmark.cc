@@ -37,8 +37,8 @@ void Sqlite3WrapperBenchmark::Run() {
 
   EndpointStringsSingleTransaction();
   EndpointStringsIndividualTransaction();
-  EndpointStringsParallelTransaction();
-  EndpointStringsParallelDelete();
+  EndpointStringsConcurrentInsertions();
+  EndpointStringsConcurrentDeletes();
 
   // PmidManager and MaidManager use GroupDb which have key length to be around 130
   //                             and value length to be around 20
@@ -51,7 +51,7 @@ void Sqlite3WrapperBenchmark::Run() {
   // When SQLite bing used for personas, each persona can has its own table or even database.
   // So the concurrent situation depending on the program configuration only,
   // the chance of high number of concurrency is low, so only tested with 4 threads.
-  KeyValueParallelTransaction();
+  KeyValueConcurrentInsertions();
   KeyValueConcurrentUpdates();
 }
 
@@ -65,7 +65,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
         "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
     PrepareTable(database, query);
     sqlite::Tranasction transaction{database};
-    UpdateEndpointStrings(database, ten_thousand_strings,
+    AddRemoveEndpointStrings(database, ten_thousand_strings,
       "INSERT OR REPLACE INTO EndpointStringsSingleTransaction (ENDPOINT) VALUES (?)");
     transaction.Commit();
   }
@@ -86,7 +86,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
     for (const auto& endpoint_string : ten_thousand_strings) {
       sqlite::Tranasction transaction{database};
       std::vector<std::string> endpoint_string_vector(1, endpoint_string);
-      UpdateEndpointStrings(database, endpoint_string_vector,
+      AddRemoveEndpointStrings(database, endpoint_string_vector,
         "INSERT OR REPLACE INTO EndpointStringsIndividualTransaction (ENDPOINT) VALUES (?)");
       transaction.Commit();
     }
@@ -96,14 +96,14 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
                                  "SELECT * from EndpointStringsIndividualTransaction");
 }
 
-void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
+void Sqlite3WrapperBenchmark::EndpointStringsConcurrentInsertions() {
   TLOG(kGreen) << "\nInserting 10k endpoint strings with 20 concurrent threads,"
                << " and individual transaction for each string\n";
 
   ticking_clock.restart();
   sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
   std::string query(
-      "CREATE TABLE IF NOT EXISTS EndpointStringsParallelTransaction ("
+      "CREATE TABLE IF NOT EXISTS EndpointStringsConcurrentInsertions ("
       "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
   PrepareTable(database, query);
 
@@ -118,31 +118,31 @@ void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
         ++index;
       }
       sqlite::Tranasction transaction{database};
-      UpdateEndpointStrings(database, endpoint_string_vector,
-        "INSERT OR REPLACE INTO EndpointStringsParallelTransaction (ENDPOINT) VALUES (?)");
+      AddRemoveEndpointStrings(database, endpoint_string_vector,
+        "INSERT OR REPLACE INTO EndpointStringsConcurrentInsertions (ENDPOINT) VALUES (?)");
       transaction.Commit();
     }
   });
   LOG(kVerbose) << "index : " << index;
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
   CheckEndpointStringsTestResult(ten_thousand_strings,
-                                 "SELECT * from EndpointStringsParallelTransaction",
+                                 "SELECT * from EndpointStringsConcurrentInsertions",
                                  false);
 }
 
-void Sqlite3WrapperBenchmark::EndpointStringsParallelDelete() {
+void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
   TLOG(kGreen) << "\nConcurrent Deletion (20 threads) from the database"
                << " containing 10k endpoint strings\n";
   sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
   std::string query(
-      "CREATE TABLE IF NOT EXISTS EndpointStringsParallelDelete ("
+      "CREATE TABLE IF NOT EXISTS EndpointStringsConcurrentDeletes ("
       "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
   PrepareTable(database, query);
   {
     // populate the database with 10k entries
     sqlite::Tranasction transaction{database};
-    UpdateEndpointStrings(database, ten_thousand_strings,
-      "INSERT OR REPLACE INTO EndpointStringsParallelDelete (ENDPOINT) VALUES (?)");
+    AddRemoveEndpointStrings(database, ten_thousand_strings,
+      "INSERT OR REPLACE INTO EndpointStringsConcurrentDeletes (ENDPOINT) VALUES (?)");
     transaction.Commit();
   }
 
@@ -159,15 +159,15 @@ void Sqlite3WrapperBenchmark::EndpointStringsParallelDelete() {
         ++index;
       }
       sqlite::Tranasction transaction{database};
-      UpdateEndpointStrings(database, endpoint_string_vector,
-        "DELETE From EndpointStringsParallelDelete WHERE ENDPOINT=?");
+      AddRemoveEndpointStrings(database, endpoint_string_vector,
+        "DELETE From EndpointStringsConcurrentDeletes WHERE ENDPOINT=?");
       transaction.Commit();
     }
   });
   LOG(kVerbose) << "index : " << index;
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
   CheckEndpointStringsTestResult(std::vector<std::string>(),
-                                 "SELECT * from EndpointStringsParallelDelete");
+                                 "SELECT * from EndpointStringsConcurrentDeletes");
 }
 
 void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
@@ -215,7 +215,7 @@ void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database,
 }
 
 // Insert or Delete
-void Sqlite3WrapperBenchmark::UpdateEndpointStrings(sqlite::Database& database,
+void Sqlite3WrapperBenchmark::AddRemoveEndpointStrings(sqlite::Database& database,
     const std::vector<std::string>& endpoint_strings, std::string query) {
   sqlite::Statement statement{database, query};
   for (const auto& endpoint_string : endpoint_strings) {
@@ -256,14 +256,14 @@ void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
   CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueIndividualTransaction");
 }
 
-void Sqlite3WrapperBenchmark::KeyValueParallelTransaction() {
+void Sqlite3WrapperBenchmark::KeyValueConcurrentInsertions() {
   TLOG(kGreen) << "\nInserting 10k key_value pairs with 4 concurrent threads,"
                << " and individual transaction for each string\n";
 
   ticking_clock.restart();
   sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
   std::string query(
-      "CREATE TABLE IF NOT EXISTS KeyValueParallelTransaction ("
+      "CREATE TABLE IF NOT EXISTS KeyValueConcurrentInsertions ("
       "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
   PrepareTable(database, query);
 
@@ -280,13 +280,13 @@ void Sqlite3WrapperBenchmark::KeyValueParallelTransaction() {
       }
       sqlite::Tranasction transaction{database};
       InsertKeyValuePair(database, *itr,
-        "INSERT OR REPLACE INTO KeyValueParallelTransaction (KEY, VALUE) VALUES (?, ?)");
+        "INSERT OR REPLACE INTO KeyValueConcurrentInsertions (KEY, VALUE) VALUES (?, ?)");
       transaction.Commit();
     }
   });
   LOG(kVerbose) << "index : " << index;
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
-  CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueParallelTransaction");
+  CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueConcurrentInsertions");
 }
 
 void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
@@ -386,7 +386,6 @@ void Sqlite3WrapperBenchmark::CheckKeyValueTestResult(
     }
   }
 }
-
 
 }  // namespace benchmark
 
