@@ -57,12 +57,16 @@ class Sqlite3WrapperBenchmark {
 
   void KeyValueIndividualTransaction();
   void KeyValueParallelTransaction();
+  void KeyValueConcurrentUpdates();
 
   void InsertKeyValuePair(sqlite::Database& database,
                           std::pair<std::string, std::string> key_value_pair,
                           std::string query);
   void ReadKeyValuePairs(std::map<std::string, std::string>& result,
                          std::string query);
+  void UpdateKeyValuePair(sqlite::Database& database,
+                          std::pair<std::string, std::string> key_value_pair,
+                          std::string query);
   void CheckKeyValueTestResult(const std::map<std::string, std::string>& expected_result,
                                std::string query);
 

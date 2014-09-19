@@ -52,6 +52,7 @@ void Sqlite3WrapperBenchmark::Run() {
   // So the concurrent situation depending on the program configuration only,
   // the chance of high number of concurrency is low, so only tested with 4 threads.
   KeyValueParallelTransaction();
+  KeyValueConcurrentUpdates();
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
@@ -95,8 +96,6 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
                                  "SELECT * from EndpointStringsIndividualTransaction");
 }
 
-// OK with 1000 and 5000 entries, getting missing entries with 10k entries,
-// but no corrupted entry in database (only missing)
 void Sqlite3WrapperBenchmark::EndpointStringsParallelTransaction() {
   TLOG(kGreen) << "\nInserting 10k endpoint strings with 20 concurrent threads,"
                << " and individual transaction for each string\n";
@@ -238,7 +237,7 @@ void Sqlite3WrapperBenchmark::ReadEndpointStrings(std::vector<std::string>& resu
 }
 
 void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
-  TLOG(kGreen) << "\nInserting 1000 key_value_pairs, individual transaction for each\n";
+  TLOG(kGreen) << "\nInserting 10k key_value_pairs, individual transaction for each\n";
   {
     ticking_clock.restart();
     sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
@@ -258,7 +257,7 @@ void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
 }
 
 void Sqlite3WrapperBenchmark::KeyValueParallelTransaction() {
-  TLOG(kGreen) << "\nInserting 1000 key_value pairs with 4 concurrent threads,"
+  TLOG(kGreen) << "\nInserting 10k key_value pairs with 4 concurrent threads,"
                << " and individual transaction for each string\n";
 
   ticking_clock.restart();
@@ -290,6 +289,46 @@ void Sqlite3WrapperBenchmark::KeyValueParallelTransaction() {
   CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueParallelTransaction");
 }
 
+void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
+  TLOG(kGreen) << "\nUpdating 10k times with 4 concurrent threads,"
+               << " inside a database containing 10k key_vaule pairs\n";
+
+  sqlite::Database database(database_path, sqlite::Mode::kReadWriteCreate);
+  std::string query(
+      "CREATE TABLE IF NOT EXISTS KeyValueConcurrentUpdates ("
+      "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
+  PrepareTable(database, query);
+  for (const auto& key_value_pair : key_value_pairs) {
+    sqlite::Tranasction transaction{database};
+    InsertKeyValuePair(database, key_value_pair,
+      "INSERT OR REPLACE INTO KeyValueConcurrentUpdates (KEY, VALUE) VALUES (?, ?)");
+    transaction.Commit();
+  }
+
+  ticking_clock.restart();
+  std::mutex mutex;
+  size_t thread_count(4), index(0);
+  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
+    for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
+      auto itr(key_value_pairs.begin());
+      {
+        std::lock_guard<std::mutex> lock{ mutex };
+        LOG(kVerbose) << index;
+        std::advance(itr, RandomInt32() % key_value_pairs.size());
+        key_value_pairs[itr->first] = RandomAlphaNumericString(512);
+        ++index;
+      }
+      sqlite::Tranasction transaction{database};
+      UpdateKeyValuePair(database, *itr,
+        "UPDATE KeyValueConcurrentUpdates SET VALUE=? WHERE KEY=?");
+      transaction.Commit();
+    }
+  });
+  LOG(kVerbose) << "index : " << index;
+  TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
+  CheckKeyValueTestResult(key_value_pairs, "SELECT * from KeyValueConcurrentUpdates");
+}
+
 void Sqlite3WrapperBenchmark::InsertKeyValuePair(sqlite::Database& database,
     std::pair<std::string, std::string> key_value_pair, std::string query) {
   sqlite::Statement statement{database, query};
@@ -308,6 +347,15 @@ void Sqlite3WrapperBenchmark::ReadKeyValuePairs(
       result[statement.ColumnText(0)] = statement.ColumnText(1);
     else
       break;
+}
+
+void Sqlite3WrapperBenchmark::UpdateKeyValuePair(sqlite::Database& database,
+    std::pair<std::string, std::string> key_value_pair, std::string query) {
+  sqlite::Statement statement{database, query};
+  statement.BindText(1, key_value_pair.second);  // set column VALUE to value
+  statement.BindText(2, key_value_pair.first);   // set WHERE KEY = to key
+  statement.Step();
+  statement.Reset();
 }
 
 void Sqlite3WrapperBenchmark::CheckKeyValueTestResult(
