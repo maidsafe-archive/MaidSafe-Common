@@ -20,7 +20,9 @@
 #define MAIDSAFE_COMMON_TOOLS_SQLITE3_WRAPPER_BENCHMARK_H_
 
 #include <string>
+#include<utility>
 #include <vector>
+#include <map>
 
 #include "boost/progress.hpp"
 
