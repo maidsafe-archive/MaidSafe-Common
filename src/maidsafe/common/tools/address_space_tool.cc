@@ -144,15 +144,26 @@ int CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) 
   return CommonLeadingBits(highest, lowest, sum, count);
 }
 
-void AddNode(bool good) {
-  if (g_algorithm == CommonLeadingBitsAlgorithm::kNone) {
-    all_nodes.emplace_back(NodeId(NodeId::IdType::kRandomId), good);
-    ++g_total_attempts;
-    return;
-  }
+void UpdateRank(size_t group_size) {
+  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size,
+      [](Node& node) { node.rank = std::min(node.rank + (RandomInt32() % 20) + 10, 100); });
+}
 
-  int attempts{ 0 };
+bool RankAllowed(size_t group_size) {
+  return std::all_of(std::begin(all_nodes), std::begin(all_nodes) + group_size,
+                     [](const Node& node) { return node.rank > 0; });
+}
+
+void DoAddNode(const NodeId& node_id, bool good, int attempts) {
+  all_nodes.emplace_back(node_id, good);
+  LOG(kInfo) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
+    << " attempt(s) in a network of size " << all_nodes.size() << '.';
+  g_total_attempts += attempts;
+}
+
+void AddNode(bool good) {
   size_t group_size{ std::min(g_group_size, all_nodes.size()) };
+  int attempts{ 0 };
   for (;;) {
     ++attempts;
     NodeId node_id(NodeId::IdType::kRandomId);
@@ -161,16 +172,17 @@ void AddNode(bool good) {
                       [&node_id](const Node& lhs, const Node& rhs) {
                         return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
                       });
+    UpdateRank(group_size);
+    if (!RankAllowed(group_size))
+      continue;
+
+    if (g_algorithm == CommonLeadingBitsAlgorithm::kNone)
+      return DoAddNode(node_id, good, attempts);
 
     int group_common_leading_bits{ GroupCommonLeadingBits(group_size) };
     int candidate_common_leading_bits{ CandidateCommonLeadingBits(node_id, group_size) };
-    if (candidate_common_leading_bits < group_common_leading_bits + g_leeway) {
-      all_nodes.emplace_back(node_id, good);
-      LOG(kInfo) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
-                 << " attempt(s) in a network of size " << all_nodes.size() << ".\n";
-      g_total_attempts += attempts;
-      break;
-    }
+    if (candidate_common_leading_bits < group_common_leading_bits + g_leeway)
+      return DoAddNode(node_id, good, attempts);
   }
 }
 
