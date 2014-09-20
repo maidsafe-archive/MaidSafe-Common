@@ -181,7 +181,7 @@ void AddNode(bool good) {
 
     int group_common_leading_bits{ GroupCommonLeadingBits(group_size) };
     int candidate_common_leading_bits{ CandidateCommonLeadingBits(node_id, group_size) };
-    if (candidate_common_leading_bits < group_common_leading_bits + g_leeway)
+    if (candidate_common_leading_bits < group_common_leading_bits + static_cast<int>(g_leeway))
       return DoAddNode(node_id, good, attempts);
   }
 }
