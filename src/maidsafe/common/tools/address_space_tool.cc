@@ -149,15 +149,27 @@ void UpdateRank(size_t group_size) {
       [](Node& node) { node.rank = std::min(node.rank + (RandomInt32() % 20) + 10, 100); });
 }
 
+
+std::pair<int, int> RankValues(size_t group_size) {
+  int close(0);
+  int proximity(0);
+
+  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size,
+              [&close](const Node& node) { close += node.rank; });
+  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + (group_size * 4),
+              [&proximity](const Node& node) { proximity += node.rank; });
+  return {close / group_size, proximity / (group_size * 4)};
+}
+
 bool RankAllowed(size_t group_size) {
-  return std::all_of(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-                     [](const Node& node) { return node.rank > 0; });
+  auto rank(RankValues(group_size));
+  return rank.first > rank.second;
 }
 
 void DoAddNode(const NodeId& node_id, bool good, int attempts) {
   all_nodes.emplace_back(node_id, good);
   LOG(kInfo) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
-    << " attempt(s) in a network of size " << all_nodes.size() << '.';
+             << " attempt(s) in a network of size " << all_nodes.size() << '.';
   g_total_attempts += attempts;
 }
 
@@ -173,7 +185,7 @@ void AddNode(bool good) {
                         return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
                       });
     UpdateRank(group_size);
-    if (!RankAllowed(group_size))
+    if (all_nodes.size() > (g_group_size * 4) && !RankAllowed(group_size))
       continue;
 
     if (g_algorithm == CommonLeadingBitsAlgorithm::kNone)
