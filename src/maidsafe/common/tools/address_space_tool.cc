@@ -39,7 +39,7 @@ struct Node {
 
 bool operator<(const Node& lhs, const Node& rhs) { return lhs.id < rhs.id; }
 
-template<typename Elem, typename Traits>
+template <typename Elem, typename Traits>
 std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
                                              const Node& node) {
   ostream << node.id << (node.good ? " (good node)" : " (bad node) ") << " with rank " << node.rank;
@@ -48,13 +48,13 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& o
 
 typedef std::pair<NodeId, std::vector<Node>> BadGroup;
 
-enum class CommonLeadingBitsAlgorithm { kNone, kHighest, kLowest, kMean };
+enum class CommonLeadingBitsAlgorithm { kHighest, kLowest, kMean, kNone };
 
-size_t g_good_count{ 1000 }, g_group_size{ 4 }, g_majority_size{ 3 }, g_bad_group_count{ 2 },
-    g_total_random_attempts{ 1000000 }, g_leeway{ 2 };
+size_t g_good_count{1000}, g_group_size{4}, g_majority_size{3}, g_bad_group_count{2},
+    g_total_random_attempts{1000000}, g_leeway{2};
 std::vector<Node> all_nodes;
-CommonLeadingBitsAlgorithm g_algorithm{ CommonLeadingBitsAlgorithm::kNone };
-size_t g_total_attempts{ 0 };
+CommonLeadingBitsAlgorithm g_algorithm{CommonLeadingBitsAlgorithm::kLowest};
+size_t g_total_attempts{0};
 
 void GetChoice(std::string input_text, size_t& value) {
   input_text = "\nEnter " + input_text + " (default " + std::to_string(value) +
@@ -70,8 +70,8 @@ void GetChoice(std::string input_text, size_t& value) {
     }
     try {
       choice = std::stoi(input);
+    } catch (const std::exception&) {
     }
-    catch (const std::exception&) {}
 
     if (choice >= 0) {
       TLOG(kDefaultColour) << choice;
@@ -87,9 +87,11 @@ void GetValues() {
   GetChoice("majority size", g_majority_size);
   GetChoice("target number of compromised groups", g_bad_group_count);
   GetChoice("number of random attempts", g_total_random_attempts);
-  size_t algorithm{ 0 };
-  GetChoice("leading bits algorithm: '0' for none, '1' for highest, '2' for lowest, or '3' "
-            "for mean", algorithm);
+  size_t algorithm{0};
+  GetChoice(
+      "leading bits algorithm: '0' for none, '1' for highest, '2' for lowest, or '3' "
+      "for mean",
+      algorithm);
   g_algorithm = static_cast<CommonLeadingBitsAlgorithm>(algorithm);
   if (g_algorithm != CommonLeadingBitsAlgorithm::kNone)
     GetChoice("leeway of common leading bits", g_leeway);
@@ -98,15 +100,14 @@ void GetValues() {
 
 int Accumulate(std::vector<Node>::iterator first, std::vector<Node>::iterator last,
                const NodeId& target, int& highest, int& lowest) {
-  return std::accumulate(first, last, 0,
-      [&](int running_total, const Node& node)->int {
-        int common_leading_bits{ node.id.CommonLeadingBits(target) };
-        if (common_leading_bits > highest)
-          highest = common_leading_bits;
-        if (common_leading_bits < lowest)
-          lowest = common_leading_bits;
-        return running_total + common_leading_bits;
-      });
+  return std::accumulate(first, last, 0, [&](int running_total, const Node& node) -> int {
+    int common_leading_bits{node.id.CommonLeadingBits(target)};
+    if (common_leading_bits > highest)
+      highest = common_leading_bits;
+    if (common_leading_bits < lowest)
+      lowest = common_leading_bits;
+    return running_total + common_leading_bits;
+  });
 }
 
 int CommonLeadingBits(int highest, int lowest, int sum, int count) {
@@ -124,7 +125,7 @@ int CommonLeadingBits(int highest, int lowest, int sum, int count) {
 
 // Requires first 'group_size' entries of 'all_nodes' to be sorted by closeness to target.
 int GroupCommonLeadingBits(size_t group_size) {
-  int sum{ 0 }, count{ 0 }, highest{ 0 }, lowest{ 512 };
+  int sum{0}, count{0}, highest{0}, lowest{512};
   auto itr(std::begin(all_nodes));
   const auto end_itr(std::begin(all_nodes) + group_size);
   while (itr != end_itr - 1) {
@@ -137,16 +138,17 @@ int GroupCommonLeadingBits(size_t group_size) {
 
 // Requires first 'group_size' entries of 'all_nodes' to be sorted by closeness to 'candidate_node'.
 int CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) {
-  int highest{ 0 }, lowest{ 512 };
+  int highest{0}, lowest{512};
   const auto end_itr(std::begin(all_nodes) + group_size);
-  int sum{ Accumulate(std::begin(all_nodes), end_itr, candidate_node, highest, lowest) };
-  int count{ static_cast<int>(std::distance(std::begin(all_nodes), end_itr)) };
+  int sum{Accumulate(std::begin(all_nodes), end_itr, candidate_node, highest, lowest)};
+  int count{static_cast<int>(std::distance(std::begin(all_nodes), end_itr))};
   return CommonLeadingBits(highest, lowest, sum, count);
 }
 
 void UpdateRank(size_t group_size) {
-  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-      [](Node& node) { node.rank = std::min(node.rank + (RandomInt32() % 20) + 10, 100); });
+  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size, [](Node& node) {
+    node.rank = std::min(node.rank + (RandomInt32() % 20) + 10, 100);
+  });
 }
 
 
@@ -155,9 +157,9 @@ std::pair<int, int> RankValues(size_t group_size) {
   int proximity(0);
 
   std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-              [&close](const Node& node) { close += node.rank; });
+                [&close](const Node& node) { close += node.rank; });
   std::for_each(std::begin(all_nodes), std::begin(all_nodes) + (group_size * 4),
-              [&proximity](const Node& node) { proximity += node.rank; });
+                [&proximity](const Node& node) { proximity += node.rank; });
   return {close / group_size, proximity / (group_size * 4)};
 }
 
@@ -169,21 +171,20 @@ bool RankAllowed(size_t group_size) {
 void DoAddNode(const NodeId& node_id, bool good, int attempts) {
   all_nodes.emplace_back(node_id, good);
   LOG(kInfo) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
-             << " attempt(s) in a network of size " << all_nodes.size() << '.';
+             << " attempt(s) in a network of size " << all_nodes.size() << "\n";
   g_total_attempts += attempts;
 }
 
 void AddNode(bool good) {
-  size_t group_size{ std::min(g_group_size, all_nodes.size()) };
-  int attempts{ 0 };
+  size_t group_size{std::min(g_group_size, all_nodes.size())};
+  int attempts{0};
   for (;;) {
     ++attempts;
     NodeId node_id(NodeId::IdType::kRandomId);
     std::partial_sort(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-                      std::end(all_nodes),
-                      [&node_id](const Node& lhs, const Node& rhs) {
-                        return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
-                      });
+                      std::end(all_nodes), [&node_id](const Node& lhs, const Node& rhs) {
+      return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
+    });
     UpdateRank(group_size);
     if (all_nodes.size() > (g_group_size * 4) && !RankAllowed(group_size))
       continue;
@@ -191,27 +192,31 @@ void AddNode(bool good) {
     if (g_algorithm == CommonLeadingBitsAlgorithm::kNone)
       return DoAddNode(node_id, good, attempts);
 
-    int group_common_leading_bits{ GroupCommonLeadingBits(group_size) };
-    int candidate_common_leading_bits{ CandidateCommonLeadingBits(node_id, group_size) };
-    if (candidate_common_leading_bits < group_common_leading_bits + static_cast<int>(g_leeway))
+    // int group_common_leading_bits{ GroupCommonLeadingBits(group_size) };
+    // int candidate_common_leading_bits{ CandidateCommonLeadingBits(node_id, group_size) };
+    if (all_nodes[0].id.CommonLeadingBits(node_id) >
+            all_nodes[0].id.CommonLeadingBits(all_nodes[1].id) &&
+        all_nodes[0].id.CommonLeadingBits(node_id) <
+            all_nodes[0].id.CommonLeadingBits(all_nodes[1].id) + 2)
       return DoAddNode(node_id, good, attempts);
   }
 }
 
 void InitialiseNetwork() {
+  all_nodes.clear();
   all_nodes.reserve(g_good_count);
   // Add first node
   all_nodes.emplace_back(NodeId(NodeId::IdType::kRandomId), true);
   // Add others
   for (size_t i(1); i < g_good_count; ++i)
     AddNode(true);
-  TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes";
-  if (g_algorithm != CommonLeadingBitsAlgorithm::kNone) {
-    TLOG(kCyan) << ", averaging " << static_cast<double>(g_total_attempts) / all_nodes.size()
-                << " attempt(s) each.\n";
-  } else {
-    TLOG(kCyan) << ".\n";
-  }
+  // TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes";
+  // if (g_algorithm != CommonLeadingBitsAlgorithm::kNone) {
+  //   TLOG(kCyan) << ", averaging " << static_cast<double>(g_total_attempts) / all_nodes.size()
+  //               << " attempt(s) each.\n";
+  // } else {
+  //   TLOG(kCyan) << ".\n";
+  // }
   g_total_attempts = 0;
 }
 
@@ -231,7 +236,7 @@ std::vector<NodeId> GetUniformlyDistributedTargetPoints() {
     steps.emplace_back(output);
     step += step_size;
   }
-  TLOG(kCyan) << "Created " << kStepCount << " evenly-distributed target addresses.\n";
+  // TLOG(kCyan) << "Created " << kStepCount << " evenly-distributed target addresses.\n";
   return steps;
 }
 
@@ -258,7 +263,7 @@ BadGroup GetBadGroup(const NodeId& target_id) {
 
 // Add bad nodes until we have 'g_bad_group_count' entirely separate bad close groups
 std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps) {
-  TLOG(kCyan) << "Adding bad nodes and checking for compromised groups...\n";
+  // TLOG(kCyan) << "Adding bad nodes and checking for compromised groups...\n";
   std::vector<BadGroup> bad_groups;
   while (bad_groups.size() < g_bad_group_count) {
     bad_groups.clear();
@@ -283,11 +288,15 @@ std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps) {
       }
     }
   }
-  TLOG(kRed) << "Got " << g_bad_group_count << " bad groups after adding " << BadCount()
-             << " bad nodes";
+  TLOG(kRed) << "for a network of " << g_good_count << " got " << g_bad_group_count
+             << " bad groups after adding " << BadCount() << " bad nodes";
   if (g_algorithm != CommonLeadingBitsAlgorithm::kNone) {
     TLOG(kRed) << ", averaging " << static_cast<double>(g_total_attempts) / BadCount()
-               << " attempt(s) each.\n";
+               << " attempt(s) each. Network poulation = " << g_good_count + BadCount()
+               << " Attack = "
+               << static_cast<double>(
+                      (static_cast<double>(BadCount()) / (g_good_count + BadCount())) * 100.0)
+               << "% \n";
   } else {
     TLOG(kRed) << ".\n";
   }
@@ -308,6 +317,7 @@ void ReportBadGroups(const std::vector<BadGroup>& bad_groups) {
 }
 
 void CheckLinkedAddresses() {
+  return;
   TLOG(kCyan) << "\nChecking linked random addresses...\n";
   size_t attempts(0), compromised_attempts(0);
   std::vector<BadGroup> bad_groups;
@@ -344,15 +354,27 @@ void RunTest() {
   InitialiseNetwork();
   auto steps(GetUniformlyDistributedTargetPoints());
   auto bad_groups(InjectBadGroups(steps));
-  ReportBadGroups(bad_groups);
-  CheckLinkedAddresses();
+  // ReportBadGroups(bad_groups);
+  // CheckLinkedAddresses();
 }
 
 }  // namespace maidsafe
 
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
-  maidsafe::GetValues();
-  maidsafe::RunTest();
+  // maidsafe::GetValues();
+
+  for (; maidsafe::g_group_size < 16; ++maidsafe::g_group_size) {
+    maidsafe::g_majority_size = (maidsafe::g_group_size / 2) + 1;
+    for (; maidsafe::g_majority_size < maidsafe::g_group_size; ++maidsafe::g_majority_size) {
+      maidsafe::g_good_count = 1000;
+      TLOG(kGreen) << "\nClose group size " << maidsafe::g_group_size << " Majority "
+                   << maidsafe::g_majority_size << "\n";
+      for (int i(1); i < 12; ++i) {
+        maidsafe::g_good_count *= 2;
+        maidsafe::RunTest();
+      }
+    }
+  }
   return 0;
 }
