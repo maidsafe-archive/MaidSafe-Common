@@ -370,7 +370,7 @@ int main(int argc, char* argv[]) {
       maidsafe::g_good_count = 1000;
       TLOG(kGreen) << "\nClose group size " << maidsafe::g_group_size << " Majority "
                    << maidsafe::g_majority_size << "\n";
-      for (int i(1); i < 12; ++i) {
+      for (int i(1); i < 4; ++i) {
         maidsafe::g_good_count *= 2;
         maidsafe::RunTest();
       }
