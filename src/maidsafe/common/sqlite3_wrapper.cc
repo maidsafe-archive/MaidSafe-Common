@@ -162,9 +162,9 @@ StepResult Statement::Step() {
 }
 
 std::string Statement::ColumnText(int col_index) {
-  std::string column_text(std::string(reinterpret_cast<const char*>(
-                                          sqlite3_column_text(statement, col_index))));
-  return column_text;
+  int bytes = sqlite3_column_bytes (statement, col_index);
+  auto column_text = reinterpret_cast<const char*>(sqlite3_column_text (statement, col_index));
+  return std::string(column_text, bytes);
 }
 
 void Statement::Reset() {
