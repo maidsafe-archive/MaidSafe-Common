@@ -23,6 +23,9 @@
 #include <string>
 #include <type_traits>
 
+#include "cereal/cereal.hpp"
+#include <cereal/archives/json.hpp>
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
@@ -112,6 +115,8 @@ class VisualiserLogMessage {
   static void SendVaultStoppedMessage(const std::string& vault_debug_id,
                                       const std::string& session_id, int exit_code);
 
+
+  friend class cereal::access;
   friend class test::VisualiserLogTest;
 
  private:
@@ -132,8 +137,23 @@ class VisualiserLogMessage {
     Enum(Enum&& other) : value(std::move(other.value)), name(std::move(other.name)) {}
     Enum& operator=(const Enum&) = default;
 
+    template <class Archive>
+    void serialize( Archive & ar ) {
+      ar( CEREAL_NVP(value), CEREAL_NVP(name));
+    }
     std::string value, name;
   };
+
+  template <class Archive>
+  void serialize(Archive & archive) {
+    archive(cereal::make_nvp("ts", kTimestamp_),
+            cereal::make_nvp("vault_id", kVaultId_),
+            cereal::make_nvp("session_id", kSessionId_),
+            cereal::make_nvp("value1", kValue1_),
+            cereal::make_nvp("value2", kValue2_),
+            cereal::make_nvp("persona_id", kPersonaId_),
+            cereal::make_nvp("action_id", kActionId_));
+  }
 
   std::string GetPostRequestBody() const;
   void SendToServer() const;
