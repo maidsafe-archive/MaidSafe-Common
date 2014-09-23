@@ -116,7 +116,8 @@ class VisualiserLogMessage {
                                       const std::string& session_id, int exit_code);
 
 
-  friend class cereal::access;
+  template <typename Archive>
+  friend void serialize(Archive& archive, const VisualiserLogMessage& vlog_message);
   friend class test::VisualiserLogTest;
 
  private:
@@ -137,23 +138,8 @@ class VisualiserLogMessage {
     Enum(Enum&& other) : value(std::move(other.value)), name(std::move(other.name)) {}
     Enum& operator=(const Enum&) = default;
 
-    template <class Archive>
-    void serialize( Archive & ar ) {
-      ar( CEREAL_NVP(value), CEREAL_NVP(name));
-    }
     std::string value, name;
   };
-
-  template <class Archive>
-  void serialize(Archive & archive) {
-    archive(cereal::make_nvp("ts", kTimestamp_),
-            cereal::make_nvp("vault_id", kVaultId_),
-            cereal::make_nvp("session_id", kSessionId_),
-            cereal::make_nvp("value1", kValue1_),
-            cereal::make_nvp("value2", kValue2_),
-            cereal::make_nvp("persona_id", kPersonaId_),
-            cereal::make_nvp("action_id", kActionId_));
-  }
 
   std::string GetPostRequestBody() const;
   void SendToServer() const;
@@ -162,6 +148,22 @@ class VisualiserLogMessage {
   const std::string kTimestamp_, kVaultId_, kSessionId_, kValue1_, kValue2_;
   const Enum kPersonaId_, kActionId_;
 };
+
+template <typename Archive>
+void serialize(Archive & archive, const VisualiserLogMessage& vlog_message) {
+  archive(cereal::make_nvp("ts", vlog_message.kTimestamp_),
+          cereal::make_nvp("vault_id", vlog_message.kVaultId_),
+          cereal::make_nvp("session_id", vlog_message.kSessionId_),
+          cereal::make_nvp("value1", vlog_message.kValue1_),
+          cereal::make_nvp("action_id", vlog_message.kActionId_.value));
+
+  if (!vlog_message.kValue2_.empty()) {
+    archive(cereal::make_nvp("value2", vlog_message.kValue2_));
+  }
+  if (!vlog_message.kPersonaId_.name.empty()) {
+    archive(cereal::make_nvp("persona_id", vlog_message.kPersonaId_.value));
+  }
+}
 
 }  // namespace log
 
