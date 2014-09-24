@@ -115,9 +115,6 @@ class VisualiserLogMessage {
   static void SendVaultStoppedMessage(const std::string& vault_debug_id,
                                       const std::string& session_id, int exit_code);
 
-
-  template <typename Archive>
-  friend void serialize(Archive& archive, const VisualiserLogMessage& vlog_message);
   friend class test::VisualiserLogTest;
 
  private:
@@ -148,22 +145,6 @@ class VisualiserLogMessage {
   const std::string kTimestamp_, kVaultId_, kSessionId_, kValue1_, kValue2_;
   const Enum kPersonaId_, kActionId_;
 };
-
-template <typename Archive>
-void serialize(Archive & archive, const VisualiserLogMessage& vlog_message) {
-  archive(cereal::make_nvp("ts", vlog_message.kTimestamp_),
-          cereal::make_nvp("vault_id", vlog_message.kVaultId_),
-          cereal::make_nvp("session_id", vlog_message.kSessionId_),
-          cereal::make_nvp("value1", vlog_message.kValue1_),
-          cereal::make_nvp("action_id", vlog_message.kActionId_.value));
-
-  if (!vlog_message.kValue2_.empty()) {
-    archive(cereal::make_nvp("value2", vlog_message.kValue2_));
-  }
-  if (!vlog_message.kPersonaId_.name.empty()) {
-    archive(cereal::make_nvp("persona_id", vlog_message.kPersonaId_.value));
-  }
-}
 
 }  // namespace log
 
