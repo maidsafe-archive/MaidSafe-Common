@@ -108,9 +108,9 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentInsertions() {
   PrepareTable(database, query);
 
   std::mutex mutex;
-  size_t thread_count(20), index(0);
+  unsigned int thread_count(20), index(0);
   ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
-    for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
+    for (unsigned int i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
       std::vector<std::string> endpoint_string_vector;
       {
         std::lock_guard<std::mutex> lock{ mutex };
@@ -148,9 +148,9 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
 
   ticking_clock.restart();
   std::mutex mutex;
-  size_t thread_count(20), index(0);
+  unsigned int thread_count(20), index(0);
   ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
-    for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
+    for (unsigned int i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
       std::vector<std::string> endpoint_string_vector;
       {
         std::lock_guard<std::mutex> lock{ mutex };
@@ -268,9 +268,9 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentInsertions() {
   PrepareTable(database, query);
 
   std::mutex mutex;
-  size_t thread_count(4), index(0);
+  unsigned int thread_count(4), index(0);
   ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
-    for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
+    for (unsigned int i(0); i < (key_value_pairs.size() / thread_count); ++i) {
       auto itr(key_value_pairs.begin());
       {
         std::lock_guard<std::mutex> lock{ mutex };
@@ -307,9 +307,9 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
 
   ticking_clock.restart();
   std::mutex mutex;
-  size_t thread_count(4), index(0);
+  unsigned int thread_count(4), index(0);
   ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
-    for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
+    for (unsigned int i(0); i < (key_value_pairs.size() / thread_count); ++i) {
       auto itr(key_value_pairs.begin());
       {
         std::lock_guard<std::mutex> lock{ mutex };
