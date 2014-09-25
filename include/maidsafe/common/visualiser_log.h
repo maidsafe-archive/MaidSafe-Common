@@ -23,9 +23,6 @@
 #include <string>
 #include <type_traits>
 
-#include "cereal/cereal.hpp"
-#include <cereal/archives/json.hpp>
-
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"

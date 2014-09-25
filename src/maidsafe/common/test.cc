@@ -44,7 +44,7 @@ namespace test {
 
 namespace {
 
-boost::optional<fs::path> BootstrapFilePath(const fs::path& bootstrap_file_path = fs::path{ "" }) {
+boost::optional<fs::path> BootstrapFilePath(const fs::path& bootstrap_file_path = fs::path{""}) {
   static boost::optional<fs::path> bootstrap_file;
   if (!bootstrap_file_path.empty())
     bootstrap_file = bootstrap_file_path;
@@ -204,8 +204,10 @@ void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
 
 #ifndef MAIDSAFE_WIN32
 UlimitConfigurer::UlimitConfigurer()
-  : prev_open_files_(0), prev_file_size_(ulimit(UL_GETFSIZE)),
-    kLimitsOpenFiles(1024), kLimitsFileSize(2048) {
+    : prev_open_files_(0),
+      prev_file_size_(ulimit(UL_GETFSIZE)),
+      kLimitsOpenFiles(1024),
+      kLimitsFileSize(2048) {
   struct rlimit rlp;
   getrlimit(RLIMIT_NOFILE, &rlp);
   prev_open_files_ = rlp.rlim_cur;
@@ -228,16 +230,16 @@ void UlimitConfigurer::OnTestProgramStart(const testing::UnitTest& /*unit_test*/
 }
 
 void UlimitConfigurer::OnTestProgramEnd(const testing::UnitTest& unit_test) {
-// Once the limit has been decreased, it seems the session doesn't allow the limit to be
-// increased again, so a Restore shall not be carried out
-/*  // Restore the ulimit configuration
-  if (prev_file_size_ < kLimitsFileSize)
-    ulimit(UL_SETFSIZE, prev_file_size_);
-*/
-// setrlimit can only affect current session, so no need to restore
+  // Once the limit has been decreased, it seems the session doesn't allow the limit to be
+  // increased again, so a Restore shall not be carried out
+  /*  // Restore the ulimit configuration
+    if (prev_file_size_ < kLimitsFileSize)
+      ulimit(UL_SETFSIZE, prev_file_size_);
+  */
+  // setrlimit can only affect current session, so no need to restore
   if (unit_test.Failed() && (prev_open_files_ < kLimitsOpenFiles))
-    LOG(kError) << "Failing tests may caused by current max open files ( "
-                << prev_open_files_ << " ) is not enough and failed to change";
+    LOG(kError) << "Failing tests may caused by current max open files ( " << prev_open_files_
+                << " ) is not enough and failed to change";
 }
 #endif
 
@@ -277,14 +279,26 @@ int ExecuteGTestMain(int argc, char* argv[]) {
 #endif
   testing::FLAGS_gtest_catch_exceptions = false;
   testing::InitGoogleTest(&argc, argv);
-  testing::UnitTest::GetInstance()->listeners().Append(new BootstrapFileHandler);
+  testing::UnitTest* unit_test{testing::UnitTest::GetInstance()};
+  unit_test->listeners().Append(new BootstrapFileHandler);
 #ifndef MAIDSAFE_WIN32
-  testing::UnitTest::GetInstance()->listeners().Append(new UlimitConfigurer);
+  unit_test->listeners().Append(new UlimitConfigurer);
 #endif
-  testing::UnitTest::GetInstance()->listeners().Append(new RandomNumberSeeder);
-  int result(RUN_ALL_TESTS());
-  int test_count = testing::UnitTest::GetInstance()->test_to_run_count();
-  return (test_count == 0) ? -1 : result;
+  unit_test->listeners().Append(new RandomNumberSeeder);
+
+  int result{RUN_ALL_TESTS()};
+
+  // If at least one test ran, just return the result of RUN_ALL_TESTS().
+  if (unit_test->test_to_run_count())
+    return result;
+
+  // Assume that if the '--gtest_filter' was set to run a single disabled test, the test is
+  // being invoked by CTest, so return MAIDSAFE_DISABLED_TEST_RETURN_CODE to allow CTest to mark
+  // this as skipped.
+  if (unit_test->reportable_test_count() == 1 && unit_test->reportable_disabled_test_count() == 1)
+    return MAIDSAFE_DISABLED_TEST_RETURN_CODE;
+
+  return -1;
 }
 
 }  // namespace detail

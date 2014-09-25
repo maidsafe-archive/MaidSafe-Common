@@ -62,7 +62,8 @@ ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
-list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
+set(VlogTestFile ${CommonSourcesDir}/tests/visualiser_log_test.cc)
+list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${VlogTestFile} ${CommonAuthenticationTestsAllFiles})
 
 
 #==================================================================================================#
@@ -145,6 +146,7 @@ target_link_libraries(address_space_tool maidsafe_common)
 # Tests
 if(MaidsafeTesting)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
+  target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
   ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
@@ -156,6 +158,10 @@ if(MaidsafeTesting)
 
   ms_add_executable(test_common_config "Tests/Common" ${ConfigTestFile})
   target_link_libraries(test_common_config maidsafe_common)
+
+  ms_add_executable(test_vlog "Tests/Common" ${VlogTestFile} ${TestLibAllFiles} ${TestsMain})
+  target_compile_definitions(test_vlog PRIVATE VLOG_TEST MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
+  target_link_libraries(test_vlog maidsafe_common gtest)
 endif()
 
 ms_rename_outdated_built_exes()
