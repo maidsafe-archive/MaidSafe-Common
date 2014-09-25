@@ -274,7 +274,7 @@ namespace detail {
 int ExecuteGTestMain(int argc, char* argv[]) {
   HandleTestOptions(argc, argv);
   log::Logging::Instance().Initialise(argc, argv);
-#ifdef USE_VLOGGING
+#if defined(USE_VLOGGING) && !defined(VLOG_TEST)
   log::Logging::Instance().InitialiseVlog("", "", "", 0, "");
 #endif
   testing::FLAGS_gtest_catch_exceptions = false;
