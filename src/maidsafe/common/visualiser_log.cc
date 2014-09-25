@@ -84,15 +84,33 @@ void VisualiserLogMessage::SendVaultStoppedMessage(const std::string& vault_debu
   }
 }
 
+//std::string VisualiserLogMessage::GetPostRequestBody() const {
+//  return std::string {
+//      "ts=" + UrlEncode(kTimestamp_) +
+//      "&vault_id=" + kVaultId_ +
+//      "&session_id=" + kSessionId_ +
+//      (kPersonaId_.name.empty() ? "" : "&persona_id=" + kPersonaId_.value) +
+//      "&action_id=" + kActionId_.value +
+//      "&value1=" + EncodeIdentityOrInt(kValue1_, false) +
+//      (kValue2_.empty() ? "" : "&value2=" + EncodeIdentityOrInt(kValue2_, false)) };
+//}
+
 std::string VisualiserLogMessage::GetPostRequestBody() const {
-  return std::string {
-      "ts=" + UrlEncode(kTimestamp_) +
-      "&vault_id=" + kVaultId_ +
-      "&session_id=" + kSessionId_ +
-      (kPersonaId_.name.empty() ? "" : "&persona_id=" + kPersonaId_.value) +
-      "&action_id=" + kActionId_.value +
-      "&value1=" + EncodeIdentityOrInt(kValue1_, false) +
-      (kValue2_.empty() ? "" : "&value2=" + EncodeIdentityOrInt(kValue2_, false)) };
+  std::stringstream ss;
+  {
+    cereal::JSONOutputArchive ar( ss );
+    ar(cereal::make_nvp("ts", kTimestamp_),
+       cereal::make_nvp("vault_id", kVaultId_),
+       cereal::make_nvp("session_id", kSessionId_),
+       cereal::make_nvp("value1", EncodeIdentityOrInt(kValue1_, false)),
+       cereal::make_nvp("action_id", kActionId_.value));
+
+    if (!kValue2_.empty())
+      ar(cereal::make_nvp("value2", EncodeIdentityOrInt(kValue2_, false)));
+    if (!kPersonaId_.name.empty())
+      ar(cereal::make_nvp("persona_id", kPersonaId_.value));
+  }
+  return ss.str();
 }
 
 void VisualiserLogMessage::SendToServer() const {
