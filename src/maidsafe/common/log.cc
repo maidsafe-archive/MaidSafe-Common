@@ -643,7 +643,7 @@ void Logging::WriteToVisualiserServer(const std::string& message) {
 
   visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
       << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
-      << "Content-Type: application/x-www-form-urlencoded\r\n"
+      << "Content-Type: application/json\r\n"
       << "Content-Length: " << std::to_string(message.size()) << "\r\n"
       << "\r\n" << message << "\r\n" << std::flush;
   auto read_response([&](char delimiter)->std::string {

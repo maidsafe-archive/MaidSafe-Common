@@ -16,101 +16,45 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+
+#include "maidsafe/common/tools/address_space_tool.h"
+
 #include <algorithm>
+#include <fstream>
 #include <numeric>
-#include <ostream>
 #include <string>
-#include <utility>
-#include <vector>
+
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
+#include "cereal/cereal.hpp"
+#include "cereal/archives/json.hpp"
 
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/node_id.h"
 #include "maidsafe/common/utils.h"
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
-struct Node {
-  Node(NodeId id_in, bool good_in) : id(std::move(id_in)), good(good_in), rank(0) {}
+namespace tools {
 
-  NodeId id;
-  bool good;
-  int rank;
-};
+const std::string kDefaultConfigFilename{"address_space_tool.conf"};
 
-bool operator<(const Node& lhs, const Node& rhs) { return lhs.id < rhs.id; }
-
-template<typename Elem, typename Traits>
-std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
-                                             const Node& node) {
-  ostream << node.id << (node.good ? " (good node)" : " (bad node) ") << " with rank " << node.rank;
-  return ostream;
+int Test::Accumulate(std::vector<Node>::const_iterator first,
+                     std::vector<Node>::const_iterator last, const NodeId& target, int& highest,
+                     int& lowest) const {
+  return std::accumulate(first, last, 0, [&](int running_total, const Node& node) -> int {
+    int common_leading_bits{node.id.CommonLeadingBits(target)};
+    if (common_leading_bits > highest)
+      highest = common_leading_bits;
+    if (common_leading_bits < lowest)
+      lowest = common_leading_bits;
+    return running_total + common_leading_bits;
+  });
 }
 
-typedef std::pair<NodeId, std::vector<Node>> BadGroup;
-
-enum class CommonLeadingBitsAlgorithm { kNone, kHighest, kLowest, kMean };
-
-size_t g_good_count{ 1000 }, g_group_size{ 4 }, g_majority_size{ 3 }, g_bad_group_count{ 2 },
-    g_total_random_attempts{ 1000000 }, g_leeway{ 2 };
-std::vector<Node> all_nodes;
-CommonLeadingBitsAlgorithm g_algorithm{ CommonLeadingBitsAlgorithm::kNone };
-size_t g_total_attempts{ 0 };
-
-void GetChoice(std::string input_text, size_t& value) {
-  input_text = "\nEnter " + input_text + " (default " + std::to_string(value) +
-               " - hit enter to use default): ";
-  std::string input;
-  int choice(-1);
-  for (;;) {
-    TLOG(kDefaultColour) << input_text;
-    std::getline(std::cin, input);
-    if (input.empty()) {
-      TLOG(kDefaultColour) << value;
-      return;
-    }
-    try {
-      choice = std::stoi(input);
-    }
-    catch (const std::exception&) {}
-
-    if (choice >= 0) {
-      TLOG(kDefaultColour) << choice;
-      break;
-    }
-  }
-  value = static_cast<size_t>(choice);
-}
-
-void GetValues() {
-  GetChoice("initial network size", g_good_count);
-  GetChoice("close group size", g_group_size);
-  GetChoice("majority size", g_majority_size);
-  GetChoice("target number of compromised groups", g_bad_group_count);
-  GetChoice("number of random attempts", g_total_random_attempts);
-  size_t algorithm{ 0 };
-  GetChoice("leading bits algorithm: '0' for none, '1' for highest, '2' for lowest, or '3' "
-            "for mean", algorithm);
-  g_algorithm = static_cast<CommonLeadingBitsAlgorithm>(algorithm);
-  if (g_algorithm != CommonLeadingBitsAlgorithm::kNone)
-    GetChoice("leeway of common leading bits", g_leeway);
-  TLOG(kDefaultColour) << '\n';
-}
-
-int Accumulate(std::vector<Node>::iterator first, std::vector<Node>::iterator last,
-               const NodeId& target, int& highest, int& lowest) {
-  return std::accumulate(first, last, 0,
-      [&](int running_total, const Node& node)->int {
-        int common_leading_bits{ node.id.CommonLeadingBits(target) };
-        if (common_leading_bits > highest)
-          highest = common_leading_bits;
-        if (common_leading_bits < lowest)
-          lowest = common_leading_bits;
-        return running_total + common_leading_bits;
-      });
-}
-
-int CommonLeadingBits(int highest, int lowest, int sum, int count) {
-  switch (g_algorithm) {
+int Test::CommonLeadingBits(int highest, int lowest, int sum, int count) const {
+  switch (config_.algorithm) {
     case CommonLeadingBitsAlgorithm::kHighest:
       return highest;
     case CommonLeadingBitsAlgorithm::kLowest:
@@ -122,11 +66,13 @@ int CommonLeadingBits(int highest, int lowest, int sum, int count) {
   }
 }
 
-// Requires first 'group_size' entries of 'all_nodes' to be sorted by closeness to target.
-int GroupCommonLeadingBits(size_t group_size) {
-  int sum{ 0 }, count{ 0 }, highest{ 0 }, lowest{ 512 };
-  auto itr(std::begin(all_nodes));
-  const auto end_itr(std::begin(all_nodes) + group_size);
+int Test::GroupCommonLeadingBits(size_t group_size) const {
+  if (config_.algorithm == CommonLeadingBitsAlgorithm::kClosest)
+    return all_nodes_[0].id.CommonLeadingBits(all_nodes_[1].id);
+
+  int sum{0}, count{0}, highest{0}, lowest{512};
+  auto itr(std::begin(all_nodes_));
+  const auto end_itr(std::begin(all_nodes_) + group_size);
   while (itr != end_itr - 1) {
     sum += Accumulate(itr + 1, end_itr, itr->id, highest, lowest);
     ++itr;
@@ -135,88 +81,94 @@ int GroupCommonLeadingBits(size_t group_size) {
   return CommonLeadingBits(highest, lowest, sum, count);
 }
 
-// Requires first 'group_size' entries of 'all_nodes' to be sorted by closeness to 'candidate_node'.
-int CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) {
-  int highest{ 0 }, lowest{ 512 };
-  const auto end_itr(std::begin(all_nodes) + group_size);
-  int sum{ Accumulate(std::begin(all_nodes), end_itr, candidate_node, highest, lowest) };
-  int count{ static_cast<int>(std::distance(std::begin(all_nodes), end_itr)) };
+int Test::CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) const {
+  if (config_.algorithm == CommonLeadingBitsAlgorithm::kClosest)
+    return all_nodes_[0].id.CommonLeadingBits(candidate_node);
+
+  int highest{0}, lowest{512};
+  const auto end_itr(std::begin(all_nodes_) + group_size);
+  int sum{Accumulate(std::begin(all_nodes_), end_itr, candidate_node, highest, lowest)};
+  int count{static_cast<int>(std::distance(std::begin(all_nodes_), end_itr))};
   return CommonLeadingBits(highest, lowest, sum, count);
 }
 
-void UpdateRank(size_t group_size) {
-  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-      [](Node& node) { node.rank = std::min(node.rank + (RandomInt32() % 20) + 10, 100); });
+void Test::UpdateRank(size_t group_size) {
+  std::for_each(std::begin(all_nodes_), std::begin(all_nodes_) + group_size, [](Node& node) {
+    node.rank = std::min(node.rank + (RandomInt32() % 20) + 10, 100);
+  });
 }
 
-
-std::pair<int, int> RankValues(size_t group_size) {
+std::pair<int, int> Test::RankValues(size_t group_size) const {
   int close(0);
   int proximity(0);
 
-  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-              [&close](const Node& node) { close += node.rank; });
-  std::for_each(std::begin(all_nodes), std::begin(all_nodes) + (group_size * 4),
-              [&proximity](const Node& node) { proximity += node.rank; });
-  return {close / group_size, proximity / (group_size * 4)};
+  std::for_each(std::begin(all_nodes_), std::begin(all_nodes_) + group_size,
+                [&close](const Node& node) { close += node.rank; });
+  std::for_each(std::begin(all_nodes_), std::begin(all_nodes_) + (group_size * 4),
+                [&proximity](const Node& node) { proximity += node.rank; });
+  return {static_cast<int>(close / group_size), static_cast<int>(proximity / (group_size * 4))};
 }
 
-bool RankAllowed(size_t group_size) {
+bool Test::RankAllowed(size_t group_size) const {
   auto rank(RankValues(group_size));
   return rank.first > rank.second;
 }
 
-void DoAddNode(const NodeId& node_id, bool good, int attempts) {
-  all_nodes.emplace_back(node_id, good);
+void Test::DoAddNode(const NodeId& node_id, bool good, int attempts) {
+  all_nodes_.emplace_back(node_id, good);
   LOG(kInfo) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
-             << " attempt(s) in a network of size " << all_nodes.size() << '.';
-  g_total_attempts += attempts;
+             << " attempt(s) in a network of size " << all_nodes_.size() << '.';
+  total_attempts_ += attempts;
+  good ? ++good_count_ : ++bad_count_;
 }
 
-void AddNode(bool good) {
-  size_t group_size{ std::min(g_group_size, all_nodes.size()) };
-  int attempts{ 0 };
+void Test::AddNode(bool good) {
+  size_t group_size{std::min(config_.group_size, all_nodes_.size())};
+  int attempts{0};
   for (;;) {
     ++attempts;
     NodeId node_id(NodeId::IdType::kRandomId);
-    std::partial_sort(std::begin(all_nodes), std::begin(all_nodes) + group_size,
-                      std::end(all_nodes),
-                      [&node_id](const Node& lhs, const Node& rhs) {
-                        return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
-                      });
+    std::partial_sort(std::begin(all_nodes_), std::begin(all_nodes_) + group_size,
+                      std::end(all_nodes_), [&node_id](const Node& lhs, const Node& rhs) {
+      return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
+    });
     UpdateRank(group_size);
-    if (all_nodes.size() > (g_group_size * 4) && !RankAllowed(group_size))
+    if (all_nodes_.size() > (config_.group_size * 4) && !RankAllowed(group_size))
       continue;
 
-    if (g_algorithm == CommonLeadingBitsAlgorithm::kNone)
+    if (config_.algorithm == CommonLeadingBitsAlgorithm::kNone)
       return DoAddNode(node_id, good, attempts);
 
-    int group_common_leading_bits{ GroupCommonLeadingBits(group_size) };
-    int candidate_common_leading_bits{ CandidateCommonLeadingBits(node_id, group_size) };
-    if (candidate_common_leading_bits < group_common_leading_bits + static_cast<int>(g_leeway))
+    int group_common_leading_bits{GroupCommonLeadingBits(group_size)};
+    int candidate_common_leading_bits{CandidateCommonLeadingBits(node_id, group_size)};
+    if (candidate_common_leading_bits > group_common_leading_bits &&
+        candidate_common_leading_bits < group_common_leading_bits + config_.leeway)
       return DoAddNode(node_id, good, attempts);
   }
 }
 
-void InitialiseNetwork() {
-  all_nodes.reserve(g_good_count);
+void Test::InitialiseNetwork() {
+  all_nodes_.clear();
+  all_nodes_.reserve(config_.initial_good_count);
   // Add first node
-  all_nodes.emplace_back(NodeId(NodeId::IdType::kRandomId), true);
+  all_nodes_.emplace_back(NodeId(NodeId::IdType::kRandomId), true);
   // Add others
-  for (size_t i(1); i < g_good_count; ++i)
+  for (size_t i(1); i < config_.initial_good_count; ++i)
     AddNode(true);
-  TLOG(kCyan) << "\nAdded " << g_good_count << " good nodes";
-  if (g_algorithm != CommonLeadingBitsAlgorithm::kNone) {
-    TLOG(kCyan) << ", averaging " << static_cast<double>(g_total_attempts) / all_nodes.size()
-                << " attempt(s) each.\n";
+  std::string output{"Added "};
+  output += std::to_string(config_.initial_good_count) + " good nodes";
+  if (config_.algorithm != CommonLeadingBitsAlgorithm::kNone) {
+    output += ", averaging ";
+    output += std::to_string(static_cast<double>(total_attempts_) / all_nodes_.size());
+    output += " attempt(s) each.";
   } else {
-    TLOG(kCyan) << ".\n";
+    output += '.';
   }
-  g_total_attempts = 0;
+  LOG(kSuccess) << output;
+  total_attempts_ = 0;
 }
 
-// Constructs a series of NodeIds spread evenly across address space
-std::vector<NodeId> GetUniformlyDistributedTargetPoints() {
+std::vector<NodeId> Test::GetUniformlyDistributedTargetPoints() const {
   const size_t kStepCount(1024);
   std::vector<NodeId> steps;
   steps.reserve(kStepCount);
@@ -231,38 +183,37 @@ std::vector<NodeId> GetUniformlyDistributedTargetPoints() {
     steps.emplace_back(output);
     step += step_size;
   }
-  TLOG(kCyan) << "Created " << kStepCount << " evenly-distributed target addresses.\n";
+  LOG(kSuccess) << "Created " << kStepCount << " evenly-distributed target addresses.";
   return steps;
 }
 
-size_t BadCount() { return all_nodes.size() - g_good_count; }
-
-// Returns group if >= g_majority_size are bad, else returns empty vector.  Returned group is
-// default-sorted (i.e. not sorted close to target_id).
-BadGroup GetBadGroup(const NodeId& target_id) {
-  std::vector<Node> bad_group;
+BadGroup Test::GetBadGroup(const NodeId& target_id) const {
+  std::vector<Node> bad_group{config_.group_size};
   // Get close group
-  std::partial_sort(std::begin(all_nodes), std::begin(all_nodes) + g_group_size,
-                    std::end(all_nodes), [&target_id](const Node& lhs, const Node& rhs) {
+  std::partial_sort_copy(std::begin(all_nodes_), std::end(all_nodes_), std::begin(bad_group),
+                         std::end(bad_group), [&target_id](const Node& lhs, const Node& rhs) {
     return NodeId::CloserToTarget(lhs.id, rhs.id, target_id);
   });
   auto is_bad([](const Node& node) { return !node.good; });
   // Count bad nodes in close group and return the group if majority are bad
-  if (static_cast<size_t>(std::count_if(std::begin(all_nodes), std::begin(all_nodes) + g_group_size,
-                                        is_bad)) >= g_majority_size) {
-    bad_group.assign(std::begin(all_nodes), std::begin(all_nodes) + g_group_size);
+  if (static_cast<size_t>(std::count_if(std::begin(all_nodes_),
+                                        std::begin(all_nodes_) + config_.group_size, is_bad)) >=
+      config_.majority_size) {
     std::sort(std::begin(bad_group), std::end(bad_group));
+  } else {
+    bad_group.clear();
   }
   return std::make_pair(target_id, std::move(bad_group));
 }
 
-// Add bad nodes until we have 'g_bad_group_count' entirely separate bad close groups
-std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps) {
-  TLOG(kCyan) << "Adding bad nodes and checking for compromised groups...\n";
+std::vector<BadGroup> Test::InjectBadGroups(const std::vector<NodeId>& steps) {
+  LOG(kSuccess) << "Adding bad nodes and checking for compromised groups...";
   std::vector<BadGroup> bad_groups;
-  while (bad_groups.size() < g_bad_group_count) {
-    bad_groups.clear();
+  while (bad_groups.size() < config_.bad_group_count) {
+    for (size_t i(0); i < config_.good_added_per_bad; ++i)
+      AddNode(true);
 
+    bad_groups.clear();
     AddNode(false);
     // Iterate through evenly-spread target IDs
     for (const auto& target_id : steps) {
@@ -283,18 +234,23 @@ std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps) {
       }
     }
   }
-  TLOG(kRed) << "Got " << g_bad_group_count << " bad groups after adding " << BadCount()
+  TLOG(kRed) << "for a network of " << config_.initial_good_count << " got "
+             << config_.bad_group_count << " bad groups after adding " << bad_count_
              << " bad nodes";
-  if (g_algorithm != CommonLeadingBitsAlgorithm::kNone) {
-    TLOG(kRed) << ", averaging " << static_cast<double>(g_total_attempts) / BadCount()
-               << " attempt(s) each.\n";
+  if (config_.algorithm != CommonLeadingBitsAlgorithm::kNone) {
+    TLOG(kRed) << ", averaging " << static_cast<double>(total_attempts_) / bad_count_
+               << " attempt(s) each. Network poulation = "
+               << config_.initial_good_count + bad_count_
+               << " Attack = " << static_cast<double>((static_cast<double>(bad_count_) /
+                                                       (config_.initial_good_count + bad_count_)) *
+                                                      100.0) << "% \n";
   } else {
     TLOG(kRed) << ".\n";
   }
   return bad_groups;
 }
 
-void ReportBadGroups(const std::vector<BadGroup>& bad_groups) {
+void Test::ReportBadGroups(const std::vector<BadGroup>& bad_groups) const {
   for (size_t i(0); i < bad_groups.size(); ++i) {
     TLOG(kDefaultColour) << "Bad group " << i << " close to target " << bad_groups[i].first
                          << ":\n";
@@ -307,15 +263,18 @@ void ReportBadGroups(const std::vector<BadGroup>& bad_groups) {
   }
 }
 
-void CheckLinkedAddresses() {
+void Test::CheckLinkedAddresses() const {
+  if (!config_.total_random_attempts)
+    return;
+
   TLOG(kCyan) << "\nChecking linked random addresses...\n";
   size_t attempts(0), compromised_attempts(0);
   std::vector<BadGroup> bad_groups;
-  while (attempts < g_total_random_attempts) {
+  while (attempts < config_.total_random_attempts) {
     bad_groups.clear();
     ++attempts;
     NodeId target_id(NodeId::IdType::kRandomId);
-    for (size_t i(0); i < g_bad_group_count; ++i) {
+    for (size_t i(0); i < config_.bad_group_count; ++i) {
       if (i > 0)  // Hash previous target to get new linked one
         target_id = NodeId(crypto::Hash<crypto::SHA512>(target_id.string()).string());
       auto bad_group(GetBadGroup(target_id));
@@ -323,16 +282,16 @@ void CheckLinkedAddresses() {
         break;
       bad_groups.emplace_back(std::move(bad_group));
     }
-    if (bad_groups.size() == g_bad_group_count) {
+    if (bad_groups.size() == config_.bad_group_count) {
       ++compromised_attempts;
-      TLOG(kRed) << "\nGot bad group chain of " << g_bad_group_count << " after " << attempts
+      TLOG(kRed) << "\nGot bad group chain of " << config_.bad_group_count << " after " << attempts
                  << " linked random ID attempts.\n";
       ReportBadGroups(bad_groups);
     }
   }
   std::string output(
       "\n" + std::to_string(compromised_attempts) + " out of " +
-      std::to_string(g_total_random_attempts) +
+      std::to_string(config_.total_random_attempts) +
       " linked random addresses were fully managed by compromised close groups.\n\n");
   if (compromised_attempts)
     TLOG(kRed) << output;
@@ -340,7 +299,7 @@ void CheckLinkedAddresses() {
     TLOG(kGreen) << output;
 }
 
-void RunTest() {
+void Test::Run() {
   InitialiseNetwork();
   auto steps(GetUniformlyDistributedTargetPoints());
   auto bad_groups(InjectBadGroups(steps));
@@ -348,11 +307,128 @@ void RunTest() {
   CheckLinkedAddresses();
 }
 
+
+
+bool IsHelpOption(const std::vector<std::string>& unused_options) {
+  return std::any_of(
+      std::begin(unused_options), std::end(unused_options),
+      [](const std::string& option) { return option == "--help" || option == "-h"; });
+}
+
+void CreateConfigFile() {
+  fs::path config_path{ThisExecutableDir() / kDefaultConfigFilename};
+  std::ofstream ofstream{config_path.string()};
+  cereal::JSONOutputArchive archive{ofstream};
+  Config config;
+  archive(CEREAL_NVP(config.iterations), CEREAL_NVP(config.initial_good_count));
+  LOG(kInfo) << "Wrote config file to \"" << config_path << "\"";
+}
+
+Config GetConfig(const std::vector<std::string>& unused_options) {
+  fs::path config_path;
+  if (unused_options.empty())
+    config_path = ThisExecutableDir() / kDefaultConfigFilename;
+  else
+    config_path = unused_options.front();
+
+  Config config;
+  if (fs::exists(config_path)) {
+    std::ifstream ifstream{config_path.string()};
+    cereal::JSONInputArchive archive{ifstream};
+    archive(CEREAL_NVP(config.iterations), CEREAL_NVP(config.initial_good_count));
+  } else {
+    CreateConfigFile();
+  }
+
+
+
+  return config;
+}
+
+void GetChoice(std::string input_text, size_t& value) {
+  input_text = "\nEnter " + input_text + " (default " + std::to_string(value) +
+               " - hit enter to use default): ";
+  std::string input;
+  int choice{-1};
+  for (;;) {
+    TLOG(kDefaultColour) << input_text;
+    std::getline(std::cin, input);
+    if (input.empty()) {
+      TLOG(kDefaultColour) << value;
+      return;
+    }
+    try {
+      choice = std::stoi(input);
+    } catch (const std::exception&) {
+    }
+
+    if (choice >= 0) {
+      TLOG(kDefaultColour) << choice;
+      break;
+    }
+  }
+  value = static_cast<size_t>(choice);
+}
+
+void GetValues() {
+  // GetChoice("initial network size", config_.initial_good_count);
+  // GetChoice("close group size", config_.group_size);
+  // GetChoice("majority size", config_.majority_size);
+  // GetChoice("target number of compromised groups", config_.bad_group_count);
+  // GetChoice("number of random attempts", config_.total_random_attempts);
+  // size_t algorithm{0};
+  // GetChoice(
+  //    "leading bits algorithm: '0' for closest, '1' for highest, '2' for lowest, '3' for mean, "
+  //    "or '4' for none",
+  //    algorithm);
+  // config_.algorithm = static_cast<CommonLeadingBitsAlgorithm>(algorithm);
+  // if (config_.algorithm != CommonLeadingBitsAlgorithm::kNone)
+  //  GetChoice("leeway of common leading bits", config_.leeway);
+  // TLOG(kDefaultColour) << '\n';
+}
+
+}  // namespace tools
+
 }  // namespace maidsafe
 
 int main(int argc, char* argv[]) {
-  maidsafe::log::Logging::Instance().Initialise(argc, argv);
-  maidsafe::GetValues();
-  maidsafe::RunTest();
+  auto unuseds(maidsafe::log::Logging::Instance().Initialise(argc, argv));
+  std::vector<std::string> unused_options;
+  for (const auto& unused : unuseds)
+    unused_options.emplace_back(&unused[1]);  // skip the first arg which is the path to this tool
+
+  if (unuseds.size() > 1 || maidsafe::tools::IsHelpOption(unused_options)) {
+    TLOG(kDefaultColour) << "This tool should be invoked with logging arguments, and an optional "
+                            "path to a config file.\nIf no config file path is provided, the tool "
+                            "will look for one named " << maidsafe::tools::kDefaultConfigFilename
+                         << "\nin the same folder as this executable, i.e. \n"
+                         << maidsafe::ThisExecutableDir() / maidsafe::tools::kDefaultConfigFilename
+                         << "\nIf it doesn't find this, it will create it using default values "
+                            "at this location.\n\n";
+    return -1;
+  }
+
+  try {
+
+    maidsafe::tools::Config config{maidsafe::tools::GetConfig(unused_options)};
+
+    // for (; maidsafe::tools::config_.group_size < 16; ++maidsafe::tools::config_.group_size) {
+    //  maidsafe::tools::config_.majority_size = (maidsafe::tools::config_.group_size / 2) + 1;
+    //  for (; maidsafe::tools::config_.majority_size < maidsafe::tools::config_.group_size;
+    //    ++maidsafe::tools::config_.majority_size) {
+    //    maidsafe::tools::config_.initial_good_count = 1000;
+    //    TLOG(kGreen) << "\nClose group size " << maidsafe::tools::config_.group_size << " Majority
+    //    "
+    //      << maidsafe::tools::config_.majority_size << "\n";
+    //    for (int i(1); i < 4; ++i) {
+    //      maidsafe::tools::config_.initial_good_count *= 2;
+    //      maidsafe::tools::RunTest();
+    //    }
+    //  }
+    //}
+  } catch (const std::exception& e) {
+    TLOG(kRed) << "Failed: " << e.what() << '\n';
+    return -2;
+  }
   return 0;
 }
