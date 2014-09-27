@@ -76,7 +76,10 @@ void VisualiserLogMessage::SendVaultStoppedMessage(const std::string& vault_debu
   try {
     std::string message{ "ts=" + UrlEncode(detail::GetUTCTime()) + "&vault_id=" + vault_debug_id +
         "&session_id=" + session_id + "&action_id=18&value1=" + std::to_string(exit_code) };
-    auto post_functor([message] { Logging::Instance().WriteToVisualiserServer(message); });
+    auto post_functor([message] {
+      Logging::Instance().ResetVisualiserServerStream();
+      Logging::Instance().WriteToVisualiserServer(message);
+      Logging::Instance().ResetVisualiserServerStream(); });
     Logging::Instance().Send(post_functor);
   }
   catch (const std::exception& e) {

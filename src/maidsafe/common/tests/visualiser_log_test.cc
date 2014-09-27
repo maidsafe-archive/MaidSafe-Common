@@ -99,10 +99,10 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   // Call before VlogPrefix has been set
   EXPECT_THROW(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
                common_error);
-
+  EXPECT_NO_THROW(log::VisualiserLogMessage::SendVaultStoppedMessage(kThisVaultId_.string(),
+                                                                     kTestSessionId_, -1));
   // Call after VLOG has been initialised
-  log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_, kServerName_,
-                                          kServerPort_, kServerDir_);
+  log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_);
 
   EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
   EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
@@ -124,8 +124,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   EXPECT_THROW(VLOG(static_cast<TestAction>(-1), 99), common_error);
 
   // Try to initialise again
-  EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", kTestSessionId_, kServerName_,
-                                                       kServerPort_, kServerDir_), common_error);
+  EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", kTestSessionId_), common_error);
   EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
   EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
@@ -159,8 +158,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
 #ifdef USE_VLOGGING
   // Set VLOG prefix in case this test isn't run after the previous one.
   try {
-    log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_, kServerName_,
-                                            kServerPort_, kServerDir_);
+    log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_);
   }
   catch (const std::exception&) {}
 
