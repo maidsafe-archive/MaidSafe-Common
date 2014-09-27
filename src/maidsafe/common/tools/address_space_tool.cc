@@ -69,6 +69,8 @@ int Test::CommonLeadingBits(int highest, int lowest, int sum, int count) const {
 int Test::GroupCommonLeadingBits(size_t group_size) const {
   if (config_.algorithm == CommonLeadingBitsAlgorithm::kClosest)
     return all_nodes_[0].id.CommonLeadingBits(all_nodes_[1].id);
+  if (all_nodes_.size() == 1)
+    return 0;
 
   int sum{0}, count{0}, highest{0}, lowest{512};
   auto itr(std::begin(all_nodes_));
@@ -141,8 +143,7 @@ void Test::AddNode(bool good) {
 
     int group_common_leading_bits{GroupCommonLeadingBits(group_size)};
     int candidate_common_leading_bits{CandidateCommonLeadingBits(node_id, group_size)};
-    if (candidate_common_leading_bits > group_common_leading_bits &&
-        candidate_common_leading_bits < group_common_leading_bits + config_.leeway)
+    if (candidate_common_leading_bits < group_common_leading_bits + config_.leeway)
       return DoAddNode(node_id, good, attempts);
   }
 }
@@ -151,7 +152,7 @@ void Test::InitialiseNetwork() {
   all_nodes_.clear();
   all_nodes_.reserve(config_.initial_good_count);
   // Add first node
-  all_nodes_.emplace_back(NodeId(NodeId::IdType::kRandomId), true);
+  DoAddNode(NodeId(NodeId::IdType::kRandomId), true, 1);
   // Add others
   for (size_t i(1); i < config_.initial_good_count; ++i)
     AddNode(true);
@@ -196,8 +197,7 @@ BadGroup Test::GetBadGroup(const NodeId& target_id) const {
   });
   auto is_bad([](const Node& node) { return !node.good; });
   // Count bad nodes in close group and return the group if majority are bad
-  if (static_cast<size_t>(std::count_if(std::begin(all_nodes_),
-                                        std::begin(all_nodes_) + config_.group_size, is_bad)) >=
+  if (static_cast<size_t>(std::count_if(std::begin(bad_group), std::end(bad_group), is_bad)) >=
       config_.majority_size) {
     std::sort(std::begin(bad_group), std::end(bad_group));
   } else {
@@ -234,31 +234,29 @@ std::vector<BadGroup> Test::InjectBadGroups(const std::vector<NodeId>& steps) {
       }
     }
   }
-  TLOG(kRed) << "for a network of " << config_.initial_good_count << " got "
-             << config_.bad_group_count << " bad groups after adding " << bad_count_
-             << " bad nodes";
+
+  TLOG(kRed) << "For a network of " << config_.initial_good_count << " got "
+             << config_.bad_group_count << " bad group(s) after adding " << bad_count_
+             << " bad nodes and " << good_count_ - config_.initial_good_count << " good nodes";
   if (config_.algorithm != CommonLeadingBitsAlgorithm::kNone) {
-    TLOG(kRed) << ", averaging " << static_cast<double>(total_attempts_) / bad_count_
-               << " attempt(s) each. Network poulation = "
-               << config_.initial_good_count + bad_count_
-               << " Attack = " << static_cast<double>((static_cast<double>(bad_count_) /
-                                                       (config_.initial_good_count + bad_count_)) *
-                                                      100.0) << "% \n";
-  } else {
-    TLOG(kRed) << ".\n";
+    TLOG(kRed) << ", averaging " << static_cast<double>(total_attempts_) /
+                                        (all_nodes_.size() - config_.initial_good_count)
+               << " attempt(s) each";
   }
+  TLOG(kRed) << ".  Network population = " << all_nodes_.size()
+             << "  Attack = " << static_cast<double>(bad_count_) * 100 / all_nodes_.size()
+             << "%.\n";
   return bad_groups;
 }
 
 void Test::ReportBadGroups(const std::vector<BadGroup>& bad_groups) const {
   for (size_t i(0); i < bad_groups.size(); ++i) {
-    TLOG(kDefaultColour) << "Bad group " << i << " close to target " << bad_groups[i].first
-                         << ":\n";
+    LOG(kInfo) << "Bad group " << i << " close to target " << bad_groups[i].first;
     for (const auto& node : bad_groups[i].second) {
       if (node.good)
-        TLOG(kGreen) << node << '\n';
+        LOG(kSuccess) << node;
       else
-        TLOG(kYellow) << node << '\n';
+        LOG(kWarning) << node;
     }
   }
 }
@@ -267,7 +265,7 @@ void Test::CheckLinkedAddresses() const {
   if (!config_.total_random_attempts)
     return;
 
-  TLOG(kCyan) << "\nChecking linked random addresses...\n";
+  LOG(kSuccess) << "Checking linked random addresses...";
   size_t attempts(0), compromised_attempts(0);
   std::vector<BadGroup> bad_groups;
   while (attempts < config_.total_random_attempts) {
@@ -284,15 +282,15 @@ void Test::CheckLinkedAddresses() const {
     }
     if (bad_groups.size() == config_.bad_group_count) {
       ++compromised_attempts;
-      TLOG(kRed) << "\nGot bad group chain of " << config_.bad_group_count << " after " << attempts
-                 << " linked random ID attempts.\n";
+      LOG(kError) << "Got bad group chain of " << config_.bad_group_count << " after " << attempts
+                 << " linked random ID attempts.";
       ReportBadGroups(bad_groups);
     }
   }
-  std::string output(
-      "\n" + std::to_string(compromised_attempts) + " out of " +
+  std::string output{
+      std::to_string(compromised_attempts) + " out of " +
       std::to_string(config_.total_random_attempts) +
-      " linked random addresses were fully managed by compromised close groups.\n\n");
+      " linked random addresses were fully managed by compromised close groups.\n\n"};
   if (compromised_attempts)
     TLOG(kRed) << output;
   else
@@ -315,15 +313,6 @@ bool IsHelpOption(const std::vector<std::string>& unused_options) {
       [](const std::string& option) { return option == "--help" || option == "-h"; });
 }
 
-void CreateConfigFile() {
-  fs::path config_path{ThisExecutableDir() / kDefaultConfigFilename};
-  std::ofstream ofstream{config_path.string()};
-  cereal::JSONOutputArchive archive{ofstream};
-  Config config;
-  archive(CEREAL_NVP(config.iterations), CEREAL_NVP(config.initial_good_count));
-  LOG(kInfo) << "Wrote config file to \"" << config_path << "\"";
-}
-
 Config GetConfig(const std::vector<std::string>& unused_options) {
   fs::path config_path;
   if (unused_options.empty())
@@ -334,57 +323,17 @@ Config GetConfig(const std::vector<std::string>& unused_options) {
   Config config;
   if (fs::exists(config_path)) {
     std::ifstream ifstream{config_path.string()};
-    cereal::JSONInputArchive archive{ifstream};
-    archive(CEREAL_NVP(config.iterations), CEREAL_NVP(config.initial_good_count));
+    cereal::JSONInputArchive input_archive{ifstream};
+    input_archive(CEREAL_NVP(config));
   } else {
-    CreateConfigFile();
+    config_path = ThisExecutableDir() / kDefaultConfigFilename;
+    std::ofstream ofstream{config_path.string()};
+    cereal::JSONOutputArchive output_archive{ofstream};
+    Config config;
+    output_archive(CEREAL_NVP(config));
+    LOG(kInfo) << "Wrote config file to " << config_path;
   }
-
-
-
   return config;
-}
-
-void GetChoice(std::string input_text, size_t& value) {
-  input_text = "\nEnter " + input_text + " (default " + std::to_string(value) +
-               " - hit enter to use default): ";
-  std::string input;
-  int choice{-1};
-  for (;;) {
-    TLOG(kDefaultColour) << input_text;
-    std::getline(std::cin, input);
-    if (input.empty()) {
-      TLOG(kDefaultColour) << value;
-      return;
-    }
-    try {
-      choice = std::stoi(input);
-    } catch (const std::exception&) {
-    }
-
-    if (choice >= 0) {
-      TLOG(kDefaultColour) << choice;
-      break;
-    }
-  }
-  value = static_cast<size_t>(choice);
-}
-
-void GetValues() {
-  // GetChoice("initial network size", config_.initial_good_count);
-  // GetChoice("close group size", config_.group_size);
-  // GetChoice("majority size", config_.majority_size);
-  // GetChoice("target number of compromised groups", config_.bad_group_count);
-  // GetChoice("number of random attempts", config_.total_random_attempts);
-  // size_t algorithm{0};
-  // GetChoice(
-  //    "leading bits algorithm: '0' for closest, '1' for highest, '2' for lowest, '3' for mean, "
-  //    "or '4' for none",
-  //    algorithm);
-  // config_.algorithm = static_cast<CommonLeadingBitsAlgorithm>(algorithm);
-  // if (config_.algorithm != CommonLeadingBitsAlgorithm::kNone)
-  //  GetChoice("leeway of common leading bits", config_.leeway);
-  // TLOG(kDefaultColour) << '\n';
 }
 
 }  // namespace tools
@@ -395,38 +344,33 @@ int main(int argc, char* argv[]) {
   auto unuseds(maidsafe::log::Logging::Instance().Initialise(argc, argv));
   std::vector<std::string> unused_options;
   for (const auto& unused : unuseds)
-    unused_options.emplace_back(&unused[1]);  // skip the first arg which is the path to this tool
+    unused_options.emplace_back(&unused[0]);
+  // skip the first arg which is the path to this tool
+  unused_options.erase(std::begin(unused_options));
 
   if (unuseds.size() > 1 || maidsafe::tools::IsHelpOption(unused_options)) {
-    TLOG(kDefaultColour) << "This tool should be invoked with logging arguments, and an optional "
-                            "path to a config file.\nIf no config file path is provided, the tool "
-                            "will look for one named " << maidsafe::tools::kDefaultConfigFilename
-                         << "\nin the same folder as this executable, i.e. \n"
-                         << maidsafe::ThisExecutableDir() / maidsafe::tools::kDefaultConfigFilename
-                         << "\nIf it doesn't find this, it will create it using default values "
-                            "at this location.\n\n";
+    TLOG(kYellow) << "This tool should be invoked with logging arguments, and an optional path to "
+                     "a config file.\nIf no config file path is provided, the tool will look for "
+                     "one named " << maidsafe::tools::kDefaultConfigFilename
+                  << "\nin the same folder as this executable, i.e. \n"
+                  << maidsafe::ThisExecutableDir() / maidsafe::tools::kDefaultConfigFilename
+                  << "\nIf it doesn't find this, it will be created using default configuration "
+                     "values at this location.\n\n";
     return -1;
   }
 
   try {
-
     maidsafe::tools::Config config{maidsafe::tools::GetConfig(unused_options)};
+    TLOG(kDefaultColour) << "Config values:\n" << config;
 
-    // for (; maidsafe::tools::config_.group_size < 16; ++maidsafe::tools::config_.group_size) {
-    //  maidsafe::tools::config_.majority_size = (maidsafe::tools::config_.group_size / 2) + 1;
-    //  for (; maidsafe::tools::config_.majority_size < maidsafe::tools::config_.group_size;
-    //    ++maidsafe::tools::config_.majority_size) {
-    //    maidsafe::tools::config_.initial_good_count = 1000;
-    //    TLOG(kGreen) << "\nClose group size " << maidsafe::tools::config_.group_size << " Majority
-    //    "
-    //      << maidsafe::tools::config_.majority_size << "\n";
-    //    for (int i(1); i < 4; ++i) {
-    //      maidsafe::tools::config_.initial_good_count *= 2;
-    //      maidsafe::tools::RunTest();
-    //    }
-    //  }
-    //}
-  } catch (const std::exception& e) {
+    for (size_t i(0); i < config.iterations; ++i) {
+      LOG(kSuccess) << "\nRunning iteration " << i << " with config values:\n" << config;
+      maidsafe::tools::Test(config).Run();
+      config.initial_good_count = static_cast<size_t>(
+          static_cast<double>(config.initial_good_count) * config.initial_factor);
+    }
+  }
+  catch (const std::exception& e) {
     TLOG(kRed) << "Failed: " << e.what() << '\n';
     return -2;
   }
