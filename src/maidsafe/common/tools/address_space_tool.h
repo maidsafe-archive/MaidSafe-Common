@@ -103,9 +103,7 @@ struct Config {
     try {
       archive(name_value_pair);
     }
-    catch (const std::exception& e) {
-      std::string g = e.what();
-      (void)g;
+    catch (const std::exception&) {
     }
   }
 
