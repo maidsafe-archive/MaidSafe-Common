@@ -96,7 +96,6 @@ if(MSVC12 AND CMAKE_CL_64)
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
-    cereal
     cryptopp
     protobuf_lite
     sqlite
