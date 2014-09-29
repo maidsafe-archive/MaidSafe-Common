@@ -162,7 +162,7 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& o
 struct Node {
   Node(NodeId id_in, bool good_in) : id(std::move(id_in)), good(good_in), rank(0) {}
   Node() : id(), good(true), rank(0) {}
-  Node(Node&& o) : id(std::move(o.id)), good(o.good), rank(std::move(o.rank)) {}
+  Node(Node&& o) MAIDSAFE_NOEXCEPT : id(std::move(o.id)), good(o.good), rank(std::move(o.rank)) {}
   Node(const Node& other) = default;
   Node& operator=(const Node& other) = default;
   Node& operator=(Node&& other) {
