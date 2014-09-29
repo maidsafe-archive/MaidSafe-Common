@@ -77,14 +77,10 @@ Tranasction::Tranasction(Database& database_in)
     try {
       database.Execute(query);
       return;
-    } catch (const maidsafe_error& error) {
-      if (error.code() == make_error_code(CommonErrors::db_busy)) {
-        LOG(kWarning) << "SQLITE_BUSY. Attempts : " << i;
-        std::this_thread::sleep_for(std::chrono::milliseconds(((RandomUint32() % 250) + 10) * i));
-      } else {
-        LOG(kError) << "SQL error. Attempts " << i;
-        throw;
-      }
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Tranasction::Constructor FAILED in Attempt " << i << " with error "
+                    << boost::diagnostic_information(e);
+    std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
@@ -102,8 +98,19 @@ Tranasction::~Tranasction() {
 }
 
 void Tranasction::Commit() {
-  database.Execute("COMMIT TRANSACTION");
-  committed = true;
+  for (int i(0); i != kAttempts; ++i) {
+    try {
+      database.Execute("COMMIT TRANSACTION");
+      committed = true;
+      return;
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Tranasction::Commit FAILED in Attempt " << i << " with error "
+                    << boost::diagnostic_information(e);
+    std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
+    }
+  }
+  LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
 }
 
 

@@ -144,7 +144,7 @@ class Logging {
   void WriteToVisualiserServer(const std::string& message);
   void WriteToProjectLogfile(const std::string& project, const std::string& message);
   FilterMap Filter() const { return filter_; }
-  bool Async() const { return !no_async_; }
+  bool Async() const { return !no_async_ && background_; }
   bool LogToConsole() const { return !no_log_to_console_; }
   ColourMode Colour() const { return colour_mode_; }
   std::string VlogPrefix() const;
