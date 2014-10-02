@@ -105,6 +105,17 @@ class VisualiserLogMessage {
         kPersonaId_(),
         kActionId_(action) {}
 
+  template <typename ActionEnum, typename T,
+            typename std::enable_if<is_string<T>::value>::type* = nullptr>
+  VisualiserLogMessage(ActionEnum action, T value)
+      : kTimestamp_(detail::GetUTCTime()),
+        kVaultId_(Logging::Instance().VlogPrefix()),
+        kSessionId_(Logging::Instance().VlogSessionId()),
+        kValue1_(value),
+        kValue2_(),
+        kPersonaId_(),
+        kActionId_(action) {}
+
   ~VisualiserLogMessage();
 
   // Nasty workaround to allow VaultManager to pretend to be a given crashed vault in order to send
