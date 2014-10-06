@@ -47,18 +47,18 @@ struct Database {
   Database(Database&&) = delete;
   Database& operator=(Database) = delete;
 
-  friend struct Tranasction;
+  friend struct Transaction;
   friend struct Statement;
  private:
   sqlite3 *database;
 };
 
-struct Tranasction {
-  explicit Tranasction(Database& database_in);
-  ~Tranasction();
-  Tranasction(const Tranasction&) = delete;
-  Tranasction(Tranasction&&) = delete;
-  Tranasction& operator=(Tranasction) = delete;
+struct Transaction {
+  explicit Transaction(Database& database_in);
+  ~Transaction();
+  Transaction(const Transaction&) = delete;
+  Transaction(Transaction&&) = delete;
+  Transaction& operator=(Transaction) = delete;
 
   void Commit();
 

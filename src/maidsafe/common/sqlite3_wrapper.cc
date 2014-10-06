@@ -53,16 +53,16 @@ Database::~Database() {
 }
 
 
-Tranasction::Tranasction(Database& database_in)
+Transaction::Transaction(Database& database_in)
     : kAttempts(100),
       database(database_in) {
-  std::string query("BEGIN IMMEDIATE TRANSACTION");  // FIXME consider immediate transaction
+  std::string query("BEGIN IMMEDIATE TRANSACTION");  // immediate or exclusive transaction
   for (int i(0); i != kAttempts; ++i) {
     try {
       Execute(query);
       return;
     } catch (const maidsafe_error& error) {
-      LOG(kWarning) << "Tranasction::Constructor FAILED in Attempt " << i << " with error "
+      LOG(kWarning) << "Transaction::Constructor FAILED in Attempt " << i << " with error "
                     << boost::diagnostic_information(error);
       if (error.code() == make_error_code(CommonErrors::db_not_presented))
         throw;
@@ -74,7 +74,7 @@ Tranasction::Tranasction(Database& database_in)
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
 }
 
-Tranasction::~Tranasction() {
+Transaction::~Transaction() {
   if (committed)
     return;
   try {
@@ -84,14 +84,14 @@ Tranasction::~Tranasction() {
   }
 }
 
-void Tranasction::Commit() {
+void Transaction::Commit() {
   for (int i(0); i != kAttempts; ++i) {
     try {
       Execute("COMMIT TRANSACTION");
       committed = true;
       return;
     } catch (const std::exception& e) {
-      LOG(kWarning) << "Tranasction::Commit FAILED in Attempt " << i << " with error "
+      LOG(kWarning) << "Transaction::Commit FAILED in Attempt " << i << " with error "
                     << boost::diagnostic_information(e);
     std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
     }
@@ -100,7 +100,7 @@ void Tranasction::Commit() {
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
 }
 
-void Tranasction::Execute(const std::string& query) {
+void Transaction::Execute(const std::string& query) {
   char *error_message = 0;
   int result = sqlite3_exec(database.database, query.c_str(), NULL, 0, &error_message);
   assert(result != SQLITE_ROW);
