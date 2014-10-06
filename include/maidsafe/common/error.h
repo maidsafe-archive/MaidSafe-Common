@@ -77,7 +77,8 @@ enum class CommonErrors {
   not_a_directory,
   db_busy,
   db_not_presented,
-  db_error
+  db_error,
+  default
 };
 
 class common_error : public maidsafe_error {
