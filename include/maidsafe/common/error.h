@@ -78,7 +78,7 @@ enum class CommonErrors {
   db_busy,
   db_not_presented,
   db_error,
-  default
+  defaulted
 };
 
 class common_error : public maidsafe_error {
