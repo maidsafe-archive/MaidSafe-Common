@@ -62,7 +62,8 @@ ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
 set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
-list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${CommonAuthenticationTestsAllFiles})
+set(VlogTestFile ${CommonSourcesDir}/tests/visualiser_log_test.cc)
+list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${VlogTestFile} ${CommonAuthenticationTestsAllFiles})
 
 
 #==================================================================================================#
@@ -93,8 +94,14 @@ if(MSVC12 AND CMAKE_CL_64)
   message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved (probably in Boost v1.56).")
   set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
 endif()
+if(${CMAKE_VERSION} VERSION_LESS 3.0)
+  set(CerealLib)
+else()
+  set(CerealLib cereal)
+endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
+    ${CerealLib}
     cryptopp
     protobuf_lite
     sqlite
@@ -127,8 +134,14 @@ ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing
 target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
 
 # Qa tool
-ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc")
-target_link_libraries(qa_tool maidsafe_common maidsafe_passport)
+ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc"
+                                         "${CommonSourcesDir}/tools/tests/sqlite3_wrapper_benchmark.cc")
+target_link_libraries(qa_tool maidsafe_common maidsafe_passport maidsafe_test)
+
+# SQLite wrapper benchmark test tool
+ms_add_executable(sqlite_wrapper_benchmark "Tools/Common" "${CommonSourcesDir}/tools/sqlite_wrapper_benchmark.cc"
+                                                          "${CommonSourcesDir}/tools/tests/sqlite3_wrapper_benchmark.cc")
+target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_passport maidsafe_test)
 
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
@@ -144,6 +157,7 @@ target_link_libraries(address_space_tool maidsafe_common)
 # Tests
 if(MaidsafeTesting)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
+  target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
   ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
@@ -155,6 +169,10 @@ if(MaidsafeTesting)
 
   ms_add_executable(test_common_config "Tests/Common" ${ConfigTestFile})
   target_link_libraries(test_common_config maidsafe_common)
+
+  ms_add_executable(test_vlog "Tests/Common" ${VlogTestFile} ${TestLibAllFiles} ${TestsMain})
+  target_compile_definitions(test_vlog PRIVATE VLOG_TEST MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
+  target_link_libraries(test_vlog maidsafe_common gtest)
 endif()
 
 ms_rename_outdated_built_exes()
