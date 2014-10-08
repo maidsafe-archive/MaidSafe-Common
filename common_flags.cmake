@@ -122,6 +122,7 @@ target_compile_options(maidsafe_common
     >
     $<$<BOOL:${UNIX}>:
         -std=c++11
+        -pthread
         -W
         -Werror
         -Wall
