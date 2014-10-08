@@ -149,7 +149,7 @@ target_compile_options(maidsafe_common
             ${CoverageFlags}
         >
         $<$<CONFIG:Release>:-O2>
-        $<$<CXX_COMPILER_ID:Clang>:
+        $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>>:
             ${LibCXX}
             $<$<CONFIG:Debug>:
                 -fdiagnostics-format=clang
