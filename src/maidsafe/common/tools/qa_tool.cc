@@ -26,6 +26,8 @@
 #include "maidsafe/common/menu_item.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/common/tools/sqlite3_wrapper_benchmark.h"
+
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
@@ -47,9 +49,10 @@ int main(int argc, char* argv[]) {
   });
 
   maidsafe::MenuItem* qa_dev_bench_item{ qa_dev_item->AddChildItem("Benchmark Suite") };
-  qa_dev_bench_item->AddChildItem("Benchmark 1", [] {
-    TLOG(kGreen) << "Running benchmark 1.\n";
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+  qa_dev_bench_item->AddChildItem("sqlite_wrapper benchmark", [] {
+    TLOG(kGreen) << "Running sqlite_wrapper benchmark test\n";
+    maidsafe::benchmark::Sqlite3WrapperBenchmark sqlite_wrapper_benchmark_test;
+    sqlite_wrapper_benchmark_test.Run();
   });
   qa_dev_bench_item->AddChildItem("Benchmark 2", [] {
     TLOG(kGreen) << "Running benchmark 2.\n";
