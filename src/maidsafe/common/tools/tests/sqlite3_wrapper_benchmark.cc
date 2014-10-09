@@ -111,7 +111,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentInsertions() {
 
   std::mutex mutex;
   size_t thread_count(20), index(0);
-  maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(static_cast<int>(thread_count - 1), [&] {
     for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
       std::vector<std::string> endpoint_string_vector;
       {
@@ -152,7 +152,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
   ticking_clock.restart();
   std::mutex mutex;
   size_t thread_count(20), index(0);
-  maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(static_cast<int>(thread_count - 1), [&] {
     for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
       std::vector<std::string> endpoint_string_vector;
       {
@@ -273,7 +273,7 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentInsertions() {
 
   std::mutex mutex;
   size_t thread_count(4), index(0);
-  maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(static_cast<int>(thread_count - 1), [&] {
     for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
       auto itr(key_value_pairs.begin());
       {
@@ -314,7 +314,7 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
   ticking_clock.restart();
   std::mutex mutex;
   size_t thread_count(4), index(0);
-  maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(static_cast<int>(thread_count - 1), [&] {
     for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
       auto itr(key_value_pairs.begin());
       {
