@@ -113,6 +113,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   VLOG(TestAction::kGet, target, target);
   VLOG(TestAction::kGet, target);
   VLOG(TestAction::kGet, 99);
+  VLOG(TestAction::kGet, RandomAlphaNumericString(10));
 
   EXPECT_THROW(VLOG(TestPersona::kMaidNode, TestAction::kGet, Identity{}), common_error);
   EXPECT_THROW(VLOG(TestPersona::kMaidNode, static_cast<TestAction>(-1), target), common_error);

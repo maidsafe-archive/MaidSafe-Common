@@ -18,10 +18,12 @@
 
 #include "maidsafe/common/node_id.h"
 
+#include <algorithm>
 #include <bitset>
 
 #include "maidsafe/common/error_categories.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/node_id_common_bits_matrix.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -142,6 +144,19 @@ bool NodeId::IsZero() const {
       return false;
   }
   return true;
+}
+
+int NodeId::CommonLeadingBits(const NodeId& other) const {
+  // Find first mismatching char between the two IDs
+  auto mismatch(std::mismatch(std::begin(raw_id_), std::end(raw_id_), std::begin(other.raw_id_)));
+
+  // If there's no mismatch, the IDs are equal
+  if (mismatch.first == std::end(raw_id_))
+    return 8 * kSize;
+
+  int common_bits{ detail::kCommonBits[static_cast<unsigned char>(*mismatch.first)]
+                                      [static_cast<unsigned char>(*mismatch.second)] };
+  return static_cast<int>(8 * std::distance(std::begin(raw_id_), mismatch.first)) + common_bits;
 }
 
 NodeId& NodeId::operator^=(const NodeId& rhs) {

@@ -151,7 +151,10 @@ ms_add_executable(bootstrap_file_tool "Tools/Common"
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
 # Address space tool
-ms_add_executable(address_space_tool "Tools/Common" "${CommonSourcesDir}/tools/address_space_tool.cc")
+ms_add_executable(address_space_tool "Tools/Common"
+    "${CommonSourcesDir}/tools/address_space_tool.cc"
+    "${CommonSourcesDir}/tools/address_space_tool.h")
+target_include_directories(address_space_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
