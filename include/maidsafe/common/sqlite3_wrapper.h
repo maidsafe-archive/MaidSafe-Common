@@ -47,10 +47,10 @@ struct Database {
   Database(Database&&) = delete;
   Database& operator=(Database) = delete;
 
+  void CheckPoint();
 
-  void Execute(const std::string& query);
+  friend struct Tranasction;
   friend struct Statement;
-
  private:
   sqlite3 *database;
 };
@@ -65,6 +65,8 @@ struct Tranasction {
   void Commit();
 
  private:
+  void Execute(const std::string& query);
+
   const int kAttempts;
   bool committed;
   Database& database;
