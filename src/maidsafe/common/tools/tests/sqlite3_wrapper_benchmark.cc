@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace benchmark {
 
 Sqlite3WrapperBenchmark::Sqlite3WrapperBenchmark()
-  : database_path(), ticking_clock(), ten_thousand_strings() {}
+    : database_path(), ticking_clock(), ten_thousand_strings() {}
 
 void Sqlite3WrapperBenchmark::Run() {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
@@ -65,8 +65,9 @@ void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
         "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
     PrepareTable(database, query);
     sqlite::Tranasction transaction{database};
-    AddRemoveEndpointStrings(database, ten_thousand_strings,
-      "INSERT OR REPLACE INTO EndpointStringsSingleTransaction (ENDPOINT) VALUES (?)");
+    AddRemoveEndpointStrings(
+        database, ten_thousand_strings,
+        "INSERT OR REPLACE INTO EndpointStringsSingleTransaction (ENDPOINT) VALUES (?)");
     transaction.Commit();
   }
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
@@ -86,8 +87,9 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
     for (const auto& endpoint_string : ten_thousand_strings) {
       sqlite::Tranasction transaction{database};
       std::vector<std::string> endpoint_string_vector(1, endpoint_string);
-      AddRemoveEndpointStrings(database, endpoint_string_vector,
-        "INSERT OR REPLACE INTO EndpointStringsIndividualTransaction (ENDPOINT) VALUES (?)");
+      AddRemoveEndpointStrings(
+          database, endpoint_string_vector,
+          "INSERT OR REPLACE INTO EndpointStringsIndividualTransaction (ENDPOINT) VALUES (?)");
       transaction.Commit();
     }
   }
@@ -109,25 +111,25 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentInsertions() {
 
   std::mutex mutex;
   size_t thread_count(20), index(0);
-  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(thread_count - 1, [&] {
     for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
       std::vector<std::string> endpoint_string_vector;
       {
-        std::lock_guard<std::mutex> lock{ mutex };
+        std::lock_guard<std::mutex> lock{mutex};
         endpoint_string_vector.push_back(ten_thousand_strings.at(index));
         ++index;
       }
       sqlite::Tranasction transaction{database};
-      AddRemoveEndpointStrings(database, endpoint_string_vector,
-        "INSERT OR REPLACE INTO EndpointStringsConcurrentInsertions (ENDPOINT) VALUES (?)");
+      AddRemoveEndpointStrings(
+          database, endpoint_string_vector,
+          "INSERT OR REPLACE INTO EndpointStringsConcurrentInsertions (ENDPOINT) VALUES (?)");
       transaction.Commit();
     }
   });
   LOG(kVerbose) << "index : " << index;
   TLOG(kGreen) << "test completed in " << ticking_clock.elapsed() << " seconds\n";
   CheckEndpointStringsTestResult(ten_thousand_strings,
-                                 "SELECT * from EndpointStringsConcurrentInsertions",
-                                 false);
+                                 "SELECT * from EndpointStringsConcurrentInsertions", false);
 }
 
 void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
@@ -141,26 +143,27 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
   {
     // populate the database with 10k entries
     sqlite::Tranasction transaction{database};
-    AddRemoveEndpointStrings(database, ten_thousand_strings,
-      "INSERT OR REPLACE INTO EndpointStringsConcurrentDeletes (ENDPOINT) VALUES (?)");
+    AddRemoveEndpointStrings(
+        database, ten_thousand_strings,
+        "INSERT OR REPLACE INTO EndpointStringsConcurrentDeletes (ENDPOINT) VALUES (?)");
     transaction.Commit();
   }
 
   ticking_clock.restart();
   std::mutex mutex;
   size_t thread_count(20), index(0);
-  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(thread_count - 1, [&] {
     for (size_t i(0); i < (ten_thousand_strings.size() / thread_count); ++i) {
       std::vector<std::string> endpoint_string_vector;
       {
-        std::lock_guard<std::mutex> lock{ mutex };
+        std::lock_guard<std::mutex> lock{mutex};
         LOG(kVerbose) << index;
         endpoint_string_vector.push_back(ten_thousand_strings.at(index));
         ++index;
       }
       sqlite::Tranasction transaction{database};
       AddRemoveEndpointStrings(database, endpoint_string_vector,
-        "DELETE From EndpointStringsConcurrentDeletes WHERE ENDPOINT=?");
+                               "DELETE From EndpointStringsConcurrentDeletes WHERE ENDPOINT=?");
       transaction.Commit();
     }
   });
@@ -171,14 +174,14 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
 }
 
 void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
-    const std::vector<std::string>& expected_result, std::string query,
-    bool check_order, bool check_content, bool check_size) {
+    const std::vector<std::string>& expected_result, std::string query, bool check_order,
+    bool check_content, bool check_size) {
   std::vector<std::string> result;
   ReadEndpointStrings(result, query);
 
   if ((check_size) && (result.size() != expected_result.size()))
-    TLOG(kRed) << "inserted " << expected_result.size()
-               << " endpoint strings, got " << result.size() << " in database\n";
+    TLOG(kRed) << "inserted " << expected_result.size() << " endpoint strings, got "
+               << result.size() << " in database\n";
 
   if (check_content) {
     if (check_order) {
@@ -205,8 +208,7 @@ void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
   }
 }
 
-void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database,
-                                           std::string query) {
+void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database, std::string query) {
   sqlite::Tranasction transaction{database};
   sqlite::Statement statement{database, query};
   statement.Step();
@@ -215,8 +217,9 @@ void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database,
 }
 
 // Insert or Delete
-void Sqlite3WrapperBenchmark::AddRemoveEndpointStrings(sqlite::Database& database,
-    const std::vector<std::string>& endpoint_strings, std::string query) {
+void Sqlite3WrapperBenchmark::AddRemoveEndpointStrings(
+    sqlite::Database& database, const std::vector<std::string>& endpoint_strings,
+    std::string query) {
   sqlite::Statement statement{database, query};
   for (const auto& endpoint_string : endpoint_strings) {
     statement.BindText(1, endpoint_string);
@@ -247,8 +250,9 @@ void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
     PrepareTable(database, query);
     for (const auto& key_value_pair : key_value_pairs) {
       sqlite::Tranasction transaction{database};
-      InsertKeyValuePair(database, key_value_pair,
-        "INSERT OR REPLACE INTO KeyValueIndividualTransaction (KEY, VALUE) VALUES (?, ?)");
+      InsertKeyValuePair(
+          database, key_value_pair,
+          "INSERT OR REPLACE INTO KeyValueIndividualTransaction (KEY, VALUE) VALUES (?, ?)");
       transaction.Commit();
     }
   }
@@ -269,18 +273,19 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentInsertions() {
 
   std::mutex mutex;
   size_t thread_count(4), index(0);
-  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(thread_count - 1, [&] {
     for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
       auto itr(key_value_pairs.begin());
       {
-        std::lock_guard<std::mutex> lock{ mutex };
+        std::lock_guard<std::mutex> lock{mutex};
         LOG(kVerbose) << index;
         std::advance(itr, index);
         ++index;
       }
       sqlite::Tranasction transaction{database};
-      InsertKeyValuePair(database, *itr,
-        "INSERT OR REPLACE INTO KeyValueConcurrentInsertions (KEY, VALUE) VALUES (?, ?)");
+      InsertKeyValuePair(
+          database, *itr,
+          "INSERT OR REPLACE INTO KeyValueConcurrentInsertions (KEY, VALUE) VALUES (?, ?)");
       transaction.Commit();
     }
   });
@@ -300,19 +305,20 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
   PrepareTable(database, query);
   for (const auto& key_value_pair : key_value_pairs) {
     sqlite::Tranasction transaction{database};
-    InsertKeyValuePair(database, key_value_pair,
-      "INSERT OR REPLACE INTO KeyValueConcurrentUpdates (KEY, VALUE) VALUES (?, ?)");
+    InsertKeyValuePair(
+        database, key_value_pair,
+        "INSERT OR REPLACE INTO KeyValueConcurrentUpdates (KEY, VALUE) VALUES (?, ?)");
     transaction.Commit();
   }
 
   ticking_clock.restart();
   std::mutex mutex;
   size_t thread_count(4), index(0);
-  ::maidsafe::test::RunInParallel(thread_count - 1, [&] {
+  maidsafe::test::RunInParallel(thread_count - 1, [&] {
     for (size_t i(0); i < (key_value_pairs.size() / thread_count); ++i) {
       auto itr(key_value_pairs.begin());
       {
-        std::lock_guard<std::mutex> lock{ mutex };
+        std::lock_guard<std::mutex> lock{mutex};
         LOG(kVerbose) << index;
         std::advance(itr, RandomInt32() % key_value_pairs.size());
         key_value_pairs[itr->first] = RandomAlphaNumericString(512);
@@ -320,7 +326,7 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
       }
       sqlite::Tranasction transaction{database};
       UpdateKeyValuePair(database, *itr,
-        "UPDATE KeyValueConcurrentUpdates SET VALUE=? WHERE KEY=?");
+                         "UPDATE KeyValueConcurrentUpdates SET VALUE=? WHERE KEY=?");
       transaction.Commit();
     }
   });
@@ -330,7 +336,8 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
 }
 
 void Sqlite3WrapperBenchmark::InsertKeyValuePair(sqlite::Database& database,
-    std::pair<std::string, std::string> key_value_pair, std::string query) {
+                                                 std::pair<std::string, std::string> key_value_pair,
+                                                 std::string query) {
   sqlite::Statement statement{database, query};
   statement.BindText(1, key_value_pair.first);
   statement.BindText(2, key_value_pair.second);
@@ -338,8 +345,8 @@ void Sqlite3WrapperBenchmark::InsertKeyValuePair(sqlite::Database& database,
   statement.Reset();
 }
 
-void Sqlite3WrapperBenchmark::ReadKeyValuePairs(
-    std::map<std::string, std::string>& result, std::string query) {
+void Sqlite3WrapperBenchmark::ReadKeyValuePairs(std::map<std::string, std::string>& result,
+                                                std::string query) {
   sqlite::Database database{database_path, sqlite::Mode::kReadOnly};
   sqlite::Statement statement{database, query};
   for (;;)
@@ -350,7 +357,8 @@ void Sqlite3WrapperBenchmark::ReadKeyValuePairs(
 }
 
 void Sqlite3WrapperBenchmark::UpdateKeyValuePair(sqlite::Database& database,
-    std::pair<std::string, std::string> key_value_pair, std::string query) {
+                                                 std::pair<std::string, std::string> key_value_pair,
+                                                 std::string query) {
   sqlite::Statement statement{database, query};
   statement.BindText(1, key_value_pair.second);  // set column VALUE to value
   statement.BindText(2, key_value_pair.first);   // set WHERE KEY = to key
@@ -364,8 +372,8 @@ void Sqlite3WrapperBenchmark::CheckKeyValueTestResult(
   ReadKeyValuePairs(result, query);
 
   if (result.size() != expected_result.size())
-    TLOG(kRed) << "inserted " << expected_result.size()
-               << " key_value pairs, got " << result.size() << " in database\n";
+    TLOG(kRed) << "inserted " << expected_result.size() << " key_value pairs, got " << result.size()
+               << " in database\n";
 
   for (auto& entry : expected_result) {
     auto itr(result.find(entry.first));
