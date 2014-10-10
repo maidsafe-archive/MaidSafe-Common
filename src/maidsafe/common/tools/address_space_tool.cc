@@ -125,7 +125,7 @@ void Test::DoAddNode(const NodeId& node_id, bool good, int attempts) {
 }
 
 void Test::AddNode(bool good) {
-  size_t group_size{std::min(config_.group_size, all_nodes_.size())};
+  size_t group_size{std::min(static_cast<size_t>(config_.group_size), all_nodes_.size())};
   int attempts{0};
   for (;;) {
     ++attempts;
