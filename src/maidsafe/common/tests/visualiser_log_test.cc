@@ -145,9 +145,9 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
 #endif
 }
 
-// This test outputs the URL-encoded version of VLOG messages along with the string representation
+// This test outputs the JSON version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
+TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
