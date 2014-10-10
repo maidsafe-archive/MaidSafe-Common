@@ -36,10 +36,19 @@ namespace process {
 namespace {
 
 std::string ConcatenateArgs(const std::vector<std::string>& args) {
-  return std::accumulate(std::begin(args), std::end(args), std::string(""),
-      [](const std::string& lhs, const std::string& rhs) {
-        return lhs.empty() ? (rhs.empty() ? "" : rhs) : (rhs.empty() ? lhs : lhs + " " + rhs);
-      });
+  std::string result;
+  if (!args.empty()) {
+    // Wrap the first arg (which is the path to the exe) in quotes if it isn't already, in case it
+    // contains spaces.
+    if (args[0].front() != '"')
+      result = '"' + args[0] + '"';
+
+    result += std::accumulate(std::begin(args), std::end(args), std::string(""),
+                              [](const std::string& lhs, const std::string& rhs) {
+      return lhs.empty() ? (rhs.empty() ? "" : rhs) : (rhs.empty() ? lhs : lhs + " " + rhs);
+    });
+  }
+  return result;
 }
 
 }  // unnamed namespace
