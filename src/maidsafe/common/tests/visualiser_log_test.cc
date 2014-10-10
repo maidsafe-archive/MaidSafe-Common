@@ -185,16 +185,17 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
   DebugPrint(vlog3);
 
   std::vector<std::string> closest_ids;
-  for (int i(0); i != 16; ++i)
+  for (int i(0); i != 5; ++i)
     closest_ids.emplace_back(std::to_string(i * 4 + i));
 
   std::stringstream stringstream;
-  cereal::JSONOutputArchive archive{ stringstream };
+  {
+    cereal::JSONOutputArchive archive{ stringstream };
 
-  archive(cereal::make_nvp("oldId", 123));
-  archive(cereal::make_nvp("newId", 234));
-  archive(cereal::make_nvp("closestIds", closest_ids));
-
+    archive(cereal::make_nvp("oldId", 123));
+    archive(cereal::make_nvp("newId", 234));
+    archive(cereal::make_nvp("closestIds", closest_ids));
+  }
   auto vlog4 = VLOG(TestAction::kPut, stringstream.str());
   LOG(kVerbose) << '\t' << GetPostRequestBody(vlog4);
   DebugPrint(vlog4);
