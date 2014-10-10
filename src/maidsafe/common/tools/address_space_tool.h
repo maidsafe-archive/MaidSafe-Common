@@ -72,22 +72,30 @@ enum class CommonLeadingBitsAlgorithm {
 };
 
 struct Config {
-  size_t iterations{4};                   // Test iterations
-  size_t initial_good_count{1000};        // No. of good nodes used to pre-populate network on first
-                                          // test iteration
-  double initial_factor{2.0};             // Factor to multiply 'initial_good_count' by for each
-                                          // test iteration
-  size_t group_size{11};                  // Close group size
-  size_t majority_size{7};                // Majority of close group required to make a mutating
-                                          // action on data
-  size_t bad_group_count{1};              // Target no. of "bad groups" (i.e. a group where
-                                          // 'majority_size' are bad)
-  size_t total_random_attempts{1000000};  // Target no. of random addresses to check after required
-                                          // bad group count has been hit
-  size_t leeway{2};                       // How many more common leading bits will be allowed when
-                                          // considering a new node, i.e. how much closer it's
-                                          // allowed to be compared to the other nodes
-  size_t good_added_per_bad{0};           // No. of good nodes added every time a bad node is added
+  // Cereal v1.0 has a bug (https://github.com/USCiLab/cereal/issues/81) which means we can't add
+  // size_t values to JSON archives.  The bug appears to be fixed and is scheduled for v1.1
+  // TODO(Fraser): Remove this conditional typedef once the bug is fixed.
+#ifdef MAIDSAFE_APPLE
+  typedef uint64_t Size;
+#else
+  typedef size_t Size;
+#endif
+  Size iterations{4};                   // Test iterations
+  Size initial_good_count{1000};        // No. of good nodes used to pre-populate network on first
+                                        // test iteration
+  double initial_factor{2.0};           // Factor to multiply 'initial_good_count' by for each test
+                                        // iteration
+  Size group_size{11};                  // Close group size
+  Size majority_size{7};                // Majority of close group required to make a mutating
+                                        // action on data
+  Size bad_group_count{1};              // Target no. of "bad groups" (i.e. a group where
+                                        // 'majority_size' are bad)
+  Size total_random_attempts{1000000};  // Target no. of random addresses to check after required
+                                        // bad group count has been hit
+  Size leeway{2};                       // How many more common leading bits will be allowed when
+                                        // considering a new node, i.e. how much closer it's
+                                        // allowed to be compared to the other nodes
+  Size good_added_per_bad{0};           // No. of good nodes added every time a bad node is added
   CommonLeadingBitsAlgorithm algorithm{CommonLeadingBitsAlgorithm::kLowest};  // Described above
 
   template <typename Archive>
