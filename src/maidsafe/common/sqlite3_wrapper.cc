@@ -52,12 +52,6 @@ Database::~Database() {
     LOG(kError) << "Failed to close DB. Error : " << result;
 }
 
-void Database::CheckPoint() {
-  if (sqlite3_wal_checkpoint(database, NULL) != SQLITE_OK)
-    LOG(kError) << "CheckPoint error " << sqlite3_errmsg(database);
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
-}
-
 
 Tranasction::Tranasction(Database& database_in)
     : kAttempts(100),

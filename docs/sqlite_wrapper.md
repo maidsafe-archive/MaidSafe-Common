@@ -1,4 +1,4 @@
-#Sqlite3 Wrapper
+#Account Transfer
 
 ##Introduction
 
@@ -54,13 +54,10 @@ maidsafe::sqlite::Database {
  public :
   Database(boost::filesystem::path& file_name, Mode access_mode);  // startup a connection to the database
   ~Database();  // close the connection to the database
-  void CheckPoint();  // manually flush the entries in temp WAL file into the database
  private :
   sqlite3 *database;  // pointer to the sqlite3 database connection
 }
-It needs to be pointed out that when WAL mode is enabled, the writen entries will only sit in a temp WAL file.
-Such entries will be flushed into database when checkpoint is reached. Once entries got flushed, the temp VAL file will got reset, otherwise the size of it will keep growing.
-As auto-checkpoint is disabled for our use, the flush only happens when database got closed or a manual call of sqlite3_wal_checkpoint. In case of the use of a database keeps alive for a long time, manual call to CheckPoint is mandatory to reset the temp file size, otherwise the open file size issue will be hit.
+
 
 maidsafe::sqlite::Transaction { 
  public :
