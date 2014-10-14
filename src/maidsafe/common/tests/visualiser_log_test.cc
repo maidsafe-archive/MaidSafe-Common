@@ -192,9 +192,9 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
   {
     cereal::JSONOutputArchive archive{ stringstream };
 
-    archive(cereal::make_nvp("oldId", 123));
-    archive(cereal::make_nvp("newId", 234));
-    archive(cereal::make_nvp("closestIds", closest_ids));
+    archive(cereal::make_nvp("vaultRemoved", 123));
+    archive(cereal::make_nvp("vaultAdded", 234));
+    archive(cereal::make_nvp("closeGroupVaults", closest_ids));
   }
   auto vlog4 = VLOG(TestAction::kPut, stringstream.str());
   LOG(kVerbose) << '\t' << GetPostRequestBody(vlog4);
