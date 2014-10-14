@@ -19,7 +19,6 @@
 #include "maidsafe/common/clock.h"
 
 namespace maidsafe {
-namespace common {
 
 Clock::time_point Clock::now() MAIDSAFE_NOEXCEPT {
   auto time_now = std::chrono::system_clock::now();
@@ -38,5 +37,4 @@ Clock::time_point Clock::from_time_t(std::time_t t) {
   return time_point(std::chrono::seconds(t));
 }
 
-}  // namespace common
 }  // namespace maidsafe
