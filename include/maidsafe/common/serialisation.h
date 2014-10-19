@@ -107,19 +107,19 @@ struct Find<CompileTimeMapper<KeyToFind, Value, NextNode>, KeyToFind> {
 };
 
 template <typename TypeToSerialise>
-std::string ConvertToString(TypeToSerialise&& obj_to_serialise) {
+std::string Serialise(TypeToSerialise&& obj_to_serialise) {
   std::stringstream string_stream;
 
   {
     cereal::BinaryOutputArchive output_bin_archive{string_stream};
-    output_bin_archive(obj_to_serialize.e_TYPE_TAG,
-                       std::forward<TypeToSerialize>(obj_to_serialize));
+    output_bin_archive(obj_to_serialise.e_TYPE_TAG,
+                       std::forward<TypeToSerialise>(obj_to_serialise));
   }
 
   return string_stream.str();
 }
 
-TypeTag ExtractTypeFromStream(std::stringstream& ref_binary_stream) {
+inline TypeTag TypeFromStream(std::stringstream& ref_binary_stream) {
   unsigned char uc_tag;
 
   {
@@ -128,18 +128,6 @@ TypeTag ExtractTypeFromStream(std::stringstream& ref_binary_stream) {
   }
 
   return static_cast<TypeTag>(uc_tag);
-}
-
-template <TypeTag eTypeTag>
-CustomType<eTypeTag> DeSerialiseStreamToType(std::stringstream& ref_binary_stream) {
-  CustomType<eTypeTag> obj_deserialised;
-
-  {
-    cereal::BinaryInputArchive input_bin_archive{ref_binary_stream};
-    input_bin_archive(obj_deserialized);
-  }
-
-  return obj_deserialized;
 }
 
 }  // namespace maidsafe
