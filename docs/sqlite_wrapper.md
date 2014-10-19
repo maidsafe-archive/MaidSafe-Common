@@ -66,7 +66,7 @@ maidsafe::sqlite::Transaction {
  public :
   Transaction(Database& database);  // BEGIN a transaction
   Commit();  // COMMIT a transaction
-  ~Tranasction();  // roll-back to last save-point if previous Commit() failed
+  ~Transaction();  // roll-back to last save-point if previous Commit() failed
 }
 It needs to be pointed out that re-attempts will be carried out in all functions (include the constructor and destructor) of Transaction.
 
