@@ -65,6 +65,22 @@ set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 set(VlogTestFile ${CommonSourcesDir}/tests/visualiser_log_test.cc)
 list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${VlogTestFile} ${CommonAuthenticationTestsAllFiles})
 
+#==================================================================================================#
+# Set up Cereal files                                                                        #
+#==================================================================================================#
+SET(CommonCerealHeaders
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/cereal/maidsafe_error.h"
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/cereal/safe_encrypt.h"
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/cereal/cerealize_helpers.h"
+)
+SET(DataTypesCerealHeaders
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/data_types/cereal/mutable_data.h"
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/data_types/cereal/structured_data_versions.h"
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/data_types/cereal/version.h"
+)
+SET(ToolsCerealHeaders
+  "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/cereal/matrix_record.h"
+)
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -76,7 +92,8 @@ ms_add_static_library(maidsafe_common
     ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
     ${CommonDataTypesAllFiles}
-    ${CommonTcpAllFiles})
+    ${CommonTcpAllFiles}
+    ${CommonCerealHeaders})
 add_dependencies(maidsafe_common boost_process)
 
 target_include_directories(maidsafe_common
