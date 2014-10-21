@@ -1,4 +1,4 @@
-/*  Copyright 2009 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_COMMON_TYPE_CHECK_H_
 #define MAIDSAFE_COMMON_TYPE_CHECK_H_
 
+#include <type_traits>
 
 namespace maidsafe {
 
@@ -29,8 +30,6 @@ struct is_regular
                     std::is_move_constructible<T>::value && std::is_copy_assignable<T>::value &&
                     std::is_move_assignable<T>::value> {};
 
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_TYPE_CHECK_H_
-
