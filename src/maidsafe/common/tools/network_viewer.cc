@@ -30,7 +30,9 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/on_scope_exit.h"
-#include "maidsafe/common/tools/network_viewer.pb.h"
+
+#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/common/tools/cereal/matrix_record.h"
 
 namespace bi = boost::interprocess;
 
@@ -223,32 +225,34 @@ MatrixRecord::MatrixRecord(const NodeId& owner_id)
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
     : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
-  protobuf::MatrixRecord proto_matrix_record;
-  if (!proto_matrix_record.ParseFromString(serialised_matrix_record)) {
+  common::tools::cereal::MatrixRecord cereal_matrix_record;
+  try {
+    common::cereal::ConvertFromString(serialised_matrix_record, cereal_matrix_record);
+  }
+  catch(...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 
-  owner_id_ = NodeId(proto_matrix_record.owner_id());
+  owner_id_ = NodeId(cereal_matrix_record.owner_id_);
   matrix_ids_ = MatrixIds([this](const NodeId & lhs, const NodeId & rhs) {
     return NodeId::CloserToTarget(lhs, rhs, owner_id_);
   });
 
-  for (int i(0); i != proto_matrix_record.matrix_ids_size(); ++i) {
-    AddElement(NodeId(proto_matrix_record.matrix_ids(i).id()),
-               static_cast<ChildType>(proto_matrix_record.matrix_ids(i).type()));
+  for (std::size_t i(0); i != cereal_matrix_record.matrix_ids_.size(); ++i) {
+    AddElement(NodeId(cereal_matrix_record.matrix_ids_[i].id_),
+               static_cast<ChildType>(cereal_matrix_record.matrix_ids_[i].type_));
   }
 }
 
 std::string MatrixRecord::Serialise() const {
-  protobuf::MatrixRecord proto_matrix_record;
-  proto_matrix_record.set_owner_id(owner_id_.string());
+  common::tools::cereal::MatrixRecord cereal_matrix_record;
+  cereal_matrix_record.owner_id_ = owner_id_.string();
   for (const auto& matrix_id : matrix_ids_) {
-    auto proto_element(proto_matrix_record.add_matrix_ids());
-    proto_element->set_id(matrix_id.first.string());
-    proto_element->set_type(static_cast<int32_t>(matrix_id.second));
+    cereal_matrix_record.matrix_ids_.emplace_back(
+          matrix_id.first.string(), static_cast<int32_t>(matrix_id.second));
   }
-  return proto_matrix_record.SerializeAsString();
+  return common::cereal::ConvertToString(cereal_matrix_record);
 }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)
