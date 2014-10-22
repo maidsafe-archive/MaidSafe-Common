@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -14,7 +14,7 @@
     OF ANY KIND, either express or implied.
 
     See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.                                                               */
+    use of the MaidSafe Software.                                                                 */
 
 /* To use this component there are several items to be created. An example of classes One Two Zero
 
@@ -29,14 +29,14 @@ struct Zero;
 struct One;
 struct Two;
 
-using MAP = GetMap<
+using Map = GetMap<
   Pair<TypeTag::Zero, Zero>,
   Pair<TypeTag::One, One>,
   Pair<TypeTag::Two, Two>
->::MAP;
+>::Map;
 
-template<TypeTag Key>
-using CustomType = typename Find<MAP, Key>::ResultCustomType;
+template<TypeTag Tag>
+using CustomType = typename Find<Map, Tag>::ResultCustomType;
 A typical class would look like
 
 struct Zero {
@@ -57,7 +57,7 @@ struct Zero {
   char   c_data       {'Z'};
   std::string sz_data {"Zero"};
 
-  const TypeTag e_TYPE_TAG {TypeTag::Zero};
+  const TypeTag kTypeTag {TypeTag::Zero};
 };
 
 */
@@ -65,71 +65,74 @@ struct Zero {
 #ifndef MAIDSAFE_COMMON_SERIALISATION_H_
 #define MAIDSAFE_COMMON_SERIALISATION_H_
 
-#include <cereal/types/vector.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/archives/binary.hpp>
+#include <sstream>
+#include <string>
+
+#include "cereal/archives/binary.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/types/vector.hpp"
 
 namespace maidsafe {
 
-enum class TypeTag : unsigned char;
+enum class SerialisableTypeTag : unsigned char;
 
-template <TypeTag Key, typename Value, typename NextNode>
+template <SerialisableTypeTag Tag, typename Value, typename NextNode>
 struct CompileTimeMapper;
 struct ERROR_given_tag_is_not_mapped_to_a_type;
 
-template <TypeTag, typename>
-struct KVPair;
+template <SerialisableTypeTag Tag, typename Value>
+struct Serialisable;
 
 template <typename...>
 struct GetMap;
 
-template <TypeTag Key, typename Value, typename... Types>
-struct GetMap<KVPair<Key, Value>, Types...> {
-  using MAP = CompileTimeMapper<Key, Value, typename GetMap<Types...>::MAP>;
+template <SerialisableTypeTag Tag, typename Value, typename... Types>
+struct GetMap<Serialisable<Tag, Value>, Types...> {
+  using Map = CompileTimeMapper<Tag, Value, typename GetMap<Types...>::Map>;
 };
 
-template <TypeTag Key, typename Value>
-struct GetMap<KVPair<Key, Value>> {
-  using MAP = CompileTimeMapper<Key, Value, ERROR_given_tag_is_not_mapped_to_a_type>;
+template <SerialisableTypeTag Tag, typename Value>
+struct GetMap<Serialisable<Tag, Value>> {
+  using Map = CompileTimeMapper<Tag, Value, ERROR_given_tag_is_not_mapped_to_a_type>;
 };
 
-template <typename, TypeTag>
+template <typename, SerialisableTypeTag>
 struct Find;
 
-template <TypeTag Key, typename Value, typename NextNode, TypeTag KeyToFind>
-struct Find<CompileTimeMapper<Key, Value, NextNode>, KeyToFind> {
-  using ResultCustomType = typename Find<NextNode, KeyToFind>::ResultCustomType;
+template <SerialisableTypeTag Tag, typename Value, typename NextNode, SerialisableTypeTag TagToFind>
+struct Find<CompileTimeMapper<Tag, Value, NextNode>, TagToFind> {
+  using ResultCustomType = typename Find<NextNode, TagToFind>::ResultCustomType;
 };
 
-template <TypeTag KeyToFind, typename Value, typename NextNode>
-struct Find<CompileTimeMapper<KeyToFind, Value, NextNode>, KeyToFind> {
+template <SerialisableTypeTag TagToFind, typename Value, typename NextNode>
+struct Find<CompileTimeMapper<TagToFind, Value, NextNode>, TagToFind> {
   using ResultCustomType = Value;
 };
 
 template <typename TypeToSerialise>
-std::string Serialise(TypeToSerialise&& obj_to_serialise) {
+std::string Serialise(const TypeToSerialise& obj_to_serialise) {
   std::stringstream string_stream;
 
   {
     cereal::BinaryOutputArchive output_bin_archive{string_stream};
-    output_bin_archive(obj_to_serialise.e_TYPE_TAG,
+    output_bin_archive(obj_to_serialise.kSerialisableTypeTag,
                        std::forward<TypeToSerialise>(obj_to_serialise));
   }
 
   return string_stream.str();
 }
 
-inline TypeTag TypeFromStream(std::stringstream& ref_binary_stream) {
-  unsigned char uc_tag;
+inline SerialisableTypeTag TypeFromStream(std::stringstream& ref_binary_stream) {
+  unsigned char tag{255};
 
   {
     cereal::BinaryInputArchive input_bin_archive{ref_binary_stream};
-    input_bin_archive(uc_tag);
+    input_bin_archive(tag);
   }
 
-  return static_cast<TypeTag>(uc_tag);
+  return static_cast<SerialisableTypeTag>(tag);
 }
 
 }  // namespace maidsafe
 
-#endif  //  MAIDSAFE_COMMON_SERIALISATION_H_
+#endif  // MAIDSAFE_COMMON_SERIALISATION_H_
