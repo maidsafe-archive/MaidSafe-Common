@@ -82,6 +82,8 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "database not presented for SQL";
     case CommonErrors::db_error:
       return "SQL error";
+    case CommonErrors::defaulted:
+      return "Defaulted";
     case CommonErrors::unknown:
     default:
       return "Unknown error in Common";
