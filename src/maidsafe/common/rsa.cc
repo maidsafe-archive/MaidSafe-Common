@@ -106,27 +106,25 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   PlainText result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
-    common::cereal::SafeEncrypt safe_encrypt;
-    try {
-      common::cereal::ConvertFromString(data.string(), safe_encrypt);
 
-      std::string out_data;
-      CryptoPP::StringSource(
+    common::cereal::SafeEncrypt safe_encrypt;
+    try { common::cereal::ConvertFromString(data.string(), safe_encrypt); }
+    catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+
+    std::string out_data;
+    CryptoPP::StringSource(
           safe_encrypt.key_, true,
           new CryptoPP::PK_DecryptorFilter(crypto::random_number_generator(), decryptor,
-              new CryptoPP::StringSink(out_data)));
-      if (out_data.size() < crypto::AES256_KeySize + crypto::AES256_IVSize) {
-        LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
-        BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
-      }
-      result = crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(safe_encrypt.data_)),
-                                   crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
-                                   crypto::AES256InitialisationVector(out_data.substr(
-                                       crypto::AES256_KeySize, crypto::AES256_IVSize)));
-    }
-    catch(...) {
+                                           new CryptoPP::StringSink(out_data)));
+    if (out_data.size() < crypto::AES256_KeySize + crypto::AES256_IVSize) {
+      LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
       BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
     }
+    result = crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(safe_encrypt.data_)),
+                                 crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
+                                 crypto::AES256InitialisationVector(
+                                   out_data.substr(
+                                     crypto::AES256_KeySize, crypto::AES256_IVSize)));
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric decrypting: " << e.what();

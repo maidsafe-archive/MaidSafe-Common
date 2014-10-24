@@ -94,7 +94,8 @@ ms_add_static_library(maidsafe_common
     ${CommonDataTypesAllFiles}
     ${CommonTcpAllFiles}
     ${CommonCerealHeaders}
-    ${ToolsCerealHeaders})
+    ${ToolsCerealHeaders}
+    ${DataTypesCerealHeaders})
 add_dependencies(maidsafe_common boost_process)
 
 target_include_directories(maidsafe_common

@@ -73,13 +73,22 @@ The "tips of trees" are '8-zzz', '4-iii', '5-nnn', '4-lll' and '4-mmm'.
 
 namespace maidsafe {
 
-namespace protobuf {
+namespace common {
 
-class StructuredDataVersions;
-class StructuredDataVersions_Branch;
-class Version;
+namespace data_types {
 
-}  // namespace protobuf
+namespace cereal {
+
+struct StructuredDataVersions;
+struct StructuredDataVersions_Branch;
+struct Version;
+
+}  // namespace cereal
+
+}  // namespace data_types
+
+}  // namespace common
+
 
 // All public functions in this class provide the strong exception guarantee.
 class StructuredDataVersions {
@@ -197,17 +206,24 @@ class StructuredDataVersions {
   friend void swap(Details& lhs, Details& rhs) MAIDSAFE_NOEXCEPT;
 
   void ValidateLimits() const;
-  void BranchFromProtobuf(VersionsItr parent_itr,
-                          const protobuf::StructuredDataVersions& proto_versions,
-                          int& proto_branch_index);
-  VersionsItr HandleFirstVersionInBranchFromProtobuf(
-      VersionsItr parent_itr, const protobuf::StructuredDataVersions_Branch& proto_branch);
-  VersionsItr CheckedInsert(const protobuf::Version& proto_version);
-  void BranchToProtobuf(VersionsItr itr, protobuf::StructuredDataVersions& proto_versions,
-                        const VersionName& absent_parent) const;
-  void BranchToProtobuf(VersionsItr itr, protobuf::StructuredDataVersions& proto_versions,
-                        protobuf::StructuredDataVersions_Branch* proto_branch) const;
-  void ApplyBranch(VersionName parent, VersionsItr itr, StructuredDataVersions& new_versions) const;
+  void BranchFromCereal(VersionsItr parent_itr,
+                        const common::data_types::cereal::StructuredDataVersions& cereal_versions,
+                        std::size_t &cereal_branch_index);
+  VersionsItr HandleFirstVersionInBranchFromCereal(
+      VersionsItr parent_itr,
+      const common::data_types::cereal::StructuredDataVersions_Branch& cereal_branch);
+
+  VersionsItr CheckedInsert(const common::data_types::cereal::Version& cereal_version);
+  void BranchToCereal(VersionsItr itr,
+                      common::data_types::cereal::StructuredDataVersions& cereal_versions,
+                      const VersionName& absent_parent) const;
+  void BranchToCereal(VersionsItr itr,
+                      common::data_types::cereal::StructuredDataVersions& cereal_versions,
+                      common::data_types::cereal::StructuredDataVersions_Branch* cereal_branch)
+  const;
+
+  void ApplyBranch(VersionName parent, VersionsItr itr,
+                   StructuredDataVersions& new_versions) const;
   VersionName ParentName(VersionsItr itr) const;
   VersionName ParentName(Versions::const_iterator itr) const;
   VersionName RootParentName() const;

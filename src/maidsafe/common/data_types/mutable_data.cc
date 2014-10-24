@@ -23,7 +23,9 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
-#include "maidsafe/common/data_types/mutable_types.pb.h"
+
+#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/common/data_types/cereal/mutable_data.h"
 
 namespace maidsafe {
 
@@ -43,16 +45,16 @@ MutableData::MutableData(Name name, NonEmptyString data)
 
 MutableData::MutableData(Name name, const serialised_type& serialised_mutable_data)
     : name_(std::move(name)), data_() {
-  protobuf::MutableData proto_mutable_data;
-  if (!proto_mutable_data.ParseFromString(serialised_mutable_data->string()))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  data_ = NonEmptyString(proto_mutable_data.data());
+  common::data_types::cereal::MutableData cereal_mutable_data;
+  try { common::cereal::ConvertFromString(serialised_mutable_data->string(), cereal_mutable_data); }
+  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+  data_ = NonEmptyString(cereal_mutable_data.data_);
 }
 
 MutableData::serialised_type MutableData::Serialise() const {
-  protobuf::MutableData proto_mutable_data;
-  proto_mutable_data.set_data(data_.string());
-  return serialised_type(NonEmptyString(proto_mutable_data.SerializeAsString()));
+  common::data_types::cereal::MutableData cereal_mutable_data;
+  cereal_mutable_data.data_ = data_.string();
+  return serialised_type(NonEmptyString(common::cereal::ConvertToString(cereal_mutable_data)));
 }
 
 MutableData::Name MutableData::name() const { return name_; }

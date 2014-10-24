@@ -16,6 +16,15 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+
+/*
+ * There two flavours of serialization and de-serialization functions here. One that works on
+ * strings and the other that works on streams. This is because the string ones create
+ * stringstreams as local variables and stringstreams being locale aware have poor contruction
+ * speed. Thus if the client code wants to provide streams himself so that he can cache and reuse
+ * the streams, the functions which directly operate on streams can be used.
+ */
+
 #ifndef MAIDSAFE_COMMON_CEREAL_CEREALIZE_HELPERS_H_
 #define MAIDSAFE_COMMON_CEREAL_CEREALIZE_HELPERS_H_
 
@@ -30,10 +39,6 @@ namespace maidsafe {
 namespace common {
 
 namespace cereal {
-
-// ------------------------------- Serialize Functions Begin--------------------------------------
-
-// Potentially Fast Functions: Dest. stream object can be cached and optimized by caller codes.
 
 template<typename... TypesToSerialize>
 inline std::ostream& ConvertToStream(std::ostream& ref_dest_stream,
@@ -51,24 +56,11 @@ inline std::string ConvertToString(std::stringstream& ref_dest_stream,
                         std::forward<TypesToSerialize>(ref_source_objs)...)).str();
 }
 
-
-// Inherently Slow Functions: These will inherently be slow because construction of
-//                            std::stingstreams are locale aware and this takes time.
-
 template<typename... TypesToSerialize>
 inline std::string ConvertToString(TypesToSerialize&&... ref_source_objs) {
   std::stringstream str_stream;
-  return static_cast<std::stringstream&>(
-        ConvertToStream(str_stream,
-                        std::forward<TypesToSerialize>(ref_source_objs)...)).str();
+  return ConvertToString(str_stream, std::forward<TypesToSerialize>(ref_source_objs)...);
 }
-
-// ------------------------------- Serialize Functions End--------------------------------------
-
-
-// ----------------------------- De-Serialize Functions Begin-----------------------------------
-
-// Potentially Fast Functions: Dest stream object can be cached and optimized by caller codes.
 
 template<typename... DeSerializeToTypes>
 inline void ConvertFromStream(std::istream& ref_source_stream,
@@ -93,10 +85,6 @@ inline DeSerializeToType ConvertFromStream(std::istream& ref_source_stream) {
   return dest_obj;
 }
 
-
-// Inherently Slow Functions: These will inherently be slow because construction of
-//                            std::stingstreams are locale aware and this takes time.
-
 template<typename... DeSerializeToTypes>
 inline void ConvertFromString(const std::string& ref_source_string,
                               DeSerializeToTypes&... ref_dest_objs) {
@@ -116,8 +104,6 @@ inline DeSerializeToType ConvertFromString(const std::string& ref_source_string)
   std::stringstream str_stream {ref_source_string};
   return ConvertFromStream<DeSerializeToType>(str_stream);
 }
-
-// ----------------------------- De-Serialize Functions End-----------------------------------
 
 }  // namespace cereal
 

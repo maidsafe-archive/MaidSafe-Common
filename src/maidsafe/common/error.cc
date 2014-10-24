@@ -108,12 +108,8 @@ maidsafe_error::serialised_type Serialise(maidsafe_error error) {
 
 maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
   common::cereal::MaidsafeError cereal_copy;
-  try {
-    common::cereal::ConvertFromString(serialised_error.data, cereal_copy);
-  }
-  catch(...) {
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  }
+  try { common::cereal::ConvertFromString(serialised_error.data, cereal_copy); }
+  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));  }
   return IntToError(static_cast<int>(cereal_copy.value_));
 }
 

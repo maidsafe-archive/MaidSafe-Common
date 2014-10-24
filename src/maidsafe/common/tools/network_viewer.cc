@@ -226,9 +226,7 @@ MatrixRecord::MatrixRecord(const NodeId& owner_id)
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
     : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
   common::tools::cereal::MatrixRecord cereal_matrix_record;
-  try {
-    common::cereal::ConvertFromString(serialised_matrix_record, cereal_matrix_record);
-  }
+  try { common::cereal::ConvertFromString(serialised_matrix_record, cereal_matrix_record); }
   catch(...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
