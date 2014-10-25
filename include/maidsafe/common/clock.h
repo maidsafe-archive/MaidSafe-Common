@@ -24,7 +24,6 @@
 #include "maidsafe/common/config.h"
 
 namespace maidsafe {
-namespace common {
 
 // Chrono clock that uses UTC from epoch 1970-01-01T00:00:00Z with 1 nanosecond resolution.
 // The resolution accuracy depends on the system clock.
@@ -49,7 +48,10 @@ struct Clock {
   static time_point from_time_t(std::time_t);
 };
 
+namespace common {
+using Clock = maidsafe::Clock;
 }  // namespace common
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_CLOCK_H_
