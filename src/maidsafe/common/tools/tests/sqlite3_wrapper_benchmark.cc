@@ -64,7 +64,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsSingleTransaction() {
         "CREATE TABLE IF NOT EXISTS EndpointStringsSingleTransaction ("
         "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
     PrepareTable(database, query);
-    sqlite::Tranasction transaction{database};
+    sqlite::Transaction transaction{database};
     AddRemoveEndpointStrings(
         database, ten_thousand_strings,
         "INSERT OR REPLACE INTO EndpointStringsSingleTransaction (ENDPOINT) VALUES (?)");
@@ -85,7 +85,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsIndividualTransaction() {
         "ENDPOINT TEXT  PRIMARY KEY NOT NULL);");
     PrepareTable(database, query);
     for (const auto& endpoint_string : ten_thousand_strings) {
-      sqlite::Tranasction transaction{database};
+      sqlite::Transaction transaction{database};
       std::vector<std::string> endpoint_string_vector(1, endpoint_string);
       AddRemoveEndpointStrings(
           database, endpoint_string_vector,
@@ -119,7 +119,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentInsertions() {
         endpoint_string_vector.push_back(ten_thousand_strings.at(index));
         ++index;
       }
-      sqlite::Tranasction transaction{database};
+      sqlite::Transaction transaction{database};
       AddRemoveEndpointStrings(
           database, endpoint_string_vector,
           "INSERT OR REPLACE INTO EndpointStringsConcurrentInsertions (ENDPOINT) VALUES (?)");
@@ -142,7 +142,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
   PrepareTable(database, query);
   {
     // populate the database with 10k entries
-    sqlite::Tranasction transaction{database};
+    sqlite::Transaction transaction{database};
     AddRemoveEndpointStrings(
         database, ten_thousand_strings,
         "INSERT OR REPLACE INTO EndpointStringsConcurrentDeletes (ENDPOINT) VALUES (?)");
@@ -161,7 +161,7 @@ void Sqlite3WrapperBenchmark::EndpointStringsConcurrentDeletes() {
         endpoint_string_vector.push_back(ten_thousand_strings.at(index));
         ++index;
       }
-      sqlite::Tranasction transaction{database};
+      sqlite::Transaction transaction{database};
       AddRemoveEndpointStrings(database, endpoint_string_vector,
                                "DELETE From EndpointStringsConcurrentDeletes WHERE ENDPOINT=?");
       transaction.Commit();
@@ -209,7 +209,7 @@ void Sqlite3WrapperBenchmark::CheckEndpointStringsTestResult(
 }
 
 void Sqlite3WrapperBenchmark::PrepareTable(sqlite::Database& database, std::string query) {
-  sqlite::Tranasction transaction{database};
+  sqlite::Transaction transaction{database};
   sqlite::Statement statement{database, query};
   statement.Step();
   statement.Reset();
@@ -249,7 +249,7 @@ void Sqlite3WrapperBenchmark::KeyValueIndividualTransaction() {
         "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
     PrepareTable(database, query);
     for (const auto& key_value_pair : key_value_pairs) {
-      sqlite::Tranasction transaction{database};
+      sqlite::Transaction transaction{database};
       InsertKeyValuePair(
           database, key_value_pair,
           "INSERT OR REPLACE INTO KeyValueIndividualTransaction (KEY, VALUE) VALUES (?, ?)");
@@ -282,7 +282,7 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentInsertions() {
         std::advance(itr, index);
         ++index;
       }
-      sqlite::Tranasction transaction{database};
+      sqlite::Transaction transaction{database};
       InsertKeyValuePair(
           database, *itr,
           "INSERT OR REPLACE INTO KeyValueConcurrentInsertions (KEY, VALUE) VALUES (?, ?)");
@@ -304,7 +304,7 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
       "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
   PrepareTable(database, query);
   for (const auto& key_value_pair : key_value_pairs) {
-    sqlite::Tranasction transaction{database};
+    sqlite::Transaction transaction{database};
     InsertKeyValuePair(
         database, key_value_pair,
         "INSERT OR REPLACE INTO KeyValueConcurrentUpdates (KEY, VALUE) VALUES (?, ?)");
@@ -324,7 +324,7 @@ void Sqlite3WrapperBenchmark::KeyValueConcurrentUpdates() {
         key_value_pairs[itr->first] = RandomAlphaNumericString(512);
         ++index;
       }
-      sqlite::Tranasction transaction{database};
+      sqlite::Transaction transaction{database};
       UpdateKeyValuePair(database, *itr,
                          "UPDATE KeyValueConcurrentUpdates SET VALUE=? WHERE KEY=?");
       transaction.Commit();
