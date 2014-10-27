@@ -184,8 +184,6 @@ enum class RoutingErrors {
   timed_out = 1,
   timer_cancelled,
   not_in_range,
-  routing_table_empty,
-  node_not_found,
   not_connected
 };
 

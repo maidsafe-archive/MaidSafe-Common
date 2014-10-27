@@ -227,10 +227,6 @@ std::string RoutingCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Not in range";
     case RoutingErrors::not_connected:
       return "Not connected";
-    case RoutingErrors::node_not_found:
-      return "Node not found";
-    case RoutingErrors::routing_table_empty:
-      return "Not connected";
     default:
       return "Unknown error in Routing";
   }
