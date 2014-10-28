@@ -35,7 +35,7 @@ struct MutableData {
     ref_archive(data_);
   }
 
-  std::string data_ {};
+  std::string data_;
 };
 
 }  // namespace cereal

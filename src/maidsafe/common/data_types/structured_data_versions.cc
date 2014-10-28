@@ -264,13 +264,13 @@ void StructuredDataVersions::BranchToCereal(
     const VersionName& absent_parent) const {
   if (itr == std::end(versions_))
     return;
-  auto& cereal_branch((cereal_versions.branch_.emplace_back(),
-                     cereal_versions.branch_[cereal_versions.branch_.size() - 1]));
+  auto cereal_branch((cereal_versions.branch_.emplace_back(),
+                      &cereal_versions.branch_[cereal_versions.branch_.size() - 1]));
   if (absent_parent.id->IsInitialised()) {
-    cereal_branch.absent_parent_.index_ = absent_parent.index;
-    cereal_branch.absent_parent_.id_ = absent_parent.id->string();
+    cereal_branch->absent_parent_.index_ = absent_parent.index;
+    cereal_branch->absent_parent_.id_ = absent_parent.id->string();
   }
-  BranchToCereal(itr, cereal_versions, &cereal_branch);
+  BranchToCereal(itr, cereal_versions, cereal_branch);
 }
 
 void StructuredDataVersions::BranchToCereal(
@@ -279,20 +279,20 @@ void StructuredDataVersions::BranchToCereal(
   for (;;) {
     if (itr == std::end(versions_))
       return;
-    auto& cereal_version((cereal_branch->name_.emplace_back(),
-                         cereal_branch->name_[cereal_branch->name_.size() - 1]));
-    cereal_version.index_ = itr->first.index;
-    cereal_version.id_ = itr->first.id->string();
+    auto cereal_version((cereal_branch->name_.emplace_back(),
+                         &cereal_branch->name_[cereal_branch->name_.size() - 1]));
+    cereal_version->index_ = itr->first.index;
+    cereal_version->id_ = itr->first.id->string();
     if (itr->second->children.empty())
       return;
     if (itr->second->children.size() == 1U) {
       itr = *std::begin(itr->second->children);
     } else {
-      cereal_version.forking_child_count_ = static_cast<uint32_t>(itr->second->children.size());
+      cereal_version->forking_child_count_ = static_cast<uint32_t>(itr->second->children.size());
       for (auto child : itr->second->children) {
-        auto& cereal_branch((cereal_versions.branch_.emplace_back(),
-                          cereal_versions.branch_[cereal_versions.branch_.size() - 1]));
-        BranchToCereal(child, cereal_versions, &cereal_branch);
+        auto cereal_branch((cereal_versions.branch_.emplace_back(),
+                            &cereal_versions.branch_[cereal_versions.branch_.size() - 1]));
+        BranchToCereal(child, cereal_versions, cereal_branch);
       }
       return;
     }

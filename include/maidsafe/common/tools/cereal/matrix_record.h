@@ -40,8 +40,8 @@ struct MatrixRecord {
   struct Element {
     Element() = default;
     Element(const std::string& ref_id, const std::int32_t type) :
-      id_ {ref_id},
-      type_ {type}
+      id_(ref_id),
+      type_(type)
     { }
 
     template<typename Archive>
@@ -49,12 +49,12 @@ struct MatrixRecord {
       ref_archive(id_, type_);
     }
 
-    std::string id_    {};
-    std::int32_t type_ {};
+    std::string id_;
+    std::int32_t type_ = 0;
   };
 
-  std::string owner_id_ {};
-  std::vector<Element> matrix_ids_ {};
+  std::string owner_id_;
+  std::vector<Element> matrix_ids_;
 };
 
 }  // namespace cereal

@@ -36,9 +36,9 @@ struct Version {
     ref_archive(index_, id_, forking_child_count_);
   }
 
-  std::uint64_t index_ {};
-  std::string id_ {};
-  std::uint32_t forking_child_count_ {};
+  std::uint64_t index_ = 0;
+  std::string id_;
+  std::uint32_t forking_child_count_ = 0;
 };
 
 }  // namespace cereal

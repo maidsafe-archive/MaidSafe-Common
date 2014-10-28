@@ -39,8 +39,8 @@ struct StructuredDataVersions_Branch {
     ref_archive(absent_parent_, name_);
   }
 
-  Version absent_parent_ {};
-  std::vector<Version> name_ {};
+  Version absent_parent_;
+  std::vector<Version> name_;
 };
 
 struct StructuredDataVersions {
@@ -51,9 +51,9 @@ struct StructuredDataVersions {
 
   using Branch = StructuredDataVersions_Branch;
 
-  std::uint32_t max_versions_ {};
-  std::uint32_t max_branches_ {};
-  std::vector<Branch> branch_ {};
+  std::uint32_t max_versions_ = 0;
+  std::uint32_t max_branches_ = 0;
+  std::vector<Branch> branch_;
 };
 
 }  // namespace cereal

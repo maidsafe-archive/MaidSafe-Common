@@ -33,7 +33,7 @@ struct MaidsafeError {
     ref_archive(value_);
   }
 
-  std::int64_t value_ {};
+  std::int64_t value_ = 0;
 };
 
 }  // namespace cereal

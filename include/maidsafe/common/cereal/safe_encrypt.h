@@ -33,8 +33,8 @@ struct SafeEncrypt {
     ref_archive(key_, data_);
   }
 
-  std::string key_  {};
-  std::string data_ {};
+  std::string key_;
+  std::string data_;
 };
 
 }  // namespace cereal
