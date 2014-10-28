@@ -23,22 +23,22 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace cereal {
 
 struct MaidsafeError {
+  MaidsafeError()
+    : value_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(value_);
   }
 
-  std::int64_t value_ = 0;
+  std::int64_t value_;
 };
 
 }  // namespace cereal
-
-}  // namespace common
 
 }  // namespace maidsafe
 

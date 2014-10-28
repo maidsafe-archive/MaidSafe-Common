@@ -225,8 +225,8 @@ MatrixRecord::MatrixRecord(const NodeId& owner_id)
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
     : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
-  common::tools::cereal::MatrixRecord cereal_matrix_record;
-  try { common::cereal::ConvertFromString(serialised_matrix_record, cereal_matrix_record); }
+  tools::cereal::MatrixRecord cereal_matrix_record;
+  try { cereal::ConvertFromString(serialised_matrix_record, cereal_matrix_record); }
   catch(...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
@@ -244,13 +244,13 @@ MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
 }
 
 std::string MatrixRecord::Serialise() const {
-  common::tools::cereal::MatrixRecord cereal_matrix_record;
+  tools::cereal::MatrixRecord cereal_matrix_record;
   cereal_matrix_record.owner_id_ = owner_id_.string();
   for (const auto& matrix_id : matrix_ids_) {
     cereal_matrix_record.matrix_ids_.emplace_back(
           matrix_id.first.string(), static_cast<int32_t>(matrix_id.second));
   }
-  return common::cereal::ConvertToString(cereal_matrix_record);
+  return cereal::ConvertToString(cereal_matrix_record);
 }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)

@@ -27,13 +27,16 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace data_types {
 
 namespace cereal {
 
 struct StructuredDataVersions_Branch {
+  StructuredDataVersions_Branch()
+    : absent_parent_ {},
+      name_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(absent_parent_, name_);
@@ -44,6 +47,12 @@ struct StructuredDataVersions_Branch {
 };
 
 struct StructuredDataVersions {
+  StructuredDataVersions()
+    : max_versions_ {},
+      max_branches_ {},
+      branch_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(max_versions_, max_branches_, branch_);
@@ -51,16 +60,14 @@ struct StructuredDataVersions {
 
   using Branch = StructuredDataVersions_Branch;
 
-  std::uint32_t max_versions_ = 0;
-  std::uint32_t max_branches_ = 0;
+  std::uint32_t max_versions_;
+  std::uint32_t max_branches_;
   std::vector<Branch> branch_;
 };
 
 }  // namespace cereal
 
 }  // namespace data_types
-
-}  // namespace common
 
 }  // namespace maidsafe
 

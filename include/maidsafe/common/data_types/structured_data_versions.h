@@ -73,8 +73,6 @@ The "tips of trees" are '8-zzz', '4-iii', '5-nnn', '4-lll' and '4-mmm'.
 
 namespace maidsafe {
 
-namespace common {
-
 namespace data_types {
 
 namespace cereal {
@@ -86,9 +84,6 @@ struct Version;
 }  // namespace cereal
 
 }  // namespace data_types
-
-}  // namespace common
-
 
 // All public functions in this class provide the strong exception guarantee.
 class StructuredDataVersions {
@@ -207,19 +202,19 @@ class StructuredDataVersions {
 
   void ValidateLimits() const;
   void BranchFromCereal(VersionsItr parent_itr,
-                        const common::data_types::cereal::StructuredDataVersions& cereal_versions,
+                        const data_types::cereal::StructuredDataVersions& cereal_versions,
                         std::size_t &cereal_branch_index);
   VersionsItr HandleFirstVersionInBranchFromCereal(
       VersionsItr parent_itr,
-      const common::data_types::cereal::StructuredDataVersions_Branch& cereal_branch);
+      const data_types::cereal::StructuredDataVersions_Branch& cereal_branch);
 
-  VersionsItr CheckedInsert(const common::data_types::cereal::Version& cereal_version);
+  VersionsItr CheckedInsert(const data_types::cereal::Version& cereal_version);
   void BranchToCereal(VersionsItr itr,
-                      common::data_types::cereal::StructuredDataVersions& cereal_versions,
+                      data_types::cereal::StructuredDataVersions& cereal_versions,
                       const VersionName& absent_parent) const;
   void BranchToCereal(VersionsItr itr,
-                      common::data_types::cereal::StructuredDataVersions& cereal_versions,
-                      common::data_types::cereal::StructuredDataVersions_Branch* cereal_branch)
+                      data_types::cereal::StructuredDataVersions& cereal_versions,
+                      data_types::cereal::StructuredDataVersions_Branch* cereal_branch)
   const;
 
   void ApplyBranch(VersionName parent, VersionsItr itr,

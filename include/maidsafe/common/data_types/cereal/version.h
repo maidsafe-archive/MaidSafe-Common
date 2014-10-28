@@ -24,28 +24,30 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace data_types {
 
 namespace cereal {
 
 struct Version {
+  Version()
+    : index_ {},
+      id_ {},
+      forking_child_count_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(index_, id_, forking_child_count_);
   }
 
-  std::uint64_t index_ = 0;
+  std::uint64_t index_;
   std::string id_;
-  std::uint32_t forking_child_count_ = 0;
+  std::uint32_t forking_child_count_;
 };
 
 }  // namespace cereal
 
 }  // namespace data_types
-
-}  // namespace common
 
 }  // namespace maidsafe
 

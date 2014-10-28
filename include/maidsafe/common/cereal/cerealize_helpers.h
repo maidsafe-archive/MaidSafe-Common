@@ -36,8 +36,6 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace cereal {
 
 template<typename... TypesToSerialize>
@@ -106,8 +104,6 @@ inline DeSerializeToType ConvertFromString(const std::string& ref_source_string)
 }
 
 }  // namespace cereal
-
-}  // namespace common
 
 }  // namespace maidsafe
 

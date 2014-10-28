@@ -45,16 +45,16 @@ MutableData::MutableData(Name name, NonEmptyString data)
 
 MutableData::MutableData(Name name, const serialised_type& serialised_mutable_data)
     : name_(std::move(name)), data_() {
-  common::data_types::cereal::MutableData cereal_mutable_data;
-  try { common::cereal::ConvertFromString(serialised_mutable_data->string(), cereal_mutable_data); }
+  data_types::cereal::MutableData cereal_mutable_data;
+  try { cereal::ConvertFromString(serialised_mutable_data->string(), cereal_mutable_data); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
   data_ = NonEmptyString(cereal_mutable_data.data_);
 }
 
 MutableData::serialised_type MutableData::Serialise() const {
-  common::data_types::cereal::MutableData cereal_mutable_data;
+  data_types::cereal::MutableData cereal_mutable_data;
   cereal_mutable_data.data_ = data_.string();
-  return serialised_type(NonEmptyString(common::cereal::ConvertToString(cereal_mutable_data)));
+  return serialised_type(NonEmptyString(cereal::ConvertToString(cereal_mutable_data)));
 }
 
 MutableData::Name MutableData::name() const { return name_; }

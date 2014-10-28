@@ -36,8 +36,8 @@ StructuredDataVersions::VersionName::VersionName(uint64_t index_in, ImmutableDat
 
 StructuredDataVersions::VersionName::VersionName(const std::string& serialised_version_name)
     : index(0), id() {
-  common::data_types::cereal::Version version_cereal;
-  try { common::cereal::ConvertFromString(serialised_version_name, version_cereal); }
+  data_types::cereal::Version version_cereal;
+  try { cereal::ConvertFromString(serialised_version_name, version_cereal); }
   catch(...) {
     LOG(kWarning) << "Failed to parse serialised version name";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -59,10 +59,10 @@ StructuredDataVersions::VersionName& StructuredDataVersions::VersionName::operat
 }
 
 std::string StructuredDataVersions::VersionName::Serialise() const {
-  common::data_types::cereal::Version version_cereal;
+  data_types::cereal::Version version_cereal;
   version_cereal.index_ = index;
   version_cereal.id_ = id->string();
-  return common::cereal::ConvertToString(version_cereal);
+  return cereal::ConvertToString(version_cereal);
 }
 
 void swap(StructuredDataVersions::VersionName& lhs,
@@ -149,8 +149,8 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
       root_(std::make_pair(VersionName(), std::end(versions_))),
       tips_of_trees_([](VersionsItr lhs, VersionsItr rhs) { return *lhs < *rhs; }),
       orphans_() {
-  common::data_types::cereal::StructuredDataVersions cereal_versions;
-  try { common::cereal::ConvertFromString(serialised_data_versions->string(), cereal_versions); }
+  data_types::cereal::StructuredDataVersions cereal_versions;
+  try { cereal::ConvertFromString(serialised_data_versions->string(), cereal_versions); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 
   max_versions_ = cereal_versions.max_versions_;
@@ -166,7 +166,7 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
 }
 
 StructuredDataVersions::serialised_type StructuredDataVersions::Serialise() const {
-  common::data_types::cereal::StructuredDataVersions cereal_versions;
+  data_types::cereal::StructuredDataVersions cereal_versions;
   cereal_versions.max_versions_ = max_versions_;
   cereal_versions.max_branches_ = max_branches_;
 
@@ -177,7 +177,7 @@ StructuredDataVersions::serialised_type StructuredDataVersions::Serialise() cons
   }
 
   //  LOG(kInfo) << proto_versions.DebugString() << '\n';
-  return serialised_type(NonEmptyString(common::cereal::ConvertToString(cereal_versions)));
+  return serialised_type(NonEmptyString(cereal::ConvertToString(cereal_versions)));
 }
 
 void StructuredDataVersions::ValidateLimits() const {
@@ -187,7 +187,7 @@ void StructuredDataVersions::ValidateLimits() const {
 
 void StructuredDataVersions::BranchFromCereal(
     VersionsItr parent_itr,
-    const common::data_types::cereal::StructuredDataVersions& cereal_versions,
+    const data_types::cereal::StructuredDataVersions& cereal_versions,
     std::size_t& cereal_branch_index) {
   if (cereal_branch_index >= cereal_versions.branch_.size())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -220,7 +220,7 @@ void StructuredDataVersions::BranchFromCereal(
 
 StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionInBranchFromCereal(
     VersionsItr parent_itr,
-    const common::data_types::cereal::StructuredDataVersions_Branch& cereal_branch) {
+    const data_types::cereal::StructuredDataVersions_Branch& cereal_branch) {
   auto itr(CheckedInsert(cereal_branch.name_[0]));
   if (parent_itr == std::end(versions_)) {
     // This is a new branch, so the first element is either root_ or an orphan.
@@ -249,7 +249,7 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionIn
 }
 
 StructuredDataVersions::VersionsItr StructuredDataVersions::CheckedInsert(
-    const common::data_types::cereal::Version& cereal_version) {
+    const data_types::cereal::Version& cereal_version) {
   VersionName version_name(cereal_version.index_,
                            ImmutableData::Name(Identity(cereal_version.id_)));
   auto result(versions_.insert(std::make_pair(version_name, std::make_shared<Details>())));
@@ -260,7 +260,7 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::CheckedInsert(
 
 void StructuredDataVersions::BranchToCereal(
     VersionsItr itr,
-    common::data_types::cereal::StructuredDataVersions& cereal_versions,
+    data_types::cereal::StructuredDataVersions& cereal_versions,
     const VersionName& absent_parent) const {
   if (itr == std::end(versions_))
     return;
@@ -274,8 +274,8 @@ void StructuredDataVersions::BranchToCereal(
 }
 
 void StructuredDataVersions::BranchToCereal(
-    VersionsItr itr, common::data_types::cereal::StructuredDataVersions& cereal_versions,
-    common::data_types::cereal::StructuredDataVersions_Branch* cereal_branch) const {
+    VersionsItr itr, data_types::cereal::StructuredDataVersions& cereal_versions,
+    data_types::cereal::StructuredDataVersions_Branch* cereal_branch) const {
   for (;;) {
     if (itr == std::end(versions_))
       return;

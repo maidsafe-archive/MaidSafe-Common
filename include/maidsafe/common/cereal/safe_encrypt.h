@@ -23,11 +23,14 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace cereal {
 
 struct SafeEncrypt {
+  SafeEncrypt()
+    : key_ {},
+      data_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(key_, data_);
@@ -38,8 +41,6 @@ struct SafeEncrypt {
 };
 
 }  // namespace cereal
-
-}  // namespace common
 
 }  // namespace maidsafe
 

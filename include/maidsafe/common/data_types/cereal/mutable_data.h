@@ -23,13 +23,15 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace data_types {
 
 namespace cereal {
 
 struct MutableData {
+  MutableData()
+    : data_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(data_);
@@ -41,8 +43,6 @@ struct MutableData {
 }  // namespace cereal
 
 }  // namespace data_types
-
-}  // namespace common
 
 }  // namespace maidsafe
 

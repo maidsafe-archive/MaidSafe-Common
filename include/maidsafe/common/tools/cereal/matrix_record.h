@@ -25,20 +25,27 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace tools {
 
 namespace cereal {
 
 struct MatrixRecord {
+  MatrixRecord()
+    : owner_id_ {},
+      matrix_ids_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(owner_id_, matrix_ids_);
   }
 
   struct Element {
-    Element() = default;
+    Element()
+      : id_ {},
+        type_ {}
+    { }
+
     Element(const std::string& ref_id, const std::int32_t type) :
       id_(ref_id),
       type_(type)
@@ -50,7 +57,7 @@ struct MatrixRecord {
     }
 
     std::string id_;
-    std::int32_t type_ = 0;
+    std::int32_t type_;
   };
 
   std::string owner_id_;
@@ -60,8 +67,6 @@ struct MatrixRecord {
 }  // namespace cereal
 
 }  // namespace tools
-
-}  // namespace common
 
 }  // namespace maidsafe
 

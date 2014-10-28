@@ -101,14 +101,14 @@ maidsafe_error IntToError(int value) {
 }
 
 maidsafe_error::serialised_type Serialise(maidsafe_error error) {
-  common::cereal::MaidsafeError cereal_copy;
+  cereal::MaidsafeError cereal_copy;
   cereal_copy.value_ = ErrorToInt(error);
-  return maidsafe_error::serialised_type{ common::cereal::ConvertToString(cereal_copy) };
+  return maidsafe_error::serialised_type{ cereal::ConvertToString(cereal_copy) };
 }
 
 maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
-  common::cereal::MaidsafeError cereal_copy;
-  try { common::cereal::ConvertFromString(serialised_error.data, cereal_copy); }
+  cereal::MaidsafeError cereal_copy;
+  try { cereal::ConvertFromString(serialised_error.data, cereal_copy); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));  }
   return IntToError(static_cast<int>(cereal_copy.value_));
 }
