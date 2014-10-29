@@ -19,6 +19,9 @@
 #include "maidsafe/common/config.h"
 
 #include <limits.h>
+#ifdef WIN32
+#include <windows.h>
+#endif
 #ifdef __FreeBSD__
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -62,7 +65,7 @@ void SetThisExecutablePath(const char* const argv[]) {
     const char *path = argv[0];
 #ifdef WIN32
     char buffer[32768];
-    if (_get_pgmptr(&path)) {
+    if (_get_pgmptr(reinterpret_cast<char **>(&path))) {
       if (GetModuleFileNameA(nullptr, buffer, sizeof(buffer)))
         path = buffer;
     }
@@ -104,7 +107,7 @@ void SetThisExecutablePath(const wchar_t* const argv[]) {
     const wchar_t *path = argv[0];
 #ifdef WIN32
     char buffer[32768];
-    if (_get_wpgmptr(&path))
+    if (_get_wpgmptr(reinterpret_cast<wchar_t **>(&path)))
       if (GetModuleFileNameW(nullptr, buffer, sizeof(buffer)))
         path = buffer;
 #endif
