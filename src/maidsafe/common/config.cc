@@ -18,6 +18,15 @@
 
 #include "maidsafe/common/config.h"
 
+#include <limits.h>
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#endif
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+
 #include <mutex>
 
 #include "boost/filesystem/operations.hpp"
@@ -50,11 +59,40 @@ template <>
 void SetThisExecutablePath(const char* const argv[]) {
   static std::once_flag flag;
   std::call_once(flag, [argv] {
+    const char *path = argv[0];
+#ifdef WIN32
+    char buffer[32768];
+    if (_get_pgmptr(&path)) {
+      if (GetModuleFileNameA(nullptr, buffer, sizeof(buffer)))
+        path = buffer;
+    }
+#endif
+#ifdef __linux__
+    char buffer[PATH_MAX];
+    size_t len = 0;
+    if ((len = readlink("/proc/self/exe", buffer, sizeof(buffer))) > 0) {
+      buffer[len] = 0;
+      path = buffer;
+    }
+#endif
+#ifdef __FreeBSD__
+    char buffer[PATH_MAX];
+    size_t bufferlen = sizeof(buffer);
+    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+    if (!sysctl(mib, 4, buffer, &bufferlen, nullptr, 0))
+      path = buffer;
+#endif
+#ifdef __APPLE__
+    char buffer[MAXPATHLEN];
+    uint32_t bufferlen = sizeof(buffer);
+    if (!_NSGetExecutablePath(buffer, &bufferlen))
+      path = buffer;
+#endif
     try {
-      g_this_executable_path = boost::filesystem::absolute(argv[0]);
+      g_this_executable_path = boost::filesystem::absolute(path);
     }
     catch (const std::exception&) {
-      g_this_executable_path = boost::filesystem::path(argv[0]);
+      g_this_executable_path = boost::filesystem::path(path);
     }
   });
 }
@@ -63,11 +101,18 @@ template <>
 void SetThisExecutablePath(const wchar_t* const argv[]) {
   static std::once_flag flag;
   std::call_once(flag, [argv] {
+    const wchar_t *path = argv[0];
+#ifdef WIN32
+    char buffer[32768];
+    if (_get_wpgmptr(&path))
+      if (GetModuleFileNameW(nullptr, buffer, sizeof(buffer)))
+        path = buffer;
+#endif
     try {
-      g_this_executable_path = boost::filesystem::absolute(argv[0]);
+      g_this_executable_path = boost::filesystem::absolute(path);
     }
     catch (const std::exception&) {
-      g_this_executable_path = boost::filesystem::path(argv[0]);
+      g_this_executable_path = boost::filesystem::path(path);
     }
   });
 }
