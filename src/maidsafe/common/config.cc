@@ -65,7 +65,7 @@ void SetThisExecutablePath(const char* const argv[]) {
     const char *path = argv[0];
 #ifdef WIN32
     char buffer[32768];
-    if (_get_pgmptr(reinterpret_cast<char **>(&path))) {
+    if (_get_pgmptr(const_cast<char **>(&path))) {
       if (GetModuleFileNameA(nullptr, buffer, sizeof(buffer)))
         path = buffer;
     }
@@ -106,8 +106,8 @@ void SetThisExecutablePath(const wchar_t* const argv[]) {
   std::call_once(flag, [argv] {
     const wchar_t *path = argv[0];
 #ifdef WIN32
-    char buffer[32768];
-    if (_get_wpgmptr(reinterpret_cast<wchar_t **>(&path)))
+    wchar_t buffer[32768];
+    if (_get_wpgmptr(const_cast<wchar_t **>(&path)))
       if (GetModuleFileNameW(nullptr, buffer, sizeof(buffer)))
         path = buffer;
 #endif
