@@ -86,7 +86,7 @@ void SetThisExecutablePath(const char* const argv[]) {
       path = buffer;
 #endif
 #ifdef __APPLE__
-    char buffer[MAXPATHLEN];
+    char buffer[PATH_MAX];
     uint32_t bufferlen = sizeof(buffer);
     if (!_NSGetExecutablePath(buffer, &bufferlen))
       path = buffer;
