@@ -20,6 +20,10 @@
 
 #include <mutex>
 
+#include "cereal/cereal.hpp"
+#include "cereal/archives/json.hpp"
+#include "cereal/types/vector.hpp"
+
 #include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/test.h"
@@ -146,9 +150,9 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
 #endif
 }
 
-// This test outputs the URL-encoded version of VLOG messages along with the string representation
+// This test outputs the JSON version of VLOG messages along with the string representation
 // of each decoded VLOG element to allow (currently manual) checking of server-side visualiser code.
-TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
+TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
   std::vector<Identity> identities;
   for (int i(0); i < 4; ++i) {
     std::string id;
@@ -180,6 +184,22 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckUrlEncode) {
   auto vlog3 = VLOG(TestAction::kGet, identities[3]);
   LOG(kVerbose) << '\t' << GetPostRequestBody(vlog3);
   DebugPrint(vlog3);
+
+  std::vector<std::string> closest_ids;
+  for (int i(0); i != 5; ++i)
+    closest_ids.emplace_back(std::to_string(i * 4 + i));
+
+  std::stringstream stringstream;
+  {
+    cereal::JSONOutputArchive archive{ stringstream };
+
+    archive(cereal::make_nvp("vaultRemoved", 123));
+    archive(cereal::make_nvp("vaultAdded", 234));
+    archive(cereal::make_nvp("closeGroupVaults", closest_ids));
+  }
+  auto vlog4 = VLOG(TestAction::kPut, stringstream.str());
+  LOG(kVerbose) << '\t' << GetPostRequestBody(vlog4);
+  DebugPrint(vlog4);
   // Sleep to allow error LOG messages caused by errors returned from the server to execute before
   // the logger's destructor causes them to be ditched.  This is non-critical; just good to see
   // errors where possible.
