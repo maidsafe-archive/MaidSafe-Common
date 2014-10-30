@@ -81,8 +81,7 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
         reinterpret_cast<const byte*>(initialisation_vector.string().data()));
     CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
                                                      encryptor, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   }
@@ -101,9 +100,8 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
         reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
         reinterpret_cast<const byte*>(initialisation_vector.string().data()));
     CryptoPP::StringSource(input->string(), true, new CryptoPP::StreamTransformationFilter(
-                                                     decryptor, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+                                                      decryptor, new CryptoPP::StringSink(result)));
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric decryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_decryption_error));
   }
@@ -125,8 +123,7 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   try {
     CryptoPP::StringSource(input.string(), true,
                            new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed compressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
   }
@@ -142,8 +139,7 @@ UncompressedText Uncompress(const CompressedText& input) {
   try {
     CryptoPP::StringSource(input->string(), true,
                            new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uncompression_error));
   }
@@ -153,9 +149,9 @@ UncompressedText Uncompress(const CompressedText& input) {
 std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
-  CryptoPP::StringSource source(
-      data, false, new CryptoPP::SecretSharing(random_number_generator(), threshold,
-      number_of_shares, channel_switch));
+  CryptoPP::StringSource source(data, false,
+                                new CryptoPP::SecretSharing(random_number_generator(), threshold,
+                                                            number_of_shares, channel_switch));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
   std::vector<std::string> out_strings(number_of_shares);
   std::string channel;
@@ -171,8 +167,7 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
   return out_strings;
 }
 
-std::string SecretRecoverData(int32_t threshold,
-                              const std::vector<std::string>& in_strings) {
+std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings) {
   int32_t size(static_cast<int32_t>(in_strings.size()));
   int32_t num_to_check = std::min(size, threshold);
   std::string data;
@@ -198,6 +193,56 @@ std::string SecretRecoverData(int32_t threshold,
 
   return data;
 }
+
+//  Rabin's information dispersal algorithm, space efficent
+std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
+                                      const std::string& data) {
+  auto channel_switch = new CryptoPP::ChannelSwitch;
+  CryptoPP::StringSource source(
+      data, false, new CryptoPP::InformationDispersal(threshold, number_of_shares, channel_switch));
+
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
+  std::vector<std::string> out_strings(number_of_shares);
+  std::string channel;
+
+  for (int i = 0; i < number_of_shares; ++i) {
+    string_sink[i].reset(new CryptoPP::StringSink(out_strings[i]));
+    channel = CryptoPP::WordToString<CryptoPP::word32>(i);
+    string_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
+    // see http://www.cryptopp.com/wiki/ChannelSwitch
+    channel_switch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
+  }
+  source.PumpAll();
+  return out_strings;
+}
+
+std::string InfoRetreive(int32_t threshold, const std::vector<std::string>& in_strings) {
+  int32_t size(static_cast<int32_t>(in_strings.size()));
+  int32_t num_to_check = std::min(size, threshold);
+  std::string data;
+
+  CryptoPP::InformationRecovery recovery(num_to_check, new CryptoPP::StringSink(data));
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
+  CryptoPP::SecByteBlock channel(4);
+
+  for (auto i = 0; i < num_to_check; ++i) {
+    string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
+    string_sources[i]->Pump(4);
+    string_sources[i]->Get(channel, 4);
+    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
+        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
+  }
+  while (string_sources[0]->Pump(256)) {
+    for (auto i = 1; i < num_to_check; ++i)
+      string_sources[i]->Pump(256);
+  }
+
+  for (auto i = 0; i < num_to_check; ++i)
+    string_sources[i]->PumpAll();
+
+  return data;
+}
+
 
 CipherText ObfuscateData(const Identity& name, const PlainText& plain_text) {
   AES256Key key(name.string().substr(0, AES256_KeySize));
