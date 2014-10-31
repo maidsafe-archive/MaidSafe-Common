@@ -33,7 +33,8 @@ namespace crypto {
 namespace {
 
 // Keep outside the function to avoid lazy static init races on MSVC
-static boost::thread_specific_ptr<CryptoPP::AutoSeededRandomPool> g_random_number_generator;
+static boost::thread_specific_ptr<CryptoPP::AutoSeededX917RNG<CryptoPP::AES>>
+    g_random_number_generator;
 
 }  // unnamed namespace
 
@@ -43,7 +44,7 @@ const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
 CryptoPP::RandomNumberGenerator& random_number_generator() {
   if (!g_random_number_generator.get())
-    g_random_number_generator.reset(new CryptoPP::AutoSeededRandomPool);
+    g_random_number_generator.reset(new CryptoPP::AutoSeededX917RNG<CryptoPP::AES>);
   return *g_random_number_generator;
 }
 
@@ -81,8 +82,7 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
         reinterpret_cast<const byte*>(initialisation_vector.string().data()));
     CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
                                                      encryptor, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   }
@@ -101,9 +101,8 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
         reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
         reinterpret_cast<const byte*>(initialisation_vector.string().data()));
     CryptoPP::StringSource(input->string(), true, new CryptoPP::StreamTransformationFilter(
-                                                     decryptor, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+                                                      decryptor, new CryptoPP::StringSink(result)));
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric decryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_decryption_error));
   }
@@ -125,8 +124,7 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   try {
     CryptoPP::StringSource(input.string(), true,
                            new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed compressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
   }
@@ -142,8 +140,7 @@ UncompressedText Uncompress(const CompressedText& input) {
   try {
     CryptoPP::StringSource(input->string(), true,
                            new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uncompression_error));
   }
@@ -153,9 +150,9 @@ UncompressedText Uncompress(const CompressedText& input) {
 std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
-  CryptoPP::StringSource source(
-      data, false, new CryptoPP::SecretSharing(random_number_generator(), threshold,
-      number_of_shares, channel_switch));
+  CryptoPP::StringSource source(data, false,
+                                new CryptoPP::SecretSharing(random_number_generator(), threshold,
+                                                            number_of_shares, channel_switch));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
   std::vector<std::string> out_strings(number_of_shares);
   std::string channel;
@@ -171,8 +168,7 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
   return out_strings;
 }
 
-std::string SecretRecoverData(int32_t threshold,
-                              const std::vector<std::string>& in_strings) {
+std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings) {
   int32_t size(static_cast<int32_t>(in_strings.size()));
   int32_t num_to_check = std::min(size, threshold);
   std::string data;
