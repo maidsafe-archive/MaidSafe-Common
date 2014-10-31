@@ -284,36 +284,48 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
   std::string test_data = "11111111111111122222222222222222222333333333333";
   std::vector<std::string> answer;
 
-  answer.emplace_back("b29c3470f1241f1d05393d2bf6c5b72201459ae43dc0da850ef3550480a7f884d1d2a03d0e25"
-                      "832af90d545b3b283f93fd29d89d7d5975ebcdd697048f550134");
-  answer.emplace_back("cb67021cf302f59eee8f593d7705261ab3d41f353eadf8d911e087f36d9a0de6f0489ab7546e"
-                      "3d06a81e6a4ccc75d49184bd81ad8d4ab5eaeebde637e2f7cb05");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
-                      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
-  answer.emplace_back("d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b8dd4c44e6d01a88526647df"
-                      "8c7555330f3d347e1ac3735e1a73c79c258e9fa7094f9ab07e33");
+  answer.emplace_back(
+      "b29c3470f1241f1d05393d2bf6c5b72201459ae43dc0da850ef3550480a7f884d1d2a03d0e25"
+      "832af90d545b3b283f93fd29d89d7d5975ebcdd697048f550134");
+  answer.emplace_back(
+      "cb67021cf302f59eee8f593d7705261ab3d41f353eadf8d911e087f36d9a0de6f0489ab7546e"
+      "3d06a81e6a4ccc75d49184bd81ad8d4ab5eaeebde637e2f7cb05");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "b72d4948dcee2878432f1044b39bbb541ba5ac412ea5602b4cc5d3b6760bc864cdfc94d6a8e1"
+      "31e5fd06603db357b03752cad7080def2eed1854267bf42328d1");
+  answer.emplace_back(
+      "d3261fe3c660734571787e5aa730c2e5bf18886e28e2b346cfe7b8dd4c44e6d01a88526647df"
+      "8c7555330f3d347e1ac3735e1a73c79c258e9fa7094f9ab07e33");
 
   for (size_t i = 0; i < 10; ++i)
-    EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data),
-                  static_cast<uint16_t>(i))->string())), answer.at(i));
+    EXPECT_EQ(HexEncode(Hash<SHA512>(
+                  Compress(UncompressedText(test_data), static_cast<uint16_t>(i))->string())),
+              answer.at(i));
 
   for (int i = 1; i < 20; ++i)
     test_data += test_data;
   // 23 Mb approx
-  std::string answer2 = ("fb5e2660c5a6f5c59ef8379df0862c4fa8504e55ba1eed54c92ffe335cb126b12c8"
-      "171815f0d17bf31e21c9fd3979b543ad91df08370a44a66e7a010d2b6e02f");
+  std::string answer2 =
+      ("fb5e2660c5a6f5c59ef8379df0862c4fa8504e55ba1eed54c92ffe335cb126b12c8"
+       "171815f0d17bf31e21c9fd3979b543ad91df08370a44a66e7a010d2b6e02f");
   // For large data sets only compression levels 0 and 1 are deterministic!
   EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 1)->string())), answer2);
 }
@@ -331,6 +343,16 @@ TEST(CryptoTest, BEH_SecretSharing) {
   uint8_t too_many(100);
   recovered = SecretRecoverData(too_many, data_parts);
   EXPECT_EQ(recovered, rand_string);
+}
+
+TEST(CryptoTest, BEH_InformationDispersal) {
+  std::string rand_string(RandomString(64));
+  uint8_t num_shares(20);
+  uint8_t threshold(10);
+  std::vector<std::string> data_parts(InfoDisperse(threshold, num_shares, rand_string));
+  EXPECT_EQ(InfoRetreive(threshold, data_parts), rand_string) << "should pass with threshold";
+  EXPECT_NE(InfoRetreive(9, data_parts), rand_string) << "should fail with to few parts";
+  EXPECT_NE(InfoRetreive(11, data_parts), rand_string) << "should fail with too many parts";
 }
 
 }  // namespace test
