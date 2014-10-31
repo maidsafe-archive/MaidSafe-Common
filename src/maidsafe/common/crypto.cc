@@ -195,6 +195,56 @@ std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>&
   return data;
 }
 
+//  Rabin's information dispersal algorithm, space efficent
+std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
+                                      const std::string& data) {
+  auto channel_switch = new CryptoPP::ChannelSwitch;
+  CryptoPP::StringSource source(
+      data, false, new CryptoPP::InformationDispersal(threshold, number_of_shares, channel_switch));
+
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
+  std::vector<std::string> out_strings(number_of_shares);
+  std::string channel;
+
+  for (int i = 0; i < number_of_shares; ++i) {
+    string_sink[i].reset(new CryptoPP::StringSink(out_strings[i]));
+    channel = CryptoPP::WordToString<CryptoPP::word32>(i);
+    string_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
+    // see http://www.cryptopp.com/wiki/ChannelSwitch
+    channel_switch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
+  }
+  source.PumpAll();
+  return out_strings;
+}
+
+std::string InfoRetreive(int32_t threshold, const std::vector<std::string>& in_strings) {
+  int32_t size(static_cast<int32_t>(in_strings.size()));
+  int32_t num_to_check = std::min(size, threshold);
+  std::string data;
+
+  CryptoPP::InformationRecovery recovery(num_to_check, new CryptoPP::StringSink(data));
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
+  CryptoPP::SecByteBlock channel(4);
+
+  for (auto i = 0; i < num_to_check; ++i) {
+    string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
+    string_sources[i]->Pump(4);
+    string_sources[i]->Get(channel, 4);
+    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
+        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
+  }
+  while (string_sources[0]->Pump(256)) {
+    for (auto i = 1; i < num_to_check; ++i)
+      string_sources[i]->Pump(256);
+  }
+
+  for (auto i = 0; i < num_to_check; ++i)
+    string_sources[i]->PumpAll();
+
+  return data;
+}
+
+
 CipherText ObfuscateData(const Identity& name, const PlainText& plain_text) {
   AES256Key key(name.string().substr(0, AES256_KeySize));
   AES256InitialisationVector iv(name.string().substr(AES256_KeySize, AES256_IVSize));
