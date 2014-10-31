@@ -28,8 +28,8 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/common/cereal/safe_encrypt.h"
-#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/safe_encrypt_cereal.h"
 
 namespace maidsafe {
 
@@ -77,7 +77,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 
   std::string result;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-  cereal::SafeEncrypt safe_encrypt;
+  detail::SafeEncrypt safe_encrypt;
   try {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
@@ -90,7 +90,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
         new CryptoPP::PK_EncryptorFilter(crypto::random_number_generator(), encryptor,
                                          new CryptoPP::StringSink(encryption_key_encrypted)));
     safe_encrypt.key_ = encryption_key_encrypted;
-    result = cereal::ConvertToString(safe_encrypt);
+    result = ConvertToString(safe_encrypt);
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric encrypting: " << e.what();
@@ -107,8 +107,8 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
 
-    cereal::SafeEncrypt safe_encrypt;
-    try { cereal::ConvertFromString(data.string(), safe_encrypt); }
+    detail::SafeEncrypt safe_encrypt;
+    try { ConvertFromString(data.string(), safe_encrypt); }
     catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 
     std::string out_data;

@@ -31,8 +31,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/on_scope_exit.h"
 
-#include "maidsafe/common/cereal/cerealize_helpers.h"
-#include "maidsafe/common/tools/cereal/matrix_record.h"
+#include "maidsafe/common/serialisation.h"
 
 namespace bi = boost::interprocess;
 
@@ -215,42 +214,30 @@ MatrixRecord::MatrixRecord()
         // Ensure this is never actually invoked
         assert(false);
         return true;
-      }) {}
+      }),
+      str_stream_() {}
 
 MatrixRecord::MatrixRecord(const NodeId& owner_id)
     : owner_id_(owner_id),
       matrix_ids_([owner_id](const NodeId & lhs, const NodeId & rhs) {
         return NodeId::CloserToTarget(lhs, rhs, owner_id);
-      }) {}
+      }),
+      str_stream_() {}
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
-    : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
-  tools::cereal::MatrixRecord cereal_matrix_record;
-  try { cereal::ConvertFromString(serialised_matrix_record, cereal_matrix_record); }
+    : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }),
+      str_stream_(serialised_matrix_record) {
+  try { ConvertFromStream(str_stream_, *this); }
   catch(...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
-
-  owner_id_ = NodeId(cereal_matrix_record.owner_id_);
-  matrix_ids_ = MatrixIds([this](const NodeId & lhs, const NodeId & rhs) {
-    return NodeId::CloserToTarget(lhs, rhs, owner_id_);
-  });
-
-  for (std::size_t i(0); i != cereal_matrix_record.matrix_ids_.size(); ++i) {
-    AddElement(NodeId(cereal_matrix_record.matrix_ids_[i].id_),
-               static_cast<ChildType>(cereal_matrix_record.matrix_ids_[i].type_));
-  }
 }
 
 std::string MatrixRecord::Serialise() const {
-  tools::cereal::MatrixRecord cereal_matrix_record;
-  cereal_matrix_record.owner_id_ = owner_id_.string();
-  for (const auto& matrix_id : matrix_ids_) {
-    cereal_matrix_record.matrix_ids_.emplace_back(
-          matrix_id.first.string(), static_cast<int32_t>(matrix_id.second));
-  }
-  return cereal::ConvertToString(cereal_matrix_record);
+  str_stream_.clear();
+  str_stream_.str("");
+  return ConvertToString(str_stream_, *this);
 }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)
@@ -264,10 +251,6 @@ MatrixRecord& MatrixRecord::operator=(MatrixRecord other) {
   swap(owner_id_, other.owner_id_);
   swap(matrix_ids_, other.matrix_ids_);
   return *this;
-}
-
-void MatrixRecord::AddElement(const NodeId& element_id, ChildType child_type) {
-  matrix_ids_[element_id] = child_type;
 }
 
 NodeId MatrixRecord::owner_id() const { return owner_id_; }

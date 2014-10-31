@@ -73,17 +73,13 @@ The "tips of trees" are '8-zzz', '4-iii', '5-nnn', '4-lll' and '4-mmm'.
 
 namespace maidsafe {
 
-namespace data_types {
-
-namespace cereal {
+namespace detail {
 
 struct StructuredDataVersions;
 struct StructuredDataVersions_Branch;
 struct Version;
 
-}  // namespace cereal
-
-}  // namespace data_types
+}  // namespace detail
 
 // All public functions in this class provide the strong exception guarantee.
 class StructuredDataVersions {
@@ -102,6 +98,9 @@ class StructuredDataVersions {
 
     uint64_t index;
     ImmutableData::Name id;
+
+   private:
+    mutable std::stringstream str_stream_;
   };
 
   typedef TaggedValue<NonEmptyString, StructuredDataVersionsTag> serialised_type;
@@ -202,20 +201,19 @@ class StructuredDataVersions {
 
   void ValidateLimits() const;
   void BranchFromCereal(VersionsItr parent_itr,
-                        const data_types::cereal::StructuredDataVersions& cereal_versions,
-                        std::size_t &cereal_branch_index);
+                        const detail::StructuredDataVersions& cereal_versions,
+                        std::size_t& cereal_branch_index);
   VersionsItr HandleFirstVersionInBranchFromCereal(
       VersionsItr parent_itr,
-      const data_types::cereal::StructuredDataVersions_Branch& cereal_branch);
+      const detail::StructuredDataVersions_Branch& cereal_branch);
 
-  VersionsItr CheckedInsert(const data_types::cereal::Version& cereal_version);
+  VersionsItr CheckedInsert(const detail::Version& cereal_version);
   void BranchToCereal(VersionsItr itr,
-                      data_types::cereal::StructuredDataVersions& cereal_versions,
+                      detail::StructuredDataVersions& cereal_versions,
                       const VersionName& absent_parent) const;
   void BranchToCereal(VersionsItr itr,
-                      data_types::cereal::StructuredDataVersions& cereal_versions,
-                      data_types::cereal::StructuredDataVersions_Branch* cereal_branch)
-  const;
+                      detail::StructuredDataVersions& cereal_versions,
+                      detail::StructuredDataVersions_Branch* cereal_branch) const;
 
   void ApplyBranch(VersionName parent, VersionsItr itr,
                    StructuredDataVersions& new_versions) const;
@@ -254,6 +252,8 @@ class StructuredDataVersions {
   std::pair<VersionName, VersionsItr> root_;
   SortedVersionsItrs tips_of_trees_;
   Orphans orphans_;
+
+  mutable std::stringstream str_stream_;
 };
 
 void swap(StructuredDataVersions::VersionName& lhs,

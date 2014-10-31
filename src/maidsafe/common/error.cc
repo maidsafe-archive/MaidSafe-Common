@@ -22,8 +22,7 @@
 
 #include "maidsafe/common/error_categories.h"
 
-#include "maidsafe/common/cereal/maidsafe_error.h"
-#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/common/serialisation.h"
 
 namespace maidsafe {
 
@@ -101,16 +100,15 @@ maidsafe_error IntToError(int value) {
 }
 
 maidsafe_error::serialised_type Serialise(maidsafe_error error) {
-  cereal::MaidsafeError cereal_copy;
-  cereal_copy.value_ = ErrorToInt(error);
-  return maidsafe_error::serialised_type{ cereal::ConvertToString(cereal_copy) };
+  error.value_ = ErrorToInt(error);
+  return maidsafe_error::serialised_type{ ConvertToString(error) };
 }
 
 maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
-  cereal::MaidsafeError cereal_copy;
-  try { cereal::ConvertFromString(serialised_error.data, cereal_copy); }
+  maidsafe_error copy {std::error_code {}, std::string {}};
+  try { ConvertFromString(serialised_error.data, copy); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));  }
-  return IntToError(static_cast<int>(cereal_copy.value_));
+  return IntToError(static_cast<int>(copy.value_));
 }
 
 std::error_code make_error_code(CommonErrors code) {

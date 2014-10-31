@@ -43,6 +43,11 @@ class MutableData {
   MutableData(Name name, const serialised_type& serialised_mutable_data);
   serialised_type Serialise() const;
 
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(data_);
+  }
+
   Name name() const;
   NonEmptyString data() const;
 
@@ -51,6 +56,8 @@ class MutableData {
  private:
   Name name_;
   NonEmptyString data_;
+
+  mutable std::stringstream str_stream_;
 };
 
 template <>

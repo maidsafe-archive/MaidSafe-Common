@@ -16,58 +16,58 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_TOOLS_CEREAL_MATRIX_RECORD_H_
-#define MAIDSAFE_COMMON_TOOLS_CEREAL_MATRIX_RECORD_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_
 
+
+#include <boost/optional.hpp>
+
+#include <cstdint>
 #include <string>
 #include <vector>
-#include <cstdint>
+
+#include "maidsafe/common/data_types/version_cereal.h"
 
 namespace maidsafe {
 
-namespace tools {
+namespace detail {
 
-namespace cereal {
-
-struct MatrixRecord {
-  MatrixRecord()
-    : owner_id_ {},
-      matrix_ids_ {}
+struct StructuredDataVersions_Branch {
+  StructuredDataVersions_Branch()
+    : absent_parent_ {},
+      name_ {}
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(owner_id_, matrix_ids_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(absent_parent_, name_);
   }
 
-  struct Element {
-    Element()
-      : id_ {},
-        type_ {}
-    { }
-
-    Element(const std::string& ref_id, const std::int32_t type) :
-      id_(ref_id),
-      type_(type)
-    { }
-
-    template<typename Archive>
-    void serialize(Archive& ref_archive) {
-      ref_archive(id_, type_);
-    }
-
-    std::string id_;
-    std::int32_t type_;
-  };
-
-  std::string owner_id_;
-  std::vector<Element> matrix_ids_;
+  boost::optional<Version> absent_parent_;
+  std::vector<Version> name_;
 };
 
-}  // namespace cereal
+struct StructuredDataVersions {
+  StructuredDataVersions()
+    : max_versions_ {},
+      max_branches_ {},
+      branch_ {}
+  { }
 
-}  // namespace tools
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(max_versions_, max_branches_, branch_);
+  }
+
+  using Branch = StructuredDataVersions_Branch;
+
+  std::uint32_t max_versions_;
+  std::uint32_t max_branches_;
+  std::vector<Branch> branch_;
+};
+
+}  // namespace detail
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_TOOLS_CEREAL_MATRIX_RECORD_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_

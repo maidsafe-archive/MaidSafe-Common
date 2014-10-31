@@ -16,59 +16,32 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_TYPES_CEREAL_STRUCTURED_DATA_VERSIONS_H_
-#define MAIDSAFE_COMMON_DATA_TYPES_CEREAL_STRUCTURED_DATA_VERSIONS_H_
+#ifndef MAIDSAFE_COMMON_SAFE_ENCRYPT_CEREAL_H_
+#define MAIDSAFE_COMMON_SAFE_ENCRYPT_CEREAL_H_
 
 #include <string>
-#include <vector>
-#include <cstdint>
-
-#include "maidsafe/common/data_types/cereal/version.h"
 
 namespace maidsafe {
 
-namespace data_types {
+namespace detail {
 
-namespace cereal {
-
-struct StructuredDataVersions_Branch {
-  StructuredDataVersions_Branch()
-    : absent_parent_ {},
-      name_ {}
+struct SafeEncrypt {
+  SafeEncrypt()
+    : key_ {},
+      data_ {}
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(absent_parent_, name_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(key_, data_);
   }
 
-  Version absent_parent_;
-  std::vector<Version> name_;
+  std::string key_;
+  std::string data_;
 };
 
-struct StructuredDataVersions {
-  StructuredDataVersions()
-    : max_versions_ {},
-      max_branches_ {},
-      branch_ {}
-  { }
-
-  template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(max_versions_, max_branches_, branch_);
-  }
-
-  using Branch = StructuredDataVersions_Branch;
-
-  std::uint32_t max_versions_;
-  std::uint32_t max_branches_;
-  std::vector<Branch> branch_;
-};
-
-}  // namespace cereal
-
-}  // namespace data_types
+}  // namespace detail
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DATA_TYPES_CEREAL_STRUCTURED_DATA_VERSIONS_H_
+#endif  // MAIDSAFE_COMMON_SAFE_ENCRYPT_CEREAL_H_

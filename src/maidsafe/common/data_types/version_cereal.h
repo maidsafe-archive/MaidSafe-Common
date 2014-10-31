@@ -16,34 +16,37 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_TYPES_CEREAL_MUTABLE_DATA_H_
-#define MAIDSAFE_COMMON_DATA_TYPES_CEREAL_MUTABLE_DATA_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
+
+#include <boost/optional.hpp>
 
 #include <string>
+#include <cstdint>
 
 namespace maidsafe {
 
-namespace data_types {
+namespace detail {
 
-namespace cereal {
-
-struct MutableData {
-  MutableData()
-    : data_ {}
+struct Version {
+  Version()
+    : index_ {},
+      id_ {},
+      forking_child_count_ {}
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(data_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(index_, id_, forking_child_count_);
   }
 
-  std::string data_;
+  std::uint64_t index_;
+  std::string id_;
+  boost::optional<std::uint32_t> forking_child_count_;
 };
 
-}  // namespace cereal
-
-}  // namespace data_types
+}  // namespace detail
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DATA_TYPES_CEREAL_MUTABLE_DATA_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_

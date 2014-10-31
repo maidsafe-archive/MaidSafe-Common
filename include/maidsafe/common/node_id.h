@@ -71,6 +71,19 @@ class NodeId {
   // XOR distance between two IDs.  XOR bit to bit.
   NodeId& operator^=(const NodeId& rhs);
 
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    std::string temp;
+    auto& archive = ref_archive(temp);
+    *this = NodeId {temp};
+    return archive;
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(raw_id_);
+  }
+
   friend bool operator==(const NodeId& lhs, const NodeId& rhs);
   friend bool operator<(const NodeId& lhs, const NodeId& rhs);
   friend std::string DebugId(const NodeId& node_id);

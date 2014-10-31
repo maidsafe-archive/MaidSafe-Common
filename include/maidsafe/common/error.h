@@ -34,14 +34,22 @@ class maidsafe_error : public std::system_error {
  public:
   typedef TaggedValue<std::string, struct SerialisedErrorTag> serialised_type;
   maidsafe_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg) {}
-  maidsafe_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+      : std::system_error(ec, what_arg), value_() {}
+  maidsafe_error(std::error_code ec, const char* what_arg)
+      : std::system_error(ec, what_arg), value_() {}
   explicit maidsafe_error(std::error_code ec) : std::system_error(ec) {}
   maidsafe_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : std::system_error(ev, ecat, what_arg), value_() {}
   maidsafe_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg) {}
+      : std::system_error(ev, ecat, what_arg), value_() {}
   maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(value_);
+  }
+
+  std::int64_t value_;
 };
 
 int32_t ErrorToInt(maidsafe_error error);
