@@ -217,7 +217,8 @@ void StructuredDataVersions::BranchFromCereal(
   if (serialised_branch.name_[serialised_version_index].forking_child_count_) {
     if (*serialised_branch.name_[serialised_version_index].forking_child_count_ < 2U)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-    for (uint32_t i(0); i != *serialised_branch.name_[serialised_version_index].forking_child_count_; ++i)
+    for (uint32_t i(0);
+         i != *serialised_branch.name_[serialised_version_index].forking_child_count_; ++i)
       BranchFromCereal(itr, serialised_versions, serialised_branch_index);
   } else {
     CheckedInsert(tips_of_trees_, itr);
@@ -294,7 +295,8 @@ void StructuredDataVersions::BranchToCereal(
     if (itr->second->children.size() == 1U) {
       itr = *std::begin(itr->second->children);
     } else {
-      serialised_version->forking_child_count_ = static_cast<uint32_t>(itr->second->children.size());
+      serialised_version->forking_child_count_ =
+          static_cast<uint32_t>(itr->second->children.size());
       for (auto child : itr->second->children) {
         auto serialised_branch((serialised_versions.branch_.emplace_back(),
                             &serialised_versions.branch_[serialised_versions.branch_.size() - 1]));
