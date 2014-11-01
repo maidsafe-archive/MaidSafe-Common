@@ -36,14 +36,14 @@ StructuredDataVersions::VersionName::VersionName(uint64_t index_in, ImmutableDat
 
 StructuredDataVersions::VersionName::VersionName(const std::string& serialised_version_name)
     : index(0), id(), str_stream_(serialised_version_name) {
-  detail::Version version_cereal;
-  try { ConvertFromStream(str_stream_, version_cereal); }
+  detail::Version version_serialised;
+  try { ConvertFromStream(str_stream_, version_serialised); }
   catch(...) {
     LOG(kWarning) << "Failed to parse serialised version name";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-  index = version_cereal.index_;
-  id = ImmutableData::Name(Identity(version_cereal.id_));
+  index = version_serialised.index_;
+  id = ImmutableData::Name(Identity(version_serialised.id_));
 }
 
 StructuredDataVersions::VersionName::VersionName(const VersionName& other)
@@ -59,13 +59,13 @@ StructuredDataVersions::VersionName& StructuredDataVersions::VersionName::operat
 }
 
 std::string StructuredDataVersions::VersionName::Serialise() const {
-  detail::Version version_cereal;
-  version_cereal.index_ = index;
-  version_cereal.id_ = id->string();
+  detail::Version version_serialised;
+  version_serialised.index_ = index;
+  version_serialised.id_ = id->string();
 
   str_stream_.clear();
   str_stream_.str("");
-  return ConvertToString(str_stream_, version_cereal);
+  return ConvertToString(str_stream_, version_serialised);
 }
 
 void swap(StructuredDataVersions::VersionName& lhs,
