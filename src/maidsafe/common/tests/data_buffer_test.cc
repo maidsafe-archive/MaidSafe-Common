@@ -165,7 +165,7 @@ class DataBufferTest : public testing::Test {
   DataBufferPtr data_buffer_;
 };
 
-TEST_F(DataBufferTest, BEH_Constructor){
+TEST_F(DataBufferTest, BEH_Constructor) {
   EXPECT_NO_THROW(DataBufferType(MemoryUsage(0), DiskUsage(0), pop_functor_));
   EXPECT_NO_THROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_));
   EXPECT_THROW(DataBufferType(MemoryUsage(1), DiskUsage(0), pop_functor_), common_error);
