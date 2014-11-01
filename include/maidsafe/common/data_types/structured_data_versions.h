@@ -201,19 +201,19 @@ class StructuredDataVersions {
 
   void ValidateLimits() const;
   void BranchFromCereal(VersionsItr parent_itr,
-                        const detail::StructuredDataVersions& cereal_versions,
-                        std::size_t& cereal_branch_index);
+                        const detail::StructuredDataVersions& serialised_versions,
+                        std::size_t& serialised_branch_index);
   VersionsItr HandleFirstVersionInBranchFromCereal(
       VersionsItr parent_itr,
-      const detail::StructuredDataVersions_Branch& cereal_branch);
+      const detail::StructuredDataVersions_Branch& serialised_branch);
 
-  VersionsItr CheckedInsert(const detail::Version& cereal_version);
+  VersionsItr CheckedInsert(const detail::Version& serialised_version);
   void BranchToCereal(VersionsItr itr,
-                      detail::StructuredDataVersions& cereal_versions,
+                      detail::StructuredDataVersions& serialised_versions,
                       const VersionName& absent_parent) const;
   void BranchToCereal(VersionsItr itr,
-                      detail::StructuredDataVersions& cereal_versions,
-                      detail::StructuredDataVersions_Branch* cereal_branch) const;
+                      detail::StructuredDataVersions& serialised_versions,
+                      detail::StructuredDataVersions_Branch* serialised_branch) const;
 
   void ApplyBranch(VersionName parent, VersionsItr itr,
                    StructuredDataVersions& new_versions) const;

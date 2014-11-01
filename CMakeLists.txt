@@ -65,6 +65,7 @@ set(ConfigTestFile ${CommonSourcesDir}/tests/config_test.cc)
 set(VlogTestFile ${CommonSourcesDir}/tests/visualiser_log_test.cc)
 list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${VlogTestFile} ${CommonAuthenticationTestsAllFiles})
 
+
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
