@@ -16,10 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include <sstream>
+#include <string>
 
 #include "maidsafe/common/bounded_string.h"
-#include "maidsafe/common/serialisation.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
