@@ -29,16 +29,11 @@
 namespace maidsafe {
 
 MutableData::MutableData(const MutableData& other)
-    : name_(other.name_), data_(other.data_), str_stream_() {}
+    : name_(other.name_), data_(other.data_) {}
 
 MutableData::MutableData(MutableData&& other)
     : name_(std::move(other.name_)),
-      data_(std::move(other.data_)),
-      // Bug:
-      // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54316
-      // str_stream_(std::move(other.str_stream_))
-      // Workaround till GCC 5:
-      str_stream_(other.str_stream_.str()) { }
+      data_(std::move(other.data_)) { }
 
 MutableData& MutableData::operator=(MutableData other) {
   swap(*this, other);
@@ -46,18 +41,16 @@ MutableData& MutableData::operator=(MutableData other) {
 }
 
 MutableData::MutableData(Name name, NonEmptyString data)
-    : name_(std::move(name)), data_(std::move(data)), str_stream_() {}
+    : name_(std::move(name)), data_(std::move(data)) {}
 
 MutableData::MutableData(Name name, const serialised_type& serialised_mutable_data)
-    : name_(std::move(name)), data_(), str_stream_(serialised_mutable_data->string()) {
-  try { ConvertFromStream(str_stream_, *this); }
+    : name_(std::move(name)), data_() {
+  try { ConvertFromString(serialised_mutable_data->string(), *this); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 }
 
 MutableData::serialised_type MutableData::Serialise() const {
-  str_stream_.clear();
-  str_stream_.str("");
-  return serialised_type(NonEmptyString(ConvertToString(str_stream_, *this)));
+  return serialised_type(NonEmptyString(ConvertToString(*this)));
 }
 
 MutableData::Name MutableData::name() const { return name_; }

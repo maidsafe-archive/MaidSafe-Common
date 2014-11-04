@@ -75,7 +75,7 @@ class NodeId {
   Archive& load(Archive& ref_archive) {
     std::string temp;
     auto& archive = ref_archive(temp);
-    *this = NodeId {temp};
+    *this = NodeId {std::move(temp)};
     return archive;
   }
 

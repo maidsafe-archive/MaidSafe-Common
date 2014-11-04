@@ -19,10 +19,10 @@
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
 
-#include <boost/optional.hpp>
-
-#include <string>
 #include <cstdint>
+#include <string>
+
+#include "boost/optional.hpp"
 
 namespace maidsafe {
 

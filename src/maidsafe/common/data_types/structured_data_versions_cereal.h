@@ -19,13 +19,10 @@
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_
 
-
-#include <boost/optional.hpp>
-
 #include <cstdint>
-#include <string>
 #include <vector>
 
+#include "boost/optional.hpp"
 #include "maidsafe/common/data_types/version_cereal.h"
 
 namespace maidsafe {

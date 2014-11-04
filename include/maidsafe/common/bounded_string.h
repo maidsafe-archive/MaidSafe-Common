@@ -116,7 +116,7 @@ class BoundedString {
   Archive& load(Archive& ref_archive) {
     StringType temp_str_type;
     auto& archive = ref_archive(temp_str_type);
-    *this = BoundedString {temp_str_type};
+    *this = BoundedString {std::move(temp_str_type)};
     return archive;
   }
 

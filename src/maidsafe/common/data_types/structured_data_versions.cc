@@ -29,15 +29,15 @@
 namespace maidsafe {
 
 StructuredDataVersions::VersionName::VersionName()
-    : index(std::numeric_limits<uint64_t>::max()), id(), str_stream_() {}
+    : index(std::numeric_limits<uint64_t>::max()), id() {}
 
 StructuredDataVersions::VersionName::VersionName(uint64_t index_in, ImmutableData::Name id_in)
-    : index(index_in), id(std::move(id_in)), str_stream_() {}
+    : index(index_in), id(std::move(id_in)) {}
 
 StructuredDataVersions::VersionName::VersionName(const std::string& serialised_version_name)
-    : index(0), id(), str_stream_(serialised_version_name) {
+    : index(0), id() {
   detail::Version version_serialised;
-  try { ConvertFromStream(str_stream_, version_serialised); }
+  try { ConvertFromString(serialised_version_name, version_serialised); }
   catch(...) {
     LOG(kWarning) << "Failed to parse serialised version name";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -63,9 +63,7 @@ std::string StructuredDataVersions::VersionName::Serialise() const {
   version_serialised.index_ = index;
   version_serialised.id_ = id->string();
 
-  str_stream_.clear();
-  str_stream_.str("");
-  return ConvertToString(str_stream_, version_serialised);
+  return ConvertToString(version_serialised);
 }
 
 void swap(StructuredDataVersions::VersionName& lhs,
@@ -136,8 +134,7 @@ StructuredDataVersions::StructuredDataVersions(uint32_t max_versions, uint32_t m
       versions_(),
       root_(std::make_pair(VersionName(), std::end(versions_))),
       tips_of_trees_([](VersionsItr lhs, VersionsItr rhs) { return *lhs < *rhs; }),
-      orphans_(),
-      str_stream_() {
+      orphans_() {
   ValidateLimits();
 }
 
@@ -152,10 +149,9 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
       versions_(),
       root_(std::make_pair(VersionName(), std::end(versions_))),
       tips_of_trees_([](VersionsItr lhs, VersionsItr rhs) { return *lhs < *rhs; }),
-      orphans_(),
-      str_stream_(serialised_data_versions->string()) {
+      orphans_() {
   detail::StructuredDataVersions serialised_versions;
-  try { ConvertFromStream(str_stream_, serialised_versions); }
+  try { ConvertFromString(serialised_data_versions->string(), serialised_versions); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 
   max_versions_ = serialised_versions.max_versions_;
@@ -181,9 +177,7 @@ StructuredDataVersions::serialised_type StructuredDataVersions::Serialise() cons
       BranchToCereal(orphan, serialised_versions, orphan_set.first);
   }
 
-  str_stream_.clear();
-  str_stream_.str("");
-  return serialised_type(NonEmptyString(ConvertToString(str_stream_, serialised_versions)));
+  return serialised_type(NonEmptyString(ConvertToString(serialised_versions)));
 }
 
 void StructuredDataVersions::ValidateLimits() const {

@@ -34,15 +34,16 @@ class maidsafe_error : public std::system_error {
  public:
   typedef TaggedValue<std::string, struct SerialisedErrorTag> serialised_type;
   maidsafe_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg), value_() {}
+      : std::system_error(ec, what_arg), value_(0) {}
   maidsafe_error(std::error_code ec, const char* what_arg)
-      : std::system_error(ec, what_arg), value_() {}
-  explicit maidsafe_error(std::error_code ec) : std::system_error(ec) {}
+      : std::system_error(ec, what_arg), value_(0) {}
+  explicit maidsafe_error(std::error_code ec) : std::system_error(ec), value_(0) {}
   maidsafe_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg), value_() {}
+      : std::system_error(ev, ecat, what_arg), value_(0) {}
   maidsafe_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg), value_() {}
-  maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+      : std::system_error(ev, ecat, what_arg), value_(0) {}
+  maidsafe_error(int ev, const std::error_category& ecat)
+      : std::system_error(ev, ecat), value_(0) {}
 
   template<typename Archive>
   Archive& serialize(Archive& ref_archive) {

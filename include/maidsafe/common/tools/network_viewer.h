@@ -85,8 +85,6 @@ class MatrixRecord {
  private:
   NodeId owner_id_;
   MatrixIds matrix_ids_;
-
-  mutable std::stringstream str_stream_;
 };
 
 void SetUpdateFunctor(std::function<void(int /*state_id*/)> functor);

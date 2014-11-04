@@ -214,20 +214,17 @@ MatrixRecord::MatrixRecord()
         // Ensure this is never actually invoked
         assert(false);
         return true;
-      }),
-      str_stream_() {}
+      }) {}
 
 MatrixRecord::MatrixRecord(const NodeId& owner_id)
     : owner_id_(owner_id),
       matrix_ids_([owner_id](const NodeId & lhs, const NodeId & rhs) {
         return NodeId::CloserToTarget(lhs, rhs, owner_id);
-      }),
-      str_stream_() {}
+      }) {}
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
-    : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }),
-      str_stream_(serialised_matrix_record) {
-  try { ConvertFromStream(str_stream_, *this); }
+    : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
+  try { ConvertFromString(serialised_matrix_record, *this); }
   catch(...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
@@ -235,9 +232,7 @@ MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
 }
 
 std::string MatrixRecord::Serialise() const {
-  str_stream_.clear();
-  str_stream_.str("");
-  return ConvertToString(str_stream_, *this);
+  return ConvertToString(*this);
 }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)

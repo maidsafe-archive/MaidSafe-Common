@@ -56,8 +56,6 @@ class MutableData {
  private:
   Name name_;
   NonEmptyString data_;
-
-  mutable std::stringstream str_stream_;
 };
 
 template <>

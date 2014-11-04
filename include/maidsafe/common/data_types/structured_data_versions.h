@@ -98,9 +98,6 @@ class StructuredDataVersions {
 
     uint64_t index;
     ImmutableData::Name id;
-
-   private:
-    mutable std::stringstream str_stream_;
   };
 
   typedef TaggedValue<NonEmptyString, StructuredDataVersionsTag> serialised_type;
@@ -252,8 +249,6 @@ class StructuredDataVersions {
   std::pair<VersionName, VersionsItr> root_;
   SortedVersionsItrs tips_of_trees_;
   Orphans orphans_;
-
-  mutable std::stringstream str_stream_;
 };
 
 void swap(StructuredDataVersions::VersionName& lhs,
