@@ -16,7 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include <sstream>
+
 #include "maidsafe/common/bounded_string.h"
+#include "maidsafe/common/serialisation.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -251,6 +254,33 @@ TEST(BoundedStringTest, BEH_Concatenation) {
   EXPECT_THROW(g += e, std::exception);
   EXPECT_EQ(e_before_throw, e.string());
   EXPECT_FALSE(g.IsInitialised());
+}
+
+TEST(BoundedStringTest, BEH_Serialization) {
+  // Invalid Serialisation
+  OneThree a;
+  EXPECT_FALSE(a.IsInitialised());
+  EXPECT_THROW(maidsafe::ConvertToString(a), std::exception);
+
+  // Valid Serialisation
+  OneThree b {RandomString(1)};
+  EXPECT_TRUE(b.IsInitialised());
+
+  std::string serialised_str;
+  EXPECT_EQ(0, serialised_str.size());
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(b));
+  EXPECT_NE(0, serialised_str.size());
+
+  // Invalid Deserialisation
+  TwoThree c;
+  EXPECT_FALSE(c.IsInitialised());
+  EXPECT_THROW(maidsafe::ConvertFromString(serialised_str, c), std::exception);
+
+  // Valid Deserialisation
+  OneTwo d;
+  EXPECT_FALSE(d.IsInitialised());
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, d));
+  EXPECT_EQ(b.string(), d.string());
 }
 
 }  // namespace test
