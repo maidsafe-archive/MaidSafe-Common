@@ -41,7 +41,14 @@ namespace maidsafe {
 // function with signature:
 //     inline DataNameVariant GetDataNameVariant(DataTagValue type, const Identity& name);
 // This throws if 'type' is not a valid DataTagValue.
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4003)
+#endif
 DEFINE_DATA_NAME_VARIANT
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
 struct GetTagValueVisitor : public boost::static_visitor<DataTagValue> {
   template <typename NameType>
