@@ -36,7 +36,7 @@ StructuredDataVersions::VersionName::VersionName(uint64_t index_in, ImmutableDat
 
 StructuredDataVersions::VersionName::VersionName(const std::string& serialised_version_name)
     : index(0), id() {
-  detail::Version version_serialised;
+  detail::VersionCereal version_serialised;
   try { ConvertFromString(serialised_version_name, version_serialised); }
   catch(...) {
     LOG(kWarning) << "Failed to parse serialised version name";
@@ -59,7 +59,7 @@ StructuredDataVersions::VersionName& StructuredDataVersions::VersionName::operat
 }
 
 std::string StructuredDataVersions::VersionName::Serialise() const {
-  detail::Version version_serialised;
+  detail::VersionCereal version_serialised;
   version_serialised.index_ = index;
   version_serialised.id_ = id->string();
 
@@ -150,7 +150,7 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
       root_(std::make_pair(VersionName(), std::end(versions_))),
       tips_of_trees_([](VersionsItr lhs, VersionsItr rhs) { return *lhs < *rhs; }),
       orphans_() {
-  detail::StructuredDataVersions serialised_versions;
+  detail::StructuredDataVersionsCereal serialised_versions;
   try { ConvertFromString(serialised_data_versions->string(), serialised_versions); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 
@@ -167,7 +167,7 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
 }
 
 StructuredDataVersions::serialised_type StructuredDataVersions::Serialise() const {
-  detail::StructuredDataVersions serialised_versions;
+  detail::StructuredDataVersionsCereal serialised_versions;
   serialised_versions.max_versions_ = max_versions_;
   serialised_versions.max_branches_ = max_branches_;
 
@@ -187,7 +187,7 @@ void StructuredDataVersions::ValidateLimits() const {
 
 void StructuredDataVersions::BranchFromCereal(
     VersionsItr parent_itr,
-    const detail::StructuredDataVersions& serialised_versions,
+    const detail::StructuredDataVersionsCereal& serialised_versions,
     std::size_t& serialised_branch_index) {
   if (serialised_branch_index >= serialised_versions.branch_.size())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -221,7 +221,7 @@ void StructuredDataVersions::BranchFromCereal(
 
 StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionInBranchFromCereal(
     VersionsItr parent_itr,
-    const detail::StructuredDataVersions_Branch& serialised_branch) {
+    const detail::StructuredDataVersionsCereal_Branch& serialised_branch) {
   auto itr(CheckedInsert(serialised_branch.name_[0]));
   if (parent_itr == std::end(versions_)) {
     // This is a new branch, so the first element is either root_ or an orphan.
@@ -250,7 +250,7 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionIn
 }
 
 StructuredDataVersions::VersionsItr StructuredDataVersions::CheckedInsert(
-    const detail::Version& serialised_version) {
+    const detail::VersionCereal& serialised_version) {
   VersionName version_name(serialised_version.index_,
                            ImmutableData::Name(Identity(serialised_version.id_)));
   auto result(versions_.insert(std::make_pair(version_name, std::make_shared<Details>())));
@@ -261,7 +261,7 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::CheckedInsert(
 
 void StructuredDataVersions::BranchToCereal(
     VersionsItr itr,
-    detail::StructuredDataVersions& serialised_versions,
+    detail::StructuredDataVersionsCereal& serialised_versions,
     const VersionName& absent_parent) const {
   if (itr == std::end(versions_))
     return;
@@ -275,8 +275,8 @@ void StructuredDataVersions::BranchToCereal(
 }
 
 void StructuredDataVersions::BranchToCereal(
-    VersionsItr itr, detail::StructuredDataVersions& serialised_versions,
-    detail::StructuredDataVersions_Branch* serialised_branch) const {
+    VersionsItr itr, detail::StructuredDataVersionsCereal& serialised_versions,
+    detail::StructuredDataVersionsCereal_Branch* serialised_branch) const {
   for (;;) {
     if (itr == std::end(versions_))
       return;

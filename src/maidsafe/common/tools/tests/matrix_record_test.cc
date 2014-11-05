@@ -16,37 +16,45 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
-#define MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
+#include "maidsafe/common/tools/network_viewer.h"
 
-#include <cstdint>
-#include <string>
-
-#include "boost/optional.hpp"
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
-namespace detail {
+namespace test {
 
-struct VersionCereal {
-  VersionCereal()
-    : index_ {},
-      id_ {},
-      forking_child_count_ {}
-  { }
+namespace {  // anonymous
 
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(index_, id_, forking_child_count_);
-  }
+using Mr_t = network_viewer::MatrixRecord;
 
-  std::uint64_t index_;
-  std::string id_;
-  boost::optional<std::uint32_t> forking_child_count_;
-};
+bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
+  return ref_lhs.owner_id() == ref_rhs.owner_id() &&
+      ref_lhs.matrix_ids() == ref_rhs.matrix_ids();
+}
 
-}  // namespace detail
+}  // anonymous namespace
+
+TEST(MatrixRecordTest, BEH_Serialisation) {
+  NodeId node_id_0 {NodeId::IdType::kRandomId};
+  NodeId node_id_1 {NodeId::IdType::kRandomId};
+  Mr_t a {node_id_0}, b {node_id_1};
+
+  // Serialisation
+  EXPECT_FALSE(a == b);
+  auto serialised_data_0(a.Serialise());
+
+  // Deserialisation
+  Mr_t c {serialised_data_0};
+  EXPECT_FALSE(b == c);
+  EXPECT_TRUE(a == c);
+
+  // Reserialise
+  auto serialised_data_1(c.Serialise());
+  EXPECT_TRUE(serialised_data_0 == serialised_data_1);
+}
+
+}  // namespace test
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_

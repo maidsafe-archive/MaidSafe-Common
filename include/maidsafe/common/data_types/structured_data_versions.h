@@ -75,9 +75,9 @@ namespace maidsafe {
 
 namespace detail {
 
-struct StructuredDataVersions;
-struct StructuredDataVersions_Branch;
-struct Version;
+struct StructuredDataVersionsCereal;
+struct StructuredDataVersionsCereal_Branch;
+struct VersionCereal;
 
 }  // namespace detail
 
@@ -198,19 +198,19 @@ class StructuredDataVersions {
 
   void ValidateLimits() const;
   void BranchFromCereal(VersionsItr parent_itr,
-                        const detail::StructuredDataVersions& serialised_versions,
+                        const detail::StructuredDataVersionsCereal& serialised_versions,
                         std::size_t& serialised_branch_index);
   VersionsItr HandleFirstVersionInBranchFromCereal(
       VersionsItr parent_itr,
-      const detail::StructuredDataVersions_Branch& serialised_branch);
+      const detail::StructuredDataVersionsCereal_Branch& serialised_branch);
 
-  VersionsItr CheckedInsert(const detail::Version& serialised_version);
+  VersionsItr CheckedInsert(const detail::VersionCereal& serialised_version);
   void BranchToCereal(VersionsItr itr,
-                      detail::StructuredDataVersions& serialised_versions,
+                      detail::StructuredDataVersionsCereal& serialised_versions,
                       const VersionName& absent_parent) const;
   void BranchToCereal(VersionsItr itr,
-                      detail::StructuredDataVersions& serialised_versions,
-                      detail::StructuredDataVersions_Branch* serialised_branch) const;
+                      detail::StructuredDataVersionsCereal& serialised_versions,
+                      detail::StructuredDataVersionsCereal_Branch* serialised_branch) const;
 
   void ApplyBranch(VersionName parent, VersionsItr itr,
                    StructuredDataVersions& new_versions) const;

@@ -16,37 +16,50 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
-#define MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
-
-#include <cstdint>
 #include <string>
 
-#include "boost/optional.hpp"
+#include "maidsafe/common/data_types/mutable_data.h"
+
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
-namespace detail {
+namespace test {
 
-struct VersionCereal {
-  VersionCereal()
-    : index_ {},
-      id_ {},
-      forking_child_count_ {}
-  { }
+namespace {  // anonymous
 
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(index_, id_, forking_child_count_);
-  }
+bool operator==(const MutableData& ref_lhs, const MutableData& ref_rhs) {
+  return ref_lhs.data() == ref_rhs.data() && ref_lhs.name() == ref_rhs.name();
+}
 
-  std::uint64_t index_;
-  std::string id_;
-  boost::optional<std::uint32_t> forking_child_count_;
-};
+}  // anonymous namespace
 
-}  // namespace detail
+TEST(MutableDataTest, BEH_Serialisation) {
+  const std::uint32_t size {64};
+  auto value_0 = NonEmptyString(RandomAlphaNumericString(size));
+
+  MutableData::Name key_0 {Identity(crypto::Hash<crypto::SHA512>(value_0))};
+  MutableData a {key_0, value_0};
+
+  std::string serialised_str;
+
+  // Serialisation
+  EXPECT_EQ(0, serialised_str.size());
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(a));
+  EXPECT_NE(0, serialised_str.size());
+
+  // Deserialisation
+  auto value_1 = NonEmptyString(RandomAlphaNumericString(size));
+  MutableData::Name key_1 {Identity(crypto::Hash<crypto::SHA512>(value_0))};
+  MutableData b {key_1, value_1};
+
+  EXPECT_FALSE(a == b);
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, b));
+  EXPECT_TRUE(a == b);
+}
+
+}  // namespace test
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
