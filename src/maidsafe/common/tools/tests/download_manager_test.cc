@@ -26,9 +26,8 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/log.h"
 
-#include "maidsafe/client_manager/config.h"
-#include "maidsafe/client_manager/download_manager.h"
-#include "maidsafe/client_manager/return_codes.h"
+#include "maidsafe/common/config.h"
+#include "maidsafe/common/tools/download_manager.h"
 
 namespace fs = boost::filesystem;
 
