@@ -167,6 +167,12 @@ if(MaidsafeTesting)
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
+  ms_add_executable(test_network_viewer
+      "Tests/Common"
+      ${CommonTestsAllFiles}
+      ${CommonSourcesDir}/tools/tests/network_viewer_test.cc)
+  target_link_libraries(test_network_viewer maidsafe_test maidsafe_network_viewer)
+
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
   add_dependencies(test_common ipc_child_process)

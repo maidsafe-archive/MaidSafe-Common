@@ -30,13 +30,12 @@ namespace {  // anonymous
 using Mr_t = network_viewer::MatrixRecord;
 
 bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
-  return ref_lhs.owner_id() == ref_rhs.owner_id() &&
-      ref_lhs.matrix_ids() == ref_rhs.matrix_ids();
+  return ref_lhs.owner_id() == ref_rhs.owner_id() && ref_lhs.matrix_ids() == ref_rhs.matrix_ids();
 }
 
 }  // anonymous namespace
 
-TEST(MatrixRecordTest, BEH_Serialisation) {
+TEST(NetworkViewerTest, BEH_MatrixRecordSerialisation) {
   NodeId node_id_0 {NodeId::IdType::kRandomId};
   NodeId node_id_1 {NodeId::IdType::kRandomId};
   Mr_t a {node_id_0}, b {node_id_1};
