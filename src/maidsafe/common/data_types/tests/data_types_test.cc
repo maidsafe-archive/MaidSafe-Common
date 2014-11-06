@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST_CASE("DataTypesOutputOperator", "[Behavioural]") {
+TEST(DataTypeTests, BEH_OutputOperator) {
   LOG(kInfo) << DataTagValue::kAnmaidValue;
   LOG(kInfo) << DataTagValue::kMaidValue;
   LOG(kInfo) << DataTagValue::kAnpmidValue;
@@ -36,25 +36,27 @@ TEST_CASE("DataTypesOutputOperator", "[Behavioural]") {
   LOG(kInfo) << DataTagValue::kImmutableDataValue;
   LOG(kInfo) << DataTagValue::kMutableDataValue;
   LOG(kInfo) << static_cast<DataTagValue>(-9);
-  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
-TEST_CASE("DataTypesConstructType", "[Behavioural]") {
-  REQUIRE(is_short_term_cacheable<MutableData>::value);
-  REQUIRE(!is_long_term_cacheable<MutableData>::value);
-  REQUIRE(!is_short_term_cacheable<ImmutableData>::value);
-  REQUIRE(is_long_term_cacheable<ImmutableData>::value);
+TEST(DataTypeTests, BEH_ConstructType) {
+  ASSERT_TRUE(is_short_term_cacheable<MutableData>::value);
+  ASSERT_TRUE(!is_long_term_cacheable<MutableData>::value);
+  ASSERT_TRUE(!is_short_term_cacheable<ImmutableData>::value);
+  ASSERT_TRUE(is_long_term_cacheable<ImmutableData>::value);
 }
 
-TEST_CASE("DataTypesRetrieveType", "[Behavioural]") {
-  REQUIRE((std::is_same<passport::PublicAnmaid, passport::PublicAnmaid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicMaid, passport::PublicMaid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicAnpmid, passport::PublicAnpmid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicPmid, passport::PublicPmid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicAnmpid, passport::PublicAnmpid::Name::data_type>::value));
-  REQUIRE((std::is_same<passport::PublicMpid, passport::PublicMpid::Name::data_type>::value));
-  REQUIRE((std::is_same<ImmutableData, ImmutableData::Name::data_type>::value));
-  REQUIRE((std::is_same<MutableData, MutableData::Name::data_type>::value));
+TEST(DataTypeTests, BEH_RetrieveType) {
+  ASSERT_TRUE((std::is_same<passport::PublicAnmaid,
+               passport::PublicAnmaid::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<passport::PublicMaid, passport::PublicMaid::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<passport::PublicAnpmid,
+               passport::PublicAnpmid::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<passport::PublicPmid, passport::PublicPmid::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<passport::PublicAnmpid,
+               passport::PublicAnmpid::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<passport::PublicMpid, passport::PublicMpid::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<ImmutableData, ImmutableData::Name::data_type>::value));
+  ASSERT_TRUE((std::is_same<MutableData, MutableData::Name::data_type>::value));
 }
 
 }  // namespace test
