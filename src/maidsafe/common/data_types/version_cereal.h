@@ -28,8 +28,8 @@ namespace maidsafe {
 
 namespace detail {
 
-struct Version {
-  Version()
+struct VersionCereal {
+  VersionCereal()
     : index_ {},
       id_ {},
       forking_child_count_ {}

@@ -25,8 +25,8 @@ namespace maidsafe {
 
 namespace detail {
 
-struct SafeEncrypt {
-  SafeEncrypt()
+struct SafeEncryptCereal {
+  SafeEncryptCereal()
     : key_ {},
       data_ {}
   { }

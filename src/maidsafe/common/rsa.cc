@@ -77,7 +77,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 
   std::string result;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-  detail::SafeEncrypt safe_encrypt;
+  detail::SafeEncryptCereal safe_encrypt;
   try {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
@@ -107,7 +107,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
 
-    detail::SafeEncrypt safe_encrypt;
+    detail::SafeEncryptCereal safe_encrypt;
     try { ConvertFromString(data.string(), safe_encrypt); }
     catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 
