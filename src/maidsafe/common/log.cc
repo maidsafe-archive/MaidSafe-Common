@@ -158,7 +158,7 @@ void ColouredPrint(Colour colour, const std::string& text) {
 
 #endif
 
-std::string GetProjectAndContractFile(std::string& file) {
+std::string GetProjectAndContractFile(std::string file) {
   boost::replace_all(file, "\\", "/");
   std::string project(file);
   size_t position(file.rfind("maidsafe"));
@@ -177,14 +177,6 @@ std::string GetProjectAndContractFile(std::string& file) {
     return "";
 
   return project.substr(start_position + 1, end_position - start_position - 1);
-}
-
-bool ShouldLog(std::string project, int level) {
-  FilterMap filter(Logging::Instance().Filter());
-  if (project.empty())
-    project = "common";
-  auto filter_itr = filter.find(project);
-  return (filter_itr != filter.end()) && ((*filter_itr).second <= level);
 }
 
 void GetColourAndLevel(char& log_level, Colour& colour, int level) {
@@ -227,14 +219,6 @@ std::string GetColouredLogEntry(char log_level) {
   oss << ' ';
 #endif
   oss << detail::GetUTCTime();
-  return oss.str();
-}
-
-std::string GetPlainLogEntry(const std::string& file, int line, const std::ostringstream& stream) {
-  std::ostringstream oss;
-  oss << " " << file << ":" << line << "] ";
-  //  oss << " Function: " << function_ << "] ";
-  oss << stream.str() << '\n';
   return oss.str();
 }
 
@@ -399,37 +383,42 @@ std::string GetTime() {
 
 }  // unnamed namespace
 
-
+namespace detail {
 
 // ======================================= LogMessage ==============================================
-LogMessage::LogMessage(std::string file, int line, std::string function, int level)
-    : file_(std::move(file)),
-      kLine_(line),
-      kFunction_(std::move(function)),
-      kLevel_(level),
-      stream_() {}
-
-LogMessage::~LogMessage() {
+boost::optional<std::string> LogMessage::ShouldLog() const {
   std::string project(GetProjectAndContractFile(file_));
-  if (!ShouldLog(project, kLevel_))
-    return;
 
+  const FilterMap filter(Logging::Instance().Filter());
+  if (project.empty()) {
+    project = "common";
+  }
+  const auto filter_itr = filter.find(project);
+  if (filter_itr != filter.end()) {
+    if ((*filter_itr).second <= level_) {
+      return project;
+    }
+  }
+  return boost::none;
+}
+
+void LogMessage::Log(const std::string& project, std::string message) const {
   char log_level(' ');
   Colour colour(Colour::kDefaultColour);
-  GetColourAndLevel(log_level, colour, kLevel_);
+  GetColourAndLevel(log_level, colour, level_);
 
-  std::string coloured_log_entry(GetColouredLogEntry(log_level));
-  std::string plain_log_entry(GetPlainLogEntry(file_, kLine_, stream_));
+  std::string coloured_log_entry(GetColouredLogEntry(level_));
   ColourMode colour_mode(Logging::Instance().Colour());
-  auto print_functor([colour, coloured_log_entry, plain_log_entry, colour_mode, project] {
-    SendToConsole(colour_mode, colour, coloured_log_entry, plain_log_entry);
-    Logging::Instance().WriteToCombinedLogfile(coloured_log_entry + plain_log_entry);
-    Logging::Instance().WriteToProjectLogfile(project, coloured_log_entry + plain_log_entry);
+  auto print_functor([colour, coloured_log_entry, message, colour_mode, project] {
+    SendToConsole(colour_mode, colour, coloured_log_entry, message);
+    Logging::Instance().WriteToCombinedLogfile(coloured_log_entry + message);
+    Logging::Instance().WriteToProjectLogfile(project, coloured_log_entry + message);
   });
 
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
 
+} // namespace detail
 
 
 // ===================================== TestLogMessage ============================================

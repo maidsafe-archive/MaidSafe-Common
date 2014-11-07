@@ -36,6 +36,7 @@
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
+#include "boost/optional.hpp"
 #include "boost/program_options/options_description.hpp"
 #include "boost/program_options/variables_map.hpp"
 
@@ -55,6 +56,79 @@ namespace test { class VisualiserLogTest; }
 
 namespace log {
 
+namespace detail {
+
+  template<typename Left, typename Right>
+  class OstreamBinder {
+   public:
+
+    template<typename LeftArg, typename RightArg>
+    OstreamBinder(LeftArg&& left, RightArg&& right)
+      : left_(std::forward<LeftArg>(left)),
+        right_(std::forward<RightArg>(right)) {
+    }
+
+    void Serialise(std::ostream& out) const {
+      out << left_ << right_;
+    }
+
+   private:
+
+    Left left_;
+    Right right_;
+  };
+
+  template<>
+  class OstreamBinder<void, void> {
+   public:
+
+    void Serialise(std::ostream&) const {}
+  };
+
+  template<typename BoundLeft, typename BoundRight, typename Right>
+  OstreamBinder<const OstreamBinder<BoundLeft, BoundRight>&, Right> operator<<(
+      const OstreamBinder<BoundLeft, BoundRight>& left, Right&& right) {
+    return {left, std::forward<Right>(right)};
+  }
+
+  template<typename BoundLeft, typename BoundRight>
+  std::ostream& operator<<(std::ostream& out, const OstreamBinder<BoundLeft, BoundRight>& binder) {
+    binder.Serialise(out);
+    return out;
+  }
+
+  struct NullStream {
+    template<typename Left, typename Right>
+    void operator=(const OstreamBinder<Left, Right>&) const {}
+  };
+
+  class LogMessage {
+   public:
+    LogMessage(const char* const file, const int level)
+      : file_(file),
+        level_(level) {
+    }
+
+    template<typename BoundLeft, typename BoundRight>
+    void operator=(const OstreamBinder<BoundLeft, BoundRight>& binder) const {
+      const boost::optional<std::string> should_log_project(ShouldLog());
+      if (should_log_project) {
+        std::ostringstream out;
+        out << binder << "\n";
+        Log(*should_log_project, out.str());
+      }
+    }
+
+  private:
+    boost::optional<std::string> ShouldLog() const;
+    void Log(const std::string& project, std::string message) const;
+
+  private:
+    const char* const file_;
+    const int level_;
+  };
+}
+
 typedef std::map<std::string, int> FilterMap;
 
 enum class Colour {
@@ -70,54 +144,17 @@ enum class ColourMode {
   kFullLine
 };
 
-// compile away DLOG and LOG statements
-class NullStream {
- public:
-  NullStream() {}
-  template <typename T>
-  NullStream& operator<<(const T&) { return *this; }
-  typedef std::basic_ostream<char, std::char_traits<char>> CoutType;
-  typedef CoutType& (*StandardEndLine)(CoutType&);
-  // define an operator<< to take in std::endl
-  NullStream& operator<<(StandardEndLine) { return *this; }
-#ifdef MAIDSAFE_WIN32
-  operator bool() const { return false; }
-#else
-  explicit operator bool() const { return false; }
-#endif
-};
-
-struct Envoid {
- public:
-  Envoid() {}
-  // This has to be an operator with a precedence lower than << but higher than ?:
-  void operator&(NullStream&) {}
-};
 
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlways = 4;
 
 #if USE_LOGGING
-#define LOG(level)                                                                            \
-  maidsafe::log::LogMessage(__FILE__, __LINE__, BOOST_CURRENT_FUNCTION, maidsafe::log::level) \
-      .MessageStream()
+#define LOG(level)                                                                                     \
+  maidsafe::log::detail::LogMessage(__FILE__, maidsafe::log::level) =                                  \
+      maidsafe::log::detail::OstreamBinder<void, void>() << " " << __FILE__ << ":" << __LINE__ << "] "
 #else
-#define LOG(_) true ? static_cast<void>(19) : maidsafe::log::Envoid() & maidsafe::log::NullStream()
+#define LOG(_) maidsafe::log::detail::NullStream() = OstreamBinder<void, void>()
 #endif
 #define TLOG(colour) maidsafe::log::TestLogMessage(maidsafe::log::Colour::colour).MessageStream()
-
-class LogMessage {
- public:
-  LogMessage(std::string file, int line, std::string function, int level);
-  ~LogMessage();
-  std::ostringstream& MessageStream() { return stream_; }
-
- private:
-  std::string file_;
-  const int kLine_;
-  const std::string kFunction_;
-  const int kLevel_;
-  std::ostringstream stream_;
-};
 
 class TestLogMessage {
  public:
