@@ -299,11 +299,8 @@ TEST(StructuredDataVersionsTests, BEH_SerialisationOptionalFieldTest) {
 
   ver_0.forking_child_count_ = ver_2.forking_child_count_ = 33;
 
-  EXPECT_TRUE(static_cast<bool>(ver_0.forking_child_count_) &&
-              static_cast<bool>(ver_2.forking_child_count_));
-
-  EXPECT_FALSE(static_cast<bool>(ver_1.forking_child_count_) &&
-               static_cast<bool>(ver_3.forking_child_count_));
+  EXPECT_TRUE(ver_0.forking_child_count_ && ver_2.forking_child_count_);
+  EXPECT_FALSE(ver_1.forking_child_count_ || ver_3.forking_child_count_);
 
   Sdv_t sdv_lhs, sdv_rhs;
   sdv_lhs.max_versions_ = sdv_rhs.max_versions_ = 20;

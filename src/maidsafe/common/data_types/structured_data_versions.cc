@@ -268,6 +268,7 @@ void StructuredDataVersions::BranchToCereal(
   auto serialised_branch((serialised_versions.branch_.emplace_back(),
                       &serialised_versions.branch_[serialised_versions.branch_.size() - 1]));
   if (absent_parent.id->IsInitialised()) {
+    serialised_branch->absent_parent_ = detail::VersionCereal {};
     serialised_branch->absent_parent_->index_ = absent_parent.index;
     serialised_branch->absent_parent_->id_ = absent_parent.id->string();
   }
