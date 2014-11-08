@@ -129,7 +129,7 @@ void Test::AddNode(bool good) {
   int attempts{0};
   for (;;) {
     ++attempts;
-    NodeId node_id(NodeId::IdType::kRandomId);
+    NodeId node_id(RandomString(NodeId::kSize));
     std::partial_sort(std::begin(all_nodes_), std::begin(all_nodes_) + group_size,
                       std::end(all_nodes_), [&node_id](const Node& lhs, const Node& rhs) {
       return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
@@ -153,7 +153,7 @@ void Test::InitialiseNetwork() {
   all_nodes_.clear();
   all_nodes_.reserve(config_.initial_good_count);
   // Add first node
-  DoAddNode(NodeId(NodeId::IdType::kRandomId), true, 1);
+  DoAddNode(NodeId(RandomString(NodeId::kSize)), true, 1);
   // Add others
   for (size_t i(1); i < config_.initial_good_count; ++i)
     AddNode(true);
@@ -240,9 +240,9 @@ std::vector<BadGroup> Test::InjectBadGroups(const std::vector<NodeId>& steps) {
              << config_.bad_group_count << " bad group(s) after adding " << bad_count_
              << " bad nodes and " << good_count_ - config_.initial_good_count << " good nodes";
   if (config_.algorithm != CommonLeadingBitsAlgorithm::kNone) {
-    TLOG(kRed) << ", averaging " << static_cast<double>(total_attempts_) /
-                                        (all_nodes_.size() - config_.initial_good_count)
-               << " attempt(s) each";
+    TLOG(kRed) << ", averaging "
+               << static_cast<double>(total_attempts_) /
+                      (all_nodes_.size() - config_.initial_good_count) << " attempt(s) each";
   }
   TLOG(kRed) << ".  Network population = " << all_nodes_.size()
              << "  Attack = " << static_cast<double>(bad_count_) * 100 / all_nodes_.size()
@@ -272,7 +272,7 @@ void Test::CheckLinkedAddresses() const {
   while (attempts < config_.total_random_attempts) {
     bad_groups.clear();
     ++attempts;
-    NodeId target_id(NodeId::IdType::kRandomId);
+    NodeId target_id(RandomString(NodeId::kSize));
     for (size_t i(0); i < config_.bad_group_count; ++i) {
       if (i > 0)  // Hash previous target to get new linked one
         target_id = NodeId(crypto::Hash<crypto::SHA512>(target_id.string()).string());
@@ -284,7 +284,7 @@ void Test::CheckLinkedAddresses() const {
     if (bad_groups.size() == config_.bad_group_count) {
       ++compromised_attempts;
       LOG(kError) << "Got bad group chain of " << config_.bad_group_count << " after " << attempts
-                 << " linked random ID attempts.";
+                  << " linked random ID attempts.";
       ReportBadGroups(bad_groups);
     }
   }
@@ -370,8 +370,7 @@ int main(int argc, char* argv[]) {
       config.initial_good_count = static_cast<size_t>(
           static_cast<double>(config.initial_good_count) * config.initial_factor);
     }
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     TLOG(kRed) << "Failed: " << e.what() << '\n';
     return -2;
   }

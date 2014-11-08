@@ -29,8 +29,6 @@
 
 namespace maidsafe {
 
-struct RandomIdTag {};
-
 class NodeId {
  public:
   enum class EncodingType { kBinary = 0, kHex, kBase64 };
@@ -43,9 +41,6 @@ class NodeId {
   NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT;
   NodeId& operator=(const NodeId& other) = default;
   NodeId& operator=(NodeId&& other) MAIDSAFE_NOEXCEPT;
-
-  // Creates a random ID in the interval [0, 2 ^ kKeySizeBits).
-  explicit NodeId(RandomIdTag);
 
   // Creates a NodeId from a raw (decoded) string.  Will throw if 'id' is invalid.
   explicit NodeId(std::string id);
@@ -111,7 +106,7 @@ inline NodeId operator^(NodeId lhs, const NodeId& rhs) {
   return lhs;
 }
 
-template<typename Elem, typename Traits>
+template <typename Elem, typename Traits>
 std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
                                              const NodeId& node_id) {
   ostream << DebugId(node_id);

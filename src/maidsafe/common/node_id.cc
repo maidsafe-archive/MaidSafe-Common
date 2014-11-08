@@ -29,9 +29,9 @@
 namespace maidsafe {
 
 #ifdef NDEBUG
-# define INIT_DEBUG_NODE_ID
+#define INIT_DEBUG_NODE_ID
 #else
-# define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
+#define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
 #endif
 
 #ifdef NDEBUG
@@ -52,8 +52,6 @@ NodeId& NodeId::operator=(NodeId&& other) MAIDSAFE_NOEXCEPT {
 #endif
   return *this;
 }
-
-NodeId::NodeId(RandomIdTag) : raw_id_(RandomString(kSize)) INIT_DEBUG_NODE_ID {}
 
 NodeId::NodeId(std::string id) : raw_id_(std::move(id)) INIT_DEBUG_NODE_ID {
   if (raw_id_.size() != kSize)
