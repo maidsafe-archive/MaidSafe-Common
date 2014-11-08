@@ -111,7 +111,7 @@ inline NodeId operator^(NodeId lhs, const NodeId& rhs) {
   return lhs;
 }
 
-template<typename Elem, typename Traits>
+template <typename Elem, typename Traits>
 std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
                                              const NodeId& node_id) {
   ostream << DebugId(node_id);

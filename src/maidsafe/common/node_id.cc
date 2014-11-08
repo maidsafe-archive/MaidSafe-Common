@@ -29,9 +29,9 @@
 namespace maidsafe {
 
 #ifdef NDEBUG
-# define INIT_DEBUG_NODE_ID
+#define INIT_DEBUG_NODE_ID
 #else
-# define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
+#define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
 #endif
 
 #ifdef NDEBUG
