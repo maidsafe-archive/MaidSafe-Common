@@ -98,19 +98,8 @@ TEST(NodeIdBasicTest, BEH_DefaultConstructor) {
   EXPECT_FALSE(id.IsValid());
 }
 
-TEST(NodeIdBasicTest, BEH_RandomIdConstructor) {
-  auto id = NodeId{RandomIdTag{}};
-  EXPECT_TRUE(id.IsValid());
-
-  auto node_ids = std::set<NodeId>{};
-  auto success = bool{true};
-  for (int i(0); i < 10000; ++i)
-    success &= node_ids.emplace(RandomIdTag{}).second;
-  ASSERT_TRUE(success);
-}
-
 TEST(NodeIdBasicTest, BEH_CopyAndMove) {
-  const auto id = NodeId{RandomIdTag{}};
+  const auto id = NodeId{RandomString(NodeId::kSize)};
 
   // Copy c'tor
   auto copy1 = NodeId{id};
@@ -211,7 +200,7 @@ TEST(NodeIdBasicTest, BEH_String) {
 }
 
 TEST(NodeIdBasicTest, BEH_IsValid) {
-  EXPECT_TRUE(NodeId{RandomIdTag{}}.IsValid());
+  EXPECT_TRUE(NodeId{RandomString(NodeId::kSize)}.IsValid());
   EXPECT_FALSE(NodeId{}.IsValid());
 }
 
@@ -220,15 +209,15 @@ class NodeIdTest : public testing::Test {
   NodeIdTest()
       : max_id_(std::string(NodeId::kSize, -1)),
         id1_([this]() -> NodeId {
-          auto id = NodeId{RandomIdTag{}};
+          auto id = NodeId{RandomString(NodeId::kSize)};
           while (id == max_id_)
-            id = NodeId{RandomIdTag{}};
+            id = NodeId{RandomString(NodeId::kSize)};
           return id;
         }()),
         id2_([this]() -> NodeId {
-          auto id = NodeId{RandomIdTag{}};
+          auto id = NodeId{RandomString(NodeId::kSize)};
           while (id == max_id_ || id == id1_)
-            id = NodeId{RandomIdTag{}};
+            id = NodeId{RandomString(NodeId::kSize)};
           return id;
         }()),
         invalid_id_() {}
@@ -328,9 +317,9 @@ TEST_F(NodeIdTest, BEH_Operators) {
 }
 
 TEST_F(NodeIdTest, BEH_CloserToTarget) {
-  auto target = NodeId{RandomIdTag{}};
+  auto target = NodeId{RandomString(NodeId::kSize)};
   while (target == id1_ || target == id2_)
-    target = NodeId{RandomIdTag{}};
+    target = NodeId{RandomString(NodeId::kSize)};
 
   auto xor_distance1 = id1_ ^ target;
   auto xor_distance2 = id2_ ^ target;

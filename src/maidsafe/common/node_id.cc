@@ -53,8 +53,6 @@ NodeId& NodeId::operator=(NodeId&& other) MAIDSAFE_NOEXCEPT {
   return *this;
 }
 
-NodeId::NodeId(RandomIdTag) : raw_id_(RandomString(kSize)) INIT_DEBUG_NODE_ID {}
-
 NodeId::NodeId(std::string id) : raw_id_(std::move(id)) INIT_DEBUG_NODE_ID {
   if (raw_id_.size() != kSize)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
