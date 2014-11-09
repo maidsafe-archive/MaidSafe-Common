@@ -135,7 +135,7 @@ TEST(NodeIdBasicTest, BEH_HashConstructor) {
 
 TEST(NodeIdBasicTest, BEH_EncodingConstructor) {
   auto known_raw = std::string(NodeId::kSize, 0);
-  for (char c = 0; c < NodeId::kSize; ++c)
+  for (char c = 0; c < static_cast<char>(NodeId::kSize); ++c)
     known_raw.at(static_cast<uint8_t>(c)) = c;
   for (int i = 0; i < 3; ++i) {
     auto rand_str = RandomString(NodeId::kSize);
@@ -311,7 +311,7 @@ TEST_F(NodeIdTest, BEH_Operators) {
   EXPECT_THROW(invalid_id_ ^ invalid_id_, common_error);
 
   // operator<<
-  auto sstream = std::stringstream{};
+  std::stringstream sstream;
   sstream << id1_ << invalid_id_;
   EXPECT_EQ(DebugId(id1_) + "Invalid ID", sstream.str());
 }
