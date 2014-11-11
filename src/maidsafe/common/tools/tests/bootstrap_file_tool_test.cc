@@ -16,8 +16,6 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "boost/asio.hpp"
-
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
