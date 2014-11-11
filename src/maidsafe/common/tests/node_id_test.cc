@@ -340,7 +340,20 @@ TEST_F(NodeIdTest, BEH_CloserToTarget) {
   EXPECT_THROW(NodeId::CloserToTarget(id1_, invalid_id_, target), common_error);
   EXPECT_THROW(NodeId::CloserToTarget(id1_, id2_, invalid_id_), common_error);
 }
+TEST_F(NodeIdTest, FUNC_CloserToTarget) {
+  auto target = NodeId{RandomString(NodeId::kSize)};
+  std::vector<NodeId> nodes(100000, NodeId(RandomString(NodeId::kSize)));
+  std::sort(std::begin(nodes), std::end(nodes), [target](const NodeId& lhs, const NodeId& rhs) {
+    return NodeId::CloserToTarget(lhs, rhs, target);
+  });
 
+  auto closest = nodes.front();
+
+  for (const auto& node : nodes) {
+    // not to worry cpmparing same nodes will not make one closer
+    EXPECT_FALSE(NodeId::CloserToTarget(node, closest, target));
+  }
+}
 TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
   // Check for two equal IDs
   auto copy_of_id1 = NodeId{id1_};
