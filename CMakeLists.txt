@@ -148,14 +148,14 @@ ms_add_executable(bootstrap_file_tool "Tools/Common"
     "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
     "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.cc"
     "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
-target_include_directories(bootstrap_file_tool PUBLIC ${CommonSourcesDir})
+target_include_directories(bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
 # Address space tool
 ms_add_executable(address_space_tool "Tools/Common"
     "${CommonSourcesDir}/tools/address_space_tool.cc"
     "${CommonSourcesDir}/tools/address_space_tool.h")
-target_include_directories(address_space_tool PRIVATE ${CommonSourcesDir})
+target_include_directories(address_space_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
@@ -172,14 +172,13 @@ if(MaidsafeTesting)
       "Tests/Common"
       ${CommonSourcesDir}/tests/tests_main.cc
       ${CommonSourcesDir}/tools/tests/network_viewer_test.cc)
-
   target_link_libraries(test_network_viewer maidsafe_test maidsafe_network_viewer)
 
   ms_add_executable(test_bootstrap_file_tool
       "Tests/Common"
       ${CommonSourcesDir}/tests/tests_main.cc
       ${CommonSourcesDir}/tools/tests/bootstrap_file_tool_test.cc)
-  target_include_directories(test_bootstrap_file_tool PUBLIC ${CommonSourcesDir})
+  target_include_directories(test_bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
   target_link_libraries(test_bootstrap_file_tool maidsafe_test)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
