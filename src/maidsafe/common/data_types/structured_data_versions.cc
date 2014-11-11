@@ -221,7 +221,7 @@ void StructuredDataVersions::BranchFromCereal(
 
 StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionInBranchFromCereal(
     VersionsItr parent_itr,
-    const detail::StructuredDataVersionsCereal_Branch& serialised_branch) {
+    const detail::StructuredDataVersionsBranchCereal& serialised_branch) {
   auto itr(CheckedInsert(serialised_branch.name_[0]));
   if (parent_itr == std::end(versions_)) {
     // This is a new branch, so the first element is either root_ or an orphan.
@@ -277,7 +277,7 @@ void StructuredDataVersions::BranchToCereal(
 
 void StructuredDataVersions::BranchToCereal(
     VersionsItr itr, detail::StructuredDataVersionsCereal& serialised_versions,
-    detail::StructuredDataVersionsCereal_Branch* serialised_branch) const {
+    detail::StructuredDataVersionsBranchCereal* serialised_branch) const {
   for (;;) {
     if (itr == std::end(versions_))
       return;

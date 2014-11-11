@@ -29,8 +29,8 @@ namespace maidsafe {
 
 namespace detail {
 
-struct StructuredDataVersionsCereal_Branch {
-  StructuredDataVersionsCereal_Branch()
+struct StructuredDataVersionsBranchCereal {
+  StructuredDataVersionsBranchCereal()
     : absent_parent_ {},
       name_ {}
   { }
@@ -56,7 +56,7 @@ struct StructuredDataVersionsCereal {
     return ref_archive(max_versions_, max_branches_, branch_);
   }
 
-  using Branch = StructuredDataVersionsCereal_Branch;
+  using Branch = StructuredDataVersionsBranchCereal;
 
   std::uint32_t max_versions_;
   std::uint32_t max_branches_;
