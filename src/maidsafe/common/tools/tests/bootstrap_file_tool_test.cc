@@ -41,11 +41,11 @@ bool operator==(const BootstrapCereal& ref_lhs, const BootstrapCereal& ref_rhs) 
 namespace test {
 
 TEST(BootstrapFileToolTest, BEH_Serialisation) {
-  detail::BootstrapCereal a, b;
-  detail::EndpointCereal c, d;
+  maidsafe::detail::BootstrapCereal a, b;
+  maidsafe::detail::EndpointCereal c, d;
 
-  c.id_ = "192.168.12.45"; c.port_ = 64435;
-  d.id_ = "10.168.12.45"; d.port_ = 99;
+  c.ip_ = "192.168.12.45"; c.port_ = 64435;
+  d.ip_ = "10.168.12.45"; d.port_ = 99;
 
   a.bootstrap_contacts_.push_back(c);
   a.bootstrap_contacts_.push_back(d);

@@ -40,8 +40,7 @@ bool operator==(const Ver_t& ref_lhs, const Ver_t& ref_rhs) {
       ref_lhs.id_ == ref_rhs.id_ && ref_lhs.index_ == ref_rhs.index_;
 }
 
-bool operator==(const maidsafe::detail::StructuredDataVersionsCereal_Branch& ref_lhs,
-                const maidsafe::detail::StructuredDataVersionsCereal_Branch& ref_rhs) {
+bool operator==(const SdvBr_t& ref_lhs, const SdvBr_t& ref_rhs) {
   return ref_lhs.absent_parent_ == ref_rhs.absent_parent_ && ref_lhs.name_ == ref_rhs.name_;
 }
 
