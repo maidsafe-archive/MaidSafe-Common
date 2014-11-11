@@ -76,7 +76,7 @@ namespace maidsafe {
 namespace detail {
 
 struct StructuredDataVersionsCereal;
-struct StructuredDataVersionsCereal_Branch;
+struct StructuredDataVersionsBranchCereal;
 struct VersionCereal;
 
 }  // namespace detail
@@ -202,7 +202,7 @@ class StructuredDataVersions {
                         std::size_t& serialised_branch_index);
   VersionsItr HandleFirstVersionInBranchFromCereal(
       VersionsItr parent_itr,
-      const detail::StructuredDataVersionsCereal_Branch& serialised_branch);
+      const detail::StructuredDataVersionsBranchCereal& serialised_branch);
 
   VersionsItr CheckedInsert(const detail::VersionCereal& serialised_version);
   void BranchToCereal(VersionsItr itr,
@@ -210,7 +210,7 @@ class StructuredDataVersions {
                       const VersionName& absent_parent) const;
   void BranchToCereal(VersionsItr itr,
                       detail::StructuredDataVersionsCereal& serialised_versions,
-                      detail::StructuredDataVersionsCereal_Branch* serialised_branch) const;
+                      detail::StructuredDataVersionsBranchCereal* serialised_branch) const;
 
   void ApplyBranch(VersionName parent, VersionsItr itr,
                    StructuredDataVersions& new_versions) const;
