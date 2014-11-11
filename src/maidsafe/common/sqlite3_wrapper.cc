@@ -60,7 +60,7 @@ void Database::CheckPoint() {
 
 
 Transaction::Transaction(Database& database_in)
-    : kAttempts(100),
+    : kAttempts(200),
       database(database_in) {
   std::string query("BEGIN IMMEDIATE TRANSACTION");  // immediate or exclusive transaction
   for (int i(0); i != kAttempts; ++i) {
@@ -73,7 +73,8 @@ Transaction::Transaction(Database& database_in)
       if (error.code() == make_error_code(CommonErrors::db_not_presented))
         throw;
       else
-        std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(
+            RandomUint32() % 200 + RandomUint32() % ((i + 1) * 10) + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
@@ -99,7 +100,8 @@ void Transaction::Commit() {
     } catch (const std::exception& e) {
       LOG(kWarning) << "Transaction::Commit FAILED in Attempt " << i << " with error "
                     << boost::diagnostic_information(e);
-    std::this_thread::sleep_for(std::chrono::milliseconds(RandomUint32() % 200 + 10));
+      std::this_thread::sleep_for(std::chrono::milliseconds(
+          RandomUint32() % 200 + RandomUint32() % ((i + 1) * 10) + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
