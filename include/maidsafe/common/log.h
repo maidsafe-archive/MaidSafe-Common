@@ -62,10 +62,9 @@ namespace detail {
   class OstreamBinder {
    public:
 
-    template<typename LeftArg, typename RightArg>
-    OstreamBinder(LeftArg&& left, RightArg&& right)
-      : left_(std::forward<LeftArg>(left)),
-        right_(std::forward<RightArg>(right)) {
+    OstreamBinder(const Left& left, const Right& right)
+      : left_(left),
+        right_(right) {
     }
 
     void Serialise(std::ostream& out) const {
@@ -74,8 +73,8 @@ namespace detail {
 
    private:
 
-    Left left_;
-    Right right_;
+    const Left& left_;
+    const Right& right_;
   };
 
   template<>
@@ -86,9 +85,9 @@ namespace detail {
   };
 
   template<typename BoundLeft, typename BoundRight, typename Right>
-  OstreamBinder<const OstreamBinder<BoundLeft, BoundRight>&, Right> operator<<(
-      const OstreamBinder<BoundLeft, BoundRight>& left, Right&& right) {
-    return {left, std::forward<Right>(right)};
+  OstreamBinder<OstreamBinder<BoundLeft, BoundRight>, Right> operator<<(
+      const OstreamBinder<BoundLeft, BoundRight>& left, const Right& right) {
+    return {left, right};
   }
 
   template<typename BoundLeft, typename BoundRight>
@@ -103,6 +102,12 @@ namespace detail {
   };
 
   class LogMessage {
+   private:
+    struct FileInfo {
+      const std::string project_;
+      const std::string contract_file_;
+    };
+
    public:
     LogMessage(const char* const file, const int level)
       : file_(file),
@@ -111,16 +116,16 @@ namespace detail {
 
     template<typename BoundLeft, typename BoundRight>
     void operator=(const OstreamBinder<BoundLeft, BoundRight>& binder) const {
-      const boost::optional<std::string> should_log_project(ShouldLog());
-      if (should_log_project) {
+      const boost::optional<FileInfo> should_log(ShouldLog());
+      if (should_log) {
         std::ostringstream out;
-        out << binder << "\n";
-        Log(*should_log_project, out.str());
+        out << " " << should_log->contract_file_ << binder << "\n";
+        Log(should_log->project_, out.str());
       }
     }
 
   private:
-    boost::optional<std::string> ShouldLog() const;
+    boost::optional<FileInfo> ShouldLog() const;
     void Log(const std::string& project, std::string message) const;
 
   private:
@@ -129,6 +134,7 @@ namespace detail {
   };
 }
 
+// Convert to map<string, int, std::less<>> when C++14 mode is enabled
 typedef std::map<std::string, int> FilterMap;
 
 enum class Colour {
@@ -148,11 +154,11 @@ enum class ColourMode {
 const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlways = 4;
 
 #if USE_LOGGING
-#define LOG(level)                                                                                     \
-  maidsafe::log::detail::LogMessage(__FILE__, maidsafe::log::level) =                                  \
-      maidsafe::log::detail::OstreamBinder<void, void>() << " " << __FILE__ << ":" << __LINE__ << "] "
+#define LOG(level)                                                                  \
+  maidsafe::log::detail::LogMessage(__FILE__, maidsafe::log::level) =               \
+      maidsafe::log::detail::OstreamBinder<void, void>() << ":" << __LINE__ << "] "
 #else
-#define LOG(_) maidsafe::log::detail::NullStream() = OstreamBinder<void, void>()
+#define LOG(_) maidsafe::log::detail::NullStream() = maidsafe::log::detail::OstreamBinder<void, void>()
 #endif
 #define TLOG(colour) maidsafe::log::TestLogMessage(maidsafe::log::Colour::colour).MessageStream()
 

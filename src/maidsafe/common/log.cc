@@ -32,11 +32,15 @@
 #include <vector>
 
 #include "boost/algorithm/string/case_conv.hpp"
+#include "boost/algorithm/string/find.hpp"
 #include "boost/algorithm/string/replace.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/make_shared.hpp"
 #include "boost/program_options/parsers.hpp"
 #include "boost/program_options/value_semantic.hpp"
+#include "boost/range/adaptor/replaced.hpp"
+#include "boost/range/algorithm/find_first_of.hpp"
+#include "boost/utility/string_ref.hpp"
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/make_unique.h"
@@ -158,25 +162,39 @@ void ColouredPrint(Colour colour, const std::string& text) {
 
 #endif
 
-std::string GetProjectAndContractFile(std::string file) {
-  boost::replace_all(file, "\\", "/");
-  std::string project(file);
-  size_t position(file.rfind("maidsafe"));
-  if (position == std::string::npos || position == 0)
-    return "";
+std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
+    const boost::string_ref entire_path) {
 
-  file = file.substr(position + 9);
+  namespace range = boost::range;
 
-  project = project.substr(0, position - 1);
-  size_t end_position = project.rfind('/');
-  if (end_position == std::string::npos || end_position == 0)
-    return "";
+  const auto filename_project_separator =
+      boost::find_last(entire_path, "maidsafe/");
 
-  size_t start_position = project.rfind('/', end_position - 1);
-  if (start_position == std::string::npos)
-    return "";
+  if (filename_project_separator.empty()) {
+    return std::make_pair(boost::string_ref(), entire_path);
+  }
 
-  return project.substr(start_position + 1, end_position - start_position - 1);
+  const boost::string_ref filename(
+      filename_project_separator.end(),
+      entire_path.end() - filename_project_separator.end());
+
+  MAIDSAFE_CONSTEXPR_OR_CONST auto dir_separator = {'/', '\\'};
+  auto project =
+      boost::make_iterator_range(
+          std::reverse_iterator<const char*>(filename_project_separator.begin()),
+          entire_path.rend());
+
+  for (unsigned i = 0; i < 2; ++i) {
+    project = range::find_first_of<boost::return_next_end>(project, dir_separator);
+  }
+
+  project = range::find_first_of<boost::return_begin_found>(project, dir_separator);
+
+  return std::make_pair(
+      boost::string_ref(
+          project.end().base(),
+          project.begin().base() - project.end().base()),
+      filename);
 }
 
 void GetColourAndLevel(char& log_level, Colour& colour, int level) {
@@ -386,17 +404,26 @@ std::string GetTime() {
 namespace detail {
 
 // ======================================= LogMessage ==============================================
-boost::optional<std::string> LogMessage::ShouldLog() const {
-  std::string project(GetProjectAndContractFile(file_));
+boost::optional<LogMessage::FileInfo> LogMessage::ShouldLog() const {
+  auto file_info(GetProjectAndContractFile(file_));
 
   const FilterMap filter(Logging::Instance().Filter());
-  if (project.empty()) {
-    project = "common";
+  if (file_info.first.empty()) {
+    file_info.first = "common";
   }
+
+  // With C++14, the map can be searched without a temp string
+  const std::string project(file_info.first.begin(), file_info.first.end());
+
   const auto filter_itr = filter.find(project);
+
   if (filter_itr != filter.end()) {
     if ((*filter_itr).second <= level_) {
-      return project;
+      const auto fix_slashes(file_info.second | boost::adaptors::replaced('\\', '/'));
+      return FileInfo{
+        std::move(project),
+        std::string(fix_slashes.begin(), fix_slashes.end())
+      };
     }
   }
   return boost::none;
@@ -407,7 +434,7 @@ void LogMessage::Log(const std::string& project, std::string message) const {
   Colour colour(Colour::kDefaultColour);
   GetColourAndLevel(log_level, colour, level_);
 
-  std::string coloured_log_entry(GetColouredLogEntry(level_));
+  std::string coloured_log_entry(GetColouredLogEntry(log_level));
   ColourMode colour_mode(Logging::Instance().Colour());
   auto print_functor([colour, coloured_log_entry, message, colour_mode, project] {
     SendToConsole(colour_mode, colour, coloured_log_entry, message);
