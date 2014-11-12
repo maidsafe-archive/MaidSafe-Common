@@ -74,10 +74,11 @@ struct Zero {
 
 namespace maidsafe {
 
-enum class SerialisableTypeTag : unsigned char;
+template <typename Enum>
+using SerialisableTypeTag = Enum;
 
 template <SerialisableTypeTag Tag, typename Value, typename NextNode>
-struct CompileTimeMapper;
+struct CompileTimeMapper{};
 struct ERROR_given_tag_is_not_mapped_to_a_type;
 
 template <SerialisableTypeTag Tag, typename Value>
@@ -122,15 +123,16 @@ std::string Serialise(const TypeToSerialise& obj_to_serialise) {
   return string_stream.str();
 }
 
-inline SerialisableTypeTag TypeFromStream(std::stringstream& ref_binary_stream) {
-  unsigned char tag{255};
+template <typename Enum, typename UnderlyingEnumType>
+Enum TypeFromStream(std::stringstream& ref_binary_stream) {
+  UnderlyingEnumType tag{-1};
 
   {
     cereal::BinaryInputArchive input_bin_archive{ref_binary_stream};
     input_bin_archive(tag);
   }
 
-  return static_cast<SerialisableTypeTag>(tag);
+  return static_cast<Enum>(tag);
 }
 
 }  // namespace maidsafe
