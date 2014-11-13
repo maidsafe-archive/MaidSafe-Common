@@ -178,7 +178,7 @@ std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
       filename_project_separator.end(),
       entire_path.end() - filename_project_separator.end());
 
-  MAIDSAFE_CONSTEXPR_OR_CONST auto dir_separator = {'/', '\\'};
+  const auto dir_separator = {'/', '\\'};
   auto project =
       boost::make_iterator_range(
           std::reverse_iterator<const char*>(filename_project_separator.begin()),
