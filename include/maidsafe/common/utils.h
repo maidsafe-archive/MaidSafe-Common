@@ -229,6 +229,19 @@ bool IsReady(std::future<T>& future) {
   return future.wait_for(std::chrono::seconds::zero()) == std::future_status::ready;
 }
 
+template <typename T>
+T Median(std::vector<T>& values)  {
+  size_t size(values.size());
+  auto it(values.begin() + size / 2);
+  std::nth_element(values.begin(), it, values.end());
+  if (size % 2 == 0) {
+    T first(*std::max_element(values.begin(), it)), second(*it);
+    return (first + second) / 2;
+  } else {
+    return *it;
+  }
+}
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_UTILS_H_
