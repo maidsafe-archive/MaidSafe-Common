@@ -145,7 +145,7 @@ uint32_t& rng_seed() {
   static uint32_t seed([]{
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);
-    return (uint32_t) t.LowPart;
+    return static_cast<uint32_t>(t.LowPart);
   }());
 #else
   static uint32_t seed(static_cast<uint32_t>(
