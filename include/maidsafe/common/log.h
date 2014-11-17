@@ -31,6 +31,7 @@
 #include <string>
 #include <sstream>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "boost/asio/ip/tcp.hpp"
@@ -60,9 +61,12 @@ namespace detail {
 
   template<typename Left, typename Right>
   class OstreamBinder {
+    typedef typename std::add_const<Left>::type BoundLeft;
+    typedef typename std::add_const<Right>::type BoundRight;
+
    public:
 
-    OstreamBinder(const Left& left, const Right& right)
+    OstreamBinder(BoundLeft& left, BoundRight& right)
       : left_(left),
         right_(right) {
     }
@@ -73,8 +77,8 @@ namespace detail {
 
    private:
 
-    const Left& left_;
-    const Right& right_;
+    BoundLeft& left_;
+    BoundRight& right_;
   };
 
   template<>
@@ -104,6 +108,10 @@ namespace detail {
   class LogMessage {
    private:
     struct FileInfo {
+      FileInfo(std::string project, std::string contract_file)
+        : project_(std::move(project)),
+          contract_file_(std::move(contract_file)) {
+      }
       const std::string project_;
       const std::string contract_file_;
     };
