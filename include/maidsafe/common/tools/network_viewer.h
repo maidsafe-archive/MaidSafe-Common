@@ -65,10 +65,22 @@ class MatrixRecord {
   MatrixRecord(MatrixRecord&& other);
   MatrixRecord& operator=(MatrixRecord other);
 
-  // If element already exists, replaces existing value of 'type'.
-  void AddElement(const NodeId& element_id, ChildType child_type);
   NodeId owner_id() const;
   MatrixIds matrix_ids() const;
+
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    ref_archive(owner_id_);
+    matrix_ids_ = MatrixIds([this](const NodeId& lhs, const NodeId& rhs) {
+      return NodeId::CloserToTarget(lhs, rhs, owner_id_);
+    });
+    return ref_archive(matrix_ids_);
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(owner_id_, matrix_ids_);
+  }
 
  private:
   NodeId owner_id_;

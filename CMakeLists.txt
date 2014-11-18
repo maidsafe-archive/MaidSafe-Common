@@ -148,6 +148,7 @@ ms_add_executable(bootstrap_file_tool "Tools/Common"
     "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
     "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.cc"
     "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
+target_include_directories(bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
 # Address space tool
