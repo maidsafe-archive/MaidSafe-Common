@@ -168,6 +168,19 @@ if(MaidsafeTesting)
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
+  ms_add_executable(test_network_viewer
+      "Tests/Common"
+      ${CommonSourcesDir}/tests/tests_main.cc
+      ${CommonSourcesDir}/tools/tests/network_viewer_test.cc)
+  target_link_libraries(test_network_viewer maidsafe_test maidsafe_network_viewer)
+
+  ms_add_executable(test_bootstrap_file_tool
+      "Tests/Common"
+      ${CommonSourcesDir}/tests/tests_main.cc
+      ${CommonSourcesDir}/tools/tests/bootstrap_file_tool_test.cc)
+  target_include_directories(test_bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
+  target_link_libraries(test_bootstrap_file_tool maidsafe_test)
+
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
   add_dependencies(test_common ipc_child_process)
@@ -196,6 +209,8 @@ include(standard_flags)
 if(MaidsafeTesting)
   ms_add_default_tests()
   ms_add_gtests(test_common)
+  ms_add_gtests(test_network_viewer)
+  ms_add_gtests(test_bootstrap_file_tool)
   ms_add_gtests(test_common_config)
   ms_test_summary_output()
 endif()
