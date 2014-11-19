@@ -82,7 +82,6 @@ add_dependencies(maidsafe_common boost_process)
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
@@ -103,7 +102,6 @@ target_link_libraries(maidsafe_common
     maidsafe_passport
     ${CerealLib}
     cryptopp
-    protobuf_lite
     sqlite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
@@ -122,10 +120,7 @@ endif()
 # Network Viewer library
 ms_add_static_library(maidsafe_network_viewer
     "${CommonSourcesDir}/tools/network_viewer.cc"
-    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.cc"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.h"
-    "${CommonSourcesDir}/tools/network_viewer.proto")
+    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h")
 target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
@@ -145,9 +140,7 @@ target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_passport
 
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
-    "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.cc"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
+    "${CommonSourcesDir}/tools/bootstrap_file_tool.cc")
 target_include_directories(bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
