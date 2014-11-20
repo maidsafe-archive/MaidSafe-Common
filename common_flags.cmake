@@ -32,7 +32,7 @@ target_compile_definitions(maidsafe_common
     APPLICATION_VERSION_PATCH=${ApplicationVersionPatch}
     TARGET_PLATFORM=${TargetPlatform}
     TARGET_ARCHITECTURE=${TargetArchitecture}
-    $<$<BOOL:${MaidsafeTesting}>:TESTING>
+    $<$<BOOL:${INCLUDE_TESTS}>:TESTING>
     $<$<BOOL:${PROFILING}>:USE_PROFILING>
     $<$<BOOL:${USE_LOGGING}>:USE_LOGGING=1>
     $<$<BOOL:${DONT_USE_LOGGING}>:USE_LOGGING=0>

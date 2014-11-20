@@ -135,12 +135,12 @@ target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
 
 # Qa tool
 ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc"
-                                         "${CommonSourcesDir}/tools/tests/sqlite3_wrapper_benchmark.cc")
+                                         "${CommonSourcesDir}/tools/tests/benchmark/sqlite3_wrapper_benchmark.cc")
 target_link_libraries(qa_tool maidsafe_common maidsafe_passport maidsafe_test)
 
 # SQLite wrapper benchmark test tool
 ms_add_executable(sqlite_wrapper_benchmark "Tools/Common" "${CommonSourcesDir}/tools/sqlite_wrapper_benchmark.cc"
-                                                          "${CommonSourcesDir}/tools/tests/sqlite3_wrapper_benchmark.cc")
+                                                          "${CommonSourcesDir}/tools/tests/benchmark/sqlite3_wrapper_benchmark.cc")
 target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_passport maidsafe_test)
 
 # Bootstrap file tool
@@ -158,13 +158,14 @@ target_include_directories(address_space_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles})
+  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles} ${CommonDataTypesTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
+  target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
@@ -191,7 +192,7 @@ include(standard_flags)
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_common)
   ms_add_gtests(test_common_config)
@@ -207,7 +208,7 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Release RUNTIME DESTINATION bin)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
   install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
