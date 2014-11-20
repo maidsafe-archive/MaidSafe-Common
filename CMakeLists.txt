@@ -158,7 +158,7 @@ target_include_directories(address_space_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
@@ -192,7 +192,7 @@ include(standard_flags)
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_common)
   ms_add_gtests(test_common_config)
@@ -208,7 +208,7 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Release RUNTIME DESTINATION bin)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
   install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
