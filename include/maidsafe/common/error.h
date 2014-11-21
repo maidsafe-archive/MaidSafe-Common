@@ -130,9 +130,7 @@ std::error_condition make_error_condition(AsymmErrors code);
 const std::error_category& GetAsymmCategory();
 asymm_error MakeError(AsymmErrors code);
 
-enum class PassportErrors {
-  id_already_exists = 1
-};
+enum class PassportErrors { id_already_exists = 1 };
 
 class passport_error : public maidsafe_error {
  public:
@@ -150,6 +148,34 @@ std::error_code make_error_code(PassportErrors code);
 std::error_condition make_error_condition(PassportErrors code);
 const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
+
+enum class RudpErrors {
+  failed_to_bootstrap = 1,
+  failed_to_connect,
+  connection_already_in_progress,
+  already_connected,
+  not_connected,
+  operation_not_supported,
+  message_size,
+  bad_message
+};
+
+class rudp_error : public maidsafe_error {
+ public:
+  rudp_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
+  rudp_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
+  explicit rudp_error(std::error_code ec) : maidsafe_error(ec) {}
+  rudp_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  rudp_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : maidsafe_error(ev, ecat, what_arg) {}
+  rudp_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+};
+
+std::error_code make_error_code(RudpErrors code);
+std::error_condition make_error_condition(RudpErrors code);
+const std::error_category& GetRudpCategory();
+rudp_error MakeError(RudpErrors code);
 
 enum class EncryptErrors {
   bad_sequence = 1,
@@ -181,12 +207,7 @@ std::error_condition make_error_condition(EncryptErrors code);
 const std::error_category& GetEncryptCategory();
 encrypt_error MakeError(EncryptErrors code);
 
-enum class RoutingErrors {
-  timed_out = 1,
-  timer_cancelled,
-  not_in_range,
-  not_connected
-};
+enum class RoutingErrors { timed_out = 1, timer_cancelled, not_in_range, not_connected };
 
 class routing_error : public maidsafe_error {
  public:
@@ -205,10 +226,7 @@ std::error_condition make_error_condition(RoutingErrors code);
 const std::error_category& GetRoutingCategory();
 routing_error MakeError(RoutingErrors code);
 
-enum class NfsErrors {
-  failed_to_get_data = 1,
-  timed_out
-};
+enum class NfsErrors { failed_to_get_data = 1, timed_out };
 
 class nfs_error : public maidsafe_error {
  public:
@@ -314,9 +332,7 @@ std::error_condition make_error_condition(VaultManagerErrors code);
 const std::error_category& GetVaultManagerCategory();
 vault_manager_error MakeError(VaultManagerErrors code);
 
-enum class ApiErrors {
-  kPasswordFailure = 1
-};
+enum class ApiErrors { kPasswordFailure = 1 };
 
 class api_error : public maidsafe_error {
  public:
@@ -347,6 +363,9 @@ struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
+
+template <>
+struct is_error_code_enum<maidsafe::RudpErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::EncryptErrors> : public true_type {};
