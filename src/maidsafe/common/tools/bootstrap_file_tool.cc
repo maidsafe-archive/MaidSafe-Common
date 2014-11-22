@@ -31,7 +31,9 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/tools/bootstrap_file_tool.pb.h"
+
+#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/tools/bootstrap_file_tool_cereal.h"
 
 namespace fs = boost::filesystem;
 
@@ -289,20 +291,23 @@ class HandlePolicyLoadBootstrapFile {
     }
     try {
       maidsafe::NonEmptyString contents(maidsafe::ReadFile(bootstrap_file));
-      maidsafe::tools::protobuf::Bootstrap parsed_endpoints;
-      if (!parsed_endpoints.ParseFromString(contents.string())) {
+      maidsafe::detail::BootstrapCereal parsed_endpoints;
+
+      try { maidsafe::ConvertFromString(contents.string(), parsed_endpoints); }
+      catch (...) {
         TLOG(kRed) << '\n' << bootstrap_file << " doesn't parse.\n\n";
         return;
       }
-      if (parsed_endpoints.bootstrap_contacts_size() == 0) {
+
+      if (parsed_endpoints.bootstrap_contacts_.size() == 0) {
         TLOG(kRed) << '\n' << bootstrap_file << " doesn't contain any endpoints.\n\n";
         return;
       }
       g_bootstrap_endpoints.clear();
-      for (int i(0); i != parsed_endpoints.bootstrap_contacts_size(); ++i) {
+      for (std::size_t i(0); i != parsed_endpoints.bootstrap_contacts_.size(); ++i) {
         g_bootstrap_endpoints.push_back(boost::asio::ip::udp::endpoint(
-            boost::asio::ip::address_v4::from_string(parsed_endpoints.bootstrap_contacts(i).ip()),
-            static_cast<uint16_t>(parsed_endpoints.bootstrap_contacts(i).port())));
+            boost::asio::ip::address_v4::from_string(parsed_endpoints.bootstrap_contacts_[i].ip_),
+            static_cast<uint16_t>(parsed_endpoints.bootstrap_contacts_[i].port_)));
       }
       g_out_of_date = false;
     }
@@ -317,13 +322,16 @@ class HandlePolicySaveBootstrapFile {
  protected:
   virtual ~HandlePolicySaveBootstrapFile() {}
   void HandleInput(const fs::path& bootstrap_file) const {
-    maidsafe::tools::protobuf::Bootstrap pb_endpoints;
+    maidsafe::detail::BootstrapCereal serialised_endpoints;
     for (auto endpoint : g_bootstrap_endpoints) {
-      maidsafe::tools::protobuf::Endpoint* pb_endpoint = pb_endpoints.add_bootstrap_contacts();
-      pb_endpoint->set_ip(endpoint.address().to_string());
-      pb_endpoint->set_port(endpoint.port());
+      serialised_endpoints.bootstrap_contacts_.emplace_back();
+      auto pos_last (serialised_endpoints.bootstrap_contacts_.size() - 1);
+      maidsafe::detail::EndpointCereal* serialised_endpoint =
+          &serialised_endpoints.bootstrap_contacts_[pos_last];
+      serialised_endpoint->ip_ = endpoint.address().to_string();
+      serialised_endpoint->port_ = endpoint.port();
     }
-    std::string contents(pb_endpoints.SerializeAsString());
+    std::string contents {maidsafe::ConvertToString(serialised_endpoints)};
     if (maidsafe::WriteFile(bootstrap_file, contents)) {
       g_out_of_date = false;
       TLOG(kGreen) << "\nSaved " << bootstrap_file << "\n\n";
