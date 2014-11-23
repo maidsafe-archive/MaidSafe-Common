@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,23 +16,44 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-option optimize_for = LITE_RUNTIME;
+#include "maidsafe/common/tools/network_viewer.h"
 
-package maidsafe.protobuf;
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
-message Version {
-  required uint64 index = 1;
-  required bytes id = 2;
-  optional uint32 forking_child_count = 3;
+namespace maidsafe {
+
+namespace test {
+
+namespace {  // anonymous
+
+using Mr_t = network_viewer::MatrixRecord;
+
+bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
+  return ref_lhs.owner_id() == ref_rhs.owner_id() && ref_lhs.matrix_ids() == ref_rhs.matrix_ids();
 }
 
+}  // anonymous namespace
 
-message StructuredDataVersions {
-  message Branch {
-    optional Version absent_parent = 1;
-    repeated Version name = 2;
-  }
-  required uint32 max_versions = 1;
-  required uint32 max_branches = 2;
-  repeated Branch branch = 3;
+TEST(NetworkViewerTest, BEH_MatrixRecordSerialisation) {
+  NodeId node_id_0 {NodeId::IdType::kRandomId};
+  NodeId node_id_1 {NodeId::IdType::kRandomId};
+  Mr_t a {node_id_0}, b {node_id_1};
+
+  // Serialisation
+  EXPECT_FALSE(a == b);
+  auto serialised_data_0(a.Serialise());
+
+  // Deserialisation
+  Mr_t c {serialised_data_0};
+  EXPECT_FALSE(b == c);
+  EXPECT_TRUE(a == c);
+
+  // Reserialise
+  auto serialised_data_1(c.Serialise());
+  EXPECT_TRUE(serialised_data_0 == serialised_data_1);
 }
+
+}  // namespace test
+
+}  // namespace maidsafe

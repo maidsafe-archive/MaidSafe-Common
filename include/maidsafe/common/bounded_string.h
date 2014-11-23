@@ -112,6 +112,19 @@ class BoundedString {
     return *this;
   }
 
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    StringType temp_str_type;
+    auto& archive = ref_archive(temp_str_type);
+    *this = BoundedString {std::move(temp_str_type)};
+    return archive;
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(string());
+  }
+
   const StringType& string() const {
     if (!valid_) {
       LOG(kError) << "class uninitialised";
