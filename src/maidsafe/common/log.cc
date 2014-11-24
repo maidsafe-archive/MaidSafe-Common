@@ -168,15 +168,21 @@ std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
   namespace range = boost::range;
 
   const auto filename_project_separator =
-      boost::find_last(entire_path, "maidsafe/");
+      boost::find_last(entire_path, "maidsafe");
 
   if (filename_project_separator.empty()) {
-    return std::make_pair(boost::string_ref(), entire_path);
+    return { boost::string_ref(), entire_path };
   }
 
-  const boost::string_ref filename(
+  boost::string_ref filename(
       filename_project_separator.end(),
       entire_path.end() - filename_project_separator.end());
+
+  if (filename.empty()) {
+    return { boost::string_ref(), entire_path };
+  }
+
+  filename.remove_prefix(1); // remove leading slash
 
   const auto dir_separator = {'/', '\\'};
   auto project =
@@ -190,11 +196,12 @@ std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
 
   project = range::find_first_of<boost::return_begin_found>(project, dir_separator);
 
-  return std::make_pair(
+  return {
       boost::string_ref(
           project.end().base(),
           project.begin().base() - project.end().base()),
-      filename);
+      filename
+  };
 }
 
 void GetColourAndLevel(char& log_level, Colour& colour, int level) {
