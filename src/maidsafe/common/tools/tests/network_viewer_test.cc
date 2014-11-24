@@ -36,16 +36,16 @@ bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
 }  // anonymous namespace
 
 TEST(NetworkViewerTest, BEH_MatrixRecordSerialisation) {
-  NodeId node_id_0 {NodeId::IdType::kRandomId};
-  NodeId node_id_1 {NodeId::IdType::kRandomId};
-  Mr_t a {node_id_0}, b {node_id_1};
+  NodeId node_id_0{NodeId::IdType::kRandomId};
+  NodeId node_id_1{NodeId::IdType::kRandomId};
+  Mr_t a{node_id_0}, b{node_id_1};
 
   // Serialisation
   EXPECT_FALSE(a == b);
   auto serialised_data_0(a.Serialise());
 
   // Deserialisation
-  Mr_t c {serialised_data_0};
+  Mr_t c{serialised_data_0};
   EXPECT_FALSE(b == c);
   EXPECT_TRUE(a == c);
 

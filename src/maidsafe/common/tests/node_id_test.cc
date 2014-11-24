@@ -20,7 +20,8 @@
 
 #include <algorithm>
 #include <bitset>
-#include <sstream>#include <string>
+#include <sstream>
+#include <string>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -358,25 +359,24 @@ TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
   }
 }
 
-TEST(NodeIdTest, BEH_Serialisation) {
+TEST_F(NodeIdTest, BEH_Serialisation) {
   // Invalid Deserialisation
-  NodeId a{NodeId::IdType::kRandomId};
-  std::string raw_id{a.string()};
+  std::string raw_id{id1_.string()};
 
   EXPECT_EQ(NodeId::kSize, raw_id.size());
 
   raw_id.erase(raw_id.size() - 1);
-  NodeId b{NodeId::IdType::kRandomId};
-
-  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), b), std::exception);
+  NodeId parsed;
+  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), parsed),
+               common_error);
 
   // Valid Serialisation
   std::string serialised_str;
-  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(a));
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(id1_));
 
   // Valid Deserialisation
-  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, b));
-  EXPECT_TRUE(a == b);
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, parsed));
+  EXPECT_EQ(id1_, parsed);
 }
 
 TEST_F(NodeIdTest, BEH_DebugId) {

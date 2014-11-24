@@ -32,7 +32,7 @@ template <typename Enum>
 using SerialisableTypeTag = Enum;
 
 template <SerialisableTypeTag Tag, typename Value, typename NextNode>
-struct CompileTimeMapper{};
+struct CompileTimeMapper {};
 struct ERROR_given_tag_is_not_mapped_to_a_type;
 
 template <SerialisableTypeTag Tag, typename Value>
