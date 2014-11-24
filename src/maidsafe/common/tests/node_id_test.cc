@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <bitset>
 #include <sstream>
+#include <string>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -369,6 +370,26 @@ TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
     EXPECT_EQ((NodeId::kSize * 8) - i - 1, id1_.CommonLeadingBits(modified_id));
     id1_as_binary.flip(i);
   }
+}
+
+TEST_F(NodeIdTest, BEH_Serialisation) {
+  // Invalid Deserialisation
+  std::string raw_id{id1_.string()};
+
+  EXPECT_EQ(NodeId::kSize, raw_id.size());
+
+  raw_id.erase(raw_id.size() - 1);
+  NodeId parsed;
+  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), parsed),
+               common_error);
+
+  // Valid Serialisation
+  std::string serialised_str;
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(id1_));
+
+  // Valid Deserialisation
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, parsed));
+  EXPECT_EQ(id1_, parsed);
 }
 
 TEST_F(NodeIdTest, BEH_DebugId) {

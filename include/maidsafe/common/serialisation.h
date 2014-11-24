@@ -16,123 +16,94 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-/* To use this component there are several items to be created. An example of classes One Two Zero
 
-enum class TypeTag: unsigned char {
-  Zero,
-  One,
-  Two
-};
-
-//--------------------------------------------------------------------------------------
-struct Zero;
-struct One;
-struct Two;
-
-using Map = GetMap<
-  Pair<TypeTag::Zero, Zero>,
-  Pair<TypeTag::One, One>,
-  Pair<TypeTag::Two, Two>
->::Map;
-
-template<TypeTag Tag>
-using CustomType = typename Find<Map, Tag>::ResultCustomType;
-A typical class would look like
-
-struct Zero {
-  template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(i_data, c_data, sz_data);
-  }
-
-  std::ostream& Print(std::ostream& out_stream) const {
-    out_stream << "[\n\t" << i_data
-               << "\n\t" << c_data
-               << "\n\t" << sz_data
-               << "\n]\n\n";
-    return out_stream;
-  }
-
-  int    i_data       {};
-  char   c_data       {'Z'};
-  std::string sz_data {"Zero"};
-
-  const TypeTag kTypeTag {TypeTag::Zero};
-};
-
-*/
+/*
+ * There two flavours of serialization and de-serialization functions here. One that works on
+ * strings and the other that works on streams. This is because the string ones create
+ * stringstreams as local variables and stringstreams being locale aware have poor contruction
+ * speed. Thus if the client code wants to provide streams himself so that he can cache and reuse
+ * the streams, the functions which directly operate on streams can be used.
+ */
 
 #ifndef MAIDSAFE_COMMON_SERIALISATION_H_
 #define MAIDSAFE_COMMON_SERIALISATION_H_
 
-#include <sstream>
 #include <string>
 
 #include "cereal/archives/binary.hpp"
-#include "cereal/types/string.hpp"
+#include "cereal/types/map.hpp"
 #include "cereal/types/vector.hpp"
+#include "cereal/types/string.hpp"
+#include "cereal/types/boost_optional.hpp"
 
 namespace maidsafe {
 
-enum class SerialisableTypeTag : unsigned char;
-
-template <SerialisableTypeTag Tag, typename Value, typename NextNode>
-struct CompileTimeMapper;
-struct ERROR_given_tag_is_not_mapped_to_a_type;
-
-template <SerialisableTypeTag Tag, typename Value>
-struct Serialisable;
-
-template <typename...>
-struct GetMap;
-
-template <SerialisableTypeTag Tag, typename Value, typename... Types>
-struct GetMap<Serialisable<Tag, Value>, Types...> {
-  using Map = CompileTimeMapper<Tag, Value, typename GetMap<Types...>::Map>;
-};
-
-template <SerialisableTypeTag Tag, typename Value>
-struct GetMap<Serialisable<Tag, Value>> {
-  using Map = CompileTimeMapper<Tag, Value, ERROR_given_tag_is_not_mapped_to_a_type>;
-};
-
-template <typename, SerialisableTypeTag>
-struct Find;
-
-template <SerialisableTypeTag Tag, typename Value, typename NextNode, SerialisableTypeTag TagToFind>
-struct Find<CompileTimeMapper<Tag, Value, NextNode>, TagToFind> {
-  using ResultCustomType = typename Find<NextNode, TagToFind>::ResultCustomType;
-};
-
-template <SerialisableTypeTag TagToFind, typename Value, typename NextNode>
-struct Find<CompileTimeMapper<TagToFind, Value, NextNode>, TagToFind> {
-  using ResultCustomType = Value;
-};
-
-template <typename TypeToSerialise>
-std::string Serialise(const TypeToSerialise& obj_to_serialise) {
-  std::stringstream string_stream;
-
-  {
-    cereal::BinaryOutputArchive output_bin_archive{string_stream};
-    output_bin_archive(obj_to_serialise.kSerialisableTypeTag,
-                       std::forward<TypeToSerialise>(obj_to_serialise));
-  }
-
-  return string_stream.str();
+template<typename... TypesToSerialise>
+inline std::ostream& ConvertToStream(std::ostream& ref_dest_stream,
+                                     TypesToSerialise&&... ref_source_objs) {
+  cereal::BinaryOutputArchive output_archive {ref_dest_stream};
+  output_archive(std::forward<TypesToSerialise>(ref_source_objs)...);
+  return ref_dest_stream;
 }
 
-inline SerialisableTypeTag TypeFromStream(std::stringstream& ref_binary_stream) {
-  unsigned char tag{255};
+template<typename... TypesToSerialise>
+inline std::string ConvertToString(std::stringstream& ref_dest_stream,
+                                   TypesToSerialise&&... ref_source_objs) {
+  return static_cast<std::stringstream&>(
+        ConvertToStream(ref_dest_stream,
+                        std::forward<TypesToSerialise>(ref_source_objs)...)).str();
+}
 
-  {
-    cereal::BinaryInputArchive input_bin_archive{ref_binary_stream};
-    input_bin_archive(tag);
-  }
+template<typename... TypesToSerialise>
+inline std::string ConvertToString(TypesToSerialise&&... ref_source_objs) {
+  std::stringstream str_stream;
+  return ConvertToString(str_stream, std::forward<TypesToSerialise>(ref_source_objs)...);
+}
 
-  return static_cast<SerialisableTypeTag>(tag);
+template<typename... DeSerialiseToTypes>
+inline void ConvertFromStream(std::istream& ref_source_stream,
+                              DeSerialiseToTypes&... ref_dest_objs) {
+  cereal::BinaryInputArchive input_archive {ref_source_stream};
+  input_archive(ref_dest_objs...);
+}
+
+template<typename DeSerialiseToType>
+inline DeSerialiseToType& ConvertFromStream(std::istream& ref_source_stream,
+                                            DeSerialiseToType& ref_dest_obj) {
+  cereal::BinaryInputArchive input_archive {ref_source_stream};
+  input_archive(ref_dest_obj);
+  return ref_dest_obj;
+}
+
+template<typename DeSerialiseToType>
+inline DeSerialiseToType ConvertFromStream(std::istream& ref_source_stream) {
+  cereal::BinaryInputArchive input_archive {ref_source_stream};
+  DeSerialiseToType dest_obj;
+  input_archive(dest_obj);
+  return dest_obj;
+}
+
+template<typename... DeSerialiseToTypes>
+inline void ConvertFromString(const std::string& ref_source_string,
+                              DeSerialiseToTypes&... ref_dest_objs) {
+  std::stringstream str_stream {ref_source_string};
+  ConvertFromStream(str_stream, ref_dest_objs...);
+}
+
+template<typename DeSerialiseToType>
+inline DeSerialiseToType& ConvertFromString(const std::string& ref_source_string,
+                                            DeSerialiseToType& ref_dest_obj) {
+  std::stringstream str_stream {ref_source_string};
+  return ConvertFromStream(str_stream, ref_dest_obj);
+}
+
+template<typename DeSerialiseToType>
+inline DeSerialiseToType ConvertFromString(const std::string& ref_source_string) {
+  std::stringstream str_stream {ref_source_string};
+  return ConvertFromStream<DeSerialiseToType>(str_stream);
 }
 
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_SERIALISATION_H_
+
