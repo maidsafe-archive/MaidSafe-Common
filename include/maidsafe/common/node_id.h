@@ -71,6 +71,21 @@ class NodeId {
   // Bitwise XOR distance between two IDs.  Will throw if IsValid() is false for '*this' or 'other'.
   NodeId& operator^=(const NodeId& other);
 
+  // Required by Cereal
+  template <typename Archive>
+  Archive& load(Archive& ref_archive) {
+    std::string temp;
+    auto& archive = ref_archive(temp);
+    *this = NodeId{std::move(temp)};
+    return archive;
+  }
+
+  // Required by Cereal
+  template <typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(raw_id_);
+  }
+
   // Returns true if both 'raw_id_'s are equal or if IsValid() is false for both.  Doesn't throw.
   friend bool operator==(const NodeId& lhs, const NodeId& rhs);
 
