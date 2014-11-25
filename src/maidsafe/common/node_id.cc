@@ -28,6 +28,10 @@
 
 namespace maidsafe {
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const size_t NodeId::kSize;
+#endif
+
 #ifdef NDEBUG
 #define INIT_DEBUG_NODE_ID
 #else
