@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <string>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -378,6 +379,27 @@ TEST(NodeIdTest, BEH_CommonLeadingBits) {
     EXPECT_EQ((NodeId::kSize * 8) - i - 1, kThisNode.CommonLeadingBits(modified_id));
     id_as_binary.flip(i);
   }
+}
+
+TEST(NodeIdTest, BEH_Serialisation) {
+  // Invalid Deserialisation
+  NodeId a {NodeId::IdType::kRandomId};
+  std::string raw_id {a.string()};
+
+  EXPECT_EQ(NodeId::kSize, raw_id.size());
+
+  raw_id.erase(raw_id.size() - 1);
+  NodeId b {NodeId::IdType::kRandomId};
+
+  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), b), std::exception);
+
+  // Valid Serialisation
+  std::string serialised_str;
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(a));
+
+  // Valid Deserialisation
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, b));
+  EXPECT_TRUE(a == b);
 }
 
 }  // namespace test

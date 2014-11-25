@@ -21,7 +21,8 @@
 #include "boost/throw_exception.hpp"
 
 #include "maidsafe/common/error_categories.h"
-#include "maidsafe/common/error.pb.h"
+
+#include "maidsafe/common/serialisation.h"
 
 namespace maidsafe {
 
@@ -99,16 +100,15 @@ maidsafe_error IntToError(int value) {
 }
 
 maidsafe_error::serialised_type Serialise(maidsafe_error error) {
-  protobuf::maidsafe_error proto_copy;
-  proto_copy.set_value(ErrorToInt(error));
-  return maidsafe_error::serialised_type{ proto_copy.SerializeAsString() };
+  error.value_ = ErrorToInt(error);
+  return maidsafe_error::serialised_type{ ConvertToString(error) };
 }
 
 maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
-  protobuf::maidsafe_error proto_copy;
-  if (!proto_copy.ParseFromString(serialised_error.data))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  return IntToError(static_cast<int>(proto_copy.value()));
+  maidsafe_error copy {std::error_code {}, std::string {}};
+  try { ConvertFromString(serialised_error.data, copy); }
+  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));  }
+  return IntToError(static_cast<int>(copy.value_));
 }
 
 std::error_code make_error_code(CommonErrors code) {
