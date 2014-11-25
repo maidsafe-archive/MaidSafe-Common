@@ -16,21 +16,17 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include "maidsafe/common/ipc.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/utils.h"
-namespace bi = boost::interprocess;
 
 int main(int argc, char* argv[]) {
   int args_required(4);
-  if (argc != args_required) {
-    std::cout << "Invalid args." << argc << "  Returning 1.\n";
+  if (argc != args_required)
     return -1;
-  }
 
   const std::string TestName(maidsafe::HexDecode(argv[1]));
   const std::string TestAnswer(argv[3]);
@@ -44,12 +40,9 @@ int main(int argc, char* argv[]) {
 
     if (TestAnswer !=
         maidsafe::HexEncode(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(answer).string())) {
-      std::cout << "Failed  Returning 2.\n";
       return -2;
     }
-  }
-  catch (...) {
-    std::cout << "exeption  Returning 3.\n";
+  } catch (...) {
     return -3;
   }
 
