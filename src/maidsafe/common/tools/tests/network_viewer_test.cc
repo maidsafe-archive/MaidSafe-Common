@@ -36,8 +36,8 @@ bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
 }  // anonymous namespace
 
 TEST(NetworkViewerTest, BEH_MatrixRecordSerialisation) {
-  NodeId node_id_0{NodeId::IdType::kRandomId};
-  NodeId node_id_1{NodeId::IdType::kRandomId};
+  NodeId node_id_0{RandomString(NodeId::kSize)};
+  NodeId node_id_1{RandomString(NodeId::kSize)};
   Mr_t a{node_id_0}, b{node_id_1};
 
   // Serialisation
