@@ -65,7 +65,6 @@ namespace detail {
     typedef typename std::add_const<Right>::type BoundRight;
 
    public:
-
     OstreamBinder(BoundLeft& left, BoundRight& right)
       : left_(left),
         right_(right) {
@@ -76,7 +75,6 @@ namespace detail {
     }
 
    private:
-
     BoundLeft& left_;
     BoundRight& right_;
   };
@@ -84,7 +82,6 @@ namespace detail {
   template<>
   class OstreamBinder<void, void> {
    public:
-
     void Serialise(std::ostream&) const {}
   };
 
@@ -140,7 +137,7 @@ namespace detail {
     const char* const file_;
     const int level_;
   };
-}
+}  // namespace detail
 
 // Convert to map<string, int, std::less<>> when C++14 mode is enabled
 typedef std::map<std::string, int> FilterMap;
@@ -166,7 +163,8 @@ const int kVerbose = -1, kInfo = 0, kSuccess = 1, kWarning = 2, kError = 3, kAlw
   maidsafe::log::detail::LogMessage(__FILE__, maidsafe::log::level) =               \
       maidsafe::log::detail::OstreamBinder<void, void>() << ":" << __LINE__ << "] "
 #else
-#define LOG(_) maidsafe::log::detail::NullStream() = maidsafe::log::detail::OstreamBinder<void, void>()
+#define LOG(_) maidsafe::log::detail::NullStream() = \
+    maidsafe::log::detail::OstreamBinder<void, void>()
 #endif
 #define TLOG(colour) maidsafe::log::TestLogMessage(maidsafe::log::Colour::colour).MessageStream()
 

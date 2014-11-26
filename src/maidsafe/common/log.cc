@@ -182,7 +182,7 @@ std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
     return { boost::string_ref(), entire_path };
   }
 
-  filename.remove_prefix(1); // remove leading slash
+  filename.remove_prefix(1);  // remove leading slash
 
   const auto dir_separator = {'/', '\\'};
   auto project =
@@ -452,7 +452,7 @@ void LogMessage::Log(const std::string& project, std::string message) const {
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
 
-} // namespace detail
+}  // namespace detail
 
 
 // ===================================== TestLogMessage ============================================
