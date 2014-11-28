@@ -71,7 +71,7 @@ namespace detail {
     }
 
     void Serialise(std::ostream& out) const {
-      out << left_ << right_;
+      out << (left_ << right_);
     }
 
    private:
