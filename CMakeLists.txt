@@ -82,6 +82,7 @@ add_dependencies(maidsafe_common boost_process)
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src/third_party_libs/header_only
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
