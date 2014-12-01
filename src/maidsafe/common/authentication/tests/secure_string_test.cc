@@ -18,7 +18,7 @@
 
 #include "maidsafe/common/authentication/detail/secure_string.h"
 
-#include "boost/regex.hpp"
+#include <regex>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -296,7 +296,7 @@ TEST(SecureStringTest, BEH_CheckPasswordIsValidForAllChars) {
   for (size_t i(0); i != 23; ++i)
     EXPECT_NO_THROW(password.Insert(i, static_cast<char>(RandomInt32())));
 
-  ASSERT_TRUE(password.IsValid(boost::regex(".")));
+  ASSERT_TRUE(password.IsValid(std::regex(".")));
 
   EXPECT_NO_THROW(password.Finalise());
 }
@@ -338,13 +338,13 @@ TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
   EXPECT_NO_THROW(pin.Finalise());
 
   ASSERT_EQ(SafeString("a123"), pin.string());
-  EXPECT_TRUE(pin.IsValid(boost::regex(".")));
+  EXPECT_TRUE(pin.IsValid(std::regex(".")));
   EXPECT_THROW(pin.Value(), std::exception);
 
   EXPECT_NO_THROW(pin.Remove(0, 1));
   EXPECT_NO_THROW(pin.Insert(0, '0'));
   EXPECT_NO_THROW(pin.Finalise());
-  EXPECT_TRUE(pin.IsValid(boost::regex(".")));
+  EXPECT_TRUE(pin.IsValid(std::regex(".")));
 
   EXPECT_NO_THROW(pin.Finalise());
   ASSERT_EQ(123, pin.Value());
