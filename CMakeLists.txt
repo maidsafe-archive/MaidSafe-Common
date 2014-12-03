@@ -53,6 +53,9 @@ ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
+ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
+ms_glob_dir(CommonSerialisationTests ${CommonSourcesDir}/serialisation/tests "Serialisation Tests")
+
 ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
 ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
@@ -76,6 +79,7 @@ ms_add_static_library(maidsafe_common
     ${CommonAuthenticationDetailAllFiles}
     ${CommonDataStoresAllFiles}
     ${CommonDataTypesAllFiles}
+    ${CommonSerialisationAllFiles}
     ${CommonTcpAllFiles})
 add_dependencies(maidsafe_common boost_process)
 
@@ -154,7 +158,12 @@ if(INCLUDE_TESTS)
   target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles} ${CommonDataTypesTestsAllFiles})
+  ms_add_executable(test_common "Tests/Common"
+      ${CommonTestsAllFiles}
+      ${CommonAuthenticationTestsAllFiles}
+      ${CommonTcpTestsAllFiles}
+      ${CommonDataTypesTestsAllFiles}
+      ${CommonSerialisationTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
 

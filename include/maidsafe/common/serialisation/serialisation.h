@@ -25,8 +25,8 @@
  * the streams, the functions which directly operate on streams can be used.
  */
 
-#ifndef MAIDSAFE_COMMON_SERIALISATION_H_
-#define MAIDSAFE_COMMON_SERIALISATION_H_
+#ifndef MAIDSAFE_COMMON_SERIALISATION_SERIALISATION_H_
+#define MAIDSAFE_COMMON_SERIALISATION_SERIALISATION_H_
 
 #include <string>
 
@@ -38,72 +38,71 @@
 
 namespace maidsafe {
 
-template<typename... TypesToSerialise>
+template <typename... TypesToSerialise>
 inline std::ostream& ConvertToStream(std::ostream& ref_dest_stream,
                                      TypesToSerialise&&... ref_source_objs) {
-  cereal::BinaryOutputArchive output_archive {ref_dest_stream};
+  cereal::BinaryOutputArchive output_archive{ref_dest_stream};
   output_archive(std::forward<TypesToSerialise>(ref_source_objs)...);
   return ref_dest_stream;
 }
 
-template<typename... TypesToSerialise>
+template <typename... TypesToSerialise>
 inline std::string ConvertToString(std::stringstream& ref_dest_stream,
                                    TypesToSerialise&&... ref_source_objs) {
   return static_cast<std::stringstream&>(
-        ConvertToStream(ref_dest_stream,
-                        std::forward<TypesToSerialise>(ref_source_objs)...)).str();
+             ConvertToStream(ref_dest_stream, std::forward<TypesToSerialise>(ref_source_objs)...))
+      .str();
 }
 
-template<typename... TypesToSerialise>
+template <typename... TypesToSerialise>
 inline std::string ConvertToString(TypesToSerialise&&... ref_source_objs) {
   std::stringstream str_stream;
   return ConvertToString(str_stream, std::forward<TypesToSerialise>(ref_source_objs)...);
 }
 
-template<typename... DeSerialiseToTypes>
+template <typename... DeSerialiseToTypes>
 inline void ConvertFromStream(std::istream& ref_source_stream,
                               DeSerialiseToTypes&... ref_dest_objs) {
-  cereal::BinaryInputArchive input_archive {ref_source_stream};
+  cereal::BinaryInputArchive input_archive{ref_source_stream};
   input_archive(ref_dest_objs...);
 }
 
-template<typename DeSerialiseToType>
+template <typename DeSerialiseToType>
 inline DeSerialiseToType& ConvertFromStream(std::istream& ref_source_stream,
                                             DeSerialiseToType& ref_dest_obj) {
-  cereal::BinaryInputArchive input_archive {ref_source_stream};
+  cereal::BinaryInputArchive input_archive{ref_source_stream};
   input_archive(ref_dest_obj);
   return ref_dest_obj;
 }
 
-template<typename DeSerialiseToType>
+template <typename DeSerialiseToType>
 inline DeSerialiseToType ConvertFromStream(std::istream& ref_source_stream) {
-  cereal::BinaryInputArchive input_archive {ref_source_stream};
+  cereal::BinaryInputArchive input_archive{ref_source_stream};
   DeSerialiseToType dest_obj;
   input_archive(dest_obj);
   return dest_obj;
 }
 
-template<typename... DeSerialiseToTypes>
+template <typename... DeSerialiseToTypes>
 inline void ConvertFromString(const std::string& ref_source_string,
                               DeSerialiseToTypes&... ref_dest_objs) {
-  std::stringstream str_stream {ref_source_string};
+  std::stringstream str_stream{ref_source_string};
   ConvertFromStream(str_stream, ref_dest_objs...);
 }
 
-template<typename DeSerialiseToType>
+template <typename DeSerialiseToType>
 inline DeSerialiseToType& ConvertFromString(const std::string& ref_source_string,
                                             DeSerialiseToType& ref_dest_obj) {
-  std::stringstream str_stream {ref_source_string};
+  std::stringstream str_stream{ref_source_string};
   return ConvertFromStream(str_stream, ref_dest_obj);
 }
 
-template<typename DeSerialiseToType>
+template <typename DeSerialiseToType>
 inline DeSerialiseToType ConvertFromString(const std::string& ref_source_string) {
-  std::stringstream str_stream {ref_source_string};
+  std::stringstream str_stream{ref_source_string};
   return ConvertFromStream<DeSerialiseToType>(str_stream);
 }
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_SERIALISATION_H_
-
+#endif  // MAIDSAFE_COMMON_SERIALISATION_SERIALISATION_H_
