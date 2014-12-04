@@ -93,7 +93,11 @@ TEST(LruCacheTest, BEH_TimeAndSizeTest) {
   cache.Add(1, 1);
   // are we trimming old stale data even
   EXPECT_EQ(cache.size(), 1);
+}
 
+TEST(LruCacheTest, BEH_FilterTimeAndSizeTest) {
+  std::chrono::milliseconds time(100);
+  auto size(10);
   LruCache<int, void> filter(size, time);
 
   for (int i(0); i < 1000; ++i) {
