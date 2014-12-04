@@ -36,7 +36,7 @@ template <SerialisableTypeTag Tag, typename Value, typename NextNode>
 struct CompileTimeMapper {};
 struct ERROR_given_tag_is_not_mapped_to_a_type;
 
-template <uint16_t Tag, typename Value>
+template <SerialisableTypeTag Tag, typename Value>
 struct Serialisable;
 
 template <typename...>
@@ -52,7 +52,7 @@ struct GetMap<Serialisable<Tag, Value>> {
   using Map = CompileTimeMapper<Tag, Value, ERROR_given_tag_is_not_mapped_to_a_type>;
 };
 
-template <typename, uint16_t>
+template <typename, SerialisableTypeTag>
 struct Find;
 
 template <SerialisableTypeTag Tag, typename Value, typename NextNode, SerialisableTypeTag TagToFind>
