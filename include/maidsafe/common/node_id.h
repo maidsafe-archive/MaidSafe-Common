@@ -64,9 +64,6 @@ class NodeId {
   // False for default constructed NodeId, otherwise true.
   bool IsValid() const;
 
-  // DEPRECATED - Use 'IsValid' instead.  True for default constructed NodeId, otherwise false.
-  bool IsZero() const { return !IsValid(); }
-
   // Number of most significant bits which are common to this ID and 'other'.  Will throw if
   // IsValid() is false for '*this' or 'other'.
   int CommonLeadingBits(const NodeId& other) const;
