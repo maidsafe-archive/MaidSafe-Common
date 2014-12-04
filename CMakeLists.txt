@@ -76,7 +76,6 @@ list(REMOVE_ITEM CommonTestsAllFiles ${IpcChildProcess} ${ConfigTestFile} ${Vlog
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 # Common library
-message("\${CommonDataStoresAllFiles} - ${CommonDataStoresAllFiles}")
 ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
     ${CommonAuthenticationAllFiles}
