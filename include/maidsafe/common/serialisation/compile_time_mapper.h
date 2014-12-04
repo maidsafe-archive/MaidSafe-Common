@@ -28,8 +28,7 @@
 
 namespace maidsafe {
 
-template <typename Enum>
-using SerialisableTypeTag = Enum;
+enum class SerialisableTypeTag : char;
 
 template <SerialisableTypeTag Tag, typename Value, typename NextNode>
 struct CompileTimeMapper {};

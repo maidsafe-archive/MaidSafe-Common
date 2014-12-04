@@ -136,7 +136,7 @@ TEST(NodeIdBasicTest, BEH_HashConstructor) {
 
 TEST(NodeIdBasicTest, BEH_EncodingConstructor) {
   auto known_raw = std::string(NodeId::kSize, 0);
-  for (char c = 0; c < NodeId::kSize; ++c)
+  for (char c = 0; c < static_cast<char>(NodeId::kSize); ++c)
     known_raw.at(static_cast<uint8_t>(c)) = c;
   for (int i = 0; i < 3; ++i) {
     auto rand_str = RandomString(NodeId::kSize);
@@ -312,7 +312,7 @@ TEST_F(NodeIdTest, BEH_Operators) {
   EXPECT_THROW(invalid_id_ ^ invalid_id_, common_error);
 
   // operator<<
-  auto sstream = std::stringstream{};
+  std::stringstream sstream;
   sstream << id1_ << invalid_id_;
   EXPECT_EQ(DebugId(id1_) + "Invalid ID", sstream.str());
 }
@@ -341,7 +341,20 @@ TEST_F(NodeIdTest, BEH_CloserToTarget) {
   EXPECT_THROW(NodeId::CloserToTarget(id1_, invalid_id_, target), common_error);
   EXPECT_THROW(NodeId::CloserToTarget(id1_, id2_, invalid_id_), common_error);
 }
+TEST_F(NodeIdTest, FUNC_CloserToTarget) {
+  auto target = NodeId{RandomString(NodeId::kSize)};
+  std::vector<NodeId> nodes(100000, NodeId(RandomString(NodeId::kSize)));
+  std::sort(std::begin(nodes), std::end(nodes), [target](const NodeId& lhs, const NodeId& rhs) {
+    return NodeId::CloserToTarget(lhs, rhs, target);
+  });
 
+  auto closest = nodes.front();
+
+  for (const auto& node : nodes) {
+    // not to worry cpmparing same nodes will not make one closer
+    EXPECT_FALSE(NodeId::CloserToTarget(node, closest, target));
+  }
+}
 TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
   // Check for two equal IDs
   auto copy_of_id1 = NodeId{id1_};
