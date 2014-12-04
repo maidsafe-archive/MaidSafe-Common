@@ -83,7 +83,7 @@ TEST(LruCacheTest, BEH_TimeAndSizeTest) {
     if (i < size)
       EXPECT_EQ(cache.size(), i);
     cache.Add(i, i);
-    // enusre we maintian max size regardless of time
+    // ensure we maintian max size regardless of time
     if (i < size)
       EXPECT_EQ(cache.size(), i + 1);
     else
@@ -99,7 +99,7 @@ TEST(LruCacheTest, BEH_TimeAndSizeStructValueTest) {
   std::chrono::milliseconds time(100);
   auto size(100);
   struct temp {
-    temp() : a{0}, b{"a string"}, id(NodeId(RandomString(NodeId::kSize))) {}
+    temp() : a{0}, b("a string"), id(NodeId(RandomString(NodeId::kSize))) {}
     int a;
     std::string b;
     NodeId id;
@@ -113,7 +113,7 @@ TEST(LruCacheTest, BEH_TimeAndSizeStructValueTest) {
     if (i < size)
       EXPECT_EQ(cache.size(), i);
     cache.Add(temp(), 3);
-    // enusre we maintian max size regardless of time
+    // ensure we maintian max size regardless of time
     if (i < size)
       EXPECT_EQ(cache.size(), i + 1);
     else
