@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_COMMON_SERIALISATION_COMPILE_TIME_MAPPER_H_
 #define MAIDSAFE_COMMON_SERIALISATION_COMPILE_TIME_MAPPER_H_
 
+#include <cstdint>
+#include <limits>
 #include <sstream>
 #include <string>
 
@@ -28,13 +30,13 @@
 
 namespace maidsafe {
 
-enum class SerialisableTypeTag : char;
+using SerialisableTypeTag = uint16_t;
 
 template <SerialisableTypeTag Tag, typename Value, typename NextNode>
 struct CompileTimeMapper {};
 struct ERROR_given_tag_is_not_mapped_to_a_type;
 
-template <SerialisableTypeTag Tag, typename Value>
+template <uint16_t Tag, typename Value>
 struct Serialisable;
 
 template <typename...>
@@ -50,7 +52,7 @@ struct GetMap<Serialisable<Tag, Value>> {
   using Map = CompileTimeMapper<Tag, Value, ERROR_given_tag_is_not_mapped_to_a_type>;
 };
 
-template <typename, SerialisableTypeTag>
+template <typename, uint16_t>
 struct Find;
 
 template <SerialisableTypeTag Tag, typename Value, typename NextNode, SerialisableTypeTag TagToFind>
@@ -66,26 +68,21 @@ struct Find<CompileTimeMapper<TagToFind, Value, NextNode>, TagToFind> {
 template <typename TypeToSerialise>
 std::string Serialise(const TypeToSerialise& obj_to_serialise) {
   std::stringstream string_stream;
-
   {
     cereal::BinaryOutputArchive output_bin_archive{string_stream};
     output_bin_archive(obj_to_serialise.kSerialisableTypeTag,
                        std::forward<TypeToSerialise>(obj_to_serialise));
   }
-
   return string_stream.str();
 }
 
-template <typename Enum, typename UnderlyingEnumType>
-Enum TypeFromStream(std::stringstream& ref_binary_stream) {
-  UnderlyingEnumType tag{-1};
-
+SerialisableTypeTag TypeFromStream(std::stringstream& ref_binary_stream) {
+  SerialisableTypeTag tag{std::numeric_limits<SerialisableTypeTag>::max()};
   {
     cereal::BinaryInputArchive input_bin_archive{ref_binary_stream};
     input_bin_archive(tag);
   }
-
-  return static_cast<Enum>(tag);
+  return tag;
 }
 
 }  // namespace maidsafe

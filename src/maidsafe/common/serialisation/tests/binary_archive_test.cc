@@ -29,10 +29,11 @@ namespace maidsafe {
 
 namespace test {
 
-enum class MessageTypeTag : uint16_t { kPing, kPingResponse };
+enum class MessageTypeTag : SerialisableTypeTag { kPing, kPingResponse };
 
 struct Ping {
-  const MessageTypeTag kSerialisableTypeTag = MessageTypeTag::kPing;
+  static const SerialisableTypeTag kSerialisableTypeTag =
+      static_cast<SerialisableTypeTag>(MessageTypeTag::kPing);
   std::string data = "Ping";
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -40,8 +41,11 @@ struct Ping {
   }
 };
 
+const SerialisableTypeTag Ping::kSerialisableTypeTag;
+
 struct PingResponse {
-  const MessageTypeTag kSerialisableTypeTag = MessageTypeTag::kPingResponse;
+  static const SerialisableTypeTag kSerialisableTypeTag =
+      static_cast<SerialisableTypeTag>(MessageTypeTag::kPingResponse);
   std::string data = "PingResponse";
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -49,11 +53,13 @@ struct PingResponse {
   }
 };
 
-using MessageMap = GetMap<Serialisable<MessageTypeTag::kPing, Ping>,
-                          Serialisable<MessageTypeTag::kPingResponse, PingResponse>>::Map;
+const SerialisableTypeTag PingResponse::kSerialisableTypeTag;
+
+using MessageMap = GetMap<Serialisable<Ping::kSerialisableTypeTag, Ping>,
+                          Serialisable<PingResponse::kSerialisableTypeTag, PingResponse>> ::Map;
 
 template <MessageTypeTag Tag>
-using Message = typename Find<MessageMap, Tag>::ResultCustomType;
+using Message = typename Find<MessageMap, static_cast<SerialisableTypeTag>(Tag)>::ResultCustomType;
 
 template <typename TypeToSerialise>
 std::vector<unsigned char> Serialise(TypeToSerialise obj_to_serialise) {
@@ -66,14 +72,13 @@ std::vector<unsigned char> Serialise(TypeToSerialise obj_to_serialise) {
   return vector_stream.vector();
 }
 
-template <typename Enum>
-Enum TypeFromStream(InputVectorStream& binary_stream) {
-  auto tag = static_cast<typename std::underlying_type<Enum>::type>(-1);
+SerialisableTypeTag TypeFromStream(InputVectorStream& binary_stream) {
+  SerialisableTypeTag tag{std::numeric_limits<SerialisableTypeTag>::max()};
   {
     BinaryInputArchive input_bin_archive(binary_stream);
     input_bin_archive(tag);
   }
-  return static_cast<Enum>(tag);
+  return tag;
 }
 
 template <MessageTypeTag Tag>
@@ -89,15 +94,15 @@ Message<Tag> Parse(InputVectorStream& binary_stream) {
 TEST(BinaryArchiveTest, BEH_Basic) {
   auto serialised_message = Serialise(Ping());
 
-  InputVectorStream binary_stream{ serialised_message };
-  MessageTypeTag tag = TypeFromStream<MessageTypeTag>(binary_stream);
+  InputVectorStream binary_stream{serialised_message};
+  MessageTypeTag tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
   ASSERT_EQ(MessageTypeTag::kPing, tag);
   auto parsed_ping = Parse<MessageTypeTag::kPing>(binary_stream);
   EXPECT_EQ("Ping", parsed_ping.data);
 
   serialised_message = Serialise(PingResponse());
   binary_stream.swap_vector(serialised_message);
-  tag = TypeFromStream<MessageTypeTag>(binary_stream);
+  tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
   ASSERT_EQ(MessageTypeTag::kPingResponse, tag);
   auto parsed_ping_response = Parse<MessageTypeTag::kPingResponse>(binary_stream);
   EXPECT_EQ("PingResponse", parsed_ping_response.data);
