@@ -31,6 +31,10 @@
 #include <mutex>
 #include <vector>
 
+#ifdef __ANDROID__
+#include "android/log.h"
+#endif
+
 #include "boost/algorithm/string/case_conv.hpp"
 #include "boost/algorithm/string/find.hpp"
 #include "boost/algorithm/string/replace.hpp"
@@ -247,11 +251,40 @@ std::string GetColouredLogEntry(char log_level) {
   return oss.str();
 }
 
-void SendToConsole(ColourMode colour_mode, Colour colour, const std::string& coloured_log_entry,
-                   const std::string& plain_log_entry) {
+void SendToConsole(ColourMode colour_mode, Colour colour, int level,
+                   const std::string& coloured_log_entry, const std::string& plain_log_entry) {
   if (!Logging::Instance().LogToConsole())
     return;
 
+#ifdef __ANDROID__
+  int android_level(0);
+  switch (level) {
+    case kVerbose:
+      android_level = 2;
+      break;
+    case kInfo:
+      android_level = 4;
+      break;
+    case kSuccess:
+      android_level = 3;
+      break;
+    case kWarning:
+      android_level = 5;
+      break;
+    case kError:
+      android_level = 6;
+      break;
+    case kAlways:
+      android_level = 1;
+      break;
+    default:
+      android_level = 0;
+  }
+  __android_log_print(android_level, "MAIDSAFE_LOG", "%s",
+                      (coloured_log_entry.substr(2) + plain_log_entry).c_str());
+  static_cast<void>(colour_mode);
+  static_cast<void>(colour);
+#else
   if (colour_mode == ColourMode::kFullLine) {
     ColouredPrint(colour, coloured_log_entry + plain_log_entry);
   } else if (colour_mode == ColourMode::kPartialLine) {
@@ -260,14 +293,21 @@ void SendToConsole(ColourMode colour_mode, Colour colour, const std::string& col
   } else {
     printf("%s%s", coloured_log_entry.c_str(), plain_log_entry.c_str());
   }
+  static_cast<void>(level);
+#endif
   fflush(stdout);
 }
 
 po::options_description SetProgramOptions(std::string& config_file, bool& no_log_to_console,
                                           std::string& log_folder, bool& no_async,
                                           int& colour_mode) {
+#ifdef __ANDROID__
+  fs::path inipath;
+  fs::path logpath;
+#else
   fs::path inipath(fs::temp_directory_path() / "maidsafe_log.ini");
   fs::path logpath(fs::temp_directory_path() / "maidsafe_logs");
+#endif
   po::options_description log_config("Logging Configuration");
   log_config.add_options()("log_no_async", po::bool_switch(&no_async),
                            "Disable asynchronous logging.")(
@@ -443,8 +483,8 @@ void LogMessage::Log(const std::string& project, std::string message) const {
 
   std::string coloured_log_entry(GetColouredLogEntry(log_level));
   ColourMode colour_mode(Logging::Instance().Colour());
-  auto print_functor([colour, coloured_log_entry, message, colour_mode, project] {
-    SendToConsole(colour_mode, colour, coloured_log_entry, message);
+  auto print_functor([this, colour, coloured_log_entry, message, colour_mode, project] {
+    SendToConsole(colour_mode, colour, level_, coloured_log_entry, message);
     Logging::Instance().WriteToCombinedLogfile(coloured_log_entry + message);
     Logging::Instance().WriteToProjectLogfile(project, coloured_log_entry + message);
   });
