@@ -93,6 +93,23 @@ TEST(LruCacheTest, BEH_TimeAndSizeTest) {
   cache.Add(1, 1);
   // are we trimming old stale data even
   EXPECT_EQ(cache.size(), 1);
+
+  LruCache<int, void> filter(size, time);
+
+  for (int i(0); i < 1000; ++i) {
+    if (i < size)
+      EXPECT_EQ(filter.size(), i);
+    filter.Add(i);
+    // ensure we maintian max size regardless of time
+    if (i < size)
+      EXPECT_EQ(filter.size(), i + 1);
+    else
+      EXPECT_EQ(filter.size(), size);
+  }
+  std::this_thread::sleep_for(time);
+  filter.Add(1);
+  // are we trimming old stale data even
+  EXPECT_EQ(filter.size(), 1);
 }
 
 TEST(LruCacheTest, BEH_TimeAndSizeStructValueTest) {

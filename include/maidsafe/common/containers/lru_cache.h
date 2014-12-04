@@ -40,50 +40,61 @@
 #include <list>
 #include <map>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace maidsafe {
 
-// Class providing fixed-size (by number of records)
-// and / or time_to_live LRU-replacement cache
+namespace detail {
+
+// Base class providing fixed-size (by number of records) and / or time_to_live LRU-replacement
+// cache
 template <typename KeyType, typename ValueType>
-class LruCache {
+class LruCacheBase {
  public:
-  explicit LruCache(size_t capacity)
+  explicit LruCacheBase(size_t capacity)
       : capacity_(capacity), time_to_live_(std::chrono::steady_clock::duration::zero()) {}
 
-  explicit LruCache(std::chrono::steady_clock::duration time_to_live)
+  explicit LruCacheBase(std::chrono::steady_clock::duration time_to_live)
       : capacity_(std::numeric_limits<size_t>::max()), time_to_live_(time_to_live) {}
 
-  LruCache(size_t capacity, std::chrono::steady_clock::duration time_to_live)
+  LruCacheBase(size_t capacity, std::chrono::steady_clock::duration time_to_live)
       : time_to_live_(time_to_live), capacity_(capacity) {}
 
-  ~LruCache() = default;
-  LruCache(const LruCache&) = delete;
-  LruCache(LruCache&&) = delete;
-  LruCache& operator=(const LruCache&) = delete;
-  LruCache& operator=(LruCache&&) = delete;
-
-  // We do not return an iterator here and use a pair instead as we are keeping two containers in
-  // sync and cannot allow access to these containers from the public interface
-  std::pair<bool, ValueType> Get(const KeyType& key) {
-    const auto it = storage_.find(key);
-
-    if (it == storage_.end()) {
-      return std::make_pair(false, ValueType());
-    } else {
-      // Update access record by moving accessed key to back of list
-      key_order_.splice(key_order_.end(), key_order_, std::get<1>(it->second));
-      return std::make_pair(true, std::get<0>(it->second));
-    }
-  }
+  virtual ~LruCacheBase() = default;
+  LruCacheBase(const LruCacheBase&) = delete;
+  LruCacheBase(LruCacheBase&&) = delete;
+  LruCacheBase& operator=(const LruCacheBase&) = delete;
+  LruCacheBase& operator=(LruCacheBase&&) = delete;
 
   bool Check(const KeyType& key) const { return storage_.find(key) != storage_.end(); }
 
-  void Add(KeyType key, ValueType value) {
-    if (storage_.find(key) != storage_.end())
-      return;
+  size_t size() const { return storage_.size(); }
 
+ protected:
+  using KeyOrder = std::list<KeyType>;
+
+  template <typename T>
+  struct TypeHelper {
+    using type = T;
+  };
+
+  template <typename T>
+  struct StorageType
+      : TypeHelper<std::map<KeyType, std::tuple<typename KeyOrder::iterator,
+                                                std::chrono::steady_clock::time_point, T>>> {};
+
+  template <>
+  struct StorageType<void>
+      : TypeHelper<std::map<KeyType, std::tuple<typename KeyOrder::iterator,
+                                                std::chrono::steady_clock::time_point>>> {};
+
+  template <typename T>
+  using Storage = typename StorageType<T>::type;
+
+  typename KeyOrder::iterator PrepareToAdd(const KeyType& key) {
+    if (storage_.find(key) != storage_.end())
+      return std::end(key_order_);
     // Check if we should evict any entries because of size
     if (storage_.size() == capacity_)
       RemoveOldestElement();
@@ -92,16 +103,9 @@ class LruCache {
       RemoveOldestElement();
 
     // Record key as most-recently-used key
-    auto it = key_order_.insert(std::end(key_order_), key);
-
-    // Create the key-value entry, linked to the usage record.
-    storage_.insert(std::make_pair(
-        std::move(key), std::make_tuple(std::move(value), it, std::chrono::steady_clock::now())));
+    return key_order_.insert(std::end(key_order_), key);
   }
 
-  size_t size() const { return storage_.size(); }
-
- private:
   void RemoveOldestElement() {
     assert(!key_order_.empty());
     // Identify least recently used key
@@ -117,14 +121,85 @@ class LruCache {
       return false;
     auto key = storage_.find(key_order_.front());
     assert(key != std::end(storage_) && "cannot find element");
-    return (std::get<2>(key->second) + time_to_live_) < std::chrono::steady_clock::now();
+    return (std::get<1>(key->second) + time_to_live_) < std::chrono::steady_clock::now();
   }
 
   const size_t capacity_;
   const std::chrono::steady_clock::duration time_to_live_;
-  std::list<KeyType> key_order_;
-  std::map<KeyType, std::tuple<ValueType, typename std::list<KeyType>::iterator,
-                               std::chrono::steady_clock::time_point>> storage_;
+  KeyOrder key_order_;
+  Storage<ValueType> storage_;
+};
+
+}  // namespace detail
+
+// Class providing fixed-size (by number of records) and / or time_to_live LRU-replacement cache
+template <typename KeyType, typename ValueType>
+class LruCache : public detail::LruCacheBase<KeyType, ValueType> {
+ public:
+  explicit LruCache(size_t capacity) : detail::LruCacheBase<KeyType, ValueType>(capacity) {}
+
+  explicit LruCache(std::chrono::steady_clock::duration time_to_live)
+      : detail::LruCacheBase<KeyType, ValueType>(time_to_live) {}
+
+  LruCache(size_t capacity, std::chrono::steady_clock::duration time_to_live)
+      : detail::LruCacheBase<KeyType, ValueType>(capacity, time_to_live) {}
+
+  virtual ~LruCache() = default;
+  LruCache(const LruCache&) = delete;
+  LruCache(LruCache&&) = delete;
+  LruCache& operator=(const LruCache&) = delete;
+  LruCache& operator=(LruCache&&) = delete;
+
+  // We do not return an iterator here and use a pair instead as we are keeping two containers in
+  // sync and cannot allow access to these containers from the public interface
+  std::pair<bool, ValueType> Get(const KeyType& key) {
+    const auto it = storage_.find(key);
+
+    if (it == storage_.end()) {
+      return std::make_pair(false, ValueType());
+    } else {
+      // Update access record by moving accessed key to back of list
+      key_order_.splice(key_order_.end(), key_order_, std::get<0>(it->second));
+      return std::make_pair(true, std::get<2>(it->second));
+    }
+  }
+
+  void Add(KeyType key, ValueType value) {
+    auto it = PrepareToAdd(key);
+    if (it == std::end(key_order_))
+      return;
+    // Create the key-value entry, linked to the usage record.
+    storage_.insert(std::make_pair(
+        std::move(key), std::make_tuple(it, std::chrono::steady_clock::now(), std::move(value))));
+  }
+};
+
+// Class providing fixed-size (by number of records) and / or time_to_live LRU-replacement filter
+template <typename KeyType>
+class LruCache<KeyType, void> : public detail::LruCacheBase<KeyType, void> {
+ public:
+  explicit LruCache(size_t capacity) : detail::LruCacheBase<KeyType, void>(capacity) {}
+
+  explicit LruCache(std::chrono::steady_clock::duration time_to_live)
+      : detail::LruCacheBase<KeyType, void>(time_to_live) {}
+
+  LruCache(size_t capacity, std::chrono::steady_clock::duration time_to_live)
+      : detail::LruCacheBase<KeyType, void>(capacity, time_to_live) {}
+
+  virtual ~LruCache() = default;
+  LruCache(const LruCache&) = delete;
+  LruCache(LruCache&&) = delete;
+  LruCache& operator=(const LruCache&) = delete;
+  LruCache& operator=(LruCache&&) = delete;
+
+  void Add(KeyType key) {
+    auto it = PrepareToAdd(key);
+    if (it == std::end(key_order_))
+      return;
+    // Create the key entry, linked to the usage record.
+    storage_.insert(
+        std::make_pair(std::move(key), std::make_tuple(it, std::chrono::steady_clock::now())));
+  }
 };
 
 }  // namespace maidsafe
