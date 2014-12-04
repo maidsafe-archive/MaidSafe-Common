@@ -40,7 +40,6 @@
 #include <list>
 #include <map>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 namespace maidsafe {
