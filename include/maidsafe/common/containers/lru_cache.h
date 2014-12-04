@@ -47,6 +47,25 @@ namespace maidsafe {
 
 namespace detail {
 
+// Helper classes
+template <typename KeyType>
+using KeyOrder = std::list<KeyType>;
+
+template <typename T>
+struct TypeHelper {
+  using type = T;
+};
+
+template <typename KeyType, typename T>
+struct StorageType
+    : TypeHelper<std::map<KeyType, std::tuple<typename KeyOrder<KeyType>::iterator,
+                                              std::chrono::steady_clock::time_point, T>>> {};
+
+template <typename KeyType>
+struct StorageType<KeyType, void>
+    : TypeHelper<std::map<KeyType, std::tuple<typename KeyOrder<KeyType>::iterator,
+                                              std::chrono::steady_clock::time_point>>> {};
+
 // Base class providing fixed-size (by number of records) and / or time_to_live LRU-replacement
 // cache
 template <typename KeyType, typename ValueType>
@@ -59,7 +78,7 @@ class LruCacheBase {
       : capacity_(std::numeric_limits<size_t>::max()), time_to_live_(time_to_live) {}
 
   LruCacheBase(size_t capacity, std::chrono::steady_clock::duration time_to_live)
-      : time_to_live_(time_to_live), capacity_(capacity) {}
+      : capacity_(capacity), time_to_live_(time_to_live) {}
 
   virtual ~LruCacheBase() = default;
   LruCacheBase(const LruCacheBase&) = delete;
@@ -72,27 +91,10 @@ class LruCacheBase {
   size_t size() const { return storage_.size(); }
 
  protected:
-  using KeyOrder = std::list<KeyType>;
-
   template <typename T>
-  struct TypeHelper {
-    using type = T;
-  };
+  using Storage = typename StorageType<KeyType, T>::type;
 
-  template <typename T>
-  struct StorageType
-      : TypeHelper<std::map<KeyType, std::tuple<typename KeyOrder::iterator,
-                                                std::chrono::steady_clock::time_point, T>>> {};
-
-  template <>
-  struct StorageType<void>
-      : TypeHelper<std::map<KeyType, std::tuple<typename KeyOrder::iterator,
-                                                std::chrono::steady_clock::time_point>>> {};
-
-  template <typename T>
-  using Storage = typename StorageType<T>::type;
-
-  typename KeyOrder::iterator PrepareToAdd(const KeyType& key) {
+  typename KeyOrder<KeyType>::iterator PrepareToAdd(const KeyType& key) {
     if (storage_.find(key) != storage_.end())
       return std::end(key_order_);
     // Check if we should evict any entries because of size
@@ -126,7 +128,7 @@ class LruCacheBase {
 
   const size_t capacity_;
   const std::chrono::steady_clock::duration time_to_live_;
-  KeyOrder key_order_;
+  KeyOrder<KeyType> key_order_;
   Storage<ValueType> storage_;
 };
 
@@ -153,23 +155,23 @@ class LruCache : public detail::LruCacheBase<KeyType, ValueType> {
   // We do not return an iterator here and use a pair instead as we are keeping two containers in
   // sync and cannot allow access to these containers from the public interface
   std::pair<bool, ValueType> Get(const KeyType& key) {
-    const auto it = storage_.find(key);
+    const auto it = this->storage_.find(key);
 
-    if (it == storage_.end()) {
+    if (it == this->storage_.end()) {
       return std::make_pair(false, ValueType());
     } else {
       // Update access record by moving accessed key to back of list
-      key_order_.splice(key_order_.end(), key_order_, std::get<0>(it->second));
+      this->key_order_.splice(this->key_order_.end(), this->key_order_, std::get<0>(it->second));
       return std::make_pair(true, std::get<2>(it->second));
     }
   }
 
   void Add(KeyType key, ValueType value) {
-    auto it = PrepareToAdd(key);
-    if (it == std::end(key_order_))
+    auto it = this->PrepareToAdd(key);
+    if (it == std::end(this->key_order_))
       return;
     // Create the key-value entry, linked to the usage record.
-    storage_.insert(std::make_pair(
+    this->storage_.insert(std::make_pair(
         std::move(key), std::make_tuple(it, std::chrono::steady_clock::now(), std::move(value))));
   }
 };
@@ -193,11 +195,11 @@ class LruCache<KeyType, void> : public detail::LruCacheBase<KeyType, void> {
   LruCache& operator=(LruCache&&) = delete;
 
   void Add(KeyType key) {
-    auto it = PrepareToAdd(key);
-    if (it == std::end(key_order_))
+    auto it = this->PrepareToAdd(key);
+    if (it == std::end(this->key_order_))
       return;
     // Create the key entry, linked to the usage record.
-    storage_.insert(
+    this->storage_.insert(
         std::make_pair(std::move(key), std::make_tuple(it, std::chrono::steady_clock::now())));
   }
 };
