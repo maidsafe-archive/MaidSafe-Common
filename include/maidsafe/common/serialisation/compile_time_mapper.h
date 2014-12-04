@@ -39,20 +39,18 @@ template <SerialisableTypeTag Tag, typename Value, typename NextNode>
 struct CompileTimeMapper {};
 struct ERROR_given_tag_is_not_mapped_to_a_type;
 
-template <SerialisableTypeTag Tag, typename Value>
-struct Serialisable;
-
 template <typename...>
 struct GetMap;
 
-template <SerialisableTypeTag Tag, typename Value, typename... Types>
-struct GetMap<Serialisable<Tag, Value>, Types...> {
-  using Map = CompileTimeMapper<Tag, Value, typename GetMap<Types...>::Map>;
+template <typename Value, typename... Types>
+struct GetMap<Value, Types...> {
+  using Map = CompileTimeMapper<Value::kSerialisableTypeTag, Value, typename GetMap<Types...>::Map>;
 };
 
-template <SerialisableTypeTag Tag, typename Value>
-struct GetMap<Serialisable<Tag, Value>> {
-  using Map = CompileTimeMapper<Tag, Value, ERROR_given_tag_is_not_mapped_to_a_type>;
+template <typename Value>
+struct GetMap<Value> {
+  using Map = CompileTimeMapper<Value::kSerialisableTypeTag, Value,
+                                ERROR_given_tag_is_not_mapped_to_a_type>;
 };
 
 template <typename, SerialisableTypeTag>
@@ -101,7 +99,7 @@ std::unique_ptr<StreamType> Serialise(TypeToSerialise object_to_serialise) {
   auto binary_output_stream = maidsafe::make_unique<StreamType>();
   {
     typename Archive<StreamType>::type binary_output_archive(*binary_output_stream);
-    binary_output_archive(typename TypeToSerialise::kSerialisableTypeTag,
+    binary_output_archive(TypeToSerialise::kSerialisableTypeTag,
                           std::forward<TypeToSerialise>(object_to_serialise));
   }
   return std::move(binary_output_stream);

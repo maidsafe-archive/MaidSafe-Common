@@ -56,8 +56,7 @@ struct PingResponse {
 
 const SerialisableTypeTag PingResponse::kSerialisableTypeTag;
 
-using MessageMap = GetMap<Serialisable<Ping::kSerialisableTypeTag, Ping>,
-                          Serialisable<PingResponse::kSerialisableTypeTag, PingResponse>>::Map;
+using MessageMap = GetMap<Ping, PingResponse>::Map;
 
 template <SerialisableTypeTag Tag>
 using Message = typename Find<MessageMap, Tag>::ResultCustomType;
