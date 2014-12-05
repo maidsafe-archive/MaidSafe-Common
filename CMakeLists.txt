@@ -90,13 +90,16 @@ if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
 if(CMAKE_VERSION VERSION_LESS "3.0")
+  set(AsioLib)
   set(CerealLib)
   target_include_directories(maidsafe_common PUBLIC ${CMAKE_SOURCE_DIR}/src/third_party_libs/header_only)
 else()
+  set(AsioLib asio)
   set(CerealLib cereal)
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
+    ${AsioLib}
     ${CerealLib}
     cryptopp
     sqlite
