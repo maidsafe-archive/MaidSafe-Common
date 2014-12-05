@@ -28,6 +28,7 @@
 #include "cereal/types/string.hpp"
 #include "cereal/types/vector.hpp"
 
+#include "maidsafe/common/serialisation/binary_archive.h"
 #include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/types.h"
 

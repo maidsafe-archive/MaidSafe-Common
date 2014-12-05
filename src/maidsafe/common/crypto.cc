@@ -230,7 +230,7 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
   std::string channel;
 
   for (int i = 0; i < number_of_shares; ++i) {
-    out_vec[i].resize(data.size() / number_of_shares);
+    out_vec[i].resize(data.size()/* / number_of_shares*/);
     array_sink[i].reset(new CryptoPP::ArraySink(&out_vec[i].data()[0], out_vec[i].size()));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
     array_sink[i]->Put((byte*)(channel.data()), 4);
@@ -238,6 +238,8 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
     channel_switch->AddRoute(channel, *array_sink[i], CryptoPP::DEFAULT_CHANNEL);
   }
   source.PumpAll();
+  for (int i = 0; i < number_of_shares; ++i)
+    out_vec[i].resize(array_sink[i]->TotalPutLength());
   return out_vec;
 }
 
@@ -257,10 +259,6 @@ std::string InfoRetreive(int32_t threshold, const std::vector<std::string>& in_s
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
-  while (string_sources[0]->Pump(256)) {
-    for (auto i = 1; i < num_to_check; ++i)
-      string_sources[i]->Pump(256);
-  }
 
   for (auto i = 0; i < num_to_check; ++i)
     string_sources[i]->PumpAll();
@@ -271,9 +269,9 @@ std::string InfoRetreive(int32_t threshold, const std::vector<std::string>& in_s
 std::vector<byte> InfoRetreive(int32_t threshold, const std::vector<std::vector<byte>>& in_bytes) {
   int32_t size(static_cast<int32_t>(in_bytes.size()));
   int32_t num_to_check = std::min(size, threshold);
-  std::vector<byte> data;
-  auto data_size(num_to_check * in_bytes.front().size());
-  data.resize(data_size);
+  // Safe to subtract 4 since each piece is prefixed with a byte piece number
+  auto data_size(num_to_check * (in_bytes.front().size() - 4));
+  std::vector<byte> data(data_size);
 
   CryptoPP::InformationRecovery recovery(num_to_check,
                                          new CryptoPP::ArraySink(&data.data()[0], data_size));
@@ -288,14 +286,25 @@ std::vector<byte> InfoRetreive(int32_t threshold, const std::vector<std::vector<
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
+  auto oooo = recovery.MaxRetrievable();
+  oooo = 0;
   while (array_sources[0]->Pump(256)) {
     for (auto i = 1; i < num_to_check; ++i)
-      array_sources[i]->Pump(256);
+      oooo += array_sources[i]->Pump(256);
   }
 
+  oooo = recovery.MaxRetrievable();
+  oooo = recovery.NumberOfMessages();
+  oooo = recovery.NumberOfMessageSeries();
+  oooo = recovery.NumberOfMessagesInThisSeries();
   for (auto i = 0; i < num_to_check; ++i)
     array_sources[i]->PumpAll();
+  oooo = recovery.MaxRetrievable();
+  oooo = recovery.NumberOfMessages();
+  oooo = recovery.NumberOfMessageSeries();
+  oooo = recovery.NumberOfMessagesInThisSeries();
 
+  data.resize(oooo);
   return data;
 }
 

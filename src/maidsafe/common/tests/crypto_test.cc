@@ -346,7 +346,7 @@ TEST(CryptoTest, BEH_SecretSharing) {
 }
 
 TEST(CryptoTest, BEH_InformationDispersal) {
-  std::string rand_string(RandomString(64));
+  std::string rand_string(RandomAlphaNumericString(64));
   uint8_t num_shares(20);
   uint8_t threshold(10);
   std::vector<std::string> data_parts(InfoDisperse(threshold, num_shares, rand_string));
@@ -358,7 +358,10 @@ TEST(CryptoTest, BEH_InformationDispersal) {
     bytes.emplace_back(std::begin(parts), std::end(parts));
   }
   auto test(std::vector<byte>(std::begin(rand_string), std::end(rand_string)));
-  EXPECT_EQ(InfoRetreive(threshold, bytes), test) << "should pass with threshold";
+  auto retrieved = InfoRetreive(threshold, bytes);
+  std::string aaaa(test.begin(), test.end());
+  std::string rrrrrrrr(retrieved.begin(), retrieved.end());
+  EXPECT_EQ(aaaa, rrrrrrrr) << "should pass with threshold";
 }
 
 TEST(CryptoTest, BEH_InformationDispersalByte) {
