@@ -184,11 +184,6 @@ std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>&
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
-  while (string_sources[0]->Pump(256)) {
-    for (auto i = 1; i < num_to_check; ++i)
-      string_sources[i]->Pump(256);
-  }
-
   for (auto i = 0; i < num_to_check; ++i)
     string_sources[i]->PumpAll();
 
@@ -230,7 +225,7 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
   std::string channel;
 
   for (int i = 0; i < number_of_shares; ++i) {
-    out_vec[i].resize(data.size()/* / number_of_shares*/);
+    out_vec[i].resize(data.size() /* / number_of_shares*/);
     array_sink[i].reset(new CryptoPP::ArraySink(&out_vec[i].data()[0], out_vec[i].size()));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
     array_sink[i]->Put((byte*)(channel.data()), 4);
@@ -286,25 +281,12 @@ std::vector<byte> InfoRetreive(int32_t threshold, const std::vector<std::vector<
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
-  auto oooo = recovery.MaxRetrievable();
-  oooo = 0;
-  while (array_sources[0]->Pump(256)) {
-    for (auto i = 1; i < num_to_check; ++i)
-      oooo += array_sources[i]->Pump(256);
-  }
-
-  oooo = recovery.MaxRetrievable();
-  oooo = recovery.NumberOfMessages();
-  oooo = recovery.NumberOfMessageSeries();
-  oooo = recovery.NumberOfMessagesInThisSeries();
   for (auto i = 0; i < num_to_check; ++i)
     array_sources[i]->PumpAll();
-  oooo = recovery.MaxRetrievable();
-  oooo = recovery.NumberOfMessages();
-  oooo = recovery.NumberOfMessageSeries();
-  oooo = recovery.NumberOfMessagesInThisSeries();
-
-  data.resize(oooo);
+  // trim any null chars at enf of stream
+  for (auto it = std::prev(std::end(data)); *it == '\0'; --it) {
+    data.erase(it);
+  }
   return data;
 }
 

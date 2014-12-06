@@ -365,7 +365,7 @@ TEST(CryptoTest, BEH_InformationDispersal) {
 }
 
 TEST(CryptoTest, BEH_InformationDispersalByte) {
-  auto str(RandomString(64));
+  auto str(RandomString(10));
   std::vector<byte> rand_bytes(std::begin(str), std::end(str));
   uint8_t num_shares(20);
   uint8_t threshold(10);
