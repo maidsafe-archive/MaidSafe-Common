@@ -97,7 +97,6 @@ const std::string ToBinary(const std::string& raw_id) {
 TEST(NodeIdBasicTest, BEH_DefaultConstructor) {
   auto id = NodeId{};
   EXPECT_FALSE(id.IsValid());
-  EXPECT_TRUE(id.IsZero());
 }
 
 TEST(NodeIdBasicTest, BEH_CopyAndMove) {
