@@ -53,8 +53,8 @@ int ErrorToInt(maidsafe_error error) {
     return -static_cast<int>(ErrorCategories::kAsymm) - error.code().value();
   if (error.code().category() == GetPassportCategory())
     return -static_cast<int>(ErrorCategories::kPassport) - error.code().value();
-  if (error.code().category() == GetRudpCategory())
-    return -static_cast<int>(ErrorCategories::kRudp) - error.code().value();
+  //if (error.code().category() == GetRudpCategory())
+  //  return -static_cast<int>(ErrorCategories::kRudp) - error.code().value();
   if (error.code().category() == GetEncryptCategory())
     return -static_cast<int>(ErrorCategories::kEncrypt) - error.code().value();
   if (error.code().category() == GetRoutingCategory())
@@ -83,8 +83,8 @@ maidsafe_error IntToError(int value) {
       return maidsafe_error{error_value, GetAsymmCategory()};
     case ErrorCategories::kPassport:
       return maidsafe_error{error_value, GetPassportCategory()};
-    case ErrorCategories::kRudp:
-      return maidsafe_error{error_value, GetRudpCategory()};
+    //case ErrorCategories::kRudp:
+    //  return maidsafe_error{error_value, GetRudpCategory()};
     case ErrorCategories::kEncrypt:
       return maidsafe_error{error_value, GetEncryptCategory()};
     case ErrorCategories::kRouting:
@@ -161,17 +161,17 @@ const std::error_category& GetPassportCategory() {
 
 passport_error MakeError(PassportErrors code) { return passport_error(make_error_code(code)); }
 
-std::error_code make_error_code(RudpErrors code) {
-  return std::error_code(static_cast<int>(code), GetRudpCategory());
-}
-
-std::error_condition make_error_condition(RudpErrors code) {
-  return std::error_condition(static_cast<int>(code), GetRudpCategory());
-}
-
-const std::error_category& GetRudpCategory() {
+const boost::system::error_category& GetRudpCategory() {
   static detail::RudpCategory instance;
   return instance;
+}
+
+boost::system::error_code make_error_code(RudpErrors code) {
+  return boost::system::error_code(static_cast<int>(code), GetRudpCategory());
+}
+
+boost::system::error_condition make_error_condition(RudpErrors code) {
+  return boost::system::error_condition(static_cast<int>(code), GetRudpCategory());
 }
 
 rudp_error MakeError(RudpErrors code) { return rudp_error(make_error_code(code)); }

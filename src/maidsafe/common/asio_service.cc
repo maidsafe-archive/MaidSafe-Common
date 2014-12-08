@@ -28,14 +28,18 @@ AsioService::AsioService(size_t thread_count)
       service_(),
       work_(make_unique<boost::asio::io_service::work>(service_)), threads_(),
       mutex_() {
+  LOG(kVerbose) << "peter AsioService()";
   if (thread_count == 0)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   for (size_t i(0); i != thread_count; ++i)
     threads_.emplace_back([&] {
       try {
+        LOG(kVerbose) << "peter service running";
         service_.run();
+        LOG(kVerbose) << "peter service stopped";
       }
       catch (...) {
+        LOG(kVerbose) << "peter service exception";
         LOG(kError) << boost::current_exception_diagnostic_information();
         // Rethrowing here will cause the application to terminate - so flush the log message first.
         log::Logging::Instance().Flush();

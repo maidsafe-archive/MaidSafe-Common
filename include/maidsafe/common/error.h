@@ -169,21 +169,15 @@ enum class RudpErrors {
   bad_message
 };
 
-class rudp_error : public maidsafe_error {
+class rudp_error : public boost::system::system_error { // maidsafe_error {
  public:
-  rudp_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  rudp_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit rudp_error(std::error_code ec) : maidsafe_error(ec) {}
-  rudp_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  rudp_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  rudp_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+  // Use same constructors as the base.
+  using boost::system::system_error::system_error;
 };
 
-std::error_code make_error_code(RudpErrors code);
-std::error_condition make_error_condition(RudpErrors code);
-const std::error_category& GetRudpCategory();
+boost::system::error_code make_error_code(RudpErrors code);
+boost::system::error_condition make_error_condition(RudpErrors code);
+const boost::system::error_category& GetRudpCategory();
 rudp_error MakeError(RudpErrors code);
 
 enum class EncryptErrors {
@@ -374,9 +368,6 @@ template <>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
 
 template <>
-struct is_error_code_enum<maidsafe::RudpErrors> : public true_type {};
-
-template <>
 struct is_error_code_enum<maidsafe::EncryptErrors> : public true_type {};
 
 template <>
@@ -398,5 +389,12 @@ template <>
 struct is_error_code_enum<maidsafe::ApiErrors> : public true_type {};
 
 }  // namespace std
+
+namespace boost { namespace system {
+
+template <>
+struct is_error_code_enum<maidsafe::RudpErrors> : public true_type {};
+
+}} // namespace boost::system
 
 #endif  // MAIDSAFE_COMMON_ERROR_H_
