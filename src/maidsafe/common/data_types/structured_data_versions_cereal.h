@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,51 +16,55 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
-#define MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_
 
 #include <cstdint>
-#include <algorithm>
+#include <vector>
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/tagged_value.h"
-#include "maidsafe/common/data_types/data_type_values.h"
+#include "boost/optional.hpp"
+#include "maidsafe/common/data_types/version_cereal.h"
 
 namespace maidsafe {
 
-class MutableData {
- public:
-  typedef maidsafe::detail::Name<MutableData> Name;
-  typedef maidsafe::detail::Tag<DataTagValue::kMutableDataValue> Tag;
-  typedef TaggedValue<NonEmptyString, Tag> serialised_type;
+namespace detail {
 
-  MutableData(const MutableData& other);
-  MutableData(MutableData&& other);
-  MutableData& operator=(MutableData other);
-
-  MutableData(Name name, NonEmptyString data);
-  MutableData(Name name, const serialised_type& serialised_mutable_data);
-  serialised_type Serialise() const;
+struct StructuredDataVersionsBranchCereal {
+  StructuredDataVersionsBranchCereal()
+    : absent_parent_ {},
+      name_ {}
+  { }
 
   template<typename Archive>
   Archive& serialize(Archive& ref_archive) {
-    return ref_archive(data_);
+    return ref_archive(absent_parent_, name_);
   }
 
-  Name name() const;
-  NonEmptyString data() const;
-
-  friend void swap(MutableData& lhs, MutableData& rhs);
-
- private:
-  Name name_;
-  NonEmptyString data_;
+  boost::optional<VersionCereal> absent_parent_;
+  std::vector<VersionCereal> name_;
 };
 
-template <>
-struct is_short_term_cacheable<MutableData> : public std::true_type {};
+struct StructuredDataVersionsCereal {
+  StructuredDataVersionsCereal()
+    : max_versions_ {},
+      max_branches_ {},
+      branch_ {}
+  { }
+
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(max_versions_, max_branches_, branch_);
+  }
+
+  using Branch = StructuredDataVersionsBranchCereal;
+
+  std::uint32_t max_versions_;
+  std::uint32_t max_branches_;
+  std::vector<Branch> branch_;
+};
+
+}  // namespace detail
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_CEREAL_H_

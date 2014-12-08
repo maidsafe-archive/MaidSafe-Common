@@ -27,7 +27,9 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/safe_encrypt.pb.h"
+
+#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/safe_encrypt_cereal.h"
 
 namespace maidsafe {
 
@@ -75,21 +77,20 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
 
   std::string result;
   CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(public_key);
-  protobuf::SafeEncrypt safe_encrypt;
+  detail::SafeEncryptCereal safe_encrypt;
   try {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-    safe_encrypt.set_data(
-        crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv)->string());
+    safe_encrypt.data_ = crypto::SymmEncrypt(data, symm_encryption_key,
+                                             symm_encryption_iv)->string();
     std::string encryption_key_encrypted;
     std::string const local_key_and_iv = symm_encryption_key.string() + symm_encryption_iv.string();
     CryptoPP::StringSource(
         local_key_and_iv, true,
         new CryptoPP::PK_EncryptorFilter(crypto::random_number_generator(), encryptor,
                                          new CryptoPP::StringSink(encryption_key_encrypted)));
-    safe_encrypt.set_key(encryption_key_encrypted);
-    if (!safe_encrypt.SerializeToString(&result))
-      BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::keys_serialisation_error));
+    safe_encrypt.key_ = encryption_key_encrypted;
+    result = ConvertToString(safe_encrypt);
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric encrypting: " << e.what();
@@ -105,24 +106,25 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
   PlainText result;
   try {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
-    protobuf::SafeEncrypt safe_encrypt;
-    if (safe_encrypt.ParseFromString(data.string())) {
-      std::string out_data;
-      CryptoPP::StringSource(
-          safe_encrypt.key(), true,
+
+    detail::SafeEncryptCereal safe_encrypt;
+    try { ConvertFromString(data.string(), safe_encrypt); }
+    catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+
+    std::string out_data;
+    CryptoPP::StringSource(
+          safe_encrypt.key_, true,
           new CryptoPP::PK_DecryptorFilter(crypto::random_number_generator(), decryptor,
-              new CryptoPP::StringSink(out_data)));
-      if (out_data.size() < crypto::AES256_KeySize + crypto::AES256_IVSize) {
-        LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
-        BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
-      }
-      result = crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(safe_encrypt.data())),
-                                   crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
-                                   crypto::AES256InitialisationVector(out_data.substr(
-                                       crypto::AES256_KeySize, crypto::AES256_IVSize)));
-    } else {
+                                           new CryptoPP::StringSink(out_data)));
+    if (out_data.size() < crypto::AES256_KeySize + crypto::AES256_IVSize) {
+      LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
       BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
     }
+    result = crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(safe_encrypt.data_)),
+                                 crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
+                                 crypto::AES256InitialisationVector(
+                                   out_data.substr(
+                                     crypto::AES256_KeySize, crypto::AES256_IVSize)));
   }
   catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric decrypting: " << e.what();
