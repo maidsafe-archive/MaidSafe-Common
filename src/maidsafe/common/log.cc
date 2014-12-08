@@ -379,6 +379,7 @@ std::string Strftime(const std::time_t* now_t);
 
 template <>
 std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
+  std::lock_guard<spinlock> lock(g_console_mutex());
   char temp[10];
   if (!std::strftime(temp, sizeof(temp), "%H:%M:%S.", std::localtime(now_t)))  // NOLINT (Fraser)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
@@ -387,6 +388,7 @@ std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
 
 template <>
 std::string Strftime<TimeType::kUTC>(const std::time_t* now_t) {
+  std::lock_guard<spinlock> lock(g_console_mutex());
   char temp[21];
   if (!std::strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.", std::gmtime(now_t)))  // NOLINT (Fraser)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
