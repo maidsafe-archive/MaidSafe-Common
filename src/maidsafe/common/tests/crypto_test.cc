@@ -18,7 +18,9 @@
 
 #include "maidsafe/common/crypto.h"
 
+#include <algorithm>
 #include <cstdlib>
+#include <random>
 #include <string>
 
 #include "boost/lexical_cast.hpp"
@@ -330,43 +332,155 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
   EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 1)->string())), answer2);
 }
 
-TEST(CryptoTest, BEH_SecretSharing) {
-  std::string rand_string(RandomString(64));
-  uint8_t num_shares(20);
-  uint8_t threshold(10);
-  std::vector<std::string> data_parts(SecretShareData(threshold, num_shares, rand_string));
-  std::string recovered(SecretRecoverData(threshold, data_parts));
-  EXPECT_EQ(recovered, rand_string);
-  uint8_t not_enough(9);
-  recovered = SecretRecoverData(not_enough, data_parts);
-  EXPECT_NE(recovered, rand_string);
-  uint8_t too_many(100);
-  recovered = SecretRecoverData(too_many, data_parts);
-  EXPECT_EQ(recovered, rand_string);
+template <typename T>
+class InformationDispersalTest : public testing::Test {
+ protected:
+  InformationDispersalTest()
+      : data_size_(0),
+        threshold_(0),
+        number_of_shares_(0),
+        random_data_(),
+        dispersed_data_parts_(),
+        secret_data_parts_() {}
+
+  enum class PartsType { kDispersed, kSecret };
+
+  std::vector<T> GetRandomParts(uint8_t count, std::vector<T>& all_parts) {
+    std::vector<T> parts(std::begin(all_parts), std::begin(all_parts) + count);
+    std::mt19937 rng(RandomUint32());
+    std::shuffle(std::begin(parts), std::end(parts), rng);
+    return parts;
+  }
+
+  size_t data_size_;
+  uint8_t threshold_, number_of_shares_;
+  T random_data_;
+  std::vector<T> dispersed_data_parts_, secret_data_parts_;
+};
+
+using IdaTestTypes = testing::Types<std::string, std::vector<byte>>;
+TYPED_TEST_CASE(InformationDispersalTest, IdaTestTypes);
+
+TYPED_TEST(InformationDispersalTest, BEH_Basic) {
+  // Basic test setup
+  this->threshold_ = 2;
+  this->number_of_shares_ = 3;
+  std::string data(100, 'A');
+  this->random_data_.assign(std::begin(data), std::end(data));
+
+  // Test IDA
+  this->dispersed_data_parts_ =
+      InfoDisperse(this->threshold_, this->number_of_shares_, this->random_data_);
+  EXPECT_EQ(this->number_of_shares_, this->dispersed_data_parts_.size());
+  auto dispersed_parts(this->GetRandomParts(this->threshold_, this->dispersed_data_parts_));
+  EXPECT_EQ(this->random_data_, InfoRetrieve(dispersed_parts));
+
+  // Test Secret Shared
+  this->secret_data_parts_ =
+      SecretShareData(this->threshold_, this->number_of_shares_, this->random_data_);
+  EXPECT_EQ(this->number_of_shares_, this->secret_data_parts_.size());
+  auto secret_parts(this->GetRandomParts(this->threshold_, this->secret_data_parts_));
+  EXPECT_EQ(this->random_data_, SecretRecoverData(secret_parts));
+
+  // Test with threshold too low
+  EXPECT_THROW(InfoDisperse(1, this->number_of_shares_, this->random_data_), common_error);
+  EXPECT_THROW(SecretShareData(1, this->number_of_shares_, this->random_data_), common_error);
+
+  // Test with threshold > number of shares
+  EXPECT_THROW(InfoDisperse(4, this->number_of_shares_, this->random_data_), common_error);
+  EXPECT_THROW(SecretShareData(4, this->number_of_shares_, this->random_data_), common_error);
+
+  // Test with number of shares too low
+  EXPECT_THROW(InfoDisperse(this->threshold_, 2, this->random_data_), common_error);
+  EXPECT_THROW(SecretShareData(this->threshold_, 2, this->random_data_), common_error);
+
+  // Test with too few parts
+  dispersed_parts.pop_back();
+  secret_parts.pop_back();
+  EXPECT_NE(this->random_data_, InfoRetrieve(dispersed_parts));
+  EXPECT_NE(this->random_data_, SecretRecoverData(secret_parts));
+
+  // Test with too many parts
+  EXPECT_NE(this->random_data_, InfoRetrieve(this->dispersed_data_parts_));
+  EXPECT_EQ(this->random_data_, SecretRecoverData(this->secret_data_parts_));
 }
 
-TEST(CryptoTest, BEH_InformationDispersal) {
-  std::string rand_string(RandomString(64));
-  uint8_t num_shares(20);
-  uint8_t threshold(10);
-  std::vector<std::string> data_parts(InfoDisperse(threshold, num_shares, rand_string));
-  EXPECT_EQ(InfoRetrieve(threshold, data_parts), rand_string) << "should pass with threshold";
-  EXPECT_NE(InfoRetrieve(9, data_parts), rand_string) << "should fail with to few parts";
-  EXPECT_NE(InfoRetrieve(11, data_parts), rand_string) << "should fail with too many parts";
-}
+TYPED_TEST(InformationDispersalTest, FUNC_MultipleValues) {
+  // Iterate through increasing sizes of input data starting at 0 and up to 2 MB max.
+  do {
+    std::string data(RandomString(this->data_size_));
+    this->random_data_.assign(std::begin(data), std::end(data));
 
-TEST(CryptoTest, BEH_InformationDispersalByte) {
-  auto str(RandomString(64));
-  std::vector<byte> rand_bytes(std::begin(str), std::end(str));
-  uint8_t num_shares(20);
-  uint8_t threshold(10);
-  std::vector<std::vector<byte>> data_parts(InfoDisperse(threshold, num_shares, rand_bytes));
-  EXPECT_EQ(data_parts.size(), num_shares);
-  EXPECT_NE(data_parts.front(), std::vector<byte>());
+    if (this->data_size_ < 1024 * 100) {  // otherwise test takes too long
+      // Use random number of shares in range [3, 102] with minimum threshold
+      this->number_of_shares_ = (RandomUint32() % 100) + 3;
+      this->threshold_ = 2;
+      // IDA
+      this->dispersed_data_parts_ =
+          InfoDisperse(this->threshold_, this->number_of_shares_, this->random_data_);
+      EXPECT_EQ(this->number_of_shares_, this->dispersed_data_parts_.size());
+      auto dispersed_parts(this->GetRandomParts(this->threshold_, this->dispersed_data_parts_));
+      EXPECT_EQ(this->random_data_, InfoRetrieve(dispersed_parts));
+      // Secret Share
+      this->secret_data_parts_ =
+          SecretShareData(this->threshold_, this->number_of_shares_, this->random_data_);
+      EXPECT_EQ(this->number_of_shares_, this->secret_data_parts_.size());
+      auto secret_parts(this->GetRandomParts(this->threshold_, this->secret_data_parts_));
+      EXPECT_EQ(this->random_data_, SecretRecoverData(secret_parts));
 
-  EXPECT_EQ(InfoRetrieve(threshold, data_parts), rand_bytes) << "should pass with threshold";
-  EXPECT_NE(InfoRetrieve(9, data_parts), rand_bytes) << "should fail with to few parts";
-  EXPECT_NE(InfoRetrieve(11, data_parts), rand_bytes) << "should fail with too many parts";
+      // Use same number of shares, but with maximum threshold
+      this->threshold_ = this->number_of_shares_;
+      // IDA
+      this->dispersed_data_parts_ =
+          InfoDisperse(this->threshold_, this->number_of_shares_, this->random_data_);
+      EXPECT_EQ(this->number_of_shares_, this->dispersed_data_parts_.size());
+      dispersed_parts = this->GetRandomParts(this->threshold_, this->dispersed_data_parts_);
+      EXPECT_EQ(this->random_data_, InfoRetrieve(dispersed_parts));
+      // Secret Share
+      this->secret_data_parts_ =
+          SecretShareData(this->threshold_, this->number_of_shares_, this->random_data_);
+      EXPECT_EQ(this->number_of_shares_, this->secret_data_parts_.size());
+      secret_parts = this->GetRandomParts(this->threshold_, this->secret_data_parts_);
+      EXPECT_EQ(this->random_data_, SecretRecoverData(secret_parts));
+
+
+      // Use same number of shares, but with threshold between max and min.
+      this->threshold_ = (RandomUint32() % (this->number_of_shares_ - 2)) + 3;
+      // IDA
+      this->dispersed_data_parts_ =
+          InfoDisperse(this->threshold_, this->number_of_shares_, this->random_data_);
+      EXPECT_EQ(this->number_of_shares_, this->dispersed_data_parts_.size());
+      dispersed_parts = this->GetRandomParts(this->threshold_, this->dispersed_data_parts_);
+      EXPECT_EQ(this->random_data_, InfoRetrieve(dispersed_parts));
+      // Secret Share
+      this->secret_data_parts_ =
+          SecretShareData(this->threshold_, this->number_of_shares_, this->random_data_);
+      EXPECT_EQ(this->number_of_shares_, this->secret_data_parts_.size());
+      secret_parts = this->GetRandomParts(this->threshold_, this->secret_data_parts_);
+      EXPECT_EQ(this->random_data_, SecretRecoverData(secret_parts));
+    }
+
+    // Use 32 shares with threshold of 29 since that's likely to be used by Routing
+    this->number_of_shares_ = 32;
+    this->threshold_ = 29;
+    // IDA
+    this->dispersed_data_parts_ =
+        InfoDisperse(this->threshold_, this->number_of_shares_, this->random_data_);
+    EXPECT_EQ(this->number_of_shares_, this->dispersed_data_parts_.size());
+    auto dispersed_parts(this->GetRandomParts(this->threshold_, this->dispersed_data_parts_));
+    EXPECT_EQ(this->random_data_, InfoRetrieve(dispersed_parts));
+    // Secret Share
+    this->secret_data_parts_ =
+        SecretShareData(this->threshold_, this->number_of_shares_, this->random_data_);
+    EXPECT_EQ(this->number_of_shares_, this->secret_data_parts_.size());
+    auto secret_parts(this->GetRandomParts(this->threshold_, this->secret_data_parts_));
+    EXPECT_EQ(this->random_data_, SecretRecoverData(secret_parts));
+
+    if (this->data_size_ == 0)
+      this->data_size_ = (RandomUint32() % 100) + 1;
+    else
+      this->data_size_ *= (RandomUint32() % 100) + 10;
+  } while (this->data_size_ < 2 * 1024 * 1024);
 }
 
 }  // namespace test
