@@ -216,19 +216,18 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
                                             const std::vector<byte>& data) {
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::ArraySource source(
-      &data.data()[0], data.size(), false,
+      data.data(), data.size(), false,
       new CryptoPP::InformationDispersal(threshold, number_of_shares, channel_switch));
 
   CryptoPP::vector_member_ptrs<CryptoPP::ArraySink> array_sink(number_of_shares);
-  std::vector<std::vector<byte>> out_vec;
-  out_vec.resize(number_of_shares);
+  std::vector<std::vector<byte>> out_vec(number_of_shares);
   std::string channel;
 
   for (int i = 0; i < number_of_shares; ++i) {
     out_vec[i].resize(data.size() /* / number_of_shares*/);
-    array_sink[i].reset(new CryptoPP::ArraySink(&out_vec[i].data()[0], out_vec[i].size()));
+    array_sink[i].reset(new CryptoPP::ArraySink(out_vec[i].data(), out_vec[i].size()));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
-    array_sink[i]->Put((byte*)(channel.data()), 4);
+    array_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
     // see http://www.cryptopp.com/wiki/ChannelSwitch
     channel_switch->AddRoute(channel, *array_sink[i], CryptoPP::DEFAULT_CHANNEL);
   }
@@ -238,8 +237,9 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
   return out_vec;
 }
 
-std::string InfoRetreive(size_t threshold, const std::vector<std::string>& in_strings) {
-  assert(in_strings.size() != threshold);
+std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_strings) {
+  int32_t size(static_cast<int32_t>(in_strings.size()));
+  int32_t num_to_check = std::min(size, threshold);
   std::string data;
 
   CryptoPP::InformationRecovery recovery(threshold, new CryptoPP::StringSink(data));
@@ -254,21 +254,30 @@ std::string InfoRetreive(size_t threshold, const std::vector<std::string>& in_st
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
+  while (string_sources[0]->Pump(256)) {
+    for (auto i = 1; i < num_to_check; ++i)
+      string_sources[i]->Pump(256);
+  }
+
   for (size_t i = 0; i < threshold; ++i)
     string_sources[i]->PumpAll();
 
   return data;
 }
 
-std::vector<byte> InfoRetreive(size_t threshold, const std::vector<std::vector<byte>>& in_bytes) {
-  assert(in_bytes.size() != threshold);
-  std::string data;
+std::vector<byte> InfoRetrieve(int32_t threshold, const std::vector<std::vector<byte>>& in_bytes) {
+  int32_t size(static_cast<int32_t>(in_bytes.size()));
+  int32_t num_to_check = std::min(size, threshold);
+  // Safe to subtract 4 since each piece is prefixed with a byte piece number
+  auto data_size(num_to_check * (in_bytes.front().size() - 4));
+  std::vector<byte> data(data_size);
 
-  CryptoPP::InformationRecovery recovery(threshold, new CryptoPP::StringSink(data));
-  CryptoPP::vector_member_ptrs<CryptoPP::ArraySource> array_sources(threshold);
+  auto array_sink = new CryptoPP::ArraySink(&data.data()[0], data_size);
+  CryptoPP::InformationRecovery recovery(num_to_check, array_sink);
+  CryptoPP::vector_member_ptrs<CryptoPP::ArraySource> array_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (size_t i = 0; i < threshold; ++i) {
+  for (auto i = 0; i < num_to_check; ++i) {
     array_sources[i].reset(
         new CryptoPP::ArraySource(&in_bytes[i].data()[0], in_bytes[i].size(), false));
     array_sources[i]->Pump(4);
@@ -276,11 +285,18 @@ std::vector<byte> InfoRetreive(size_t threshold, const std::vector<std::vector<b
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
-  for (size_t i = 0; i < threshold; ++i)
-    array_sources[i]->PumpAll2(true);
-  return std::vector<byte>(std::begin(data), std::end(data));
-}
 
+  while (array_sources[0]->Pump(256)) {
+    for (auto i = 1; i < num_to_check; ++i)
+      array_sources[i]->Pump(256);
+  }
+
+  for (auto i = 0; i < num_to_check; ++i)
+    array_sources[i]->PumpAll();
+
+  data.resize(array_sink->TotalPutLength());
+  return data;
+}
 
 CipherText ObfuscateData(const Identity& name, const PlainText& plain_text) {
   AES256Key key(name.string().substr(0, AES256_KeySize));
