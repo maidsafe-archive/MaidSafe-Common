@@ -170,6 +170,8 @@ if(INCLUDE_TESTS)
       ${CommonSerialisationTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
+  # TODO(Fraser#5#): 2014-12-08 - BEFORE_RELEASE - remove this define and all associated C++ code.
+  target_compile_definitions(test_common PRIVATE USE_DEPRECATED_NODE_ID_BEHAVIOUR)
 
   ms_add_executable(test_network_viewer
       "Tests/Common"

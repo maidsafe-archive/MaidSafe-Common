@@ -197,7 +197,9 @@ TEST(NodeIdBasicTest, BEH_String) {
   const auto rand_str = RandomString(NodeId::kSize);
   auto id = NodeId{rand_str};
   EXPECT_EQ(id.string(), rand_str);
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   EXPECT_THROW(NodeId{}.string(), common_error);
+#endif
 }
 
 TEST(NodeIdBasicTest, BEH_IsValid) {
@@ -307,14 +309,20 @@ TEST_F(NodeIdTest, BEH_Operators) {
   EXPECT_EQ(xor_of_id1_and_id2, id2_ ^ id1_);
   EXPECT_EQ(NodeId(std::string(NodeId::kSize, 0)), id1_ ^ id1_);
 
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   EXPECT_THROW(id1_ ^ invalid_id_, common_error);
   EXPECT_THROW(invalid_id_ ^ id1_, common_error);
   EXPECT_THROW(invalid_id_ ^ invalid_id_, common_error);
+#endif
 
   // operator<<
   std::stringstream sstream;
   sstream << id1_ << invalid_id_;
+#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  EXPECT_EQ(DebugId(id1_) + DebugId(invalid_id_), sstream.str());
+#else
   EXPECT_EQ(DebugId(id1_) + "Invalid ID", sstream.str());
+#endif
 }
 
 TEST_F(NodeIdTest, BEH_CloserToTarget) {
@@ -337,9 +345,11 @@ TEST_F(NodeIdTest, BEH_CloserToTarget) {
   EXPECT_FALSE(NodeId::CloserToTarget(id1_, target, target));
   EXPECT_FALSE(NodeId::CloserToTarget(id1_, id1_, target));
 
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   EXPECT_THROW(NodeId::CloserToTarget(invalid_id_, id1_, target), common_error);
   EXPECT_THROW(NodeId::CloserToTarget(id1_, invalid_id_, target), common_error);
   EXPECT_THROW(NodeId::CloserToTarget(id1_, id2_, invalid_id_), common_error);
+#endif
 }
 
 TEST_F(NodeIdTest, FUNC_CloserToTarget) {
@@ -395,7 +405,11 @@ TEST_F(NodeIdTest, BEH_Serialisation) {
 }
 
 TEST_F(NodeIdTest, BEH_DebugId) {
+#if defined(USE_DEPRECATED_NODE_ID_BEHAVIOUR) && !defined(NDEBUG)
+  EXPECT_EQ("000000..000000", DebugId(invalid_id_));
+#else
   EXPECT_EQ("Invalid ID", DebugId(invalid_id_));
+#endif
   EXPECT_EQ(HexSubstr(id1_.string()), DebugId(id1_));
 
   // Test after calling each non-const function that DebugId is still valid.
