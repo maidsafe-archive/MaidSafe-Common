@@ -322,7 +322,7 @@ std::string InfoRetrieve(const std::vector<std::string>& in_strings) {
   CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (auto i = 0; i < num_to_check; ++i) {
+  for (size_t i = 0; i < num_to_check; ++i) {
     string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
@@ -330,7 +330,7 @@ std::string InfoRetrieve(const std::vector<std::string>& in_strings) {
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
-  for (auto i = 0; i < num_to_check; ++i)
+  for (size_t i = 0; i < num_to_check; ++i)
     string_sources[i]->PumpAll();
 
   return data;
@@ -347,7 +347,7 @@ std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays) 
   CryptoPP::vector_member_ptrs<CryptoPP::ArraySource> array_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (auto i = 0; i < num_to_check; ++i) {
+  for (size_t i = 0; i < num_to_check; ++i) {
     array_sources[i].reset(
         new CryptoPP::ArraySource(in_arrays[i].data(), in_arrays[i].size(), false));
     array_sources[i]->Pump(4);
@@ -356,7 +356,7 @@ std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays) 
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
-  for (auto i = 0; i < num_to_check; ++i)
+  for (size_t i = 0; i < num_to_check; ++i)
     array_sources[i]->PumpAll();
 
   data.resize(array_sink->TotalPutLength());
