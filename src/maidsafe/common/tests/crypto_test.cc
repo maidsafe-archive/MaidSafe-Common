@@ -350,9 +350,23 @@ TEST(CryptoTest, BEH_InformationDispersal) {
   uint8_t num_shares(20);
   uint8_t threshold(10);
   std::vector<std::string> data_parts(InfoDisperse(threshold, num_shares, rand_string));
-  EXPECT_EQ(InfoRetreive(threshold, data_parts), rand_string) << "should pass with threshold";
-  EXPECT_NE(InfoRetreive(9, data_parts), rand_string) << "should fail with to few parts";
-  EXPECT_NE(InfoRetreive(11, data_parts), rand_string) << "should fail with too many parts";
+  EXPECT_EQ(InfoRetrieve(threshold, data_parts), rand_string) << "should pass with threshold";
+  EXPECT_NE(InfoRetrieve(9, data_parts), rand_string) << "should fail with to few parts";
+  EXPECT_NE(InfoRetrieve(11, data_parts), rand_string) << "should fail with too many parts";
+}
+
+TEST(CryptoTest, BEH_InformationDispersalByte) {
+  auto str(RandomString(64));
+  std::vector<byte> rand_bytes(std::begin(str), std::end(str));
+  uint8_t num_shares(20);
+  uint8_t threshold(10);
+  std::vector<std::vector<byte>> data_parts(InfoDisperse(threshold, num_shares, rand_bytes));
+  EXPECT_EQ(data_parts.size(), num_shares);
+  EXPECT_NE(data_parts.front(), std::vector<byte>());
+
+  EXPECT_EQ(InfoRetrieve(threshold, data_parts), rand_bytes) << "should pass with threshold";
+  EXPECT_NE(InfoRetrieve(9, data_parts), rand_bytes) << "should fail with to few parts";
+  EXPECT_NE(InfoRetrieve(11, data_parts), rand_bytes) << "should fail with too many parts";
 }
 
 }  // namespace test
