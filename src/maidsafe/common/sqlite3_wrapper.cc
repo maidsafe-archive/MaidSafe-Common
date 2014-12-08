@@ -55,14 +55,12 @@ Database::~Database() {
 void Database::CheckPoint() {
   if (sqlite3_wal_checkpoint(database, NULL) != SQLITE_OK)
     LOG(kError) << "CheckPoint error " << sqlite3_errmsg(database);
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+  //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
 }
 
 
-Tranasction::Tranasction(Database& database_in)
-    : kAttempts(100),
-      database(database_in) {
-  std::string query("BEGIN IMMEDIATE TRANSACTION");  // FIXME consider immediate transaction
+Transaction::Transaction(Database& database_in) : kAttempts(200), database(database_in) {
+  std::string query("BEGIN IMMEDIATE TRANSACTION");  // immediate or exclusive transaction
   for (int i(0); i != kAttempts; ++i) {
     try {
       Execute(query);
