@@ -25,8 +25,31 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/common/data_types/structured_data_versions.h"
+#include "maidsafe/common/data_types/structured_data_versions_cereal.h"
 
 namespace maidsafe {
+
+namespace detail {  // Provide ADL for this TU to std::vector comparisons
+
+using Sdv_t = StructuredDataVersionsCereal;
+using SdvBr_t = StructuredDataVersionsCereal::Branch;
+using Ver_t = VersionCereal;
+
+bool operator==(const Ver_t& ref_lhs, const Ver_t& ref_rhs) {
+  return ref_lhs.forking_child_count_ == ref_rhs.forking_child_count_ &&
+      ref_lhs.id_ == ref_rhs.id_ && ref_lhs.index_ == ref_rhs.index_;
+}
+
+bool operator==(const SdvBr_t& ref_lhs, const SdvBr_t& ref_rhs) {
+  return ref_lhs.absent_parent_ == ref_rhs.absent_parent_ && ref_lhs.name_ == ref_rhs.name_;
+}
+
+bool operator==(const Sdv_t& ref_lhs, const Sdv_t& ref_rhs) {
+  return ref_lhs.max_branches_ == ref_rhs.max_branches_ &&
+      ref_lhs.max_versions_ == ref_rhs.max_versions_ && ref_lhs.branch_ == ref_rhs.branch_;
+}
+
+}  // namespace detail
 
 namespace test {
 
@@ -262,6 +285,54 @@ TEST(StructuredDataVersionsTests, BEH_ApplySerialised) {
   ASSERT_NO_THROW(versions1.ApplySerialised(serialised2));
   ASSERT_NO_THROW(versions2.ApplySerialised(serialised1));
   ASSERT_TRUE(Equivalent(versions1, versions2));
+}
+
+TEST(StructuredDataVersionsTests, BEH_SerialisationOptionalFieldTest) {
+  using Sdv_t = maidsafe::detail::Sdv_t;
+  using SdvBr_t = maidsafe::detail::SdvBr_t;
+  using Ver_t = maidsafe::detail::Ver_t;
+
+  Ver_t ver_0, ver_1, ver_2, ver_3;
+  ver_0.index_ = ver_1.index_ = ver_2.index_ = ver_3.index_ = 100;
+  ver_0.id_ = ver_1.id_ = ver_2.id_ = ver_3.id_ = "Data";
+
+  ver_0.forking_child_count_ = ver_2.forking_child_count_ = 33;
+
+  EXPECT_TRUE(ver_0.forking_child_count_ && ver_2.forking_child_count_);
+  EXPECT_FALSE(ver_1.forking_child_count_ || ver_3.forking_child_count_);
+
+  Sdv_t sdv_lhs, sdv_rhs;
+  sdv_lhs.max_versions_ = sdv_rhs.max_versions_ = 20;
+  sdv_lhs.max_branches_ = sdv_rhs.max_branches_ = 10;
+
+  SdvBr_t sdv_br_0, sdv_br_1;
+
+  sdv_br_0.absent_parent_ = ver_0;
+  sdv_br_0.name_.push_back(ver_3);
+
+  sdv_br_1.name_.push_back(ver_2);
+
+  sdv_lhs.branch_.push_back(sdv_br_0);
+  sdv_rhs.branch_.push_back(sdv_br_1);
+
+  EXPECT_FALSE(sdv_lhs == sdv_rhs);
+  // Lhs has optional absent_parent_, Rhs has optional absent_parent_ missing
+  EXPECT_FALSE(sdv_lhs.branch_[0].absent_parent_ == sdv_rhs.branch_[0].absent_parent_);
+  // Lhs has optional forking_child_count_ missing, Rhs has optional forking_child_count_
+  EXPECT_FALSE(sdv_lhs.branch_[0].name_[0] == sdv_rhs.branch_[0].name_[0]);
+
+  // Serialise
+  std::string str_serialised_0 {ConvertToString(sdv_lhs)};
+
+  // Deserialise
+  ConvertFromString(str_serialised_0, sdv_rhs);
+  // Rhs has optional absent_parent_ restored by presence of it in stream.
+  // Rhs has optional forking_child_count_ forced absent by absence of it in stream.
+  EXPECT_TRUE(sdv_lhs == sdv_rhs);
+
+  // Reserialise
+  std::string str_serialised_1 {ConvertToString(sdv_rhs)};
+  EXPECT_TRUE(str_serialised_0 == str_serialised_1);
 }
 
 }  // namespace test

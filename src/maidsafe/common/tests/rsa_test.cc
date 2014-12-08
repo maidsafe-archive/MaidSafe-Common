@@ -44,6 +44,14 @@ class RsaTest : public testing::Test {
   }
 };
 
+TEST_F(RsaTest, BEH_ValidateKey) {
+  Keys keys;
+  EXPECT_FALSE(ValidateKey(keys.private_key));
+  EXPECT_FALSE(ValidateKey(keys.public_key));
+  EXPECT_TRUE(ValidateKey(keys_.private_key));
+  EXPECT_TRUE(ValidateKey(keys_.public_key));
+}
+
 TEST_F(RsaTest, BEH_RsaEncodeKeys) {
   Keys keys = GenerateKeyPair();
   maidsafe::test::RunInParallel(100, [&] {

@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,23 +16,37 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-option optimize_for = LITE_RUNTIME;
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_
 
-package maidsafe.protobuf;
+#include <cstdint>
+#include <string>
 
-message Version {
-  required uint64 index = 1;
-  required bytes id = 2;
-  optional uint32 forking_child_count = 3;
-}
+#include "boost/optional.hpp"
 
+namespace maidsafe {
 
-message StructuredDataVersions {
-  message Branch {
-    optional Version absent_parent = 1;
-    repeated Version name = 2;
+namespace detail {
+
+struct VersionCereal {
+  VersionCereal()
+    : index_ {},
+      id_ {},
+      forking_child_count_ {}
+  { }
+
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(index_, id_, forking_child_count_);
   }
-  required uint32 max_versions = 1;
-  required uint32 max_branches = 2;
-  repeated Branch branch = 3;
-}
+
+  std::uint64_t index_;
+  std::string id_;
+  boost::optional<std::uint32_t> forking_child_count_;
+};
+
+}  // namespace detail
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_VERSION_CEREAL_H_

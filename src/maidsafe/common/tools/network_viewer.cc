@@ -30,7 +30,8 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/on_scope_exit.h"
-#include "maidsafe/common/tools/network_viewer.pb.h"
+
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace bi = boost::interprocess;
 
@@ -223,32 +224,15 @@ MatrixRecord::MatrixRecord(const NodeId& owner_id)
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
     : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
-  protobuf::MatrixRecord proto_matrix_record;
-  if (!proto_matrix_record.ParseFromString(serialised_matrix_record)) {
+  try { ConvertFromString(serialised_matrix_record, *this); }
+  catch(...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-
-  owner_id_ = NodeId(proto_matrix_record.owner_id());
-  matrix_ids_ = MatrixIds([this](const NodeId & lhs, const NodeId & rhs) {
-    return NodeId::CloserToTarget(lhs, rhs, owner_id_);
-  });
-
-  for (int i(0); i != proto_matrix_record.matrix_ids_size(); ++i) {
-    AddElement(NodeId(proto_matrix_record.matrix_ids(i).id()),
-               static_cast<ChildType>(proto_matrix_record.matrix_ids(i).type()));
   }
 }
 
 std::string MatrixRecord::Serialise() const {
-  protobuf::MatrixRecord proto_matrix_record;
-  proto_matrix_record.set_owner_id(owner_id_.string());
-  for (const auto& matrix_id : matrix_ids_) {
-    auto proto_element(proto_matrix_record.add_matrix_ids());
-    proto_element->set_id(matrix_id.first.string());
-    proto_element->set_type(static_cast<int32_t>(matrix_id.second));
-  }
-  return proto_matrix_record.SerializeAsString();
+  return ConvertToString(*this);
 }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)
@@ -262,10 +246,6 @@ MatrixRecord& MatrixRecord::operator=(MatrixRecord other) {
   swap(owner_id_, other.owner_id_);
   swap(matrix_ids_, other.matrix_ids_);
   return *this;
-}
-
-void MatrixRecord::AddElement(const NodeId& element_id, ChildType child_type) {
-  matrix_ids_[element_id] = child_type;
 }
 
 NodeId MatrixRecord::owner_id() const { return owner_id_; }

@@ -23,7 +23,8 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
-#include "maidsafe/common/data_types/mutable_types.pb.h"
+
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
@@ -31,7 +32,8 @@ MutableData::MutableData(const MutableData& other)
     : name_(other.name_), data_(other.data_) {}
 
 MutableData::MutableData(MutableData&& other)
-    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
+    : name_(std::move(other.name_)),
+      data_(std::move(other.data_)) { }
 
 MutableData& MutableData::operator=(MutableData other) {
   swap(*this, other);
@@ -43,16 +45,12 @@ MutableData::MutableData(Name name, NonEmptyString data)
 
 MutableData::MutableData(Name name, const serialised_type& serialised_mutable_data)
     : name_(std::move(name)), data_() {
-  protobuf::MutableData proto_mutable_data;
-  if (!proto_mutable_data.ParseFromString(serialised_mutable_data->string()))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  data_ = NonEmptyString(proto_mutable_data.data());
+  try { ConvertFromString(serialised_mutable_data->string(), *this); }
+  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 }
 
 MutableData::serialised_type MutableData::Serialise() const {
-  protobuf::MutableData proto_mutable_data;
-  proto_mutable_data.set_data(data_.string());
-  return serialised_type(NonEmptyString(proto_mutable_data.SerializeAsString()));
+  return serialised_type(NonEmptyString(ConvertToString(*this)));
 }
 
 MutableData::Name MutableData::name() const { return name_; }

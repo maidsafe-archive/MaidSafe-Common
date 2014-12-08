@@ -140,8 +140,17 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
 }
 
 uint32_t& rng_seed() {
+#ifdef _MSC_VER
+  // Work around high_resolution_clock being the lowest resolution clock pre-VS14
+  static uint32_t seed([]{
+    LARGE_INTEGER t;
+    QueryPerformanceCounter(&t);
+    return static_cast<uint32_t>(t.LowPart);
+  }());
+#else
   static uint32_t seed(static_cast<uint32_t>(
       std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+#endif
   return seed;
 }
 

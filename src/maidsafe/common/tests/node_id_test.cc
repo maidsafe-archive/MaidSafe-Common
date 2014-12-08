@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <bitset>
 #include <sstream>
+#include <string>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -135,7 +136,7 @@ TEST(NodeIdBasicTest, BEH_HashConstructor) {
 
 TEST(NodeIdBasicTest, BEH_EncodingConstructor) {
   auto known_raw = std::string(NodeId::kSize, 0);
-  for (char c = 0; c < NodeId::kSize; ++c)
+  for (char c = 0; c < static_cast<char>(NodeId::kSize); ++c)
     known_raw.at(static_cast<uint8_t>(c)) = c;
   for (int i = 0; i < 3; ++i) {
     auto rand_str = RandomString(NodeId::kSize);
@@ -311,7 +312,7 @@ TEST_F(NodeIdTest, BEH_Operators) {
   EXPECT_THROW(invalid_id_ ^ invalid_id_, common_error);
 
   // operator<<
-  auto sstream = std::stringstream{};
+  std::stringstream sstream;
   sstream << id1_ << invalid_id_;
   EXPECT_EQ(DebugId(id1_) + "Invalid ID", sstream.str());
 }
@@ -341,6 +342,21 @@ TEST_F(NodeIdTest, BEH_CloserToTarget) {
   EXPECT_THROW(NodeId::CloserToTarget(id1_, id2_, invalid_id_), common_error);
 }
 
+TEST_F(NodeIdTest, FUNC_CloserToTarget) {
+  auto target = NodeId{RandomString(NodeId::kSize)};
+  std::vector<NodeId> nodes(100000, NodeId(RandomString(NodeId::kSize)));
+  std::sort(std::begin(nodes), std::end(nodes), [target](const NodeId& lhs, const NodeId& rhs) {
+    return NodeId::CloserToTarget(lhs, rhs, target);
+  });
+
+  auto closest = nodes.front();
+
+  for (const auto& node : nodes) {
+    // not to worry comparing same nodes will not make one closer
+    EXPECT_FALSE(NodeId::CloserToTarget(node, closest, target));
+  }
+}
+
 TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
   // Check for two equal IDs
   auto copy_of_id1 = NodeId{id1_};
@@ -356,6 +372,26 @@ TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
     EXPECT_EQ((NodeId::kSize * 8) - i - 1, id1_.CommonLeadingBits(modified_id));
     id1_as_binary.flip(i);
   }
+}
+
+TEST_F(NodeIdTest, BEH_Serialisation) {
+  // Invalid Deserialisation
+  std::string raw_id{id1_.string()};
+
+  EXPECT_EQ(NodeId::kSize, raw_id.size());
+
+  raw_id.erase(raw_id.size() - 1);
+  NodeId parsed;
+  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), parsed),
+               common_error);
+
+  // Valid Serialisation
+  std::string serialised_str;
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(id1_));
+
+  // Valid Deserialisation
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, parsed));
+  EXPECT_EQ(id1_, parsed);
 }
 
 TEST_F(NodeIdTest, BEH_DebugId) {

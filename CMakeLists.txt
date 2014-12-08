@@ -50,14 +50,20 @@ ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authenticat
 ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
 ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
 
+ms_glob_dir(CommonContainers ${CommonSourcesDir}/containers "Containers")
+ms_glob_dir(CommonContainersTests ${CommonSourcesDir}/containers/tests "Containers Tests")
+
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
-ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
-ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
+ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
+ms_glob_dir(CommonSerialisationTests ${CommonSourcesDir}/serialisation/tests "Serialisation Tests")
 
 ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
 ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
+
+ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
+ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
@@ -74,15 +80,15 @@ ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
-    ${CommonDataStoresAllFiles}
+    ${CommonContainersAllFiles}
     ${CommonDataTypesAllFiles}
+    ${CommonSerialisationAllFiles}
     ${CommonTcpAllFiles})
 add_dependencies(maidsafe_common boost_process)
 
 target_include_directories(maidsafe_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src
 )
@@ -90,20 +96,19 @@ ms_target_include_system_dirs(maidsafe_common PUBLIC ${BoostSourceDir})
 if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
-if(MSVC12 AND CMAKE_CL_64)
-  message(AUTHOR_WARNING "Remove the \"/GS-\" flag from ipc.cc once https://svn.boost.org/trac/boost/ticket/9666 is resolved (probably in Boost v1.56).")
-  set_property(SOURCE ${CommonSourcesDir}/ipc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " /GS-")
-endif()
-if(${CMAKE_VERSION} VERSION_LESS 3.0)
+if(CMAKE_VERSION VERSION_LESS "3.0")
+  set(AsioLib)
   set(CerealLib)
+  target_include_directories(maidsafe_common PUBLIC ${CMAKE_SOURCE_DIR}/src/third_party_libs/header_only)
 else()
+  set(AsioLib asio)
   set(CerealLib cereal)
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
+    ${AsioLib}
     ${CerealLib}
     cryptopp
-    protobuf_lite
     sqlite
     ${BoostChronoLibs}
     ${BoostDateTimeLibs}
@@ -122,10 +127,7 @@ endif()
 # Network Viewer library
 ms_add_static_library(maidsafe_network_viewer
     "${CommonSourcesDir}/tools/network_viewer.cc"
-    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.cc"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/network_viewer.pb.h"
-    "${CommonSourcesDir}/tools/network_viewer.proto")
+    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h")
 target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
@@ -145,9 +147,8 @@ target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_passport
 
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
-    "${CommonSourcesDir}/tools/bootstrap_file_tool.cc"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.cc"
-    "${CMAKE_BINARY_DIR}/GeneratedProtoFiles/maidsafe/common/tools/bootstrap_file_tool.pb.h")
+    "${CommonSourcesDir}/tools/bootstrap_file_tool.cc")
+target_include_directories(bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(bootstrap_file_tool maidsafe_common)
 
 # Address space tool
@@ -158,14 +159,33 @@ target_include_directories(address_space_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(address_space_tool maidsafe_common)
 
 # Tests
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_static_library(maidsafe_test ${TestLibAllFiles})
   target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles} ${CommonDataTypesTestsAllFiles})
+  ms_add_executable(test_common "Tests/Common"
+      ${CommonTestsAllFiles}
+      ${CommonAuthenticationTestsAllFiles}
+      ${CommonTcpTestsAllFiles}
+      ${CommonContainersTestsAllFiles}
+      ${CommonDataTypesTestsAllFiles}
+      ${CommonSerialisationTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
+
+  ms_add_executable(test_network_viewer
+      "Tests/Common"
+      ${CommonSourcesDir}/tests/tests_main.cc
+      ${CommonSourcesDir}/tools/tests/network_viewer_test.cc)
+  target_link_libraries(test_network_viewer maidsafe_test maidsafe_network_viewer)
+
+  ms_add_executable(test_bootstrap_file_tool
+      "Tests/Common"
+      ${CommonSourcesDir}/tests/tests_main.cc
+      ${CommonSourcesDir}/tools/tests/bootstrap_file_tool_test.cc)
+  target_include_directories(test_bootstrap_file_tool PRIVATE ${PROJECT_SOURCE_DIR}/src)
+  target_link_libraries(test_bootstrap_file_tool maidsafe_test)
 
   ms_add_executable(ipc_child_process "Tests/Common" ${IpcChildProcess})
   target_link_libraries(ipc_child_process maidsafe_common)
@@ -192,9 +212,11 @@ include(standard_flags)
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_common)
+  ms_add_gtests(test_network_viewer)
+  ms_add_gtests(test_bootstrap_file_tool)
   ms_add_gtests(test_common_config)
   ms_test_summary_output()
 endif()
@@ -208,7 +230,7 @@ install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMP
 install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Release RUNTIME DESTINATION bin)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
   install(TARGETS ipc_child_process test_common_config test_common COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
