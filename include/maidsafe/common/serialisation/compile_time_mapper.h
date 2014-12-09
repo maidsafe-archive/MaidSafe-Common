@@ -30,6 +30,7 @@
 
 #include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/serialisation/binary_archive.h"
 
 namespace maidsafe {
 
