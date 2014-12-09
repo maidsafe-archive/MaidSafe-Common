@@ -19,7 +19,7 @@
 #ifndef MAIDSAFE_COMMON_TEST_H_
 #define MAIDSAFE_COMMON_TEST_H_
 
-#ifndef MAIDSAFE_WIN32
+#if !defined(MAIDSAFE_WIN32) && !defined(__ANDROID__)
 #include <ulimit.h>
 #endif
 #include <functional>
