@@ -113,7 +113,7 @@ target_link_libraries(maidsafe_common
     ${BoostProgramOptionsLibs}
     ${JustThread_LIBRARIES}
     ${SYS_LIB}
-    $<$<BOOL:${ANDROID_BUILD}>:"${ANDROID_NDK_TOOLCHAIN_ROOT}/sysroot/usr/lib/liblog.so">)
+    $<$<BOOL:${ANDROID_BUILD}>:${ANDROID_NDK_TOOLCHAIN_ROOT}/sysroot/usr/lib/liblog.so>)
 if(TARGET check_sanitizer_blacklist)
   add_dependencies(maidsafe_common check_sanitizer_blacklist)
 endif()
