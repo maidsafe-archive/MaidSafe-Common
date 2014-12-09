@@ -38,18 +38,10 @@ const size_t NodeId::kSize;
 #define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
 #endif
 
-#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
-
-NodeId::NodeId() : raw_id_(kSize, 0) INIT_DEBUG_NODE_ID {}
-
-#else
-
 #ifdef NDEBUG
 NodeId::NodeId() : raw_id_() {}
 #else
 NodeId::NodeId() : raw_id_(), debug_id_("Invalid ID") {}
-#endif
-
 #endif
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) INIT_DEBUG_NODE_ID {}
@@ -117,10 +109,8 @@ void NodeId::DecodeFromBinary(const std::string& binary_id) {
 }
 
 bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id) {
-#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   if (!id1.IsValid() || !id2.IsValid() || !target_id.IsValid())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
-#endif
   for (uint16_t i = 0; i < kSize; ++i) {
     unsigned char result1 = id1.raw_id_[i] ^ target_id.raw_id_[i];
     unsigned char result2 = id2.raw_id_[i] ^ target_id.raw_id_[i];
@@ -131,18 +121,14 @@ bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& 
 }
 
 std::string NodeId::string() const {
-#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   if (!IsValid())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
-#endif
   return raw_id_;
 }
 
 std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
-#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   if (!IsValid())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
-#endif
   switch (encoding_type) {
     case EncodingType::kBinary:
       return EncodeToBinary();
@@ -155,27 +141,11 @@ std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
   }
 }
 
-#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
-
-bool NodeId::IsValid() const {
-  for (auto i : raw_id_) {
-    if (i != 0)
-      return true;
-  }
-  return false;
-}
-
-#else
-
 bool NodeId::IsValid() const { return !raw_id_.empty(); }
 
-#endif
-
 int NodeId::CommonLeadingBits(const NodeId& other) const {
-#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   if (!IsValid() || !other.IsValid())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
-#endif
 
   // Find first mismatching char between the two IDs
   auto mismatch(std::mismatch(std::begin(raw_id_), std::end(raw_id_), std::begin(other.raw_id_)));
@@ -190,10 +160,8 @@ int NodeId::CommonLeadingBits(const NodeId& other) const {
 }
 
 NodeId& NodeId::operator^=(const NodeId& other) {
-#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
   if (!IsValid() || !other.IsValid())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
-#endif
 
   for (uint16_t i(0); i != kSize; ++i)
     raw_id_[i] ^= other.raw_id_[i];
