@@ -265,7 +265,6 @@ std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arr
   return data;
 }
 
-//  Rabin's information dispersal algorithm, space efficent
 std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
                                       const std::string& data) {
   ValidateDispersalArgs(threshold, number_of_shares);
