@@ -256,14 +256,6 @@ std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_s
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
->>>>>>> Stashed changes
-  while (string_sources[0]->Pump(256)) {
-    for (auto i = 1; i < num_to_check; ++i)
-      string_sources[i]->Pump(256);
-  }
-
-<<<<<<< Updated upstream
-=======
   for (int32_t i = 0; i < threshold; ++i)
     string_sources[i]->PumpAll();
 
@@ -291,14 +283,8 @@ std::vector<byte> InfoRetrieve(int32_t threshold, const std::vector<std::vector<
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
-  while (array_sources[0]->Pump(256)) {
-    for (auto i = 1; i < num_to_check; ++i)
-      array_sources[i]->Pump(256);
-  }
-
->>>>>>> Stashed changes
   for (auto i = 0; i < num_to_check; ++i)
-    string_sources[i]->PumpAll();
+    array_sources[i]->PumpAll();
 
   return data;
 }
