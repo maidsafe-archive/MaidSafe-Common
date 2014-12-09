@@ -184,8 +184,6 @@ std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>&
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
-<<<<<<< Updated upstream
-=======
   for (auto i = 0; i < num_to_check; ++i)
     string_sources[i]->PumpAll();
 
@@ -240,8 +238,6 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
 }
 
 std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_strings) {
-  int32_t size(static_cast<int32_t>(in_strings.size()));
-  int32_t num_to_check = std::min(size, threshold);
   std::string data;
 
   CryptoPP::InformationRecovery recovery(threshold, new CryptoPP::StringSink(data));
@@ -258,33 +254,6 @@ std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_s
 
   for (int32_t i = 0; i < threshold; ++i)
     string_sources[i]->PumpAll();
-
-  return data;
-}
-
-std::vector<byte> InfoRetrieve(int32_t threshold, const std::vector<std::vector<byte>>& in_bytes) {
-  int32_t size(static_cast<int32_t>(in_bytes.size()));
-  int32_t num_to_check = std::min(size, threshold);
-  // Safe to subtract 4 since each piece is prefixed with a byte piece number
-  auto data_size(num_to_check * (in_bytes.front().size() - 4));
-  std::vector<byte> data(data_size);
-
-  auto array_sink = new CryptoPP::ArraySink(&data.data()[0], data_size);
-  CryptoPP::InformationRecovery recovery(num_to_check, array_sink);
-  CryptoPP::vector_member_ptrs<CryptoPP::ArraySource> array_sources(num_to_check);
-  CryptoPP::SecByteBlock channel(4);
-
-  for (auto i = 0; i < num_to_check; ++i) {
-    array_sources[i].reset(
-        new CryptoPP::ArraySource(&in_bytes[i].data()[0], in_bytes[i].size(), false));
-    array_sources[i]->Pump(4);
-    array_sources[i]->Get(channel, 4);
-    array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
-        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
-  }
-
-  for (auto i = 0; i < num_to_check; ++i)
-    array_sources[i]->PumpAll();
 
   return data;
 }
