@@ -31,8 +31,7 @@ namespace maidsafe {
 
 namespace sqlite {
 
-Database::Database(const boost::filesystem::path& filename, Mode mode)
-    : database(nullptr) {
+Database::Database(const boost::filesystem::path& filename, Mode mode) : database(nullptr) {
   auto flags = static_cast<int>(mode);
   if (sqlite3_open_v2(filename.string().c_str(), &database, flags, NULL) != SQLITE_OK) {
     LOG(kError) << "Could not open db at : " << filename
@@ -40,7 +39,7 @@ Database::Database(const boost::filesystem::path& filename, Mode mode)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
   }
   assert(sqlite3_threadsafe());
-  char *error_message = 0;
+  char* error_message = 0;
   sqlite3_exec(database, "PRAGMA synchronous = OFF", NULL, 0, &error_message);
   sqlite3_exec(database, "PRAGMA journal_mode = WAL", NULL, 0, &error_message);
   sqlite3_exec(database, "PRAGMA wal_autocheckpoint = 0", NULL, 0, &error_message);
@@ -56,13 +55,11 @@ Database::~Database() {
 void Database::CheckPoint() {
   if (sqlite3_wal_checkpoint(database, NULL) != SQLITE_OK)
     LOG(kError) << "CheckPoint error " << sqlite3_errmsg(database);
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+  //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
 }
 
 
-Transaction::Transaction(Database& database_in)
-    : kAttempts(200),
-      database(database_in) {
+Transaction::Transaction(Database& database_in) : kAttempts(200), database(database_in) {
   std::string query("BEGIN IMMEDIATE TRANSACTION");  // immediate or exclusive transaction
   for (int i(0); i != kAttempts; ++i) {
     try {
@@ -74,8 +71,8 @@ Transaction::Transaction(Database& database_in)
       if (error.code() == make_error_code(CommonErrors::db_not_presented))
         throw;
       else
-        std::this_thread::sleep_for(std::chrono::milliseconds(
-            RandomUint32() % 200 + RandomUint32() % ((i + 1) * 10) + 10));
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(RandomUint32() % 200 + RandomUint32() % ((i + 1) * 10) + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
@@ -101,8 +98,8 @@ void Transaction::Commit() {
     } catch (const std::exception& e) {
       LOG(kWarning) << "Transaction::Commit FAILED in Attempt " << i << " with error "
                     << boost::diagnostic_information(e);
-      std::this_thread::sleep_for(std::chrono::milliseconds(
-          RandomUint32() % 200 + RandomUint32() % ((i + 1) * 10) + 10));
+      std::this_thread::sleep_for(
+          std::chrono::milliseconds(RandomUint32() % 200 + RandomUint32() % ((i + 1) * 10) + 10));
     }
   }
   LOG(kError) << "Failed to aquire db lock in " << kAttempts << " attempts";
@@ -110,7 +107,7 @@ void Transaction::Commit() {
 }
 
 void Transaction::Execute(const std::string& query) {
-  char *error_message = 0;
+  char* error_message = 0;
   int result = sqlite3_exec(database.database, query.c_str(), NULL, 0, &error_message);
   assert(result != SQLITE_ROW);
 
@@ -123,7 +120,7 @@ void Transaction::Execute(const std::string& query) {
       LOG(kError) << "database not presented";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
     } else {
-      LOG(kError) << "SQL error : " << error_message  << ". return value : " << result
+      LOG(kError) << "SQL error : " << error_message << ". return value : " << result
                   << " . Query :" << query;
       sqlite3_free(error_message);
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
@@ -132,8 +129,7 @@ void Transaction::Execute(const std::string& query) {
 }
 
 Statement::Statement(Database& database_in, const std::string& query)
-    : database(database_in),
-      statement() {
+    : database(database_in), statement() {
   auto return_value = sqlite3_prepare_v2(database.database, query.c_str(),
                                          static_cast<int>(query.size()), &statement, 0);
   if (return_value != SQLITE_OK) {
@@ -152,8 +148,8 @@ Statement::~Statement() {
 }
 
 void Statement::BindText(int row_index, const std::string& text) {
-  auto return_value = sqlite3_bind_text(statement, row_index, text.c_str(),
-                                        static_cast<int>(text.size()), 0);
+  auto return_value =
+      sqlite3_bind_text(statement, row_index, text.c_str(), static_cast<int>(text.size()), 0);
   if (return_value != SQLITE_OK) {
     LOG(kError) << " sqlite3_bind_text returned : " << return_value;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
@@ -171,8 +167,8 @@ StepResult Statement::Step() {
 }
 
 std::string Statement::ColumnText(int col_index) {
-  int bytes = sqlite3_column_bytes (statement, col_index);
-  auto column_text = reinterpret_cast<const char*>(sqlite3_column_text (statement, col_index));
+  int bytes = sqlite3_column_bytes(statement, col_index);
+  auto column_text = reinterpret_cast<const char*>(sqlite3_column_text(statement, col_index));
   return std::string(column_text, bytes);
 }
 
