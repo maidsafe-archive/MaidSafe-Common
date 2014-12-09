@@ -49,7 +49,7 @@ struct Database {
 
   void CheckPoint();
 
-  friend struct Tranasction;
+  friend struct Transaction;
   friend struct Statement;
  private:
   sqlite3 *database;
