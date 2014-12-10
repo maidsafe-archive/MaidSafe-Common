@@ -19,6 +19,7 @@
 #include "maidsafe/common/error_categories.h"
 
 #include "maidsafe/common/error.h"
+#include "asio/error.hpp"
 
 namespace maidsafe {
 
@@ -205,27 +206,35 @@ std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   }
 }
 
-//std::error_condition RudpCategory::default_error_condition(int error_value) const
-//    MAIDSAFE_NOEXCEPT {
-//  switch (static_cast<RudpErrors>(error_value)) {
-//    case RudpErrors::failed_to_connect:
-//      return std::errc::connection_refused;
-//    case RudpErrors::connection_already_in_progress:
-//      return std::errc::connection_already_in_progress;
-//    case RudpErrors::already_connected:
-//      return std::errc::already_connected;
-//    case RudpErrors::not_connected:
-//      return std::errc::not_connected;
-//    case RudpErrors::operation_not_supported:
-//      return std::errc::operation_not_supported;
-//    case RudpErrors::message_size:
-//      return std::errc::message_size;
-//    case RudpErrors::bad_message:
-//      return std::errc::bad_message;
-//    default:
-//      return std::error_condition(error_value, *this);
-//  }
-//}
+std::error_condition RudpCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RudpErrors>(error_value)) {
+    case RudpErrors::operation_aborted:
+      return std::error_condition(asio::error::operation_aborted, *this);
+    case RudpErrors::failed_to_connect:
+      return std::errc::connection_refused;
+    case RudpErrors::connection_already_in_progress:
+      return std::errc::connection_already_in_progress;
+    case RudpErrors::already_connected:
+      return std::errc::already_connected;
+    case RudpErrors::already_started:
+      return std::error_condition(asio::error::already_started, *this);
+    case RudpErrors::not_connected:
+      return std::errc::not_connected;
+    case RudpErrors::operation_not_supported:
+      return std::errc::operation_not_supported;
+    case RudpErrors::message_size:
+      return std::errc::message_size;
+    case RudpErrors::bad_message:
+      return std::errc::bad_message;
+    case RudpErrors::timed_out:
+      return std::errc::timed_out;
+    case RudpErrors::shut_down:
+      return std::error_condition(asio::error::shut_down, *this);
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
 
 const char* EncryptCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Encryption"; }
 
