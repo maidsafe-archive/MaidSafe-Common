@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/serialisation/binary_archive.h"
 
+#include <limits>
 #include <type_traits>
 
 #include "cereal/types/string.hpp"
@@ -29,10 +30,11 @@ namespace maidsafe {
 
 namespace test {
 
-enum class MessageTypeTag : uint16_t { kPing, kPingResponse };
+enum class MessageTypeTag : SerialisableTypeTag { kPing, kPingResponse };
 
 struct Ping {
-  const MessageTypeTag kSerialisableTypeTag = MessageTypeTag::kPing;
+  static const SerialisableTypeTag kSerialisableTypeTag =
+      static_cast<SerialisableTypeTag>(MessageTypeTag::kPing);
   std::string data = "Ping";
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -40,8 +42,11 @@ struct Ping {
   }
 };
 
+const SerialisableTypeTag Ping::kSerialisableTypeTag;
+
 struct PingResponse {
-  const MessageTypeTag kSerialisableTypeTag = MessageTypeTag::kPingResponse;
+  static const SerialisableTypeTag kSerialisableTypeTag =
+      static_cast<SerialisableTypeTag>(MessageTypeTag::kPingResponse);
   std::string data = "PingResponse";
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -49,57 +54,44 @@ struct PingResponse {
   }
 };
 
-using MessageMap = GetMap<Serialisable<MessageTypeTag::kPing, Ping>,
-                          Serialisable<MessageTypeTag::kPingResponse, PingResponse>>::Map;
+const SerialisableTypeTag PingResponse::kSerialisableTypeTag;
 
-template <MessageTypeTag Tag>
+using MessageMap = GetMap<Ping, PingResponse>::Map;
+
+template <SerialisableTypeTag Tag>
 using Message = typename Find<MessageMap, Tag>::ResultCustomType;
 
-template <typename TypeToSerialise>
-std::vector<unsigned char> Serialise(TypeToSerialise obj_to_serialise) {
-  OutputVectorStream vector_stream;
-  {
-    BinaryOutputArchive output_bin_archive(vector_stream);
-    output_bin_archive(obj_to_serialise.kSerialisableTypeTag,
-                       std::forward<TypeToSerialise>(obj_to_serialise));
-  }
-  return vector_stream.vector();
-}
-
-template <typename Enum>
-Enum TypeFromStream(InputVectorStream& binary_stream) {
-  auto tag = static_cast<typename std::underlying_type<Enum>::type>(-1);
-  {
-    BinaryInputArchive input_bin_archive(binary_stream);
-    input_bin_archive(tag);
-  }
-  return static_cast<Enum>(tag);
-}
-
-template <MessageTypeTag Tag>
-Message<Tag> Parse(InputVectorStream& binary_stream) {
-  Message<Tag> parsed_message;
-  {
-    BinaryInputArchive input_bin_archive(binary_stream);
-    input_bin_archive(parsed_message);
-  }
-  return parsed_message;
-}
-
 TEST(BinaryArchiveTest, BEH_Basic) {
+  // std::vector<byte> functions
   auto serialised_message = Serialise(Ping());
 
   InputVectorStream binary_stream{ serialised_message };
-  MessageTypeTag tag = TypeFromStream<MessageTypeTag>(binary_stream);
+  auto tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
   ASSERT_EQ(MessageTypeTag::kPing, tag);
-  auto parsed_ping = Parse<MessageTypeTag::kPing>(binary_stream);
+  auto parsed_ping = Parse<Ping>(binary_stream);
   EXPECT_EQ("Ping", parsed_ping.data);
 
   serialised_message = Serialise(PingResponse());
   binary_stream.swap_vector(serialised_message);
-  tag = TypeFromStream<MessageTypeTag>(binary_stream);
+  tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
   ASSERT_EQ(MessageTypeTag::kPingResponse, tag);
-  auto parsed_ping_response = Parse<MessageTypeTag::kPingResponse>(binary_stream);
+  auto parsed_ping_response = Parse<PingResponse>(binary_stream);
+  EXPECT_EQ("PingResponse", parsed_ping_response.data);
+
+  // std::string functions
+  auto serialised_to_string_message = SerialiseToString(Ping());
+
+  std::istringstream binary_string_stream{ serialised_to_string_message };
+  tag = static_cast<MessageTypeTag>(TypeFromStringStream(binary_string_stream));
+  ASSERT_EQ(MessageTypeTag::kPing, tag);
+  parsed_ping = ParseFromStringStream<Ping>(binary_string_stream);
+  EXPECT_EQ("Ping", parsed_ping.data);
+
+  serialised_to_string_message = SerialiseToString(PingResponse());
+  binary_string_stream.str(serialised_to_string_message);
+  tag = static_cast<MessageTypeTag>(TypeFromStringStream(binary_string_stream));
+  ASSERT_EQ(MessageTypeTag::kPingResponse, tag);
+  parsed_ping_response = ParseFromStringStream<PingResponse>(binary_string_stream);
   EXPECT_EQ("PingResponse", parsed_ping_response.data);
 }
 

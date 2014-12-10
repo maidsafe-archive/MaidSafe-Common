@@ -50,17 +50,20 @@ ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authenticat
 ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
 ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
 
+ms_glob_dir(CommonContainers ${CommonSourcesDir}/containers "Containers")
+ms_glob_dir(CommonContainersTests ${CommonSourcesDir}/containers/tests "Containers Tests")
+
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
 ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
 ms_glob_dir(CommonSerialisationTests ${CommonSourcesDir}/serialisation/tests "Serialisation Tests")
 
-ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
-ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
-
 ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
 ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
+
+ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
+ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
@@ -77,7 +80,7 @@ ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
-    ${CommonDataStoresAllFiles}
+    ${CommonContainersAllFiles}
     ${CommonDataTypesAllFiles}
     ${CommonSerialisationAllFiles}
     ${CommonTcpAllFiles})
@@ -94,13 +97,16 @@ if(JustThread_FOUND)
   ms_target_include_system_dirs(maidsafe_common PUBLIC ${JustThread_INCLUDE_DIR})
 endif()
 if(CMAKE_VERSION VERSION_LESS "3.0")
+  set(AsioLib)
   set(CerealLib)
   target_include_directories(maidsafe_common PUBLIC ${CMAKE_SOURCE_DIR}/src/third_party_libs/header_only)
 else()
+  set(AsioLib asio)
   set(CerealLib cereal)
 endif()
 target_link_libraries(maidsafe_common
     maidsafe_passport
+    ${AsioLib}
     ${CerealLib}
     cryptopp
     sqlite
@@ -162,6 +168,7 @@ if(INCLUDE_TESTS)
       ${CommonTestsAllFiles}
       ${CommonAuthenticationTestsAllFiles}
       ${CommonTcpTestsAllFiles}
+      ${CommonContainersTestsAllFiles}
       ${CommonDataTypesTestsAllFiles}
       ${CommonSerialisationTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
