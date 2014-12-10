@@ -241,11 +241,6 @@ std::string InfoRetrieve(const std::vector<std::string>& in_strings);
 
 std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays);
 
-std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of_shares,
-                                            const std::vector<byte>& data);
-
-std::vector<byte> InfoRetreive(int32_t threshold, const std::vector<std::vector<byte>>& parts);
-
 CipherText ObfuscateData(const Identity& name, const PlainText& plain_text);
 
 PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text);
