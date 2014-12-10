@@ -36,6 +36,23 @@ namespace {
 static boost::thread_specific_ptr<CryptoPP::AutoSeededX917RNG<CryptoPP::AES>>
     g_random_number_generator;
 
+void ValidateDispersalArgs(int32_t threshold, int32_t number_of_shares) {
+  if (threshold > number_of_shares) {
+    LOG(kError) << "The threshold (" << threshold
+                << ") must be less than or equal to the number of shares (" << number_of_shares
+                << ").";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  }
+  if (number_of_shares < 3) {
+    LOG(kError) << "The number of shares (" << number_of_shares << ") must be at least 3.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  }
+  if (threshold < 2) {
+    LOG(kError) << "The threshold (" << threshold << ") must be at least 2.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  }
+}
+
 }  // unnamed namespace
 
 const uint16_t kMaxCompressionLevel = 9;
@@ -149,6 +166,7 @@ UncompressedText Uncompress(const CompressedText& input) {
 
 std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data) {
+  ValidateDispersalArgs(threshold, number_of_shares);
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::StringSource source(data, false,
                                 new CryptoPP::SecretSharing(random_number_generator(), threshold,
@@ -168,31 +186,88 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
   return out_strings;
 }
 
-std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings) {
-  int32_t size(static_cast<int32_t>(in_strings.size()));
-  int32_t num_to_check = std::min(size, threshold);
+std::vector<std::vector<byte>> SecretShareData(int32_t threshold, int32_t number_of_shares,
+                                               const std::vector<byte>& data) {
+  ValidateDispersalArgs(threshold, number_of_shares);
+  auto channel_switch = new CryptoPP::ChannelSwitch;
+  CryptoPP::ArraySource source(data.data(), data.size(), false,
+                               new CryptoPP::SecretSharing(random_number_generator(), threshold,
+                                                           number_of_shares, channel_switch));
+
+  CryptoPP::vector_member_ptrs<CryptoPP::ArraySink> array_sink(number_of_shares);
+  std::vector<std::vector<byte>> out_vec(number_of_shares);
+  std::string channel;
+
+  for (int i = 0; i < number_of_shares; ++i) {
+    out_vec[i].resize(data.size() + 8);  // for padding
+    array_sink[i].reset(new CryptoPP::ArraySink(out_vec[i].data(), out_vec[i].size()));
+    channel = CryptoPP::WordToString<CryptoPP::word32>(i);
+    array_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
+    // see http://www.cryptopp.com/wiki/ChannelSwitch
+    channel_switch->AddRoute(channel, *array_sink[i], CryptoPP::DEFAULT_CHANNEL);
+  }
+  source.PumpAll();
+  for (int i = 0; i < number_of_shares; ++i)
+    out_vec[i].resize(array_sink[i]->TotalPutLength());
+  return out_vec;
+}
+
+std::string SecretRecoverData(const std::vector<std::string>& in_strings) {
+  size_t num_to_check = in_strings.size();
   std::string data;
 
-  CryptoPP::SecretRecovery recovery(num_to_check, new CryptoPP::StringSink(data));
+  CryptoPP::SecretRecovery recovery(static_cast<int>(num_to_check), new CryptoPP::StringSink(data));
   CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (auto i = 0; i < num_to_check; ++i) {
+  for (size_t i = 0; i < num_to_check; ++i) {
     string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
     string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
-  for (auto i = 0; i < num_to_check; ++i)
+
+  for (size_t i = 0; i < num_to_check; ++i)
     string_sources[i]->PumpAll();
 
   return data;
 }
 
-//  Rabin's information dispersal algorithm, space efficent
+std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arrays) {
+  size_t num_to_check = in_arrays.size();
+  // Safe to subtract 4 since each piece is prefixed with a byte piece number
+  auto data_size(num_to_check * in_arrays.front().size());
+  std::vector<byte> data(data_size);
+
+  auto array_sink = new CryptoPP::ArraySink(data.data(), data_size);
+  CryptoPP::SecretRecovery recovery(static_cast<int>(num_to_check), array_sink);
+  CryptoPP::vector_member_ptrs<CryptoPP::ArraySource> array_sources(num_to_check);
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
+  CryptoPP::SecByteBlock channel(4);
+
+  for (size_t i = 0; i < num_to_check; ++i) {
+    array_sources[i].reset(
+        new CryptoPP::ArraySource(in_arrays[i].data(), in_arrays[i].size(), false));
+    array_sources[i]->Pump(4);
+    array_sources[i]->Get(channel, 4);
+    array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
+        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
+  }
+
+  for (size_t i = 0; i < num_to_check; ++i)
+    array_sources[i]->PumpAll();
+
+  data.resize(array_sink->TotalPutLength());
+  std::string ffff(data.begin(), data.end());
+  (void)ffff;
+
+  return data;
+}
+
 std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
                                       const std::string& data) {
+  ValidateDispersalArgs(threshold, number_of_shares);
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::StringSource source(
       data, false, new CryptoPP::InformationDispersal(threshold, number_of_shares, channel_switch));
@@ -214,6 +289,7 @@ std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_share
 
 std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of_shares,
                                             const std::vector<byte>& data) {
+  ValidateDispersalArgs(threshold, number_of_shares);
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::ArraySource source(
       data.data(), data.size(), false,
@@ -224,7 +300,7 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
   std::string channel;
 
   for (int i = 0; i < number_of_shares; ++i) {
-    out_vec[i].resize(data.size() /* / number_of_shares*/);
+    out_vec[i].resize(data.size());
     array_sink[i].reset(new CryptoPP::ArraySink(out_vec[i].data(), out_vec[i].size()));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
     array_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
@@ -237,14 +313,15 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
   return out_vec;
 }
 
-std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_strings) {
+std::string InfoRetrieve(const std::vector<std::string>& in_strings) {
   std::string data;
-
-  CryptoPP::InformationRecovery recovery(threshold, new CryptoPP::StringSink(data));
-  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(threshold);
+  size_t num_to_check = in_strings.size();
+  CryptoPP::InformationRecovery recovery(static_cast<int>(num_to_check),
+                                         new CryptoPP::StringSink(data));
+  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (int32_t i = 0; i < threshold; ++i) {
+  for (size_t i = 0; i < num_to_check; ++i) {
     string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
     string_sources[i]->Pump(4);
     string_sources[i]->Get(channel, 4);
@@ -252,36 +329,36 @@ std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_s
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
-  for (int32_t i = 0; i < threshold; ++i)
+  for (size_t i = 0; i < num_to_check; ++i)
     string_sources[i]->PumpAll();
 
   return data;
 }
 
-std::vector<byte> InfoRetrieve(int32_t threshold, const std::vector<std::vector<byte>>& in_bytes) {
-  int32_t size(static_cast<int32_t>(in_bytes.size()));
-  int32_t num_to_check = std::min(size, threshold);
+std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays) {
+  size_t num_to_check = in_arrays.size();
   // Safe to subtract 4 since each piece is prefixed with a byte piece number
-  auto data_size(num_to_check * (in_bytes.front().size() - 4));
+  auto data_size(num_to_check * (in_arrays.front().size() - 4));
   std::vector<byte> data(data_size);
 
-  auto array_sink = new CryptoPP::ArraySink(&data.data()[0], data_size);
-  CryptoPP::InformationRecovery recovery(num_to_check, array_sink);
+  auto array_sink = new CryptoPP::ArraySink(data.data(), data_size);
+  CryptoPP::InformationRecovery recovery(static_cast<int>(num_to_check), array_sink);
   CryptoPP::vector_member_ptrs<CryptoPP::ArraySource> array_sources(num_to_check);
   CryptoPP::SecByteBlock channel(4);
 
-  for (auto i = 0; i < num_to_check; ++i) {
+  for (size_t i = 0; i < num_to_check; ++i) {
     array_sources[i].reset(
-        new CryptoPP::ArraySource(&in_bytes[i].data()[0], in_bytes[i].size(), false));
+        new CryptoPP::ArraySource(in_arrays[i].data(), in_arrays[i].size(), false));
     array_sources[i]->Pump(4);
     array_sources[i]->Get(channel, 4);
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
         recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
   }
 
-  for (auto i = 0; i < num_to_check; ++i)
+  for (size_t i = 0; i < num_to_check; ++i)
     array_sources[i]->PumpAll();
 
+  data.resize(array_sink->TotalPutLength());
   return data;
 }
 

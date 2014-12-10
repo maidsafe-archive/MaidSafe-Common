@@ -19,7 +19,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 #include "maidsafe/common/tools/bootstrap_file_tool_cereal.h"
 
 namespace maidsafe {

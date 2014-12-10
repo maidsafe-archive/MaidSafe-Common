@@ -20,6 +20,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <sstream>
 #include <string>
 
 #include "maidsafe/common/error.h"
@@ -30,26 +31,6 @@
 namespace maidsafe {
 
 namespace test {
-
-size_t BitToByteCount(size_t bit_count) {
-  return static_cast<size_t>(0.999999 + static_cast<double>(bit_count) / 8);
-}
-
-NodeId IncreaseId(const NodeId& kad_id) {
-  std::string raw(kad_id.string());
-  std::string::reverse_iterator rit = raw.rbegin();
-  while (rit != raw.rend()) {
-    if (++(*rit) == 0)
-      ++rit;
-    else
-      break;
-  }
-  return NodeId(raw);
-}
-
-NodeId MaxNodeId() {
-  return NodeId(std::string(NodeId::kSize, -1));
-}
 
 const std::string ToBinary(const std::string& raw_id) {
   std::string hex_encoded(HexEncode(raw_id));
@@ -113,94 +94,52 @@ const std::string ToBinary(const std::string& raw_id) {
   return result;
 }
 
-TEST(NodeIdTest, BEH_DefaultConstructor) {
-  NodeId zero_id;
-  EXPECT_TRUE(zero_id.IsZero());
-  EXPECT_EQ(zero_id, NodeId(std::string(NodeId::kSize, 0)));
+TEST(NodeIdBasicTest, BEH_DefaultConstructor) {
+  auto id = NodeId{};
+  EXPECT_FALSE(id.IsValid());
 }
 
-TEST(NodeIdTest, BEH_DistanceCheck) {
-  for (size_t i(0); i < 10000; ++i) {
-    NodeId one(NodeId::IdType::kRandomId);
-    NodeId two(NodeId::IdType::kRandomId);
-    EXPECT_NE(one, two);
-    EXPECT_EQ((one ^ two), (two ^ one));
-  }
+TEST(NodeIdBasicTest, BEH_CopyAndMove) {
+  const auto id = NodeId{RandomString(NodeId::kSize)};
+
+  // Copy c'tor
+  auto copy1 = NodeId{id};
+  EXPECT_EQ(id, copy1);
+
+  // Copy assignment
+  auto copy2 = NodeId{};
+  copy2 = id;
+  EXPECT_EQ(id, copy2);
+
+  // Move c'tor
+  auto move1 = NodeId{std::move(copy1)};
+  EXPECT_EQ(id, move1);
+
+  // Move assignment
+  auto move2 = NodeId{};
+  move2 = std::move(copy2);
+  EXPECT_EQ(id, move2);
 }
 
-TEST(NodeIdTest, BEH_BitToByteCount) {
-  for (size_t i = 0; i < NodeId::kSize; ++i) {
-    EXPECT_EQ(i, BitToByteCount(8 * i));
-    for (size_t j = 1; j < 8; ++j)
-      ASSERT_EQ((i + 1), BitToByteCount((8 * i) + j));
-  }
+TEST(NodeIdBasicTest, BEH_StringConstructor) {
+  const auto rand_str = RandomString(NodeId::kSize);
+  auto id = NodeId{rand_str};
+  EXPECT_EQ(id.string(), rand_str);
+  EXPECT_THROW(NodeId{rand_str.substr(0, NodeId::kSize - 1)}, common_error);
 }
 
-TEST(NodeIdTest, BEH_OtherConstructors) {
-  NodeId node_id;
-  ASSERT_EQ(NodeId::kSize, node_id.string().size());
-  for (size_t i = 0; i < node_id.string().size(); ++i)
-    ASSERT_EQ('\0', node_id.string()[i]);
-  std::string hex_id(NodeId::kSize * 2, '0');
-  ASSERT_EQ(hex_id, node_id.ToStringEncoded(NodeId::EncodingType::kHex));
-  std::string bin_id(NodeId::kSize * 8, '0');
-  ASSERT_EQ(bin_id, node_id.ToStringEncoded(NodeId::EncodingType::kBinary));
-  EXPECT_THROW(NodeId dave("not64long"), maidsafe_error);
+TEST(NodeIdBasicTest, BEH_HashConstructor) {
+  const auto hash = crypto::Hash<crypto::SHA512>(RandomString(10));
+  auto id = NodeId{hash};
+  EXPECT_EQ(id.string(), hash.string());
 }
 
-TEST(NodeIdTest, BEH_CopyConstructor) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  NodeId kadid2(kadid1);
-  ASSERT_EQ(kadid1, kadid2);
-  for (size_t i = 0; i < kadid1.string().size(); ++i)
-    ASSERT_EQ(kadid1.string()[i], kadid2.string()[i]);
-  ASSERT_TRUE(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary) ==
-            kadid2.ToStringEncoded(NodeId::EncodingType::kBinary));
-  ASSERT_TRUE(kadid1.ToStringEncoded(NodeId::EncodingType::kHex) ==
-            kadid2.ToStringEncoded(NodeId::EncodingType::kHex));
-  ASSERT_EQ(kadid1.string(), kadid2.string());
-  NodeId kadid3(std::move(kadid2));
-  ASSERT_EQ(kadid1, kadid3);
-}
-
-TEST(NodeIdTest, BEH_Assignment) {
-  NodeId kadid1(NodeId::IdType::kRandomId), kadid2(NodeId::IdType::kRandomId);
-  kadid2 = kadid1;
-  ASSERT_EQ(kadid1, kadid2);
-  NodeId kadid3(NodeId::IdType::kRandomId);
-  kadid3 = std::move(kadid2);
-  ASSERT_EQ(kadid1, kadid3);
-}
-
-TEST(NodeIdTest, BEH_KademliaIdTypeConstructor) {
-  std::string min_id(NodeId::kSize, 0);
-  ASSERT_EQ(NodeId::kSize, min_id.size());
-  for (int i = 0; i < NodeId::kSize; ++i)
-    ASSERT_EQ(min_id[i], '\0');
-  NodeId max_id(MaxNodeId());
-  ASSERT_EQ(NodeId::kSize, max_id.string().size());
-  for (int i = 0; i < NodeId::kSize; ++i)
-    ASSERT_EQ(char(-1), max_id.string()[i]);
-  NodeId rand_id(NodeId::IdType::kRandomId);
-  ASSERT_EQ(NodeId::kSize, rand_id.string().size());
-  // TODO(Fraser#5#): 2010-06-06 - Test for randomness properly
-  ASSERT_NE(rand_id.string(), NodeId(NodeId::IdType::kRandomId).string());
-  EXPECT_THROW(NodeId(static_cast<NodeId::IdType>(-999)), maidsafe_error);
-}
-
-TEST(NodeIdTest, BEH_StringConstructor) {
-  std::string rand_str(RandomString(NodeId::kSize));
-  NodeId id1(rand_str);
-  ASSERT_EQ(id1.string(), rand_str);
-  EXPECT_THROW(NodeId id2(rand_str.substr(0, NodeId::kSize - 1)), maidsafe_error);
-}
-
-TEST(NodeIdTest, BEH_EncodingConstructor) {
-  std::string known_raw(NodeId::kSize, 0);
-  for (char c = 0; c < NodeId::kSize; ++c)
+TEST(NodeIdBasicTest, BEH_EncodingConstructor) {
+  auto known_raw = std::string(NodeId::kSize, 0);
+  for (char c = 0; c < static_cast<char>(NodeId::kSize); ++c)
     known_raw.at(static_cast<uint8_t>(c)) = c;
   for (int i = 0; i < 3; ++i) {
-    std::string rand_str(RandomString(NodeId::kSize));
+    auto rand_str = RandomString(NodeId::kSize);
     std::string bad_encoded("Bad Encoded"), encoded, known_encoded;
     NodeId::EncodingType type = static_cast<NodeId::EncodingType>(i);
     switch (type) {
@@ -220,36 +159,33 @@ TEST(NodeIdTest, BEH_EncodingConstructor) {
         break;
     }
 
-    EXPECT_THROW(NodeId bad_id(bad_encoded, type), maidsafe_error);
-    //    ASSERT_TRUE(bad_id.string().empty());
-    //    ASSERT_FALSE(bad_id.IsValid());
-    //    ASSERT_TRUE(bad_id.ToStringEncoded(type).empty());
-    NodeId rand_id(encoded, type);
-    ASSERT_EQ(rand_str, rand_id.string());
-    ASSERT_EQ(encoded, rand_id.ToStringEncoded(type));
-    NodeId known_id(known_encoded, type);
-    ASSERT_EQ(known_raw, known_id.string());
-    ASSERT_EQ(known_encoded, known_id.ToStringEncoded(type));
+    EXPECT_THROW(NodeId(bad_encoded, type), common_error);
+    auto rand_id = NodeId{encoded, type};
+    EXPECT_EQ(rand_str, rand_id.string());
+    EXPECT_EQ(encoded, rand_id.ToStringEncoded(type));
+    auto known_id = NodeId{known_encoded, type};
+    EXPECT_EQ(known_raw, known_id.string());
+    EXPECT_EQ(known_encoded, known_id.ToStringEncoded(type));
     switch (i) {
-      case static_cast<int>(NodeId::EncodingType::kBinary) :
-        ASSERT_TRUE("000000000000000100000010000000110000010000000101000001100000"
-                "011100001000000010010000101000001011000011000000110100001110"
-                "000011110001000000010001000100100001001100010100000101010001"
-                "011000010111000110000001100100011010000110110001110000011101"
-                "000111100001111100100000001000010010001000100011001001000010"
-                "010100100110001001110010100000101001001010100010101100101100"
-                "001011010010111000101111001100000011000100110010001100110011"
-                "010000110101001101100011011100111000001110010011101000111011"
-                "00111100001111010011111000111111" == known_encoded);
+      case static_cast<int>(NodeId::EncodingType::kBinary):
+        EXPECT_EQ(known_encoded,
+                  "00000000000000010000001000000011000001000000010100000110000001110000100000001001"
+                  "00001010000010110000110000001101000011100000111100010000000100010001001000010011"
+                  "00010100000101010001011000010111000110000001100100011010000110110001110000011101"
+                  "00011110000111110010000000100001001000100010001100100100001001010010011000100111"
+                  "00101000001010010010101000101011001011000010110100101110001011110011000000110001"
+                  "00110010001100110011010000110101001101100011011100111000001110010011101000111011"
+                  "00111100001111010011111000111111");
         break;
-      case static_cast<int>(NodeId::EncodingType::kHex) :
-        ASSERT_TRUE("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d"
-                "1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b"
-                "3c3d3e3f" == known_encoded);
+      case static_cast<int>(NodeId::EncodingType::kHex):
+        EXPECT_EQ(known_encoded,
+                  "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324252627"
+                  "28292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f");
         break;
-      case static_cast<int>(NodeId::EncodingType::kBase64) :
-        ASSERT_TRUE("AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKiss"
-                "LS4vMDEyMzQ1Njc4OTo7PD0+Pw==" == known_encoded);
+      case static_cast<int>(NodeId::EncodingType::kBase64):
+        EXPECT_EQ(known_encoded,
+                  "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7"
+                  "PD0+Pw==");
         break;
       default:
         break;
@@ -257,149 +193,259 @@ TEST(NodeIdTest, BEH_EncodingConstructor) {
   }
 }
 
-TEST(NodeIdTest, BEH_OperatorEqual) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  std::string id(kadid1.string());
-  NodeId kadid2(id);
-  ASSERT_EQ(kadid1, kadid2);
-  std::string id1;
-  for (size_t i = 0; i < BitToByteCount(NodeId::kSize * 8) * 2; ++i) {
-    id1 += "f";
+TEST(NodeIdBasicTest, BEH_String) {
+  const auto rand_str = RandomString(NodeId::kSize);
+  auto id = NodeId{rand_str};
+  EXPECT_EQ(id.string(), rand_str);
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  EXPECT_THROW(NodeId{}.string(), common_error);
+#endif
+}
+
+TEST(NodeIdBasicTest, BEH_IsValid) {
+  EXPECT_TRUE(NodeId{RandomString(NodeId::kSize)}.IsValid());
+  EXPECT_FALSE(NodeId{}.IsValid());
+}
+
+class NodeIdTest : public testing::Test {
+ protected:
+  NodeIdTest()
+      : max_id_(std::string(NodeId::kSize, -1)),
+        id1_([this]() -> NodeId {
+          auto id = NodeId{RandomString(NodeId::kSize)};
+          while (id == max_id_)
+            id = NodeId{RandomString(NodeId::kSize)};
+          return id;
+        }()),
+        id2_([this]() -> NodeId {
+          auto id = NodeId{RandomString(NodeId::kSize)};
+          while (id == max_id_ || id == id1_)
+            id = NodeId{RandomString(NodeId::kSize)};
+          return id;
+        }()),
+        invalid_id_() {}
+  const NodeId max_id_, id1_, id2_, invalid_id_;
+};
+
+TEST_F(NodeIdTest, BEH_Operators) {
+  const auto copy_of_id1 = NodeId{id1_};
+
+  // operator==
+  EXPECT_TRUE(id1_ == copy_of_id1);
+  EXPECT_TRUE(invalid_id_ == NodeId{});
+
+  EXPECT_FALSE(id1_ == max_id_);
+  EXPECT_FALSE(max_id_ == id1_);
+
+  EXPECT_FALSE(id1_ == invalid_id_);
+  EXPECT_FALSE(invalid_id_ == id1_);
+
+  // operator!=
+  EXPECT_FALSE(id1_ != copy_of_id1);
+  EXPECT_FALSE(invalid_id_ != NodeId{});
+
+  EXPECT_TRUE(id1_ != max_id_);
+  EXPECT_TRUE(max_id_ != id1_);
+
+  EXPECT_TRUE(id1_ != invalid_id_);
+  EXPECT_TRUE(invalid_id_ != id1_);
+
+  // operator<
+  EXPECT_FALSE(id1_ < copy_of_id1);
+  EXPECT_FALSE(invalid_id_ < NodeId{});
+
+  EXPECT_TRUE(id1_ < max_id_);
+  EXPECT_FALSE(max_id_ < id1_);
+
+  EXPECT_FALSE(id1_ < invalid_id_);
+  EXPECT_TRUE(invalid_id_ < id1_);
+
+  // operator>
+  EXPECT_FALSE(id1_ > copy_of_id1);
+  EXPECT_FALSE(invalid_id_ > NodeId{});
+
+  EXPECT_FALSE(id1_ > max_id_);
+  EXPECT_TRUE(max_id_ > id1_);
+
+  EXPECT_TRUE(id1_ > invalid_id_);
+  EXPECT_FALSE(invalid_id_ > id1_);
+
+  // operator<=
+  EXPECT_TRUE(id1_ <= copy_of_id1);
+  EXPECT_TRUE(invalid_id_ <= NodeId{});
+
+  EXPECT_TRUE(id1_ <= max_id_);
+  EXPECT_FALSE(max_id_ <= id1_);
+
+  EXPECT_FALSE(id1_ <= invalid_id_);
+  EXPECT_TRUE(invalid_id_ <= id1_);
+
+  // operator>=
+  EXPECT_TRUE(id1_ >= copy_of_id1);
+  EXPECT_TRUE(invalid_id_ >= NodeId{});
+
+  EXPECT_FALSE(id1_ >= max_id_);
+  EXPECT_TRUE(max_id_ >= id1_);
+
+  EXPECT_TRUE(id1_ >= invalid_id_);
+  EXPECT_FALSE(invalid_id_ >= id1_);
+
+  // operator^
+  const auto xor_of_id1_and_id2 = id1_ ^ id2_;
+
+  auto binary_id1 = id1_.ToStringEncoded(NodeId::EncodingType::kBinary);
+  auto binary_id2 = id2_.ToStringEncoded(NodeId::EncodingType::kBinary);
+  auto binary_xor = xor_of_id1_and_id2.ToStringEncoded(NodeId::EncodingType::kBinary);
+  auto itr1 = std::begin(binary_id1);
+  auto itr2 = std::begin(binary_id2);
+  auto itr_xor = std::begin(binary_xor);
+  while (itr1 != std::end(binary_id1)) {
+    if (*itr1++ == *itr2++)
+      EXPECT_EQ('0', *itr_xor++);
+    else
+      EXPECT_EQ('1', *itr_xor++);
   }
-  NodeId kadid3(id1, NodeId::EncodingType::kHex);
-  ASSERT_NE(kadid1, kadid3);
+
+  EXPECT_EQ(xor_of_id1_and_id2, id2_ ^ id1_);
+  EXPECT_EQ(NodeId(std::string(NodeId::kSize, 0)), id1_ ^ id1_);
+
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  EXPECT_THROW(id1_ ^ invalid_id_, common_error);
+  EXPECT_THROW(invalid_id_ ^ id1_, common_error);
+  EXPECT_THROW(invalid_id_ ^ invalid_id_, common_error);
+#endif
+
+  // operator<<
+  std::stringstream sstream;
+  sstream << id1_ << invalid_id_;
+#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  EXPECT_EQ(DebugId(id1_) + DebugId(invalid_id_), sstream.str());
+#else
+  EXPECT_EQ(DebugId(id1_) + "Invalid ID", sstream.str());
+#endif
 }
 
-TEST(NodeIdTest, BEH_OperatorDifferent) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  std::string id(kadid1.string());
-  NodeId kadid2(id);
-  ASSERT_EQ(kadid1, kadid2);
-  std::string id1;
-  for (size_t i = 0; i < BitToByteCount(NodeId::kSize * 8) * 2; ++i)
-    id1 += "f";
-  NodeId kadid3(id1, NodeId::EncodingType::kHex);
-  ASSERT_NE(kadid1, kadid3);
-}
+TEST_F(NodeIdTest, BEH_CloserToTarget) {
+  auto target = NodeId{RandomString(NodeId::kSize)};
+  while (target == id1_ || target == id2_)
+    target = NodeId{RandomString(NodeId::kSize)};
 
-TEST(NodeIdTest, BEH_OperatorGreaterThan) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == MaxNodeId())
-    kadid1 = NodeId(NodeId::IdType::kRandomId);
-  NodeId kadid2(kadid1);
-  ASSERT_FALSE(kadid1 > kadid2);
-  NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid3 > kadid1);
-  ASSERT_FALSE(kadid1 > kadid3);
-}
+  auto xor_distance1 = id1_ ^ target;
+  auto xor_distance2 = id2_ ^ target;
 
-TEST(NodeIdTest, BEH_OperatorLessThan) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == MaxNodeId())
-    kadid1 = NodeId(NodeId::IdType::kRandomId);
-  NodeId kadid2(kadid1);
-  ASSERT_FALSE(kadid1 < kadid2);
-  NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid1 < kadid3);
-  ASSERT_FALSE(kadid3 < kadid1);
-}
-
-TEST(NodeIdTest, BEH_OperatorGreaterThanOrEqualTo) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == MaxNodeId())
-    kadid1 = NodeId(NodeId::IdType::kRandomId);
-  NodeId kadid2(kadid1);
-  ASSERT_GE(kadid1, kadid2);
-  NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_GE(kadid3, kadid1);
-}
-
-TEST(NodeIdTest, BEH_OperatorLessThanOrEqualTo) {
-  NodeId kadid1(NodeId::IdType::kRandomId);
-  while (kadid1 == MaxNodeId())
-    kadid1 = NodeId(NodeId::IdType::kRandomId);
-  NodeId kadid2(kadid1);
-  ASSERT_TRUE(kadid1 <= kadid2);
-  NodeId kadid3(IncreaseId(kadid1));
-  ASSERT_TRUE(kadid1 <= kadid3);
-}
-
-TEST(NodeIdTest, BEH_OperatorXOR) {
-  NodeId kadid1(NodeId::IdType::kRandomId), kadid2(NodeId::IdType::kRandomId);
-  NodeId kadid3(kadid1 ^ kadid2);
-  std::string binid1(kadid1.ToStringEncoded(NodeId::EncodingType::kBinary));
-  std::string binid2(kadid2.ToStringEncoded(NodeId::EncodingType::kBinary));
-  std::string binresult;
-  for (size_t i = 0; i < binid1.size(); ++i) {
-    if (binid1[i] == binid2[i]) {
-      binresult += "0";
-    } else {
-      binresult += "1";
-    }
+  if (xor_distance1 < xor_distance2) {
+    EXPECT_TRUE(NodeId::CloserToTarget(id1_, id2_, target));
+    EXPECT_FALSE(NodeId::CloserToTarget(id2_, id1_, target));
+  } else {
+    EXPECT_FALSE(NodeId::CloserToTarget(id1_, id2_, target));
+    EXPECT_TRUE(NodeId::CloserToTarget(id2_, id1_, target));
   }
-  std::string binzero;
-  while (binzero.size() < binid1.size())
-    binzero += "0";
-  ASSERT_NE(binzero, kadid3.ToStringEncoded(NodeId::EncodingType::kBinary));
-  ASSERT_EQ(binresult, kadid3.ToStringEncoded(NodeId::EncodingType::kBinary));
-  NodeId kadid4(kadid2 ^ kadid1);
-  ASSERT_EQ(binresult, kadid4.ToStringEncoded(NodeId::EncodingType::kBinary));
-  NodeId kadid5(kadid1.string());
-  NodeId kadid6(kadid1 ^ kadid5);
-  ASSERT_EQ(binzero, kadid6.ToStringEncoded(NodeId::EncodingType::kBinary));
-  std::string zero(kadid6.string());
-  ASSERT_EQ(BitToByteCount(NodeId::kSize * 8), zero.size());
-  for (size_t i = 0; i < zero.size(); ++i)
-    ASSERT_EQ('\0', zero[i]);
+
+  EXPECT_TRUE(NodeId::CloserToTarget(target, id1_, target));
+  EXPECT_FALSE(NodeId::CloserToTarget(id1_, target, target));
+  EXPECT_FALSE(NodeId::CloserToTarget(id1_, id1_, target));
+
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  EXPECT_THROW(NodeId::CloserToTarget(invalid_id_, id1_, target), common_error);
+  EXPECT_THROW(NodeId::CloserToTarget(id1_, invalid_id_, target), common_error);
+  EXPECT_THROW(NodeId::CloserToTarget(id1_, id2_, invalid_id_), common_error);
+#endif
 }
 
-TEST(NodeIdTest, BEH_Collision) {
-  // Ensure we don't get a duplicate random ID.
-  std::set<NodeId> node_ids;
-  bool success(true);
-  for (int i(0); i < 100000; ++i)
-    success &= node_ids.emplace(NodeId::IdType::kRandomId).second;
-  ASSERT_TRUE(success);
+TEST_F(NodeIdTest, FUNC_CloserToTarget) {
+  auto target = NodeId{RandomString(NodeId::kSize)};
+  std::vector<NodeId> nodes(100000, NodeId(RandomString(NodeId::kSize)));
+  std::sort(std::begin(nodes), std::end(nodes), [target](const NodeId& lhs, const NodeId& rhs) {
+    return NodeId::CloserToTarget(lhs, rhs, target);
+  });
+
+  auto closest = nodes.front();
+
+  for (const auto& node : nodes) {
+    // not to worry comparing same nodes will not make one closer
+    EXPECT_FALSE(NodeId::CloserToTarget(node, closest, target));
+  }
 }
 
-TEST(NodeIdTest, BEH_CommonLeadingBits) {
-  const NodeId kThisNode{ NodeId::IdType::kRandomId };
-
+TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
   // Check for two equal IDs
-  NodeId other{ kThisNode };
-  EXPECT_EQ(NodeId::kSize * 8, kThisNode.CommonLeadingBits(other));
+  auto copy_of_id1 = NodeId{id1_};
+  EXPECT_EQ(NodeId::kSize * 8, id1_.CommonLeadingBits(copy_of_id1));
 
-  // Iterate through a copy of ID starting at the least significant bit, flipping a bit each time,
+  // Iterate through a copy of ID starting at the least significant bit,
+  // flipping a bit each time,
   // checking the function, then flipping the bit back.
-  std::bitset<NodeId::kSize * 8> id_as_binary{
-      kThisNode.ToStringEncoded(NodeId::EncodingType::kBinary) };
-  for (size_t i(0); i != id_as_binary.size(); ++i) {
-    id_as_binary.flip(i);
-    NodeId modified_id{ id_as_binary.to_string(), NodeId::EncodingType::kBinary };
-    EXPECT_EQ((NodeId::kSize * 8) - i - 1, kThisNode.CommonLeadingBits(modified_id));
-    id_as_binary.flip(i);
+  std::bitset<NodeId::kSize * 8> id1_as_binary{id1_.ToStringEncoded(NodeId::EncodingType::kBinary)};
+  for (size_t i(0); i != id1_as_binary.size(); ++i) {
+    id1_as_binary.flip(i);
+    auto modified_id = NodeId{id1_as_binary.to_string(), NodeId::EncodingType::kBinary};
+    EXPECT_EQ((NodeId::kSize * 8) - i - 1, id1_.CommonLeadingBits(modified_id));
+    id1_as_binary.flip(i);
   }
 }
 
-TEST(NodeIdTest, BEH_Serialisation) {
+TEST_F(NodeIdTest, BEH_Serialisation) {
   // Invalid Deserialisation
-  NodeId a {NodeId::IdType::kRandomId};
-  std::string raw_id {a.string()};
+  std::string raw_id{id1_.string()};
 
   EXPECT_EQ(NodeId::kSize, raw_id.size());
 
   raw_id.erase(raw_id.size() - 1);
-  NodeId b {NodeId::IdType::kRandomId};
-
-  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), b), std::exception);
+  NodeId parsed;
+  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), parsed),
+               common_error);
 
   // Valid Serialisation
   std::string serialised_str;
-  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(a));
+  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(id1_));
 
   // Valid Deserialisation
-  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, b));
-  EXPECT_TRUE(a == b);
+  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, parsed));
+  EXPECT_EQ(id1_, parsed);
+}
+
+TEST_F(NodeIdTest, BEH_DebugId) {
+#if defined(USE_DEPRECATED_NODE_ID_BEHAVIOUR) && !defined(NDEBUG)
+  EXPECT_EQ("000000..000000", DebugId(invalid_id_));
+#else
+  EXPECT_EQ("Invalid ID", DebugId(invalid_id_));
+#endif
+  EXPECT_EQ(HexSubstr(id1_.string()), DebugId(id1_));
+
+  // Test after calling each non-const function that DebugId is still valid.
+  auto id1 = id1_;
+  EXPECT_EQ(HexSubstr(id1.string()), DebugId(id1));
+
+  auto id2 = std::move(id1);
+  EXPECT_EQ(HexSubstr(id2.string()), DebugId(id2));
+
+  id2 = id2_;
+  EXPECT_EQ(HexSubstr(id2_.string()), DebugId(id2));
+
+  id1 = std::move(id2);
+  EXPECT_EQ(HexSubstr(id2_.string()), DebugId(id1));
+
+  id1 = id1_;
+  id2 = id2_;
+  swap(id1, id2);
+  EXPECT_EQ(HexSubstr(id1.string()), DebugId(id1));
+  EXPECT_EQ(HexSubstr(id2.string()), DebugId(id2));
+
+  id1 ^= id2;
+  EXPECT_EQ(HexSubstr(id1.string()), DebugId(id1));
+}
+
+TEST_F(NodeIdTest, BEH_Swap) {
+  auto id1 = id1_;
+  auto id2 = id2_;
+  swap(id1, id2);
+  EXPECT_EQ(id1_, id2);
+  EXPECT_EQ(id2_, id1);
+
+  auto invalid_id = NodeId{};
+  swap(invalid_id, id1);
+  EXPECT_EQ(invalid_id_, id1);
+  EXPECT_EQ(id2_, invalid_id);
 }
 
 }  // namespace test
