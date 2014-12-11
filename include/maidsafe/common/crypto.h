@@ -224,7 +224,12 @@ UncompressedText Uncompress(const CompressedText& input);
 std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data);
 
-std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings);
+std::vector<std::vector<byte>> SecretShareData(int32_t threshold, int32_t number_of_shares,
+                                               const std::vector<byte>& data);
+
+std::string SecretRecoverData(const std::vector<std::string>& in_strings);
+
+std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arrays);
 
 std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
                                       const std::string& data);
@@ -232,11 +237,12 @@ std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_share
 std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of_shares,
                                             const std::vector<byte>& data);
 
-std::string InfoRetrieve(int32_t threshold, const std::vector<std::string>& in_strings);
+std::string InfoRetrieve(const std::vector<std::string>& in_strings);
 
-std::vector<byte> InfoRetrieve(int32_t threshold, const std::vector<std::vector<byte>>& parts);
+std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays);
 
 CipherText ObfuscateData(const Identity& name, const PlainText& plain_text);
+
 PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text);
 
 }  // namespace crypto
