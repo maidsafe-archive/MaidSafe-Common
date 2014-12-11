@@ -34,7 +34,7 @@
     (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || \
      defined(__GLIBC__)) &&                                                          \
         !defined(_CRAYC)
-#include  "pwd.h"  // NOLINT (dirvine)
+#include "pwd.h"  // NOLINT (dirvine)
 #include "sys/param.h"
 #endif
 
@@ -130,8 +130,8 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
   std::mbstate_t state;
   const CharIn* from_next;
   CharOut* to_next;
-  const auto result(converter.out(state, &input[0], &input[input.size()], from_next,
-                                  &output[0], &output[output.size()], to_next));
+  const auto result(converter.out(state, &input[0], &input[input.size()], from_next, &output[0],
+                                  &output[output.size()], to_next));
   if (result != Converter::ok && result != Converter::noconv)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
 
@@ -142,14 +142,14 @@ std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input
 uint32_t& rng_seed() {
 #ifdef _MSC_VER
   // Work around high_resolution_clock being the lowest resolution clock pre-VS14
-  static uint32_t seed([]{
+  static uint32_t seed([] {
     LARGE_INTEGER t;
     QueryPerformanceCounter(&t);
     return static_cast<uint32_t>(t.LowPart);
   }());
 #else
-  static uint32_t seed(static_cast<uint32_t>(
-      std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+  static uint32_t seed(
+      static_cast<uint32_t>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
 #endif
   return seed;
 }
@@ -216,8 +216,7 @@ boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint
         socket.local_endpoint().address().is_loopback())
       return boost::asio::ip::address();
     return socket.local_endpoint().address();
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Failed trying to connect to " << peer_endpoint << " - "
                 << boost::diagnostic_information(e);
     return boost::asio::ip::address();
@@ -246,8 +245,7 @@ int VersionToInt(const std::string& version) {
       LOG(kWarning) << "Invalid patch level " << version;
       return kInvalidVersion;
     }
-  }
-  catch (const std::logic_error& e) {
+  } catch (const std::logic_error& e) {
     LOG(kWarning) << "Invalid version " << version << ": " << boost::diagnostic_information(e);
     return kInvalidVersion;
   }
@@ -416,7 +414,7 @@ std::string Base64Substr(const std::string& non_base64) {
     return base64;
 }
 
-std::string WstringToString(const std::wstring &input) {
+std::string WstringToString(const std::wstring& input) {
   return StringToString<wchar_t, char>(input);
 }
 
@@ -426,9 +424,7 @@ std::wstring StringToWstring(const std::string& input) {
 }
 #endif
 
-std::string DebugId(const Identity& id) {
-  return HexSubstr(id.string());
-}
+std::string DebugId(const Identity& id) { return HexSubstr(id.string()); }
 
 uint64_t GetTimeStamp() {
   return (bptime::microsec_clock::universal_time() - kMaidSafeEpoch).total_milliseconds();
@@ -465,8 +461,7 @@ bool ReadFile(const fs::path& file_path, std::string* content) {
     content->resize(static_cast<size_t>(file_size));
     file_in.read(&((*content)[0]), file_size);
     file_in.close();
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Failed to read file " << file_path << ": " << boost::diagnostic_information(e);
     return false;
   }
@@ -499,8 +494,7 @@ bool WriteFile(const fs::path& file_path, const std::string& content) {
     }
     file_out.write(content.data(), content.size());
     file_out.close();
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Failed to write file " << file_path << ": " << boost::diagnostic_information(e);
     return false;
   }
@@ -534,8 +528,7 @@ fs::path GetPathFromProgramOptions(const std::string& option_name,
       if (option_path.has_filename()) {
         try {
           std::ofstream(option_path.c_str());
-        }
-        catch (const std::exception& e) {
+        } catch (const std::exception& e) {
           LOG(kError) << "Exception while creating new file: " << boost::diagnostic_information(e);
           return fs::path();
         }
@@ -562,7 +555,6 @@ fs::path GetPathFromProgramOptions(const std::string& option_name,
 }
 
 unsigned int Concurrency() { return std::max(std::thread::hardware_concurrency(), 2U); }
-
 
 
 

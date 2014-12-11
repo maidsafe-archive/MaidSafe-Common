@@ -69,16 +69,15 @@ std::once_flag logging_initialised;
 // This fellow needs to work during static data deinit
 class spinlock {
  public:
-  spinlock() : flag(false) { }
+  spinlock() : flag(false) {}
   void lock() {
     bool v;
-    while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
-          std::memory_order_acquire))
+    while (v = 0,
+           !flag.compare_exchange_weak(v, 1, std::memory_order_acquire, std::memory_order_acquire))
       std::this_thread::yield();
   }
-  void unlock() {
-    flag.store(false, std::memory_order_release);
-  }
+  void unlock() { flag.store(false, std::memory_order_release); }
+
  private:
   std::atomic<bool> flag;
 };
@@ -87,8 +86,9 @@ spinlock& g_console_mutex() {
   return mutex;
 }
 
-const std::array<std::string, 10> kProjects = { { "api", "common", "drive", "encrypt", "nfs",
-    "passport", "routing", "rudp", "vault", "vault_manager" } };
+const std::array<std::string, 10> kProjects = {{"api", "common", "drive", "encrypt", "nfs",
+                                                "passport", "routing", "rudp", "vault",
+                                                "vault_manager"}};
 
 #ifdef MAIDSAFE_WIN32
 
@@ -164,31 +164,26 @@ void ColouredPrint(Colour colour, const std::string& text) {
 
 std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
     const boost::string_ref entire_path) {
-
   namespace range = boost::range;
 
-  const auto filename_project_separator =
-      boost::find_last(entire_path, "maidsafe");
+  const auto filename_project_separator = boost::find_last(entire_path, "maidsafe");
 
   if (filename_project_separator.empty()) {
-    return { boost::string_ref(), entire_path };
+    return {boost::string_ref(), entire_path};
   }
 
-  boost::string_ref filename(
-      filename_project_separator.end(),
-      entire_path.end() - filename_project_separator.end());
+  boost::string_ref filename(filename_project_separator.end(),
+                             entire_path.end() - filename_project_separator.end());
 
   if (filename.empty()) {
-    return { boost::string_ref(), entire_path };
+    return {boost::string_ref(), entire_path};
   }
 
   filename.remove_prefix(1);  // remove leading slash
 
   const auto dir_separator = {'/', '\\'};
-  auto project =
-      boost::make_iterator_range(
-          std::reverse_iterator<const char*>(filename_project_separator.begin()),
-          entire_path.rend());
+  auto project = boost::make_iterator_range(
+      std::reverse_iterator<const char*>(filename_project_separator.begin()), entire_path.rend());
 
   for (unsigned i = 0; i < 2; ++i) {
     project = range::find_first_of<boost::return_next_end>(project, dir_separator);
@@ -196,12 +191,8 @@ std::pair<boost::string_ref, boost::string_ref> GetProjectAndContractFile(
 
   project = range::find_first_of<boost::return_begin_found>(project, dir_separator);
 
-  return {
-      boost::string_ref(
-          project.end().base(),
-          project.begin().base() - project.end().base()),
-      filename
-  };
+  return {boost::string_ref(project.end().base(), project.begin().base() - project.end().base()),
+          filename};
 }
 
 void GetColourAndLevel(char& log_level, Colour& colour, int level) {
@@ -277,8 +268,8 @@ po::options_description SetProgramOptions(std::string& config_file, bool& no_log
       "Path to the logging configuration file.")(
       "log_folder", po::value<std::string>(&log_folder)->default_value(logpath.string().c_str()),
       "Path to folder where log files will be written. If empty, no files will be written.")(
-      "log_no_console", po::bool_switch(&no_log_to_console), "Disable logging to console.")(
-      "help,h", "Show help message.");
+      "log_no_console", po::bool_switch(&no_log_to_console),
+      "Disable logging to console.")("help,h", "Show help message.");
   for (auto project : kProjects) {
     std::string description("Set log level for ");
     description += std::string(project) + " project.";
@@ -300,7 +291,9 @@ void ParseProgramOptions(const po::options_description& log_config, const std::s
   po::options_description cmdline_options;
   cmdline_options.add(log_config);
   po::basic_parsed_options<Char> parsed(po::basic_command_line_parser<Char>(argc, argv)
-                                          .options(cmdline_options).allow_unregistered().run());
+                                            .options(cmdline_options)
+                                            .allow_unregistered()
+                                            .run());
 
   po::store(parsed, log_variables);
   po::notify(log_variables);
@@ -382,25 +375,26 @@ std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
   char temp[10];
   if (!std::strftime(temp, sizeof(temp), "%H:%M:%S.", std::localtime(now_t)))  // NOLINT (Fraser)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-  return std::string{ temp };
+  return std::string{temp};
 }
 
 template <>
 std::string Strftime<TimeType::kUTC>(const std::time_t* now_t) {
   char temp[21];
-  if (!std::strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.", std::gmtime(now_t)))  // NOLINT (Fraser)
+  if (!std::strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.",
+                     std::gmtime(now_t)))  // NOLINT (Fraser)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-  return std::string{ temp };
+  return std::string{temp};
 }
 
 template <TimeType time_type>
 std::string GetTime() {
   auto now(std::chrono::system_clock::now());
   auto seconds_since_epoch(
-    std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()));
 
   std::time_t now_t(std::chrono::system_clock::to_time_t(
-    std::chrono::system_clock::time_point(seconds_since_epoch)));
+      std::chrono::system_clock::time_point(seconds_since_epoch)));
 
   return Strftime<time_type>(&now_t) +
          std::to_string((now.time_since_epoch() - seconds_since_epoch).count());
@@ -427,10 +421,7 @@ boost::optional<LogMessage::FileInfo> LogMessage::ShouldLog() const {
   if (filter_itr != filter.end()) {
     if ((*filter_itr).second <= level_) {
       const auto fix_slashes(file_info.second | boost::adaptors::replaced('\\', '/'));
-      return FileInfo{
-        std::move(project),
-        std::string(fix_slashes.begin(), fix_slashes.end())
-      };
+      return FileInfo{std::move(project), std::string(fix_slashes.begin(), fix_slashes.end())};
     }
   }
   return boost::none;
@@ -463,10 +454,10 @@ TestLogMessage::~TestLogMessage() {
   std::string log_entry(stream_.str());
   FilterMap filter(Logging::Instance().Filter());
   auto print_functor([colour, log_entry, filter] {
-//     if (Logging::Instance().LogToConsole())
+    //     if (Logging::Instance().LogToConsole())
     ColouredPrint(colour, log_entry);
-//     for (auto& entry : filter)
-//       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
+    //     for (auto& entry : filter)
+    //       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
     if (filter.size() == 1)
       Logging::Instance().WriteToProjectLogfile(filter.begin()->first, log_entry);
     else
@@ -519,8 +510,7 @@ std::vector<std::vector<char>> Logging::Initialise(int argc, char** argv) {
       HandleFilterOptions();
       SetStreams();
 #endif
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
     }
   });
@@ -546,8 +536,7 @@ std::vector<std::vector<wchar_t>> Logging::Initialise(int argc, wchar_t** argv) 
       HandleFilterOptions();
       SetStreams();
 #endif
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
       std::cout << "Exception initialising logging: " << boost::diagnostic_information(e) << "\n\n";
     }
   });
@@ -665,11 +654,12 @@ void Logging::WriteToVisualiserServer(const std::string& message) {
   }
 
   visualiser_.server_stream << "POST " << visualiser_.server_dir << " HTTP/1.1\r\n"
-      << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port << "\r\n"
-      << "Content-Type: application/json\r\n"
-      << "Content-Length: " << std::to_string(message.size()) << "\r\n"
-      << "\r\n" << message << "\r\n" << std::flush;
-  auto read_response([&](char delimiter)->std::string {
+                            << "Host: " << visualiser_.server_name << ':' << visualiser_.server_port
+                            << "\r\n"
+                            << "Content-Type: application/json\r\n"
+                            << "Content-Length: " << std::to_string(message.size()) << "\r\n"
+                            << "\r\n" << message << "\r\n" << std::flush;
+  auto read_response([&](char delimiter) -> std::string {
     std::string response;
     if (!std::getline(visualiser_.server_stream, response, delimiter)) {
       LOG(kWarning) << "Failed to read VLOG server response.";
@@ -679,18 +669,18 @@ void Logging::WriteToVisualiserServer(const std::string& message) {
   });
   try {
     read_response(' ');  // "HTTP/1.1"
-    unsigned http_code{ static_cast<unsigned>(std::stoul(read_response(' '))) };
+    unsigned http_code{static_cast<unsigned>(std::stoul(read_response(' ')))};
     if (http_code != 200) {
-      std::string http_code_message{ read_response('\r') };
-      LOG(kWarning) << "VLOG server responded with \"" << http_code << ": "
-                    << http_code_message << "\" to request \"" << message << "\"";
+      std::string http_code_message{read_response('\r')};
+      LOG(kWarning) << "VLOG server responded with \"" << http_code << ": " << http_code_message
+                    << "\" to request \"" << message << "\"";
     }
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kWarning) << e.what();
   }
   std::array<char, 100> discarded;
-  while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {}
+  while (visualiser_.server_stream.readsome(&discarded[0], discarded.size())) {
+  }
 }
 
 void Logging::WriteToProjectLogfile(const std::string& project, const std::string& message) {
@@ -722,13 +712,9 @@ std::string Logging::VlogSessionId() const {
 
 namespace detail {
 
-std::string GetLocalTime() {
-  return GetTime<TimeType::kLocal>();
-}
+std::string GetLocalTime() { return GetTime<TimeType::kLocal>(); }
 
-std::string GetUTCTime() {
-  return GetTime<TimeType::kUTC>();
-}
+std::string GetUTCTime() { return GetTime<TimeType::kUTC>(); }
 
 }  // namespace detail
 

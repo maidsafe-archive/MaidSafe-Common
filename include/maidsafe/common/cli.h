@@ -50,10 +50,10 @@ class CLI {
 
 template <class T>
 T CLI::Get(std::string display_message, bool echo_input) const {
-  on_scope_exit restore_console{ [this] {
+  on_scope_exit restore_console{[this] {
     Echo(true);
     TLOG(kDefaultColour) << kPrompt_;
-  } };
+  }};
   Echo(echo_input);
   TLOG(kDefaultColour) << std::move(display_message) << '\n' << kPrompt_;
   T command{};

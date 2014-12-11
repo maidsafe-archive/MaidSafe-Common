@@ -49,7 +49,7 @@ struct Keys {
     kKeyBitSize = 2048,
     kSignatureByteSize = kKeyBitSize / 8
   };
-  Keys() : private_key(), public_key() {}
+
   PrivateKey private_key;
   PublicKey public_key;
 };
