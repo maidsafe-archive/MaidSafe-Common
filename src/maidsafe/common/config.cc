@@ -62,10 +62,10 @@ template <>
 void SetThisExecutablePath(const char* const argv[]) {
   static std::once_flag flag;
   std::call_once(flag, [argv] {
-    const char *path = argv[0];
+    const char* path = argv[0];
 #ifdef WIN32
     char buffer[32768];
-    if (_get_pgmptr(const_cast<char **>(&path))) {
+    if (_get_pgmptr(const_cast<char**>(&path))) {
       if (GetModuleFileNameA(nullptr, buffer, sizeof(buffer)))
         path = buffer;
     }
@@ -81,7 +81,7 @@ void SetThisExecutablePath(const char* const argv[]) {
 #ifdef __FreeBSD__
     char buffer[PATH_MAX];
     size_t bufferlen = sizeof(buffer);
-    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1 };
+    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PATHNAME, -1};
     if (!sysctl(mib, 4, buffer, &bufferlen, nullptr, 0))
       path = buffer;
 #endif
@@ -93,8 +93,7 @@ void SetThisExecutablePath(const char* const argv[]) {
 #endif
     try {
       g_this_executable_path = boost::filesystem::absolute(path);
-    }
-    catch (const std::exception&) {
+    } catch (const std::exception&) {
       g_this_executable_path = boost::filesystem::path(path);
     }
   });
@@ -104,17 +103,16 @@ template <>
 void SetThisExecutablePath(const wchar_t* const argv[]) {
   static std::once_flag flag;
   std::call_once(flag, [argv] {
-    const wchar_t *path = argv[0];
+    const wchar_t* path = argv[0];
 #ifdef WIN32
     wchar_t buffer[32768];
-    if (_get_wpgmptr(const_cast<wchar_t **>(&path)))
+    if (_get_wpgmptr(const_cast<wchar_t**>(&path)))
       if (GetModuleFileNameW(nullptr, buffer, sizeof(buffer)))
         path = buffer;
 #endif
     try {
       g_this_executable_path = boost::filesystem::absolute(path);
-    }
-    catch (const std::exception&) {
+    } catch (const std::exception&) {
       g_this_executable_path = boost::filesystem::path(path);
     }
   });
@@ -126,9 +124,7 @@ boost::filesystem::path ThisExecutablePath() {
   return g_this_executable_path;
 }
 
-boost::filesystem::path ThisExecutableDir() {
-  return ThisExecutablePath().parent_path();
-}
+boost::filesystem::path ThisExecutableDir() { return ThisExecutablePath().parent_path(); }
 
 namespace tcp {
 

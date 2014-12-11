@@ -66,8 +66,8 @@ ManagedHandle::ManagedHandle(HANDLE handle_in) : handle(handle_in) {
 ManagedHandle::~ManagedHandle() {
   try {
     CloseHandle(handle);
+  } catch (...) {
   }
-  catch (...) {}
 }
 
 bool IsRunning(HANDLE handle) {
@@ -86,9 +86,7 @@ ProcessId GetProcessId() {
   return static_cast<ProcessId>(GetCurrentProcessId());
 }
 
-bool IsRunning(const ProcessInfo& process_info) {
-  return IsRunning(process_info.handle);
-}
+bool IsRunning(const ProcessInfo& process_info) { return IsRunning(process_info.handle); }
 
 #else
 
@@ -116,8 +114,8 @@ bool IsRunning(const ProcessInfo& process_info) {
 
 boost::filesystem::path GetOtherExecutablePath(
     const boost::filesystem::path& name_without_extension) {
-  return (ThisExecutableDir() /
-          name_without_extension).replace_extension(ThisExecutablePath().extension());
+  return (ThisExecutableDir() / name_without_extension)
+      .replace_extension(ThisExecutablePath().extension());
 }
 
 }  // namespace process

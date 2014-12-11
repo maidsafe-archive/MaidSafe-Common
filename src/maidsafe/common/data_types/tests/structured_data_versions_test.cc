@@ -37,7 +37,7 @@ using Ver_t = VersionCereal;
 
 bool operator==(const Ver_t& ref_lhs, const Ver_t& ref_rhs) {
   return ref_lhs.forking_child_count_ == ref_rhs.forking_child_count_ &&
-      ref_lhs.id_ == ref_rhs.id_ && ref_lhs.index_ == ref_rhs.index_;
+         ref_lhs.id_ == ref_rhs.id_ && ref_lhs.index_ == ref_rhs.index_;
 }
 
 bool operator==(const SdvBr_t& ref_lhs, const SdvBr_t& ref_rhs) {
@@ -46,7 +46,7 @@ bool operator==(const SdvBr_t& ref_lhs, const SdvBr_t& ref_rhs) {
 
 bool operator==(const Sdv_t& ref_lhs, const Sdv_t& ref_rhs) {
   return ref_lhs.max_branches_ == ref_rhs.max_branches_ &&
-      ref_lhs.max_versions_ == ref_rhs.max_versions_ && ref_lhs.branch_ == ref_rhs.branch_;
+         ref_lhs.max_versions_ == ref_rhs.max_versions_ && ref_lhs.branch_ == ref_rhs.branch_;
 }
 
 }  // namespace detail
@@ -75,9 +75,9 @@ std::vector<VersionName> AddBranch(StructuredDataVersions& versions, VersionName
 
 std::string DisplayVersion(const VersionName& version, bool to_hex) {
   return std::to_string(version.index) + "-" +
-         (version.id->IsInitialised()
-              ? (to_hex ? HexEncode(version.id.value) : version.id->string()).substr(0, 3)
-              : ("Uninitialised"));
+         (version.id->IsInitialised() ?
+              (to_hex ? HexEncode(version.id.value) : version.id->string()).substr(0, 3) :
+              ("Uninitialised"));
 }
 
 std::string DisplayVersions(const std::vector<VersionName>& versions, bool to_hex) {
@@ -151,13 +151,13 @@ void ConstructAsDiagram(StructuredDataVersions& versions) {
 
 bool Equivalent(const StructuredDataVersions& lhs, const StructuredDataVersions& rhs) {
   if (lhs.max_versions() != rhs.max_versions()) {
-    LOG(kInfo) << "lhs.max_versions (" << lhs.max_versions()
-               << ") != rhs.max_versions(" << rhs.max_versions() << ")";
+    LOG(kInfo) << "lhs.max_versions (" << lhs.max_versions() << ") != rhs.max_versions("
+               << rhs.max_versions() << ")";
     return false;
   }
   if (lhs.max_branches() != rhs.max_branches()) {
-    LOG(kInfo) << "lhs.max_branches (" << lhs.max_branches()
-               << ") != rhs.max_branches(" << rhs.max_branches() << ")";
+    LOG(kInfo) << "lhs.max_branches (" << lhs.max_branches() << ") != rhs.max_branches("
+               << rhs.max_branches() << ")";
     return false;
   }
 
@@ -322,7 +322,7 @@ TEST(StructuredDataVersionsTests, BEH_SerialisationOptionalFieldTest) {
   EXPECT_FALSE(sdv_lhs.branch_[0].name_[0] == sdv_rhs.branch_[0].name_[0]);
 
   // Serialise
-  std::string str_serialised_0 {ConvertToString(sdv_lhs)};
+  std::string str_serialised_0{ConvertToString(sdv_lhs)};
 
   // Deserialise
   ConvertFromString(str_serialised_0, sdv_rhs);
@@ -331,7 +331,7 @@ TEST(StructuredDataVersionsTests, BEH_SerialisationOptionalFieldTest) {
   EXPECT_TRUE(sdv_lhs == sdv_rhs);
 
   // Reserialise
-  std::string str_serialised_1 {ConvertToString(sdv_rhs)};
+  std::string str_serialised_1{ConvertToString(sdv_rhs)};
   EXPECT_TRUE(str_serialised_0 == str_serialised_1);
 }
 

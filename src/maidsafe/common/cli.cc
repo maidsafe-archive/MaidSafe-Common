@@ -35,7 +35,7 @@ CLI::CLI(std::string prompt) : kPrompt_(std::move(prompt)) {}
 
 void CLI::Echo(bool enable) const {
 #ifdef MAIDSAFE_WIN32
-  HANDLE hStdin{ GetStdHandle(STD_INPUT_HANDLE) };
+  HANDLE hStdin{GetStdHandle(STD_INPUT_HANDLE)};
   DWORD mode;
   GetConsoleMode(hStdin, &mode);
 
@@ -59,15 +59,14 @@ void CLI::Echo(bool enable) const {
 
 void CLI::Clear() const {
 #ifdef MAIDSAFE_WIN32
-  COORD top_left = { 0, 0 };
-  HANDLE console{ GetStdHandle(STD_OUTPUT_HANDLE) };
+  COORD top_left = {0, 0};
+  HANDLE console{GetStdHandle(STD_OUTPUT_HANDLE)};
   CONSOLE_SCREEN_BUFFER_INFO screen;
   DWORD written;
   GetConsoleScreenBufferInfo(console, &screen);
   FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, top_left, &written);
-  FillConsoleOutputAttribute(
-      console, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE,
-      screen.dwSize.X * screen.dwSize.Y, top_left, &written);
+  FillConsoleOutputAttribute(console, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_BLUE,
+                             screen.dwSize.X * screen.dwSize.Y, top_left, &written);
   SetConsoleCursorPosition(console, top_left);
 #else
   TLOG(kDefaultColour) << "\x1B[2J\x1B[H";  // CSI[2J to clear, CSI[H to move cursor to top-left
@@ -86,9 +85,9 @@ std::string CLI::GetPassword(bool repeat) const {
 
 std::vector<std::string> CLI::TokeniseLine(std::string line) const {
   std::vector<std::string> args;
-  line = std::string{ "--" } +line;
-  boost::char_separator<char> sep{ " " };
-  boost::tokenizer<boost::char_separator<char>> tokens{ line, sep };
+  line = std::string{"--"} + line;
+  boost::char_separator<char> sep{" "};
+  boost::tokenizer<boost::char_separator<char>> tokens{line, sep};
   for (const auto& token : tokens)
     args.push_back(token);
   return args;

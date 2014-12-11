@@ -28,12 +28,10 @@
 
 namespace maidsafe {
 
-MutableData::MutableData(const MutableData& other)
-    : name_(other.name_), data_(other.data_) {}
+MutableData::MutableData(const MutableData& other) : name_(other.name_), data_(other.data_) {}
 
 MutableData::MutableData(MutableData&& other)
-    : name_(std::move(other.name_)),
-      data_(std::move(other.data_)) { }
+    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
 
 MutableData& MutableData::operator=(MutableData other) {
   swap(*this, other);
@@ -45,8 +43,11 @@ MutableData::MutableData(Name name, NonEmptyString data)
 
 MutableData::MutableData(Name name, const serialised_type& serialised_mutable_data)
     : name_(std::move(name)), data_() {
-  try { ConvertFromString(serialised_mutable_data->string(), *this); }
-  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+  try {
+    ConvertFromString(serialised_mutable_data->string(), *this);
+  } catch (...) {
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  }
 }
 
 MutableData::serialised_type MutableData::Serialise() const {

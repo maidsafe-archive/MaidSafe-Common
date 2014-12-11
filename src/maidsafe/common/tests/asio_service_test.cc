@@ -40,12 +40,12 @@ TEST(AsioServiceTest, BEH_StartAndStop) {
   std::condition_variable cond_var;
 
   auto task([&] {
-      {
+    {
       std::lock_guard<std::mutex> lock(mutex);
       done = true;
-      }
-      cond_var.notify_one();
-      });
+    }
+    cond_var.notify_one();
+  });
 
   EXPECT_THROW(AsioService(0), std::exception);
 

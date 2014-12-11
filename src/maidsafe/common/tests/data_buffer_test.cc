@@ -98,7 +98,7 @@ class DataBufferTest : public testing::Test {
       NonEmptyString popped_value(key_value_pairs[index].second);
       GetIdentityVisitor get_identity;
       EXPECT_TRUE(boost::apply_visitor(get_identity, popped_key) ==
-            boost::apply_visitor(get_identity, key));
+                  boost::apply_visitor(get_identity, key));
       EXPECT_EQ(popped_value, value);
       ++index;
     }
@@ -114,8 +114,7 @@ class DataBufferTest : public testing::Test {
         fs::remove_all((*it).path(), error_code);
       if (error_code)
         return false;
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
       LOG(kError) << e.what();
       return false;
     }
@@ -170,8 +169,7 @@ TEST_F(DataBufferTest, BEH_Constructor) {
   EXPECT_NO_THROW(DataBufferType(MemoryUsage(1), DiskUsage(1), pop_functor_));
   EXPECT_THROW(DataBufferType(MemoryUsage(1), DiskUsage(0), pop_functor_), common_error);
   EXPECT_THROW(DataBufferType(MemoryUsage(2), DiskUsage(1), pop_functor_), common_error);
-  EXPECT_THROW(DataBufferType(MemoryUsage(200001), DiskUsage(200000), pop_functor_),
-                  common_error);
+  EXPECT_THROW(DataBufferType(MemoryUsage(200001), DiskUsage(200000), pop_functor_), common_error);
   EXPECT_NO_THROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_));
 
   // Create a path to a file, and check that it can't be used as the disk buffer path.
@@ -180,9 +178,10 @@ TEST_F(DataBufferTest, BEH_Constructor) {
   boost::filesystem::path file_path(*test_path / "File");
   EXPECT_TRUE(WriteFile(file_path, " "));
   EXPECT_THROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_, file_path),
-                  common_error);
-  EXPECT_THROW(DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_,
-                                 file_path / "Directory"), common_error);
+               common_error);
+  EXPECT_THROW(
+      DataBufferType(MemoryUsage(199999), DiskUsage(200000), pop_functor_, file_path / "Directory"),
+      common_error);
 
   // Create a path to a directory, and check that it can be used as the disk buffer path.
   boost::filesystem::path directory_path(*test_path / "Directory");
@@ -214,25 +213,21 @@ TEST_F(DataBufferTest, BEH_Destructor) {
 TEST_F(DataBufferTest, BEH_SetMaxDiskMemoryUsage) {
   ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ - 1)));
   ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_)));
-  ASSERT_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ + 1)),
-                    common_error);
-  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ - 1)),
-                    common_error);
+  ASSERT_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(max_disk_usage_ + 1)), common_error);
+  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ - 1)), common_error);
   ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_)));
   ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(max_disk_usage_ + 1)));
   ASSERT_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(-1))),
-                    common_error);
+               common_error);
   ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(1))));
-  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))),
-                    common_error);
+  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))), common_error);
   ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(1))));
   ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(static_cast<uint64_t>(0))));
   ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(static_cast<uint64_t>(0))));
   ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(std::numeric_limits<uint64_t>().max())));
   MemoryUsage memory_usage(std::numeric_limits<uint64_t>().max());
   ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(memory_usage)));
-  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)),
-                    common_error);
+  ASSERT_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)), common_error);
   ASSERT_NO_THROW(data_buffer_->SetMaxMemoryUsage(MemoryUsage(kDefaultMaxMemoryUsage)));
   ASSERT_NO_THROW(data_buffer_->SetMaxDiskUsage(DiskUsage(kDefaultMaxDiskUsage)));
 }
@@ -304,11 +299,10 @@ TEST_F(DataBufferTest, BEH_DeleteOnDiskBufferOverfill) {
   KeyType first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   value = NonEmptyString(RandomAlphaNumericString(static_cast<uint32_t>(2 * OneKB)));
   auto key(GenerateKeyFromValue<KeyType>(value));
-  auto async = std::async(std::launch::async,
-                          [this, key, value] {
-                            Sleep(std::chrono::milliseconds(100));
-                            data_buffer_->Store(key, value);
-                          });
+  auto async = std::async(std::launch::async, [this, key, value] {
+    Sleep(std::chrono::milliseconds(100));
+    data_buffer_->Store(key, value);
+  });
   ASSERT_THROW(recovered = data_buffer_->Get(key), common_error);
   Sleep(std::chrono::milliseconds(200));
   ASSERT_NO_THROW(recovered = data_buffer_->Get(key));
@@ -326,13 +320,13 @@ TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
   std::mutex mutex;
   std::condition_variable condition_variable;
   KeyValueVector key_value_pairs;
-  PopFunctor pop_functor([&](const KeyType& key, const NonEmptyString & value) {
+  PopFunctor pop_functor([&](const KeyType& key, const NonEmptyString& value) {
     PopFunction(key, value, key_value_pairs, index, mutex, condition_variable);
   });
   const size_t num_entries(4), num_memory_entries(1), num_disk_entries(4);
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
-  key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
-                                       test_path, pop_functor);
+  key_value_pairs =
+      PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries, test_path, pop_functor);
   EXPECT_EQ(0, index);
 
   NonEmptyString value, recovered;
@@ -345,7 +339,7 @@ TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
   {
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(lock, std::chrono::seconds(1),
-                                            [&]()->bool { return index == 1; }));
+                                            [&]() -> bool { return index == 1; }));
     EXPECT_TRUE(result);
   }
   EXPECT_EQ(1, index);
@@ -357,7 +351,7 @@ TEST_F(DataBufferTest, BEH_PopOnDiskBufferOverfill) {
   {
     std::unique_lock<std::mutex> lock(mutex);
     auto result(condition_variable.wait_for(lock, std::chrono::seconds(2),
-                                            [&]()->bool { return index == 3; }));
+                                            [&]() -> bool { return index == 3; }));
     EXPECT_TRUE(result);
   }
   EXPECT_EQ(3, index);
@@ -385,8 +379,8 @@ TEST_F(DataBufferTest, BEH_AsyncDeleteOnDiskBufferOverfill) {
   for (auto key_value : new_key_value_pairs) {
     value = key_value.second;
     key = key_value.first;
-    async_stores.push_back(std::async(
-        std::launch::async, [this, key, value] { data_buffer_->Store(key, value); }));
+    async_stores.push_back(
+        std::async(std::launch::async, [this, key, value] { data_buffer_->Store(key, value); }));
   }
 
   // Check the new Store attempts all block pending some Deletes
@@ -397,9 +391,8 @@ TEST_F(DataBufferTest, BEH_AsyncDeleteOnDiskBufferOverfill) {
 
   std::vector<std::future<NonEmptyString>> async_gets;
   for (auto key_value : new_key_value_pairs) {
-    async_gets.push_back(std::async(std::launch::async, [this, key_value] {
-      return data_buffer_->Get(key_value.first);
-    }));
+    async_gets.push_back(std::async(
+        std::launch::async, [this, key_value] { return data_buffer_->Get(key_value.first); }));
   }
 
   // Check Get attempts for the new Store values don't block pending the Store attempts completing
@@ -432,13 +425,13 @@ TEST_F(DataBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   std::mutex mutex;
   std::condition_variable condition_variable;
   KeyValueVector old_key_value_pairs, new_key_value_pairs;
-  PopFunctor pop_functor([&](const KeyType& key, const NonEmptyString & value) {
+  PopFunctor pop_functor([&](const KeyType& key, const NonEmptyString& value) {
     PopFunction(key, value, old_key_value_pairs, index, mutex, condition_variable);
   });
   const size_t num_entries(6), num_memory_entries(1), num_disk_entries(6);
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
-  old_key_value_pairs = PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries,
-                                           test_path, pop_functor);
+  old_key_value_pairs =
+      PopulateDataBuffer(num_entries, num_memory_entries, num_disk_entries, test_path, pop_functor);
   EXPECT_EQ(0, index);
 
   NonEmptyString value, recovered;
@@ -458,8 +451,8 @@ TEST_F(DataBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
   }
   {
     std::unique_lock<std::mutex> lock(mutex);
-    auto result(condition_variable.wait_for(
-        lock, std::chrono::seconds(2), [&]()->bool { return index == num_entries; }));
+    auto result(condition_variable.wait_for(lock, std::chrono::seconds(2),
+                                            [&]() -> bool { return index == num_entries; }));
     EXPECT_TRUE(result);
   }
   for (auto key_value : new_key_value_pairs) {
@@ -473,7 +466,7 @@ TEST_F(DataBufferTest, BEH_AsyncPopOnDiskBufferOverfill) {
 TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   data_buffer_path_ = fs::path(*test_path / "data_buffer");
-  PopFunctor pop_functor([this](const KeyType& key, const NonEmptyString & value) {
+  PopFunctor pop_functor([this](const KeyType& key, const NonEmptyString& value) {
     LOG(kInfo) << "Pop called on " << DebugKeyName(key) << "with value "
                << HexSubstr(value.string());
   });
@@ -482,8 +475,8 @@ TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
                                         data_buffer_path_));
   NonEmptyString value(RandomAlphaNumericString((RandomUint32() % 30) + 1)), recovered, last_value;
   auto key(GenerateKeyFromValue<KeyType>(value));
-  auto async = std::async(std::launch::async,
-                          [this, key, value] { data_buffer_->Store(key, value); });
+  auto async =
+      std::async(std::launch::async, [this, key, value] { data_buffer_->Store(key, value); });
   EXPECT_NO_THROW(async.wait());
   EXPECT_TRUE(async.valid());
   EXPECT_NO_THROW(async.get());
@@ -495,9 +488,8 @@ TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
     last_value = value;
     while (last_value == value)
       last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % 30) + 1));
-    auto async =
-        std::async(std::launch::async,
-                   [this, key, last_value] { data_buffer_->Store(key, last_value); });
+    auto async = std::async(std::launch::async,
+                            [this, key, last_value] { data_buffer_->Store(key, last_value); });
     EXPECT_NO_THROW(async.wait());
     EXPECT_TRUE(async.valid());
     EXPECT_NO_THROW(async.get());
@@ -513,7 +505,7 @@ TEST_F(DataBufferTest, BEH_RepeatedlyStoreUsingSameKey) {
 TEST_F(DataBufferTest, BEH_RandomAsync) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DataBuffer"));
   data_buffer_path_ = fs::path(*test_path / "data_buffer");
-  PopFunctor pop_functor([this](const KeyType& key, const NonEmptyString & value) {
+  PopFunctor pop_functor([this](const KeyType& key, const NonEmptyString& value) {
     LOG(kInfo) << "Pop called on " << DebugKeyName(key) << "with value "
                << HexSubstr(value.string());
   });
@@ -548,9 +540,8 @@ TEST_F(DataBufferTest, BEH_RandomAsync) {
         uint32_t index(i);
         KeyType event_key(key_value_pairs[index].first);
         NonEmptyString event_value(key_value_pairs[index].second);
-        future_stores.push_back(std::async([this, event_key, event_value] {
-            data_buffer_->Store(event_key, event_value);
-        }));
+        future_stores.push_back(std::async(
+            [this, event_key, event_value] { data_buffer_->Store(event_key, event_value); }));
         break;
       }
       case 2: {
@@ -573,8 +564,8 @@ TEST_F(DataBufferTest, BEH_RandomAsync) {
   for (auto& future_delete : future_deletes) {
     try {
       future_delete.get();
+    } catch (const common_error&) {
     }
-    catch (const common_error&) {}
   }
 
   for (auto& future_get : future_gets) {
@@ -583,10 +574,9 @@ TEST_F(DataBufferTest, BEH_RandomAsync) {
       typedef KeyValueVector::value_type value_type;
       auto it = std::find_if(
           key_value_pairs.begin(), key_value_pairs.end(),
-          [this, &value](const value_type & key_value) { return key_value.second == value; });
+          [this, &value](const value_type& key_value) { return key_value.second == value; });
       EXPECT_NE(key_value_pairs.end(), it);
-    }
-    catch (const common_error& e) {
+    } catch (const common_error& e) {
       LOG(kInfo) << boost::diagnostic_information(e);
     }
   }
@@ -632,12 +622,12 @@ class DataBufferValueParameterisedTest : public testing::TestWithParam<DataBuffe
 };
 
 TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
-  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage),
-                                        pop_functor_));
+  data_buffer_.reset(
+      new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage), pop_functor_));
 
   while (total_usage) {
-    NonEmptyString value(std::string(RandomAlphaNumericString(
-                      static_cast<uint32_t>(memory_usage))));
+    NonEmptyString value(
+        std::string(RandomAlphaNumericString(static_cast<uint32_t>(memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
     EXPECT_NO_THROW(data_buffer_->Store(key, value));
     NonEmptyString recovered;
@@ -653,21 +643,21 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Store) {
 }
 
 TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
-  data_buffer_.reset(new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage),
-                                        pop_functor_));
+  data_buffer_.reset(
+      new DataBufferType(MemoryUsage(memory_usage), DiskUsage(disk_usage), pop_functor_));
 
   std::map<KeyType, NonEmptyString> key_value_pairs;
   while (total_usage) {
     NonEmptyString value(
         std::string(RandomAlphaNumericString(static_cast<uint32_t>(memory_usage))));
     KeyType key(GenerateKeyFromValue<KeyType>(value));
-  #if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__)
     auto ret_val = key_value_pairs.insert(std::make_pair(key, value));
     if (!ret_val.second)
       ret_val.first->second = value;
-  #else
+#else
     key_value_pairs[key] = value;
-  #endif
+#endif
 
     EXPECT_NO_THROW(data_buffer_->Store(key, value));
     if (disk_usage) {
@@ -687,16 +677,12 @@ TEST_P(DataBufferValueParameterisedTest, BEH_Delete) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(BufferValueParam, DataBufferValueParameterisedTest, testing::Values(
-    DataBufferUsage(1, 2),
-    DataBufferUsage(1, 1024),
-    DataBufferUsage(8, 1024),
-    DataBufferUsage(1024, 2048),
-    DataBufferUsage(1024, 1024),
-    DataBufferUsage(16, 16 * 1024),
-    DataBufferUsage(32, 32),
-    DataBufferUsage(1000, 10000),
-    DataBufferUsage(10000, 1000000)));
+INSTANTIATE_TEST_CASE_P(BufferValueParam, DataBufferValueParameterisedTest,
+                        testing::Values(DataBufferUsage(1, 2), DataBufferUsage(1, 1024),
+                                        DataBufferUsage(8, 1024), DataBufferUsage(1024, 2048),
+                                        DataBufferUsage(1024, 1024), DataBufferUsage(16, 16 * 1024),
+                                        DataBufferUsage(32, 32), DataBufferUsage(1000, 10000),
+                                        DataBufferUsage(10000, 1000000)));
 
 }  // namespace test
 

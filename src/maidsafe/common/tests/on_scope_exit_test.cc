@@ -51,8 +51,7 @@ TEST(OnScopeExitTest, BEH_RevertValue) {
   try {
     on_scope_exit strong_guarantee(on_scope_exit::RevertValue(before));
     IncrementAndThrow(before);
-  }
-  catch (const maidsafe_error&) {
+  } catch (const maidsafe_error&) {
     EXPECT_EQ(before.size(), 101);
   }
   EXPECT_EQ(before.size(), 101);
@@ -74,8 +73,7 @@ TEST(OnScopeExitTest, BEH_SetAction) {
   try {
     on_scope_exit strong_guarantee([&before]() { before.clear(); });
     IncrementAndThrow(before);
-  }
-  catch (const maidsafe_error&) {
+  } catch (const maidsafe_error&) {
     EXPECT_TRUE(before.empty());
   }
   EXPECT_TRUE(before.empty());

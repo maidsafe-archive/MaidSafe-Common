@@ -54,9 +54,7 @@ bool ConfirmChoice(bool exiting) {
 template <int command_index, typename MessagePolicy, typename InputPolicy, typename HandlePolicy>
 class Choice : private MessagePolicy, private InputPolicy, private HandlePolicy {
  public:
-  enum {
-    index = command_index
-  };
+  enum { index = command_index };
   static void PrintCommandPreamble() { MessagePolicy::PrintCommandPreamble(command_index); }
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -216,7 +214,7 @@ class InputPolicyGetEndpoint {
     std::string entered_endpoint;
     std::getline(std::cin, entered_endpoint);
 
-    auto fail([&error_info, entered_endpoint](const std::string & error_finish)->bool {
+    auto fail([&error_info, entered_endpoint](const std::string& error_finish) -> bool {
       error_info = "\"" + entered_endpoint + "\" is not a valid endpoint (" + error_finish;
       return false;
     });
@@ -261,8 +259,7 @@ class InputPolicyGetEndpoint {
       if (port_as_int < 1025 || port_as_int > std::numeric_limits<uint16_t>::max())
         return fail_functor("invalid port " + entered_port + ").");
       port = static_cast<uint16_t>(port_as_int);
-    }
-    catch (const std::exception&) {
+    } catch (const std::exception&) {
       return fail_functor("invalid port " + entered_port + ").");
     }
     return true;
@@ -293,8 +290,9 @@ class HandlePolicyLoadBootstrapFile {
       maidsafe::NonEmptyString contents(maidsafe::ReadFile(bootstrap_file));
       maidsafe::detail::BootstrapCereal parsed_endpoints;
 
-      try { maidsafe::ConvertFromString(contents.string(), parsed_endpoints); }
-      catch (...) {
+      try {
+        maidsafe::ConvertFromString(contents.string(), parsed_endpoints);
+      } catch (...) {
         TLOG(kRed) << '\n' << bootstrap_file << " doesn't parse.\n\n";
         return;
       }
@@ -310,8 +308,7 @@ class HandlePolicyLoadBootstrapFile {
             static_cast<uint16_t>(parsed_endpoints.bootstrap_contacts_[i].port_)));
       }
       g_out_of_date = false;
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
       TLOG(kRed) << "\nException while loading " << bootstrap_file << ": " << e.what() << "\n\n";
     }
     TLOG(kGreen) << "\nLoaded " << bootstrap_file << "\n\n";
@@ -325,13 +322,13 @@ class HandlePolicySaveBootstrapFile {
     maidsafe::detail::BootstrapCereal serialised_endpoints;
     for (auto endpoint : g_bootstrap_endpoints) {
       serialised_endpoints.bootstrap_contacts_.emplace_back();
-      auto pos_last (serialised_endpoints.bootstrap_contacts_.size() - 1);
+      auto pos_last(serialised_endpoints.bootstrap_contacts_.size() - 1);
       maidsafe::detail::EndpointCereal* serialised_endpoint =
           &serialised_endpoints.bootstrap_contacts_[pos_last];
       serialised_endpoint->ip_ = endpoint.address().to_string();
       serialised_endpoint->port_ = endpoint.port();
     }
-    std::string contents {maidsafe::ConvertToString(serialised_endpoints)};
+    std::string contents{maidsafe::ConvertToString(serialised_endpoints)};
     if (maidsafe::WriteFile(bootstrap_file, contents)) {
       g_out_of_date = false;
       TLOG(kGreen) << "\nSaved " << bootstrap_file << "\n\n";
@@ -440,8 +437,7 @@ int GetChoice() {
     std::getline(std::cin, input);
     try {
       choice = std::stoi(input);
-    }
-    catch (const std::exception&) {
+    } catch (const std::exception&) {
     }
 
     if (choice > 0 && choice < 8)
