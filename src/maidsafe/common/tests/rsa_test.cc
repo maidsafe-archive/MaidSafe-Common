@@ -70,7 +70,6 @@ TEST_F(RsaTest, BEH_AsymEncryptDecrypt) {
   maidsafe::test::RunInParallel(6, [&] {
     const PlainText kSmallData(RandomString(21));
     const PlainText kLargeData(RandomString(1024 * 1024));
-    const Keys empty_keys;
     for (int i(0); i < 10; ++i) {
       PlainText enc_small_data(Encrypt(kSmallData, keys_.public_key));
       EXPECT_EQ(kSmallData.string(), Decrypt(enc_small_data, keys_.private_key).string());

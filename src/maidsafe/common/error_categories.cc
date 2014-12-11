@@ -185,6 +185,8 @@ const char* RudpCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe RUDP
 
 std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<RudpErrors>(error_value)) {
+    case RudpErrors::operation_aborted:
+      return "Operation aborted";
     case RudpErrors::failed_to_bootstrap:
       return "Failed to bootstrap";
     case RudpErrors::failed_to_connect:
@@ -193,6 +195,8 @@ std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Connection already in progress";
     case RudpErrors::already_connected:
       return "Already connected";
+    case RudpErrors::already_started:
+      return "Already started";
     case RudpErrors::not_connected:
       return "Not connected";
     case RudpErrors::operation_not_supported:
@@ -201,6 +205,10 @@ std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Invalid message size";
     case RudpErrors::bad_message:
       return "Bad message";
+    case RudpErrors::timed_out:
+      return "Timed out";
+    case RudpErrors::shut_down:
+      return "Shut down";
     default:
       return "Unknown error in RUDP";
   }
