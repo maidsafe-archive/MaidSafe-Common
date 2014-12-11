@@ -180,6 +180,53 @@ std::error_condition PassportCategory::default_error_condition(int error_value) 
   //  }
 }
 
+const char* RudpCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe RUDP"; }
+
+std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RudpErrors>(error_value)) {
+    case RudpErrors::failed_to_bootstrap:
+      return "Failed to bootstrap";
+    case RudpErrors::failed_to_connect:
+      return "Failed to connect";
+    case RudpErrors::connection_already_in_progress:
+      return "Connection already in progress";
+    case RudpErrors::already_connected:
+      return "Already connected";
+    case RudpErrors::not_connected:
+      return "Not connected";
+    case RudpErrors::operation_not_supported:
+      return "Operation not supported";
+    case RudpErrors::message_size:
+      return "Invalid message size";
+    case RudpErrors::bad_message:
+      return "Bad message";
+    default:
+      return "Unknown error in RUDP";
+  }
+}
+
+std::error_condition RudpCategory::default_error_condition(int error_value) const
+    MAIDSAFE_NOEXCEPT {
+  switch (static_cast<RudpErrors>(error_value)) {
+    case RudpErrors::failed_to_connect:
+      return std::errc::connection_refused;
+    case RudpErrors::connection_already_in_progress:
+      return std::errc::connection_already_in_progress;
+    case RudpErrors::already_connected:
+      return std::errc::already_connected;
+    case RudpErrors::not_connected:
+      return std::errc::not_connected;
+    case RudpErrors::operation_not_supported:
+      return std::errc::operation_not_supported;
+    case RudpErrors::message_size:
+      return std::errc::message_size;
+    case RudpErrors::bad_message:
+      return std::errc::bad_message;
+    default:
+      return std::error_condition(error_value, *this);
+  }
+}
+
 const char* EncryptCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe Encryption"; }
 
 std::string EncryptCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {

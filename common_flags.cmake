@@ -70,6 +70,9 @@ target_compile_definitions(maidsafe_common
     $<$<CONFIG:Release>:NDEBUG>
     $<$<AND:$<BOOL:${JUST_THREAD_DEADLOCK_CHECK}>,$<CONFIG:Debug>>:_JUST_THREAD_DEADLOCK_CHECK>
     $<$<BOOL:${BOOST_DISABLE_ASSERTS}>:BOOST_DISABLE_ASSERTS>
+  PRIVATE
+    # TODO(Fraser#5#): 2014-12-08 - BEFORE_RELEASE - remove this define and all associated C++ code.
+    USE_DEPRECATED_NODE_ID_BEHAVIOUR
 )
 
 target_compile_options(maidsafe_common

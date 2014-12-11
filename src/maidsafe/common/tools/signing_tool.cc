@@ -328,7 +328,7 @@ void GroupSignIn() {
       enc_data.clear();
     }
   }
-  priv_key = maidsafe::crypto::SecretRecoverData(min, chunks);
+  priv_key = maidsafe::crypto::SecretRecoverData(chunks);
   Keys.private_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPrivateKey(priv_key));
 
   if (maidsafe::asymm::ValidateKey(Keys.private_key)) {

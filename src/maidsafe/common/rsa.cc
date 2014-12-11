@@ -28,7 +28,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 #include "maidsafe/common/safe_encrypt_cereal.h"
 
 namespace maidsafe {
