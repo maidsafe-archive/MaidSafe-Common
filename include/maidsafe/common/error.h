@@ -159,26 +159,24 @@ const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
 
 enum class RudpErrors {
-  failed_to_bootstrap = 1,
+  operation_aborted = 1,
+  failed_to_bootstrap,
   failed_to_connect,
   connection_already_in_progress,
   already_connected,
+  already_started,
   not_connected,
   operation_not_supported,
   message_size,
-  bad_message
+  bad_message,
+  timed_out,
+  shut_down
 };
 
 class rudp_error : public maidsafe_error {
  public:
-  rudp_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  rudp_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit rudp_error(std::error_code ec) : maidsafe_error(ec) {}
-  rudp_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  rudp_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  rudp_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
+  // Use same constructors as the base.
+  using maidsafe_error::maidsafe_error;
 };
 
 std::error_code make_error_code(RudpErrors code);
