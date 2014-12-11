@@ -429,11 +429,14 @@ void LogMessage::Log(const std::string& project, std::string message) const {
   GetColourAndLevel(log_level, colour, level_);
 
   std::string coloured_log_entry(GetColouredLogEntry(log_level));
+  std::shared_ptr<std::string> message_ptr(new std::string(message.data(), message.size()));
+  std::shared_ptr<std::string> coloured_log_entry_ptr(
+      new std::string(coloured_log_entry.data(), coloured_log_entry.size()));
   ColourMode colour_mode(Logging::Instance().Colour());
-  auto print_functor([colour, coloured_log_entry, message, colour_mode, project] {
-    SendToConsole(colour_mode, colour, coloured_log_entry, message);
-    Logging::Instance().WriteToCombinedLogfile(coloured_log_entry + message);
-    Logging::Instance().WriteToProjectLogfile(project, coloured_log_entry + message);
+  auto print_functor([colour, coloured_log_entry_ptr, message_ptr, colour_mode, project] {
+    SendToConsole(colour_mode, colour, *coloured_log_entry_ptr, *message_ptr);
+    Logging::Instance().WriteToCombinedLogfile(*coloured_log_entry_ptr + *message_ptr);
+    Logging::Instance().WriteToProjectLogfile(project, *coloured_log_entry_ptr + *message_ptr);
   });
 
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
@@ -447,17 +450,17 @@ TestLogMessage::TestLogMessage(Colour colour) : kColour_(colour), stream_() {}
 
 TestLogMessage::~TestLogMessage() {
   Colour colour(kColour_);
-  std::string log_entry(stream_.str());
+  std::shared_ptr<std::string> log_entry(new std::string(stream_.str()));
   FilterMap filter(Logging::Instance().Filter());
   auto print_functor([colour, log_entry, filter] {
 //     if (Logging::Instance().LogToConsole())
-    ColouredPrint(colour, log_entry);
+    ColouredPrint(colour, *log_entry);
 //     for (auto& entry : filter)
 //       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
     if (filter.size() == 1)
-      Logging::Instance().WriteToProjectLogfile(filter.begin()->first, log_entry);
+      Logging::Instance().WriteToProjectLogfile(filter.begin()->first, *log_entry);
     else
-      Logging::Instance().WriteToCombinedLogfile(log_entry);
+      Logging::Instance().WriteToCombinedLogfile(*log_entry);
   });
   Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
 }
@@ -611,8 +614,10 @@ void Logging::SetStreams() {
     project_logfile_streams_.insert(std::make_pair(entry.first, std::move(log_file)));
   }
 
-  if (filter_.size() != 1)
+  if (filter_.size() != 1) {
+    std::lock_guard<std::mutex> lock(combined_logfile_stream_.mutex);
     combined_logfile_stream_.stream.open(GetLogfileName("combined").c_str(), std::ios_base::trunc);
+  }
 }
 
 void Logging::Send(std::function<void()> message_functor) {
