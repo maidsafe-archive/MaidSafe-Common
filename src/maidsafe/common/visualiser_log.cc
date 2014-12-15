@@ -83,8 +83,7 @@ void VisualiserLogMessage::SendVaultStoppedMessage(const std::string& vault_debu
                         std::to_string(exit_code)};
     auto post_functor([message] { Logging::Instance().WriteToVisualiserServer(message); });
     Logging::Instance().Send(post_functor);
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Error writing VLOG to file: " << boost::diagnostic_information(e);
   }
 }
@@ -111,8 +110,7 @@ void VisualiserLogMessage::SendToServer() const {
     std::string message{GetPostRequestBody()};
     auto post_functor([message] { Logging::Instance().WriteToVisualiserServer(message); });
     Logging::Instance().Send(post_functor);
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Error writing VLOG to file: " << boost::diagnostic_information(e);
   }
 }
@@ -126,8 +124,7 @@ void VisualiserLogMessage::WriteToFile() const {
                           '\n'};
     auto print_functor([log_entry] { Logging::Instance().WriteToVisualiserLogfile(log_entry); });
     Logging::Instance().Async() ? Logging::Instance().Send(print_functor) : print_functor();
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Error writing VLOG to file: " << boost::diagnostic_information(e);
   }
 }

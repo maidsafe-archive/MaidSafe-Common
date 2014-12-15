@@ -65,7 +65,7 @@ TEST(BinaryArchiveTest, BEH_Basic) {
   // std::vector<byte> functions
   auto serialised_message = Serialise(Ping());
 
-  InputVectorStream binary_stream{ serialised_message };
+  InputVectorStream binary_stream{serialised_message};
   auto tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
   ASSERT_EQ(MessageTypeTag::kPing, tag);
   auto parsed_ping = Parse<Ping>(binary_stream);
@@ -81,7 +81,7 @@ TEST(BinaryArchiveTest, BEH_Basic) {
   // std::string functions
   auto serialised_to_string_message = SerialiseToString(Ping());
 
-  std::istringstream binary_string_stream{ serialised_to_string_message };
+  std::istringstream binary_string_stream{serialised_to_string_message};
   tag = static_cast<MessageTypeTag>(TypeFromStringStream(binary_string_stream));
   ASSERT_EQ(MessageTypeTag::kPing, tag);
   parsed_ping = ParseFromStringStream<Ping>(binary_string_stream);

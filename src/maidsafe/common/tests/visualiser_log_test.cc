@@ -35,16 +35,10 @@ namespace maidsafe {
 
 namespace test {
 
-DEFINE_OSTREAMABLE_ENUM_VALUES(TestPersona, int32_t,
-    (MaidNode)
-    (DataGetter)
-    (CacheHandler))
+DEFINE_OSTREAMABLE_ENUM_VALUES(TestPersona, int32_t, (MaidNode)(DataGetter)(CacheHandler))
 
 DEFINE_OSTREAMABLE_ENUM_VALUES(TestAction, uint64_t,
-    (Put)
-    (Get)
-    (AccountTransfer)
-    (IncrementReferenceCount))
+                               (Put)(Get)(AccountTransfer)(IncrementReferenceCount))
 
 class VisualiserLogTest : public ::testing::Test {
  protected:
@@ -73,12 +67,12 @@ class VisualiserLogTest : public ::testing::Test {
   }
 
   static Identity InitId() {
-    static Identity id{ RandomString(64) };
+    static Identity id{RandomString(64)};
     return id;
   }
 
   std::unique_ptr<on_scope_exit> GetScopedSessionIdInvalidator() {
-    const std::string kOriginalSessionId{ log::Logging::Instance().VlogSessionId() };
+    const std::string kOriginalSessionId{log::Logging::Instance().VlogSessionId()};
     auto scoped_invalidator(maidsafe::make_unique<on_scope_exit>([kOriginalSessionId] {
       log::Logging::Instance().visualiser_.session_id = kOriginalSessionId;
     }));
@@ -99,7 +93,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   EXPECT_TRUE(!IsValid(static_cast<TestPersona>(3)));
 
 #ifdef USE_VLOGGING
-  Identity target{ RandomString(64) };
+  Identity target{RandomString(64)};
   // Call before VlogPrefix has been set
   EXPECT_THROW(VLOG(TestPersona::kCacheHandler, TestAction::kAccountTransfer, target),
                common_error);
@@ -130,7 +124,8 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
 
   // Try to initialise again
   EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", kTestSessionId_, kServerName_,
-                                                       kServerPort_, kServerDir_), common_error);
+                                                       kServerPort_, kServerDir_),
+               common_error);
   EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
   EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
@@ -166,8 +161,8 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
   try {
     log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_, kServerName_,
                                             kServerPort_, kServerDir_);
+  } catch (const std::exception&) {
   }
-  catch (const std::exception&) {}
 
   auto vlog0 = VLOG(TestPersona::kDataGetter, TestAction::kGet, identities[0], identities[1]);
   LOG(kVerbose) << '\t' << GetPostRequestBody(vlog0);
@@ -191,7 +186,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
 
   std::stringstream stringstream;
   {
-    cereal::JSONOutputArchive archive{ stringstream };
+    cereal::JSONOutputArchive archive{stringstream};
 
     archive(cereal::make_nvp("vaultRemoved", 123));
     archive(cereal::make_nvp("vaultAdded", 234));

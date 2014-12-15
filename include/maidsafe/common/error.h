@@ -45,7 +45,7 @@ class maidsafe_error : public std::system_error {
   maidsafe_error(int ev, const std::error_category& ecat)
       : std::system_error(ev, ecat), value_(0) {}
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& serialize(Archive& ref_archive) {
     return ref_archive(value_);
   }
@@ -159,14 +159,18 @@ const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
 
 enum class RudpErrors {
-  failed_to_bootstrap = 1,
+  operation_aborted = 1,
+  failed_to_bootstrap,
   failed_to_connect,
   connection_already_in_progress,
   already_connected,
+  already_started,
   not_connected,
   operation_not_supported,
   message_size,
-  bad_message
+  bad_message,
+  timed_out,
+  shut_down
 };
 
 class rudp_error : public maidsafe_error {

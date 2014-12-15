@@ -55,8 +55,9 @@ TEST(SecureStringTest, BEH_Construct) {
 }
 
 TEST(SecureStringTest, BEH_Hash) {
-//  typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE>
-//      BoundedString;
+  //  typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE,
+  //  crypto::SHA512::DIGESTSIZE>
+  //      BoundedString;
   SafeString string("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   EXPECT_NO_THROW(crypto::Hash<crypto::SHA512>(string));
 }

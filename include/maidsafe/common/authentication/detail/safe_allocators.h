@@ -128,7 +128,7 @@ static inline size_t GetSystemPageSize() {
   page_size = sSysInfo.dwPageSize;
 #elif defined(PAGESIZE)  // defined in limits.h
   page_size = PAGESIZE;
-#else  // assume some POSIX OS
+#else                    // assume some POSIX OS
   page_size = sysconf(_SC_PAGESIZE);
 #endif
   return page_size;
