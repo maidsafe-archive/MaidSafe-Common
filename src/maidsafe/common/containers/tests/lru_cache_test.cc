@@ -71,9 +71,6 @@ TEST(LruCacheTest, BEH_DeleteTest) {
       EXPECT_FALSE(cache.Get(index).valid());
     }
 
-    for (int i(0); i < 10; ++i)
-      EXPECT_FALSE(cache.Get(i).valid());
-
     EXPECT_EQ(cache.size(), 0);
   }
 
@@ -89,9 +86,6 @@ TEST(LruCacheTest, BEH_DeleteTest) {
       cache.Delete(index);
       EXPECT_FALSE(cache.Get(index).valid());
     }
-
-    for (int i(size); i < size * 2; ++i)
-      EXPECT_FALSE(cache.Get(i).valid());
 
     EXPECT_EQ(cache.size(), 0);
   }
