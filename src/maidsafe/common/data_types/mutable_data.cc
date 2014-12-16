@@ -24,7 +24,7 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 

@@ -22,7 +22,7 @@
 
 #include "maidsafe/common/error_categories.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
@@ -31,16 +31,17 @@ namespace {
 const int kMultiple(100000);
 
 enum class ErrorCategories : int {
-  kCommon =       1 * kMultiple,
-  kAsymm =        2 * kMultiple,
-  kPassport =     3 * kMultiple,
-  kEncrypt =      4 * kMultiple,
-  kRouting =      5 * kMultiple,
-  kNfs =          6 * kMultiple,
-  kDrive =        7 * kMultiple,
-  kVault =        8 * kMultiple,
-  kVaultManager = 9 * kMultiple,
-  kApi =          10 * kMultiple
+  kCommon = 1 * kMultiple,
+  kAsymm = 2 * kMultiple,
+  kPassport = 3 * kMultiple,
+  kRudp = 4 * kMultiple,
+  kEncrypt = 5 * kMultiple,
+  kRouting = 6 * kMultiple,
+  kNfs = 7 * kMultiple,
+  kDrive = 8 * kMultiple,
+  kVault = 9 * kMultiple,
+  kVaultManager = 10 * kMultiple,
+  kApi = 11 * kMultiple
 };
 
 }  // unnamed namespace
@@ -52,6 +53,8 @@ int ErrorToInt(maidsafe_error error) {
     return -static_cast<int>(ErrorCategories::kAsymm) - error.code().value();
   if (error.code().category() == GetPassportCategory())
     return -static_cast<int>(ErrorCategories::kPassport) - error.code().value();
+  if (error.code().category() == GetRudpCategory())
+    return -static_cast<int>(ErrorCategories::kRudp) - error.code().value();
   if (error.code().category() == GetEncryptCategory())
     return -static_cast<int>(ErrorCategories::kEncrypt) - error.code().value();
   if (error.code().category() == GetRoutingCategory())
@@ -71,29 +74,31 @@ int ErrorToInt(maidsafe_error error) {
 
 maidsafe_error IntToError(int value) {
   value = 0 - value;
-  ErrorCategories category_value{ static_cast<ErrorCategories>(value - (value % kMultiple)) };
-  int error_value{ value % kMultiple };
+  ErrorCategories category_value{static_cast<ErrorCategories>(value - (value % kMultiple))};
+  int error_value{value % kMultiple};
   switch (category_value) {
     case ErrorCategories::kCommon:
-      return maidsafe_error{ error_value, GetCommonCategory() };
+      return maidsafe_error{error_value, GetCommonCategory()};
     case ErrorCategories::kAsymm:
-      return maidsafe_error{ error_value, GetAsymmCategory() };
+      return maidsafe_error{error_value, GetAsymmCategory()};
     case ErrorCategories::kPassport:
-      return maidsafe_error{ error_value, GetPassportCategory() };
+      return maidsafe_error{error_value, GetPassportCategory()};
+    case ErrorCategories::kRudp:
+      return maidsafe_error{error_value, GetRudpCategory()};
     case ErrorCategories::kEncrypt:
-      return maidsafe_error{ error_value, GetEncryptCategory() };
+      return maidsafe_error{error_value, GetEncryptCategory()};
     case ErrorCategories::kRouting:
-      return maidsafe_error{ error_value, GetRoutingCategory() };
+      return maidsafe_error{error_value, GetRoutingCategory()};
     case ErrorCategories::kNfs:
-      return maidsafe_error{ error_value, GetNfsCategory() };
+      return maidsafe_error{error_value, GetNfsCategory()};
     case ErrorCategories::kDrive:
-      return maidsafe_error{ error_value, GetDriveCategory() };
+      return maidsafe_error{error_value, GetDriveCategory()};
     case ErrorCategories::kVault:
-      return maidsafe_error{ error_value, GetVaultCategory() };
+      return maidsafe_error{error_value, GetVaultCategory()};
     case ErrorCategories::kVaultManager:
-      return maidsafe_error{ error_value, GetVaultManagerCategory() };
+      return maidsafe_error{error_value, GetVaultManagerCategory()};
     case ErrorCategories::kApi:
-      return maidsafe_error{ error_value, GetApiCategory() };
+      return maidsafe_error{error_value, GetApiCategory()};
     default:
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
@@ -155,6 +160,21 @@ const std::error_category& GetPassportCategory() {
 }
 
 passport_error MakeError(PassportErrors code) { return passport_error(make_error_code(code)); }
+
+std::error_code make_error_code(RudpErrors code) {
+  return std::error_code(static_cast<int>(code), GetRudpCategory());
+}
+
+std::error_condition make_error_condition(RudpErrors code) {
+  return std::error_condition(static_cast<int>(code), GetRudpCategory());
+}
+
+const std::error_category& GetRudpCategory() {
+  static detail::RudpCategory instance;
+  return instance;
+}
+
+rudp_error MakeError(RudpErrors code) { return rudp_error(make_error_code(code)); }
 
 std::error_code make_error_code(EncryptErrors code) {
   return std::error_code(static_cast<int>(code), GetEncryptCategory());

@@ -16,44 +16,20 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/tools/network_viewer.h"
+#ifndef MAIDSAFE_COMMON_TYPE_CHECK_H_
+#define MAIDSAFE_COMMON_TYPE_CHECK_H_
 
-#include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
+#include <type_traits>
 
 namespace maidsafe {
 
-namespace test {
-
-namespace {  // anonymous
-
-using Mr_t = network_viewer::MatrixRecord;
-
-bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
-  return ref_lhs.owner_id() == ref_rhs.owner_id() && ref_lhs.matrix_ids() == ref_rhs.matrix_ids();
-}
-
-}  // anonymous namespace
-
-TEST(NetworkViewerTest, BEH_MatrixRecordSerialisation) {
-  NodeId node_id_0{RandomString(NodeId::kSize)};
-  NodeId node_id_1{RandomString(NodeId::kSize)};
-  Mr_t a{node_id_0}, b{node_id_1};
-
-  // Serialisation
-  EXPECT_FALSE(a == b);
-  auto serialised_data_0(a.Serialise());
-
-  // Deserialisation
-  Mr_t c{serialised_data_0};
-  EXPECT_FALSE(b == c);
-  EXPECT_TRUE(a == c);
-
-  // Reserialise
-  auto serialised_data_1(c.Serialise());
-  EXPECT_TRUE(serialised_data_0 == serialised_data_1);
-}
-
-}  // namespace test
+template <typename T>
+struct is_regular
+    : std::integral_constant<
+          bool, std::is_default_constructible<T>::value && std::is_copy_constructible<T>::value &&
+                    std::is_move_constructible<T>::value && std::is_copy_assignable<T>::value &&
+                    std::is_move_assignable<T>::value> {};
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_COMMON_TYPE_CHECK_H_
