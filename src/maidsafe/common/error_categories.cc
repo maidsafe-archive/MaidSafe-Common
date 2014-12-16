@@ -372,6 +372,8 @@ std::string VaultCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Attempt to create an account which already exists";
     case VaultErrors::data_already_exists:
       return "Attempt to put data which already exists";
+    case VaultErrors::too_few_entries_to_resolve:
+      return "Attempt to resolve without having enough entries";
     default:
       return "Unknown error in Vault";
   }
