@@ -83,7 +83,7 @@ class NodeId {
   // Required by Cereal
   template <typename Archive>
   Archive& save(Archive& ref_archive) const {
-    return ref_archive(raw_id_);
+    return ref_archive(string());
   }
 
   // Returns true if both 'raw_id_'s are equal or if IsValid() is false for both.  Doesn't throw.
