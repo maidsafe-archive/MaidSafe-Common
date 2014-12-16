@@ -42,7 +42,7 @@
 #include <tuple>
 #include <utility>
 
-#include "boost_expected/boost/expected/expected.hpp"
+#include "boost/expected/expected.hpp"
 
 #include "maidsafe/common/types.h"
 
