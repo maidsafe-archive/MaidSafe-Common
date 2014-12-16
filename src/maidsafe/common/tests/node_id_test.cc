@@ -385,6 +385,13 @@ TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
 }
 
 TEST_F(NodeIdTest, BEH_Serialisation) {
+  // Invalid Serialisation
+#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  EXPECT_NO_THROW(maidsafe::ConvertToString(NodeId()));
+#else
+  EXPECT_THROW(maidsafe::ConvertToString(NodeId()), common_error);
+#endif
+
   // Invalid Deserialisation
   std::string raw_id{id1_.string()};
 
