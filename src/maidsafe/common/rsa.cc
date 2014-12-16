@@ -51,6 +51,11 @@ void DecodeKey(const std::string& key, CryptoPP::BufferedTransformation& bt) {
 
 }  // Unnamed namespace
 
+detail::spinlock& g_rsa_mutex() {
+  static detail::spinlock mutex;
+  return mutex;
+}
+
 Keys GenerateKeyPair() {
   Keys keypair;
   CryptoPP::InvertibleRSAFunction parameters;
@@ -84,6 +89,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
         crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv)->string();
     std::string encryption_key_encrypted;
     std::string const local_key_and_iv = symm_encryption_key.string() + symm_encryption_iv.string();
+    std::lock_guard<detail::spinlock> lock(g_rsa_mutex());
     CryptoPP::StringSource(
         local_key_and_iv, true,
         new CryptoPP::PK_EncryptorFilter(crypto::random_number_generator(), encryptor,
