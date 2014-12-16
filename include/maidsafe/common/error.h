@@ -30,20 +30,22 @@
 
 namespace maidsafe {
 
+class maidsafe_error;
+int32_t ErrorToInt(maidsafe_error error);
+maidsafe_error IntToError(int32_t);
+
 class maidsafe_error : public std::system_error {
  public:
   maidsafe_error() : std::system_error(std::error_code()) {}
   maidsafe_error(std::error_code ec, const std::string& what_arg)
       : std::system_error(ec, what_arg) {}
-  maidsafe_error(std::error_code ec, const char* what_arg)
-      : std::system_error(ec, what_arg) {}
+  maidsafe_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
   explicit maidsafe_error(std::error_code ec) : std::system_error(ec) {}
   maidsafe_error(int ev, const std::error_category& ecat, const std::string& what_arg)
       : std::system_error(ev, ecat, what_arg) {}
   maidsafe_error(int ev, const std::error_category& ecat, const char* what_arg)
       : std::system_error(ev, ecat, what_arg) {}
-  maidsafe_error(int ev, const std::error_category& ecat)
-      : std::system_error(ev, ecat) {}
+  maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
 
   template <typename Archive>
   void save(Archive& archive) const {
@@ -52,14 +54,11 @@ class maidsafe_error : public std::system_error {
 
   template <typename Archive>
   void load(Archive& archive) {
-    int error_as_int{ 0 };
+    int error_as_int{0};
     archive(error_as_int);
     *this = IntToError(error_as_int);
   }
 };
-
-int32_t ErrorToInt(maidsafe_error error);
-maidsafe_error IntToError(int32_t);
 
 enum class CommonErrors {
   success = 0,

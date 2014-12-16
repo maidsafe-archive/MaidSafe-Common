@@ -46,7 +46,7 @@ using SerialisedData = std::vector<byte>;
 
 template <typename TypeToSerialise>
 SerialisedData Serialise(const TypeToSerialise& object_to_serialise) {
-  auto binary_output_stream = OutputVectorStream{};
+  OutputVectorStream binary_output_stream;
   {
     auto binary_output_archive = BinaryOutputArchive{binary_output_stream};
     binary_output_archive(object_to_serialise);
@@ -66,7 +66,7 @@ ParsedType Parse(InputVectorStream& binary_input_stream) {
 
 template <typename ParsedType>
 ParsedType Parse(const SerialisedData& serialised_data) {
-  auto binary_input_stream = InputVectorStream{serialised_data};
+  InputVectorStream binary_input_stream{serialised_data};
   return Parse<ParsedType>(binary_input_stream);
 }
 
