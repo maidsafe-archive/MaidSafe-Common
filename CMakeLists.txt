@@ -50,14 +50,20 @@ ms_glob_dir(CommonAuthentication ${CommonSourcesDir}/authentication "Authenticat
 ms_glob_dir(CommonAuthenticationDetail ${CommonSourcesDir}/authentication/detail "Authentication Detail")
 ms_glob_dir(CommonAuthenticationTests ${CommonSourcesDir}/authentication/tests "Authentication Tests")
 
+ms_glob_dir(CommonContainers ${CommonSourcesDir}/containers "Containers")
+ms_glob_dir(CommonContainersTests ${CommonSourcesDir}/containers/tests "Containers Tests")
+
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
-ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
-ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
+ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
+ms_glob_dir(CommonSerialisationTests ${CommonSourcesDir}/serialisation/tests "Serialisation Tests")
 
 ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
 ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
+
+ms_glob_dir(CommonTools ${CommonSourcesDir}/tools Tools)
+ms_glob_dir(CommonToolsTests ${CommonSourcesDir}/tools/tests "Tools Tests")
 
 set(TestsMain ${CommonSourcesDir}/tests/tests_main.cc)
 set(IpcChildProcess ${CommonSourcesDir}/tests/ipc_child_process.cc)
@@ -74,8 +80,9 @@ ms_add_static_library(maidsafe_common
     ${CommonAllFiles}
     ${CommonAuthenticationAllFiles}
     ${CommonAuthenticationDetailAllFiles}
-    ${CommonDataStoresAllFiles}
+    ${CommonContainersAllFiles}
     ${CommonDataTypesAllFiles}
+    ${CommonSerialisationAllFiles}
     ${CommonTcpAllFiles})
 add_dependencies(maidsafe_common boost_process)
 
@@ -160,9 +167,17 @@ if(INCLUDE_TESTS)
   target_compile_definitions(maidsafe_test PRIVATE MAIDSAFE_DISABLED_TEST_RETURN_CODE=${SkipReturnCodeValue})
   target_link_libraries(maidsafe_test maidsafe_common gtest)
 
-  ms_add_executable(test_common "Tests/Common" ${CommonTestsAllFiles} ${CommonAuthenticationTestsAllFiles} ${CommonTcpTestsAllFiles} ${CommonDataTypesTestsAllFiles})
+  ms_add_executable(test_common "Tests/Common"
+      ${CommonTestsAllFiles}
+      ${CommonAuthenticationTestsAllFiles}
+      ${CommonTcpTestsAllFiles}
+      ${CommonContainersTestsAllFiles}
+      ${CommonDataTypesTestsAllFiles}
+      ${CommonSerialisationTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
+  # TODO(Fraser#5#): 2014-12-08 - BEFORE_RELEASE - remove this define and all associated C++ code.
+  target_compile_definitions(test_common PRIVATE USE_DEPRECATED_NODE_ID_BEHAVIOUR)
 
   ms_add_executable(test_network_viewer
       "Tests/Common"

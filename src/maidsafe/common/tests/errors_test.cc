@@ -145,6 +145,9 @@ template <>
 struct EnumClass<passport_error> { typedef PassportErrors type; };
 
 template <>
+struct EnumClass<rudp_error> { typedef RudpErrors type; };
+
+template <>
 struct EnumClass<encrypt_error> { typedef EncryptErrors type; };
 
 template <>
@@ -168,6 +171,7 @@ struct EnumClass<api_error> { typedef ApiErrors type; };
 typedef testing::Types<common_error,
                        asymm_error,
                        passport_error,
+                       rudp_error,
                        encrypt_error,
                        routing_error,
                        nfs_error,

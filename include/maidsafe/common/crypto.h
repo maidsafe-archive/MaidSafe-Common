@@ -88,12 +88,8 @@ typedef CryptoPP::SHA384 SHA384;
 typedef CryptoPP::SHA512 SHA512;
 typedef CryptoPP::Integer BigInt;
 
-enum {
-  AES256_KeySize = 32
-};  // size in bytes.
-enum {
-  AES256_IVSize = 16
-};  // size in bytes.
+enum { AES256_KeySize = 32 };  // size in bytes.
+enum { AES256_IVSize = 16 };   // size in bytes.
 extern const uint16_t kMaxCompressionLevel;
 extern const std::string kMaidSafeVersionLabel1;
 extern const std::string kMaidSafeVersionLabel;
@@ -145,8 +141,7 @@ std::string XOR(const std::string& first, const std::string& second);
 // "label" is additional data to provide distinct input data to PBKDF.  The function will throw a
 // std::exception if invalid parameters are passed.
 template <typename PasswordType>
-SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt,
-                                    uint32_t pin,
+SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& salt, uint32_t pin,
                                     const std::string& label = kMaidSafeVersionLabel) {
   if (!password.IsInitialised() || !salt.IsInitialised()) {
     LOG(kError) << "CreateSecurePassword password or salt uninitialised";
@@ -176,8 +171,7 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std
   try {
     CryptoPP::StringSource(input, true,
                            new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
@@ -203,8 +197,7 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Ha
     static_cast<void>(CryptoPP::StringSource(
         reinterpret_cast<const byte*>(input.data()), input.length(), true,
         new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result))));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
@@ -231,9 +224,25 @@ UncompressedText Uncompress(const CompressedText& input);
 std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
                                          const std::string& data);
 
-std::string SecretRecoverData(int32_t threshold, const std::vector<std::string>& in_strings);
+std::vector<std::vector<byte>> SecretShareData(int32_t threshold, int32_t number_of_shares,
+                                               const std::vector<byte>& data);
+
+std::string SecretRecoverData(const std::vector<std::string>& in_strings);
+
+std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arrays);
+
+std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
+                                      const std::string& data);
+
+std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of_shares,
+                                            const std::vector<byte>& data);
+
+std::string InfoRetrieve(const std::vector<std::string>& in_strings);
+
+std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays);
 
 CipherText ObfuscateData(const Identity& name, const PlainText& plain_text);
+
 PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text);
 
 }  // namespace crypto

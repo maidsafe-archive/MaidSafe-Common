@@ -23,7 +23,7 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 #include "maidsafe/common/data_types/structured_data_versions_cereal.h"
 
 namespace maidsafe {

@@ -28,33 +28,42 @@
 
 namespace maidsafe {
 
-#ifdef NDEBUG
-# define INIT_DEBUG_NODE_ID
-#else
-# define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
+#if !defined(_MSC_VER) || _MSC_VER >= 1900
+const size_t NodeId::kSize;
 #endif
 
+#ifdef NDEBUG
+#define INIT_DEBUG_NODE_ID
+#else
+#define INIT_DEBUG_NODE_ID , debug_id_(HexSubstr(raw_id_))
+#endif
+
+#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+
 NodeId::NodeId() : raw_id_(kSize, 0) INIT_DEBUG_NODE_ID {}
+
+#else
+
+#ifdef NDEBUG
+NodeId::NodeId() : raw_id_() {}
+#else
+NodeId::NodeId() : raw_id_(), debug_id_("Invalid ID") {}
+#endif
+
+#endif
 
 NodeId::NodeId(const NodeId& other) : raw_id_(other.raw_id_) INIT_DEBUG_NODE_ID {}
 
 NodeId::NodeId(NodeId&& other) MAIDSAFE_NOEXCEPT
     : raw_id_(std::move(other.raw_id_)) INIT_DEBUG_NODE_ID {}
 
-NodeId& NodeId::operator=(NodeId other) {
-  swap(*this, other);
+NodeId& NodeId::operator=(NodeId&& other) MAIDSAFE_NOEXCEPT {
+  raw_id_ = std::move(other.raw_id_);
+#ifndef NDEBUG
+  debug_id_ = std::move(other.debug_id_);
+#endif
   return *this;
 }
-
-NodeId::NodeId(IdType type)
-    : raw_id_([type]()->std::string {
-        switch (type) {
-          case IdType::kRandomId:
-            return RandomString(kSize);
-          default:
-            BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-        }
-      }()) INIT_DEBUG_NODE_ID {}
 
 NodeId::NodeId(std::string id) : raw_id_(std::move(id)) INIT_DEBUG_NODE_ID {
   if (raw_id_.size() != kSize)
@@ -78,17 +87,12 @@ NodeId::NodeId(const std::string& id, NodeId::EncodingType encoding_type) : raw_
       default:
         raw_id_ = id;
     }
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "NodeId Ctor: " << boost::diagnostic_information(e);
     raw_id_.clear();
   }
-  if (encoding_type == EncodingType::kBase64) {
-    Base64Decode(id);
-  } else if (raw_id_.size() != kSize) {
-    raw_id_.clear();
+  if (raw_id_.size() != kSize)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
-  }
 #ifndef NDEBUG
   debug_id_ = HexSubstr(raw_id_);
 #endif
@@ -105,8 +109,7 @@ std::string NodeId::EncodeToBinary() const {
 }
 
 void NodeId::DecodeFromBinary(const std::string& binary_id) {
-  if (raw_id_.size() != kSize)
-    raw_id_.assign(kSize, 0);
+  raw_id_.assign(kSize, 0);
   for (size_t i = 0; i < kSize; ++i) {
     std::bitset<8> temp(binary_id.substr(i * 8, 8));
     raw_id_[i] = static_cast<char>(temp.to_ulong());
@@ -114,6 +117,10 @@ void NodeId::DecodeFromBinary(const std::string& binary_id) {
 }
 
 bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& target_id) {
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  if (!id1.IsValid() || !id2.IsValid() || !target_id.IsValid())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
+#endif
   for (uint16_t i = 0; i < kSize; ++i) {
     unsigned char result1 = id1.raw_id_[i] ^ target_id.raw_id_[i];
     unsigned char result2 = id2.raw_id_[i] ^ target_id.raw_id_[i];
@@ -123,9 +130,19 @@ bool NodeId::CloserToTarget(const NodeId& id1, const NodeId& id2, const NodeId& 
   return false;
 }
 
-const std::string NodeId::string() const { return raw_id_; }
+std::string NodeId::string() const {
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  if (!IsValid())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
+#endif
+  return raw_id_;
+}
 
-const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
+std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) const {
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  if (!IsValid())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
+#endif
   switch (encoding_type) {
     case EncodingType::kBinary:
       return EncodeToBinary();
@@ -138,15 +155,28 @@ const std::string NodeId::ToStringEncoded(const EncodingType& encoding_type) con
   }
 }
 
-bool NodeId::IsZero() const {
+#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+
+bool NodeId::IsValid() const {
   for (auto i : raw_id_) {
     if (i != 0)
-      return false;
+      return true;
   }
-  return true;
+  return false;
 }
 
+#else
+
+bool NodeId::IsValid() const { return !raw_id_.empty(); }
+
+#endif
+
 int NodeId::CommonLeadingBits(const NodeId& other) const {
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  if (!IsValid() || !other.IsValid())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
+#endif
+
   // Find first mismatching char between the two IDs
   auto mismatch(std::mismatch(std::begin(raw_id_), std::end(raw_id_), std::begin(other.raw_id_)));
 
@@ -154,14 +184,19 @@ int NodeId::CommonLeadingBits(const NodeId& other) const {
   if (mismatch.first == std::end(raw_id_))
     return 8 * kSize;
 
-  int common_bits{ detail::kCommonBits[static_cast<unsigned char>(*mismatch.first)]
-                                      [static_cast<unsigned char>(*mismatch.second)] };
+  int common_bits{detail::kCommonBits[static_cast<unsigned char>(
+      *mismatch.first)][static_cast<unsigned char>(*mismatch.second)]};
   return static_cast<int>(8 * std::distance(std::begin(raw_id_), mismatch.first)) + common_bits;
 }
 
-NodeId& NodeId::operator^=(const NodeId& rhs) {
+NodeId& NodeId::operator^=(const NodeId& other) {
+#ifndef USE_DEPRECATED_NODE_ID_BEHAVIOUR
+  if (!IsValid() || !other.IsValid())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_node_id));
+#endif
+
   for (uint16_t i(0); i != kSize; ++i)
-    raw_id_[i] ^= rhs.raw_id_[i];
+    raw_id_[i] ^= other.raw_id_[i];
 #ifndef NDEBUG
   debug_id_ = HexSubstr(raw_id_);
 #endif
@@ -170,7 +205,7 @@ NodeId& NodeId::operator^=(const NodeId& rhs) {
 
 std::string DebugId(const NodeId& node_id) {
 #ifdef NDEBUG
-  return HexSubstr(node_id.raw_id_);
+  return node_id.IsValid() ? HexSubstr(node_id.raw_id_) : "Invalid ID";
 #else
   return node_id.debug_id_;
 #endif
