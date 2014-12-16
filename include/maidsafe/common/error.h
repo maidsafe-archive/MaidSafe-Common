@@ -291,7 +291,8 @@ enum class VaultErrors {
   unique_data_clash,
   data_available_not_given,
   account_already_exists,
-  data_already_exists
+  data_already_exists,
+  too_few_entries_to_resolve
 };
 
 class vault_error : public maidsafe_error {
