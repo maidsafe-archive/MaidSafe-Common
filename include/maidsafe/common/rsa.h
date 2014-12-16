@@ -39,27 +39,43 @@ namespace maidsafe {
 
 namespace rsa {
 
-typedef CryptoPP::RSA::PrivateKey PrivateKey;
-typedef CryptoPP::RSA::PublicKey PublicKey;
+using PrivateKey = CryptoPP::RSA::PrivateKey;
+using PublicKey = CryptoPP::RSA::PublicKey;
+
 struct Keys {
   // The signature will be the same size as the key size in bytes
   // http://stackoverflow.com/questions/5403808/private-key-length-bytes
   // http://stackoverflow.com/questions/6658728/rsa-signature-size
-  enum {
-    kKeyBitSize = 2048,
-    kSignatureByteSize = kKeyBitSize / 8
-  };
-  Keys() : private_key(), public_key() {}
+  enum { kKeyBitSize = 2048, kSignatureByteSize = kKeyBitSize / 8 };
+
+  Keys() = default;
+  Keys(const Keys&) = default;
+  Keys(Keys&& other)
+      : private_key(std::move(other.private_key)), public_key(std::move(other.public_key)) {}
+  ~Keys() = default;
+  Keys& operator=(const Keys&) = default;
+  Keys& operator=(Keys&& other) {
+    private_key = std::move(other.private_key);
+    public_key = std::move(other.public_key);
+    return *this;
+  }
+
+  template <typename Archive>
+  void serialize(Archive& archive) {
+    archive(private_key, public_key);
+  }
+
   PrivateKey private_key;
   PublicKey public_key;
 };
 
 // TODO(Fraser#5#): 2012-10-02 - Calculate reliable lower and upper bounds for the following 2 types
-typedef detail::BoundedString<2> EncodedPublicKey;
-typedef detail::BoundedString<3> EncodedPrivateKey;
+using EncodedPublicKey = detail::BoundedString<2>;
+using EncodedPrivateKey = detail::BoundedString<3>;
 
-typedef NonEmptyString PlainText, CipherText;
-typedef detail::BoundedString<Keys::kSignatureByteSize> Signature;
+using PlainText = NonEmptyString;
+using CipherText = NonEmptyString;
+using Signature = maidsafe::detail::BoundedString<Keys::kSignatureByteSize>;
 
 Keys GenerateKeyPair();
 
@@ -97,5 +113,35 @@ bool MatchingKeys(const PublicKey& public_key1, const PublicKey& public_key2);
 namespace asymm = rsa;
 
 }  // namespace maidsafe
+
+namespace cereal {
+
+template <typename Archive>
+void save(Archive& archive, const CryptoPP::RSA::PrivateKey& private_key) {
+  auto encoded_key = maidsafe::asymm::EncodeKey(private_key);
+  archive(encoded_key);
+}
+
+template <typename Archive>
+void save(Archive& archive, const CryptoPP::RSA::PublicKey& public_key) {
+  auto encoded_key = maidsafe::asymm::EncodeKey(public_key);
+  archive(encoded_key);
+}
+
+template <typename Archive>
+void load(Archive& archive, CryptoPP::RSA::PrivateKey& private_key) {
+  auto encoded_key = maidsafe::asymm::EncodedPrivateKey{};
+  archive(encoded_key);
+  private_key = maidsafe::asymm::DecodeKey(encoded_key);
+}
+
+template <typename Archive>
+void load(Archive& archive, CryptoPP::RSA::PublicKey& public_key) {
+  auto encoded_key = maidsafe::asymm::EncodedPublicKey{};
+  archive(encoded_key);
+  public_key = maidsafe::asymm::DecodeKey(encoded_key);
+}
+
+}  // namespace cereal
 
 #endif  // MAIDSAFE_COMMON_RSA_H_

@@ -29,6 +29,7 @@
 #define MAIDSAFE_COMMON_SERIALISATION_SERIALISATION_H_
 
 #include <string>
+#include <vector>
 
 #include "cereal/archives/binary.hpp"
 #include "cereal/types/map.hpp"
@@ -36,7 +37,40 @@
 #include "cereal/types/string.hpp"
 #include "cereal/types/boost_optional.hpp"
 
+#include "maidsafe/common/types.h"
+#include "maidsafe/common/serialisation/binary_archive.h"
+
 namespace maidsafe {
+
+using SerialisedData = std::vector<byte>;
+
+template <typename TypeToSerialise>
+SerialisedData Serialise(const TypeToSerialise& object_to_serialise) {
+  auto binary_output_stream = OutputVectorStream{};
+  {
+    auto binary_output_archive = BinaryOutputArchive{binary_output_stream};
+    binary_output_archive(object_to_serialise);
+  }
+  return binary_output_stream.vector();
+}
+
+template <typename ParsedType>
+ParsedType Parse(InputVectorStream& binary_input_stream) {
+  ParsedType parsed;
+  {
+    BinaryInputArchive binary_input_archive(binary_input_stream);
+    binary_input_archive(parsed);
+  }
+  return parsed;
+}
+
+template <typename ParsedType>
+ParsedType Parse(const SerialisedData& serialised_data) {
+  auto binary_input_stream = InputVectorStream{serialised_data};
+  return Parse<ParsedType>(binary_input_stream);
+}
+
+
 
 template <typename... TypesToSerialise>
 inline std::ostream& ConvertToStream(std::ostream& ref_dest_stream,

@@ -24,6 +24,7 @@
 #include "cereal/types/string.hpp"
 
 #include "maidsafe/common/serialisation/compile_time_mapper.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 #include "maidsafe/common/test.h"
 
 namespace maidsafe {
@@ -63,7 +64,7 @@ using Message = typename Find<MessageMap, Tag>::ResultCustomType;
 
 TEST(BinaryArchiveTest, BEH_Basic) {
   // std::vector<byte> functions
-  auto serialised_message = Serialise(Ping());
+  auto serialised_message = SerialiseMappedType(Ping());
 
   InputVectorStream binary_stream{serialised_message};
   auto tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
@@ -71,7 +72,7 @@ TEST(BinaryArchiveTest, BEH_Basic) {
   auto parsed_ping = Parse<Ping>(binary_stream);
   EXPECT_EQ("Ping", parsed_ping.data);
 
-  serialised_message = Serialise(PingResponse());
+  serialised_message = SerialiseMappedType(PingResponse());
   binary_stream.swap_vector(serialised_message);
   tag = static_cast<MessageTypeTag>(TypeFromStream(binary_stream));
   ASSERT_EQ(MessageTypeTag::kPingResponse, tag);
@@ -79,7 +80,7 @@ TEST(BinaryArchiveTest, BEH_Basic) {
   EXPECT_EQ("PingResponse", parsed_ping_response.data);
 
   // std::string functions
-  auto serialised_to_string_message = SerialiseToString(Ping());
+  auto serialised_to_string_message = SerialiseMappedTypeToString(Ping());
 
   std::istringstream binary_string_stream{serialised_to_string_message};
   tag = static_cast<MessageTypeTag>(TypeFromStringStream(binary_string_stream));
@@ -87,7 +88,7 @@ TEST(BinaryArchiveTest, BEH_Basic) {
   parsed_ping = ParseFromStringStream<Ping>(binary_string_stream);
   EXPECT_EQ("Ping", parsed_ping.data);
 
-  serialised_to_string_message = SerialiseToString(PingResponse());
+  serialised_to_string_message = SerialiseMappedTypeToString(PingResponse());
   binary_string_stream.str(serialised_to_string_message);
   tag = static_cast<MessageTypeTag>(TypeFromStringStream(binary_string_stream));
   ASSERT_EQ(MessageTypeTag::kPingResponse, tag);
