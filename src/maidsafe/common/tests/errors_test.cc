@@ -107,16 +107,19 @@ TEST(ErrorsTest, BEH_ErrorCodesThrownAsBoostExceptions) {
 
 TEST(ErrorsTest, BEH_SerialisingAndParsingErrors) {
   common_error hashing_error{MakeError(CommonErrors::hashing_error)};
-  maidsafe_error::serialised_type serialised{Serialise(hashing_error)};
-  EXPECT_EQ(hashing_error.code(), Parse(serialised).code());
-  EXPECT_EQ(std::string{hashing_error.what()}, std::string{Parse(serialised).what()});
+  SerialisedData serialised{Serialise(hashing_error)};
+  EXPECT_EQ(hashing_error.code(), Parse<maidsafe_error>(serialised).code());
+  EXPECT_EQ(std::string{hashing_error.what()},
+            std::string{Parse<maidsafe_error>(serialised).what()});
 
   vault_manager_error listening_error{MakeError(VaultManagerErrors::failed_to_listen)};
   serialised = Serialise(listening_error);
-  EXPECT_EQ(listening_error.code(), Parse(serialised).code());
-  EXPECT_EQ(std::string{listening_error.what()}, std::string{Parse(serialised).what()});
-  EXPECT_NE(hashing_error.code(), Parse(serialised).code());
-  EXPECT_NE(std::string{hashing_error.what()}, std::string{Parse(serialised).what()});
+  EXPECT_EQ(listening_error.code(), Parse<maidsafe_error>(serialised).code());
+  EXPECT_EQ(std::string{listening_error.what()},
+            std::string{Parse<maidsafe_error>(serialised).what()});
+  EXPECT_NE(hashing_error.code(), Parse<maidsafe_error>(serialised).code());
+  EXPECT_NE(std::string{hashing_error.what()},
+            std::string{Parse<maidsafe_error>(serialised).what()});
 
   EXPECT_THROW(IntToError(0), maidsafe_error);
   EXPECT_EQ(IntToError(-100000).code(), MakeError(CommonErrors::success).code());
