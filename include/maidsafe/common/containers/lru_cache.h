@@ -213,15 +213,6 @@ class LruCache<KeyType, void> : public detail::LruCacheBase<KeyType, void> {
     this->storage_.insert(
         std::make_pair(std::move(key), std::make_tuple(it, std::chrono::steady_clock::now())));
   }
-
-  void Delete(const KeyType& key) {
-    const auto it = this->storage_.find(key);
-    if (it != this->storage_.end()) {
-      std::get<1>(it->second) = std::chrono::steady_clock::now() - this->time_to_live_;
-      this->key_order_.splice(this->key_order_.begin(), this->key_order_, std::get<0>(it->second));
-      this->RemoveOldestElement();
-    }
-  }
 };
 
 }  // namespace maidsafe
