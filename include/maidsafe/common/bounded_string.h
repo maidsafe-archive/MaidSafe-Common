@@ -125,7 +125,7 @@ class BoundedString {
     return ref_archive(string());
   }
 
-  const StringType& string() const {
+  const StringType string() const {
     if (!valid_) {
       LOG(kError) << "class uninitialised";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
