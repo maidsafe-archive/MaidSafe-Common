@@ -30,7 +30,6 @@ namespace maidsafe {
 
 namespace test {
 
-
 TEST(LruCacheTest, BEH_SizeOnlyTest) {
   auto size(10);
   LruCache<int, int> cache(size);
