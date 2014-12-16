@@ -42,6 +42,10 @@
 #include <tuple>
 #include <utility>
 
+#include "boost_expected/boost/expected/expected.hpp"
+
+#include "maidsafe/common/types.h"
+
 namespace maidsafe {
 
 namespace detail {
@@ -153,16 +157,15 @@ class LruCache : public detail::LruCacheBase<KeyType, ValueType> {
 
   // We do not return an iterator here and use a pair instead as we are keeping two containers in
   // sync and cannot allow access to these containers from the public interface
-  std::pair<bool, ValueType> Get(const KeyType& key) {
+  boost::expected<ValueType, CommonErrors> Get(const KeyType& key) {
     const auto it = this->storage_.find(key);
 
-    if (it == this->storage_.end()) {
-      return std::make_pair(false, ValueType());
-    } else {
-      // Update access record by moving accessed key to back of list
-      this->key_order_.splice(this->key_order_.end(), this->key_order_, std::get<0>(it->second));
-      return std::make_pair(true, std::get<2>(it->second));
-    }
+    if (it == this->storage_.end())
+      return boost::make_unexpected(CommonErrors::no_such_element);
+
+    // Update access record by moving accessed key to back of list
+    this->key_order_.splice(this->key_order_.end(), this->key_order_, std::get<0>(it->second));
+    return std::get<2>(it->second);
   }
 
   void Add(KeyType key, ValueType value) {
@@ -172,6 +175,15 @@ class LruCache : public detail::LruCacheBase<KeyType, ValueType> {
     // Create the key-value entry, linked to the usage record.
     this->storage_.insert(std::make_pair(
         std::move(key), std::make_tuple(it, std::chrono::steady_clock::now(), std::move(value))));
+  }
+
+  void Delete(const KeyType& key) {
+    const auto it = this->storage_.find(key);
+    if (it != this->storage_.end()) {
+      std::get<1>(it->second) = std::chrono::steady_clock::now() - this->time_to_live_;
+      this->key_order_.splice(this->key_order_.begin(), this->key_order_, std::get<0>(it->second));
+      this->RemoveOldestElement();
+    }
   }
 };
 
@@ -200,6 +212,15 @@ class LruCache<KeyType, void> : public detail::LruCacheBase<KeyType, void> {
     // Create the key entry, linked to the usage record.
     this->storage_.insert(
         std::make_pair(std::move(key), std::make_tuple(it, std::chrono::steady_clock::now())));
+  }
+
+  void Delete(const KeyType& key) {
+    const auto it = this->storage_.find(key);
+    if (it != this->storage_.end()) {
+      std::get<1>(it->second) = std::chrono::steady_clock::now() - this->time_to_live_;
+      this->key_order_.splice(this->key_order_.begin(), this->key_order_, std::get<0>(it->second));
+      this->RemoveOldestElement();
+    }
   }
 };
 
