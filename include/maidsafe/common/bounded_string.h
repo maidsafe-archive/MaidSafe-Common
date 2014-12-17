@@ -124,7 +124,7 @@ class BoundedString {
   Archive& save(Archive& ref_archive) const {
     return ref_archive(string());
   }
-#if __GLIBCXX__ < 20141217
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20141217
   const StringType string() const {
 #else
   const StringType& string() const {

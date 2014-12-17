@@ -429,7 +429,7 @@ void LogMessage::Log(const std::string& project, std::string message) const {
   GetColourAndLevel(log_level, colour, level_);
   std::string coloured_log_entry(GetColouredLogEntry(log_level));
   ColourMode colour_mode(Logging::Instance().Colour());
-#if __GLIBCXX__ < 20141217
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20141217
   auto message_ptr(std::make_shared<std::string>(message.data(), message.size()));
   auto coloured_log_entry_ptr(std::make_shared<std::string>(coloured_log_entry.data(),
                                                             coloured_log_entry.size()));
@@ -457,7 +457,7 @@ TestLogMessage::TestLogMessage(Colour colour) : kColour_(colour), stream_() {}
 TestLogMessage::~TestLogMessage() {
   Colour colour(kColour_);
   FilterMap filter(Logging::Instance().Filter());
-#if __GLIBCXX__ < 20141217
+#if defined(__GLIBCXX__) && __GLIBCXX__ < 20141217
   auto log_entry(std::make_shared<std::string>(stream_.str()));
   auto print_functor([colour, log_entry, filter] {
 //     if (Logging::Instance().LogToConsole())
