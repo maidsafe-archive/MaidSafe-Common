@@ -24,6 +24,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
@@ -64,13 +65,17 @@ TEST_F(RsaTest, BEH_RsaEncodeKeys) {
   EXPECT_THROW(EncodeKey(PublicKey()), std::exception);
   EXPECT_THROW(DecodeKey(EncodedPrivateKey()), std::exception);
   EXPECT_THROW(DecodeKey(EncodedPublicKey()), std::exception);
+
+  auto serialised_keys = Serialise(keys);
+  auto parsed_keys = Parse<Keys>(serialised_keys);
+  EXPECT_TRUE(MatchingKeys(keys.private_key, parsed_keys.private_key));
+  EXPECT_TRUE(MatchingKeys(keys.public_key, parsed_keys.public_key));
 }
 
 TEST_F(RsaTest, BEH_AsymEncryptDecrypt) {
   maidsafe::test::RunInParallel(6, [&] {
     const PlainText kSmallData(RandomString(21));
     const PlainText kLargeData(RandomString(1024 * 1024));
-    const Keys empty_keys;
     for (int i(0); i < 10; ++i) {
       PlainText enc_small_data(Encrypt(kSmallData, keys_.public_key));
       EXPECT_EQ(kSmallData.string(), Decrypt(enc_small_data, keys_.private_key).string());

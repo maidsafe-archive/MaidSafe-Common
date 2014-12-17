@@ -19,6 +19,7 @@
 #include "maidsafe/common/error_categories.h"
 
 #include "maidsafe/common/error.h"
+#include "asio/error.hpp"
 
 namespace maidsafe {
 
@@ -184,6 +185,8 @@ const char* RudpCategory::name() const MAIDSAFE_NOEXCEPT { return "MaidSafe RUDP
 
 std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
   switch (static_cast<RudpErrors>(error_value)) {
+    case RudpErrors::operation_aborted:
+      return "Operation aborted";
     case RudpErrors::failed_to_bootstrap:
       return "Failed to bootstrap";
     case RudpErrors::failed_to_connect:
@@ -192,6 +195,8 @@ std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Connection already in progress";
     case RudpErrors::already_connected:
       return "Already connected";
+    case RudpErrors::already_started:
+      return "Already started";
     case RudpErrors::not_connected:
       return "Not connected";
     case RudpErrors::operation_not_supported:
@@ -200,6 +205,10 @@ std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Invalid message size";
     case RudpErrors::bad_message:
       return "Bad message";
+    case RudpErrors::timed_out:
+      return "Timed out";
+    case RudpErrors::shut_down:
+      return "Shut down";
     default:
       return "Unknown error in RUDP";
   }
@@ -208,12 +217,16 @@ std::string RudpCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
 std::error_condition RudpCategory::default_error_condition(int error_value) const
     MAIDSAFE_NOEXCEPT {
   switch (static_cast<RudpErrors>(error_value)) {
+    case RudpErrors::operation_aborted:
+      return std::error_condition(asio::error::operation_aborted, *this);
     case RudpErrors::failed_to_connect:
       return std::errc::connection_refused;
     case RudpErrors::connection_already_in_progress:
       return std::errc::connection_already_in_progress;
     case RudpErrors::already_connected:
       return std::errc::already_connected;
+    case RudpErrors::already_started:
+      return std::error_condition(asio::error::already_started, *this);
     case RudpErrors::not_connected:
       return std::errc::not_connected;
     case RudpErrors::operation_not_supported:
@@ -222,6 +235,10 @@ std::error_condition RudpCategory::default_error_condition(int error_value) cons
       return std::errc::message_size;
     case RudpErrors::bad_message:
       return std::errc::bad_message;
+    case RudpErrors::timed_out:
+      return std::errc::timed_out;
+    case RudpErrors::shut_down:
+      return std::error_condition(asio::error::shut_down, *this);
     default:
       return std::error_condition(error_value, *this);
   }

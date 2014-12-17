@@ -61,8 +61,7 @@ Keys GenerateKeyPair() {
   CryptoPP::InvertibleRSAFunction parameters;
   try {
     parameters.GenerateRandomWithKeySize(crypto::random_number_generator(), Keys::kKeyBitSize);
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed generating key pair: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::keys_generation_error));
   }
@@ -71,7 +70,7 @@ Keys GenerateKeyPair() {
   keypair.private_key = private_key;
   keypair.public_key = public_key;
   if (!(keypair.private_key.Validate(crypto::random_number_generator(), 2) &&
-      keypair.public_key.Validate(crypto::random_number_generator(), 2)))
+        keypair.public_key.Validate(crypto::random_number_generator(), 2)))
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::keys_generation_error));
   return keypair;
 }
@@ -86,8 +85,8 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
   try {
     crypto::AES256Key symm_encryption_key(RandomString(crypto::AES256_KeySize));
     crypto::AES256InitialisationVector symm_encryption_iv(RandomString(crypto::AES256_IVSize));
-    safe_encrypt.data_ = crypto::SymmEncrypt(data, symm_encryption_key,
-                                             symm_encryption_iv)->string();
+    safe_encrypt.data_ =
+        crypto::SymmEncrypt(data, symm_encryption_key, symm_encryption_iv)->string();
     std::string encryption_key_encrypted;
     std::string const local_key_and_iv = symm_encryption_key.string() + symm_encryption_iv.string();
     std::lock_guard<detail::spinlock> lock(g_rsa_mutex());
@@ -97,8 +96,7 @@ CipherText Encrypt(const PlainText& data, const PublicKey& public_key) {
                                          new CryptoPP::StringSink(encryption_key_encrypted)));
     safe_encrypt.key_ = encryption_key_encrypted;
     result = ConvertToString(safe_encrypt);
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric encrypting: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::encryption_error));
   }
@@ -114,25 +112,26 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
     CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(private_key);
 
     detail::SafeEncryptCereal safe_encrypt;
-    try { ConvertFromString(data.string(), safe_encrypt); }
-    catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+    try {
+      ConvertFromString(data.string(), safe_encrypt);
+    } catch (...) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
 
     std::string out_data;
-    CryptoPP::StringSource(
-          safe_encrypt.key_, true,
-          new CryptoPP::PK_DecryptorFilter(crypto::random_number_generator(), decryptor,
-                                           new CryptoPP::StringSink(out_data)));
+    CryptoPP::StringSource(safe_encrypt.key_, true,
+                           new CryptoPP::PK_DecryptorFilter(crypto::random_number_generator(),
+                                                            decryptor,
+                                                            new CryptoPP::StringSink(out_data)));
     if (out_data.size() < crypto::AES256_KeySize + crypto::AES256_IVSize) {
       LOG(kError) << "Asymmetric decryption failed to yield correct symmetric key and IV.";
       BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
     }
     result = crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(safe_encrypt.data_)),
                                  crypto::AES256Key(out_data.substr(0, crypto::AES256_KeySize)),
-                                 crypto::AES256InitialisationVector(
-                                   out_data.substr(
+                                 crypto::AES256InitialisationVector(out_data.substr(
                                      crypto::AES256_KeySize, crypto::AES256_IVSize)));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric decrypting: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
   }
@@ -153,12 +152,10 @@ Signature Sign(const PlainText& data, const PrivateKey& private_key) {
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
-    CryptoPP::StringSource(
-        data.string(), true,
-        new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
-            new CryptoPP::StringSink(signature)));
-  }
-  catch (const CryptoPP::Exception& e) {
+    CryptoPP::StringSource(data.string(), true,
+                           new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
+                                                      new CryptoPP::StringSink(signature)));
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::signing_error));
   }
@@ -172,12 +169,10 @@ Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& pr
   std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
-    CryptoPP::FileSource(
-        filename.c_str(), true,
-        new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
-            new CryptoPP::StringSink(signature)));
-  }
-  catch (const CryptoPP::Exception& e) {
+    CryptoPP::FileSource(filename.c_str(), true,
+                         new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
+                                                    new CryptoPP::StringSink(signature)));
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
     if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
       BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_file));
@@ -202,8 +197,7 @@ bool CheckSignature(const PlainText& data, const Signature& signature,
     return verifier.VerifyMessage(
         reinterpret_cast<const byte*>(data.string().c_str()), data.string().size(),
         reinterpret_cast<const byte*>(signature.string().c_str()), signature.string().size());
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signature checking: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::signing_error));
   }
@@ -227,8 +221,7 @@ bool CheckFileSignature(const boost::filesystem::path& filename, const Signature
                          verifier.SignatureLength());
     CryptoPP::FileSource file_source(filename.c_str(), true, verifier_filter);
     return verifier_filter->GetLastResult();
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signature checking: " << e.what();
     if (e.GetErrorType() == CryptoPP::Exception::IO_ERROR)
       BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_file));
@@ -245,8 +238,7 @@ EncodedPrivateKey EncodeKey(const PrivateKey& private_key) {
     CryptoPP::ByteQueue queue;
     private_key.DEREncodePrivateKey(queue);
     EncodeKey(queue, encoded_key);
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed encoding private key: " << e.what();
     encoded_key.clear();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_private_key));
@@ -263,8 +255,7 @@ EncodedPublicKey EncodeKey(const PublicKey& public_key) {
     CryptoPP::ByteQueue queue;
     public_key.DEREncodePublicKey(queue);
     EncodeKey(queue, encoded_key);
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed encoding public key: " << e.what();
     encoded_key.clear();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_public_key));
@@ -284,8 +275,7 @@ PrivateKey DecodeKey(const EncodedPrivateKey& private_key) {
     DecodeKey(private_key.string(), queue);
     key.BERDecodePrivateKey(queue, false /*paramsPresent*/,
                             static_cast<size_t>(queue.MaxRetrievable()));
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Failed decoding private key: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_private_key));
   }
@@ -304,8 +294,7 @@ PublicKey DecodeKey(const EncodedPublicKey& public_key) {
     DecodeKey(public_key.string(), queue);
     key.BERDecodePublicKey(queue, false /*paramsPresent*/,
                            static_cast<size_t>(queue.MaxRetrievable()));
-  }
-  catch (const CryptoPP::Exception& e) {
+  } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed decoding public key: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_public_key));
   }

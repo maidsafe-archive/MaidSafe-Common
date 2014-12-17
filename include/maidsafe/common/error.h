@@ -30,33 +30,35 @@
 
 namespace maidsafe {
 
-class maidsafe_error : public std::system_error {
- public:
-  typedef TaggedValue<std::string, struct SerialisedErrorTag> serialised_type;
-  maidsafe_error(std::error_code ec, const std::string& what_arg)
-      : std::system_error(ec, what_arg), value_(0) {}
-  maidsafe_error(std::error_code ec, const char* what_arg)
-      : std::system_error(ec, what_arg), value_(0) {}
-  explicit maidsafe_error(std::error_code ec) : std::system_error(ec), value_(0) {}
-  maidsafe_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : std::system_error(ev, ecat, what_arg), value_(0) {}
-  maidsafe_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : std::system_error(ev, ecat, what_arg), value_(0) {}
-  maidsafe_error(int ev, const std::error_category& ecat)
-      : std::system_error(ev, ecat), value_(0) {}
-
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(value_);
-  }
-
-  std::int64_t value_;
-};
-
+class maidsafe_error;
 int32_t ErrorToInt(maidsafe_error error);
 maidsafe_error IntToError(int32_t);
-maidsafe_error::serialised_type Serialise(maidsafe_error error);
-maidsafe_error Parse(maidsafe_error::serialised_type serialised_error);
+
+class maidsafe_error : public std::system_error {
+ public:
+  maidsafe_error() : std::system_error(std::error_code()) {}
+  maidsafe_error(std::error_code ec, const std::string& what_arg)
+      : std::system_error(ec, what_arg) {}
+  maidsafe_error(std::error_code ec, const char* what_arg) : std::system_error(ec, what_arg) {}
+  explicit maidsafe_error(std::error_code ec) : std::system_error(ec) {}
+  maidsafe_error(int ev, const std::error_category& ecat, const std::string& what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  maidsafe_error(int ev, const std::error_category& ecat, const char* what_arg)
+      : std::system_error(ev, ecat, what_arg) {}
+  maidsafe_error(int ev, const std::error_category& ecat) : std::system_error(ev, ecat) {}
+
+  template <typename Archive>
+  void save(Archive& archive) const {
+    archive(ErrorToInt(*this));
+  }
+
+  template <typename Archive>
+  void load(Archive& archive) {
+    int error_as_int{0};
+    archive(error_as_int);
+    *this = IntToError(error_as_int);
+  }
+};
 
 enum class CommonErrors {
   success = 0,
@@ -159,14 +161,18 @@ const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
 
 enum class RudpErrors {
-  failed_to_bootstrap = 1,
+  operation_aborted = 1,
+  failed_to_bootstrap,
   failed_to_connect,
   connection_already_in_progress,
   already_connected,
+  already_started,
   not_connected,
   operation_not_supported,
   message_size,
-  bad_message
+  bad_message,
+  timed_out,
+  shut_down
 };
 
 class rudp_error : public maidsafe_error {

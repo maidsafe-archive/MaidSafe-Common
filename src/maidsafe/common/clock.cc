@@ -22,7 +22,7 @@ namespace maidsafe {
 
 Clock::time_point Clock::now() MAIDSAFE_NOEXCEPT {
   auto time_now = std::chrono::system_clock::now();
-  // Assumes that system_clock uses 1970-01-01 as epoch
+// Assumes that system_clock uses 1970-01-01 as epoch
 #if defined(MAIDSAFE_CLOCK_EPOCH_OFFSET_IN_DAYS)
   time_now += std::chrono::days(MAIDSAFE_CLOCK_EPOCH_OFFSET_IN_DAYS);
 #endif
@@ -33,8 +33,6 @@ std::time_t Clock::to_time_t(const time_point& t) {
   return std::chrono::duration_cast<std::chrono::seconds>(t.time_since_epoch()).count();
 }
 
-Clock::time_point Clock::from_time_t(std::time_t t) {
-  return time_point(std::chrono::seconds(t));
-}
+Clock::time_point Clock::from_time_t(std::time_t t) { return time_point(std::chrono::seconds(t)); }
 
 }  // namespace maidsafe

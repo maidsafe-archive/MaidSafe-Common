@@ -234,9 +234,9 @@ void DecryptFile() {
     std::cout << "error reading file\n";
     return;
   }
-  if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmDecrypt(maidsafe::crypto::CipherText(
-                                                               maidsafe::NonEmptyString(data)), key,
-                                                               iv).string()))
+  if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmDecrypt(
+                                     maidsafe::crypto::CipherText(maidsafe::NonEmptyString(data)),
+                                     key, iv).string()))
     std::cout << "error writing file\n";
   else
     std::cout << "File is now decrypted " << filename << "\n";
@@ -283,8 +283,8 @@ void CreateKeyGroup() {
           passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
       fs::path file(location + name + ".keyfile");
       if (!maidsafe::WriteFile(
-               file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(chunks.at(i)), key,
-                                                   iv)->string())) {
+              file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(chunks.at(i)), key,
+                                                  iv)->string())) {
         std::cout << "error writing file\n";
         --i;
         std::cout << "Error, are you sure you used a unique name, retry !\n";
@@ -323,8 +323,8 @@ void GroupSignIn() {
       std::cout << "Error, are you sure you used a correct name/password, retry !\n";
     } else {
       chunks.push_back(
-          maidsafe::crypto::SymmDecrypt(maidsafe::crypto::CipherText(
-              maidsafe::NonEmptyString(enc_data)), key, iv).string());
+          maidsafe::crypto::SymmDecrypt(
+              maidsafe::crypto::CipherText(maidsafe::NonEmptyString(enc_data)), key, iv).string());
       enc_data.clear();
     }
   }

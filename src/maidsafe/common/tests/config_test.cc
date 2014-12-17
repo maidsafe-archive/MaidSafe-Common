@@ -48,7 +48,7 @@ TEST(ConfigTest, BEH_TargetArchitecture) {
 
 TEST(ConfigTest, BEH_ThisExecutableDir) {
   // Accommodate running with '--gtest_repeat' != 0 or 1.
-  static bool has_run{ false };
+  static bool has_run{false};
   if (!has_run) {
     // Before calling SetThisExecutablePath
     EXPECT_THROW(maidsafe::ThisExecutablePath(), maidsafe::common_error);
@@ -71,7 +71,7 @@ TEST(ConfigTest, BEH_ThisExecutableDir) {
 
   // Call SetThisExecutablePath again - shouldn't change values
   char argv0[] = "New Path";
-  char* new_argv[] = { argv0 };
+  char* new_argv[] = {argv0};
   maidsafe::SetThisExecutablePath(new_argv);
   EXPECT_TRUE(maidsafe::ThisExecutablePath() == this_exe_path);
   EXPECT_TRUE(maidsafe::ThisExecutableDir() == this_exe_dir);

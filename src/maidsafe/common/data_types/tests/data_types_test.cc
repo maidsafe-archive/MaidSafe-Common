@@ -46,14 +46,14 @@ TEST(DataTypeTests, BEH_ConstructType) {
 }
 
 TEST(DataTypeTests, BEH_RetrieveType) {
-  ASSERT_TRUE((std::is_same<passport::PublicAnmaid,
-               passport::PublicAnmaid::Name::data_type>::value));
+  ASSERT_TRUE(
+      (std::is_same<passport::PublicAnmaid, passport::PublicAnmaid::Name::data_type>::value));
   ASSERT_TRUE((std::is_same<passport::PublicMaid, passport::PublicMaid::Name::data_type>::value));
-  ASSERT_TRUE((std::is_same<passport::PublicAnpmid,
-               passport::PublicAnpmid::Name::data_type>::value));
+  ASSERT_TRUE(
+      (std::is_same<passport::PublicAnpmid, passport::PublicAnpmid::Name::data_type>::value));
   ASSERT_TRUE((std::is_same<passport::PublicPmid, passport::PublicPmid::Name::data_type>::value));
-  ASSERT_TRUE((std::is_same<passport::PublicAnmpid,
-               passport::PublicAnmpid::Name::data_type>::value));
+  ASSERT_TRUE(
+      (std::is_same<passport::PublicAnmpid, passport::PublicAnmpid::Name::data_type>::value));
   ASSERT_TRUE((std::is_same<passport::PublicMpid, passport::PublicMpid::Name::data_type>::value));
   ASSERT_TRUE((std::is_same<ImmutableData, ImmutableData::Name::data_type>::value));
   ASSERT_TRUE((std::is_same<MutableData, MutableData::Name::data_type>::value));

@@ -44,7 +44,7 @@ std::string LocationToString(const ProfileEntry::Location& location) {
 }
 
 std::string DurationToString(const std::chrono::high_resolution_clock::duration& duration) {
-  long long nanos(   // NOLINT
+  long long nanos(  // NOLINT
       std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count());
   std::vector<char> buffer(21, 0);
   std::sprintf(&buffer[0], "%8lli.%09lli s", nanos / 1000000000, nanos % 1000000000);  // NOLINT
@@ -122,15 +122,16 @@ Profiler::~Profiler() {
 
   output.assign("\nSorted by call count\n====================\n\n");
   std::sort(std::begin(entries), std::end(entries),
-            [](const Entries::value_type & lhs,
-               const Entries::value_type & rhs) { return lhs.second.first > rhs.second.first; });
+            [](const Entries::value_type& lhs, const Entries::value_type& rhs) {
+    return lhs.second.first > rhs.second.first;
+  });
   for (const auto& entry : entries)
     AppendInfo(entry, output);
   std::cout << output << "\n\n";
 
   output.assign("\nSorted by average duration\n==========================\n\n");
   std::sort(std::begin(entries), std::end(entries),
-            [](const Entries::value_type & lhs, const Entries::value_type & rhs) {
+            [](const Entries::value_type& lhs, const Entries::value_type& rhs) {
     return lhs.second.second / lhs.second.first > rhs.second.second / rhs.second.first;
   });
   for (const auto& entry : entries)
@@ -139,8 +140,9 @@ Profiler::~Profiler() {
 
   output.assign("\nSorted by total duration\n========================\n\n");
   std::sort(std::begin(entries), std::end(entries),
-            [](const Entries::value_type & lhs,
-               const Entries::value_type & rhs) { return lhs.second.second > rhs.second.second; });
+            [](const Entries::value_type& lhs, const Entries::value_type& rhs) {
+    return lhs.second.second > rhs.second.second;
+  });
   for (const auto& entry : entries)
     AppendInfo(entry, output);
   std::cout << output << "\n\n";

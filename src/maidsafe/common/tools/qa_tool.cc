@@ -31,14 +31,14 @@
 int main(int argc, char* argv[]) {
   maidsafe::log::Logging::Instance().Initialise(argc, argv);
 
-  maidsafe::Menu menu{ "Main menu" };
+  maidsafe::Menu menu{"Main menu"};
 
   // QA
-  maidsafe::MenuItem* qa_item{ menu.AddItem("QA (stress tests, dynamic and static analysis)") };
+  maidsafe::MenuItem* qa_item{menu.AddItem("QA (stress tests, dynamic and static analysis)")};
 
-  maidsafe::MenuItem* qa_dev_item{ qa_item->AddChildItem("Developer's Menu (core dev help)") };
+  maidsafe::MenuItem* qa_dev_item{qa_item->AddChildItem("Developer's Menu (core dev help)")};
 
-  maidsafe::MenuItem* qa_dev_test_item{ qa_dev_item->AddChildItem("Test Suite") };
+  maidsafe::MenuItem* qa_dev_test_item{qa_dev_item->AddChildItem("Test Suite")};
   qa_dev_test_item->AddChildItem("Test 1", [] {
     TLOG(kGreen) << "Running dev test 1.\n";
     std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     std::this_thread::sleep_for(std::chrono::seconds(2));
   });
 
-  maidsafe::MenuItem* qa_dev_bench_item{ qa_dev_item->AddChildItem("Benchmark Suite") };
+  maidsafe::MenuItem* qa_dev_bench_item{qa_dev_item->AddChildItem("Benchmark Suite")};
   qa_dev_bench_item->AddChildItem("sqlite_wrapper benchmark", [] {
     TLOG(kGreen) << "Running sqlite_wrapper benchmark test\n";
     maidsafe::benchmark::Sqlite3WrapperBenchmark sqlite_wrapper_benchmark_test;
@@ -60,8 +60,8 @@ int main(int argc, char* argv[]) {
   });
 
   // Builders
-  maidsafe::MenuItem* builders_item{ menu.AddItem("Builder's Menu (includes tools and examples)") };
-  maidsafe::MenuItem* builders_examples_item{ builders_item->AddChildItem("Examples") };
+  maidsafe::MenuItem* builders_item{menu.AddItem("Builder's Menu (includes tools and examples)")};
+  maidsafe::MenuItem* builders_examples_item{builders_item->AddChildItem("Examples")};
   builders_examples_item->AddChildItem("Example 1", [] {
     TLOG(kGreen) << "Running builder's example 1.\n";
     std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     std::this_thread::sleep_for(std::chrono::seconds(2));
   });
 
-  maidsafe::MenuItem* builders_tools_item{ builders_item->AddChildItem("Tools") };
+  maidsafe::MenuItem* builders_tools_item{builders_item->AddChildItem("Tools")};
   builders_tools_item->AddChildItem("Tool 1", [] {
     TLOG(kGreen) << "Running builder's tool 1.\n";
     std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -89,4 +89,3 @@ int main(int argc, char* argv[]) {
 
   return menu.Run();
 }
-
