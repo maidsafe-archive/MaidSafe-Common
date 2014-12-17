@@ -43,6 +43,22 @@ namespace maidsafe {
 
 namespace detail {
 
+class spinlock {
+ public:
+  spinlock() : flag(false) { }
+  void lock() {
+    bool v;
+    while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
+          std::memory_order_acquire))
+      std::this_thread::yield();
+  }
+  void unlock() {
+    flag.store(false, std::memory_order_release);
+  }
+ private:
+  std::atomic<bool> flag;
+};
+
 std::mt19937& random_number_generator();
 std::mutex& random_number_generator_mutex();
 #ifdef TESTING
