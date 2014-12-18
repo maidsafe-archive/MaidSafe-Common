@@ -157,11 +157,11 @@ class LruCache : public detail::LruCacheBase<KeyType, ValueType> {
 
   // We do not return an iterator here and use a pair instead as we are keeping two containers in
   // sync and cannot allow access to these containers from the public interface
-  boost::expected<ValueType, CommonErrors> Get(const KeyType& key) {
+  boost::expected<ValueType, maidsafe_error> Get(const KeyType& key) {
     const auto it = this->storage_.find(key);
 
     if (it == this->storage_.end())
-      return boost::make_unexpected(CommonErrors::no_such_element);
+      return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 
     // Update access record by moving accessed key to back of list
     this->key_order_.splice(this->key_order_.end(), this->key_order_, std::get<0>(it->second));
