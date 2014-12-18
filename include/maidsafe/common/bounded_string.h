@@ -124,11 +124,8 @@ class BoundedString {
   Archive& save(Archive& ref_archive) const {
     return ref_archive(string());
   }
-#if defined(__GLIBCXX__) && __GLIBCXX__ < 20141217
-  const StringType string() const {
-#else
+
   const StringType& string() const {
-#endif
     if (!valid_) {
       LOG(kError) << "class uninitialised";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
