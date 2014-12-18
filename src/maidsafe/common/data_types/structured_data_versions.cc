@@ -37,8 +37,9 @@ StructuredDataVersions::VersionName::VersionName(uint64_t index_in, ImmutableDat
 StructuredDataVersions::VersionName::VersionName(const std::string& serialised_version_name)
     : index(0), id() {
   detail::VersionCereal version_serialised;
-  try { ConvertFromString(serialised_version_name, version_serialised); }
-  catch(...) {
+  try {
+    ConvertFromString(serialised_version_name, version_serialised);
+  } catch (...) {
     LOG(kWarning) << "Failed to parse serialised version name";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
@@ -151,8 +152,11 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
       tips_of_trees_([](VersionsItr lhs, VersionsItr rhs) { return *lhs < *rhs; }),
       orphans_() {
   detail::StructuredDataVersionsCereal serialised_versions;
-  try { ConvertFromString(serialised_data_versions->string(), serialised_versions); }
-  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+  try {
+    ConvertFromString(serialised_data_versions->string(), serialised_versions);
+  } catch (...) {
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  }
 
   max_versions_ = serialised_versions.max_versions_;
   max_branches_ = serialised_versions.max_branches_;
@@ -186,8 +190,7 @@ void StructuredDataVersions::ValidateLimits() const {
 }
 
 void StructuredDataVersions::BranchFromCereal(
-    VersionsItr parent_itr,
-    const detail::StructuredDataVersionsCereal& serialised_versions,
+    VersionsItr parent_itr, const detail::StructuredDataVersionsCereal& serialised_versions,
     std::size_t& serialised_branch_index) {
   if (serialised_branch_index >= serialised_versions.branch_.size())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -220,8 +223,7 @@ void StructuredDataVersions::BranchFromCereal(
 }
 
 StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionInBranchFromCereal(
-    VersionsItr parent_itr,
-    const detail::StructuredDataVersionsBranchCereal& serialised_branch) {
+    VersionsItr parent_itr, const detail::StructuredDataVersionsBranchCereal& serialised_branch) {
   auto itr(CheckedInsert(serialised_branch.name_[0]));
   if (parent_itr == std::end(versions_)) {
     // This is a new branch, so the first element is either root_ or an orphan.
@@ -260,15 +262,14 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::CheckedInsert(
 }
 
 void StructuredDataVersions::BranchToCereal(
-    VersionsItr itr,
-    detail::StructuredDataVersionsCereal& serialised_versions,
+    VersionsItr itr, detail::StructuredDataVersionsCereal& serialised_versions,
     const VersionName& absent_parent) const {
   if (itr == std::end(versions_))
     return;
   auto serialised_branch((serialised_versions.branch_.emplace_back(),
-                      &serialised_versions.branch_[serialised_versions.branch_.size() - 1]));
+                          &serialised_versions.branch_[serialised_versions.branch_.size() - 1]));
   if (absent_parent.id->IsInitialised()) {
-    serialised_branch->absent_parent_ = detail::VersionCereal {};
+    serialised_branch->absent_parent_ = detail::VersionCereal{};
     serialised_branch->absent_parent_->index_ = absent_parent.index;
     serialised_branch->absent_parent_->id_ = absent_parent.id->string();
   }
@@ -282,7 +283,7 @@ void StructuredDataVersions::BranchToCereal(
     if (itr == std::end(versions_))
       return;
     auto serialised_version((serialised_branch->name_.emplace_back(),
-                         &serialised_branch->name_[serialised_branch->name_.size() - 1]));
+                             &serialised_branch->name_[serialised_branch->name_.size() - 1]));
     serialised_version->index_ = itr->first.index;
     serialised_version->id_ = itr->first.id->string();
     if (itr->second->children.empty())
@@ -293,8 +294,9 @@ void StructuredDataVersions::BranchToCereal(
       serialised_version->forking_child_count_ =
           static_cast<uint32_t>(itr->second->children.size());
       for (auto child : itr->second->children) {
-        auto serialised_branch((serialised_versions.branch_.emplace_back(),
-                            &serialised_versions.branch_[serialised_versions.branch_.size() - 1]));
+        auto serialised_branch(
+            (serialised_versions.branch_.emplace_back(),
+             &serialised_versions.branch_[serialised_versions.branch_.size() - 1]));
         BranchToCereal(child, serialised_versions, serialised_branch);
       }
       return;

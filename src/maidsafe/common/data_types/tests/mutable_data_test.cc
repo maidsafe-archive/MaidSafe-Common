@@ -36,11 +36,11 @@ bool operator==(const MutableData& ref_lhs, const MutableData& ref_rhs) {
 }  // anonymous namespace
 
 TEST(MutableDataTest, BEH_Serialisation) {
-  const std::uint32_t size {64};
+  const std::uint32_t size{64};
   auto value_0 = NonEmptyString(RandomAlphaNumericString(size));
 
-  MutableData::Name key_0 {Identity(crypto::Hash<crypto::SHA512>(value_0))};
-  MutableData a {key_0, value_0};
+  MutableData::Name key_0{Identity(crypto::Hash<crypto::SHA512>(value_0))};
+  MutableData a{key_0, value_0};
 
   std::string serialised_str;
 
@@ -51,8 +51,8 @@ TEST(MutableDataTest, BEH_Serialisation) {
 
   // Deserialisation
   auto value_1 = NonEmptyString(RandomAlphaNumericString(size));
-  MutableData::Name key_1 {Identity(crypto::Hash<crypto::SHA512>(value_0))};
-  MutableData b {key_1, value_1};
+  MutableData::Name key_1{Identity(crypto::Hash<crypto::SHA512>(value_0))};
+  MutableData b{key_1, value_1};
 
   EXPECT_FALSE(a == b);
   EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, b));
@@ -62,4 +62,3 @@ TEST(MutableDataTest, BEH_Serialisation) {
 }  // namespace test
 
 }  // namespace maidsafe
-

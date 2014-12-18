@@ -29,17 +29,19 @@ namespace maidsafe {
 namespace authentication {
 
 struct UserCredentials {
-  typedef detail::SecureInputString<
-      std::greater_equal<detail::SecureString::size_type>, 1, detail::KeywordTag> Keyword;
-  typedef detail::SecureInputString<
-      std::greater_equal<detail::SecureString::size_type>, 1, detail::PinTag> Pin;
-  typedef detail::SecureInputString<
-      std::greater_equal<detail::SecureString::size_type>, 1, detail::PasswordTag> Password;
+  typedef detail::SecureInputString<std::greater_equal<detail::SecureString::size_type>, 1,
+                                    detail::KeywordTag> Keyword;
+  typedef detail::SecureInputString<std::greater_equal<detail::SecureString::size_type>, 1,
+                                    detail::PinTag> Pin;
+  typedef detail::SecureInputString<std::greater_equal<detail::SecureString::size_type>, 1,
+                                    detail::PasswordTag> Password;
 
   UserCredentials() : keyword(), pin(), password() {}
 
-  UserCredentials(UserCredentials&& other) : keyword(std::move(other.keyword)),
-      pin(std::move(other.pin)), password(std::move(other.password)) {}
+  UserCredentials(UserCredentials&& other)
+      : keyword(std::move(other.keyword)),
+        pin(std::move(other.pin)),
+        password(std::move(other.password)) {}
 
   UserCredentials& operator=(UserCredentials&& other) {
     keyword = std::move(other.keyword);

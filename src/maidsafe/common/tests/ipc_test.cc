@@ -23,7 +23,7 @@
 #include <thread>
 
 #ifdef MAIDSAFE_BSD
-extern "C" char **environ;
+extern "C" char** environ;
 #endif
 
 #include "boost/process/child.hpp"
@@ -99,12 +99,11 @@ TEST(IpcTest, FUNC_IpcFunctionsThreaded) {
     test1_vec.push_back(RandomString(10 * i));
 
   // Check reading shared memory that hasn't been created yet throws.
-  bool all_threw{ false };
+  bool all_threw{false};
   auto all_should_throw([&] {
     try {
       ReadSharedMemory(kTestName, 1);
-    }
-    catch (const bi::interprocess_exception&) {
+    } catch (const bi::interprocess_exception&) {
       all_threw = true;
     }
   });
@@ -116,7 +115,7 @@ TEST(IpcTest, FUNC_IpcFunctionsThreaded) {
   EXPECT_NO_THROW(CreateSharedMemory(kTestName, test1_vec));
 
   // Check reading works.
-  bool all_match{ false };
+  bool all_match{false};
   auto all_should_match([&] {
     all_match = ((test1_vec) == (ReadSharedMemory(kTestName, static_cast<int>(test1_vec.size()))));
   });
@@ -156,8 +155,7 @@ TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
     test1_vec.push_back(test_string);
     total += test_string;
   }
-  std::string kAnswer(maidsafe::HexEncode(
-                                crypto::Hash<crypto::SHA512>(total).string()));
+  std::string kAnswer(maidsafe::HexEncode(crypto::Hash<crypto::SHA512>(total).string()));
   // Set up boost::process args for passing to 'ipc_child_process' executable
   const auto kExePath(process::GetOtherExecutablePath("ipc_child_process").string());
   std::vector<std::string> process_args;
@@ -172,14 +170,14 @@ TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
 
   EXPECT_NO_THROW(CreateSharedMemory(kTestName, test1_vec));
   bp::child child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
-                              bp::initializers::set_cmd_line(kCommandLine),
-                              bp::initializers::set_on_error(error_code)));
+                                          bp::initializers::set_cmd_line(kCommandLine),
+                                          bp::initializers::set_on_error(error_code)));
   ASSERT_FALSE(error_code);
   exit_code = wait_for_exit(child, error_code);
   ASSERT_FALSE(error_code);
   EXPECT_EQ(exit_code, 0);
   exit_code = 99;
-    // Check modifying the original objects doesn't affect reading from shared memory
+  // Check modifying the original objects doesn't affect reading from shared memory
   test1_vec.clear();
   child = bp::child(bp::execute(bp::initializers::run_exe(kExePath),
                                 bp::initializers::set_cmd_line(kCommandLine),

@@ -42,20 +42,21 @@ MenuItem::MenuItem(MenuItem* parent, std::string name, Functor operation)
 }
 
 MenuItem* MenuItem::AddChildItem(std::string name, Functor operation) {
-  if (std::any_of(std::begin(children_), std::end(children_),
-      [&name](const std::unique_ptr<MenuItem>& child) { return name == child->kName_; })) {
+  if (std::any_of(
+          std::begin(children_), std::end(children_),
+          [&name](const std::unique_ptr<MenuItem>& child) { return name == child->kName_; })) {
     LOG(kError) << "This menu item already has a child with the given name.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   children_.emplace_back(
-      std::unique_ptr<MenuItem>{ new MenuItem{ this, std::move(name), std::move(operation) } });
+      std::unique_ptr<MenuItem>{new MenuItem{this, std::move(name), std::move(operation)}});
   return children_.back().get();
 }
 
 void MenuItem::ShowChildrenNames() const {
-  size_t max_length{ kName_.size() };
+  size_t max_length{kName_.size()};
   std::string output;
-  for (size_t i{ 1 }; i <= children_.size(); ++i) {
+  for (size_t i{1}; i <= children_.size(); ++i) {
     max_length = std::max(max_length, children_[i - 1]->kName_.size() + 6);
     output += std::to_string(i) + (i < 10 ? " " : "") + "  " + children_[i - 1]->kName_ + '\n';
   }
@@ -71,9 +72,7 @@ const MenuItem* MenuItem::Child(int index) const {
   return children_.at(static_cast<size_t>(index)).get();
 }
 
-bool MenuItem::HasNoChildren() const {
-  return children_.empty();
-}
+bool MenuItem::HasNoChildren() const { return children_.empty(); }
 
 void MenuItem::DoOperation() const {
   if (kOperation_)

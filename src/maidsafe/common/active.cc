@@ -48,7 +48,7 @@ void Active::Send(Functor functor) {
 }
 
 void Active::Run() {
-  auto running = [this]()->bool {
+  auto running = [this]() -> bool {
     std::lock_guard<std::mutex> flags_lock(flags_mutex_);
     return running_;
   };

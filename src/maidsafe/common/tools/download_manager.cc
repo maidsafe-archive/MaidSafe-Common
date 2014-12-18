@@ -105,8 +105,7 @@ bool DownloadManager::InitialisePublicKey() {
       LOG(kError) << "MaidSafe public key invalid.";
       return false;
     }
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Exception validating MaidSafe public key: " << e.what();
     return false;
   }
@@ -231,8 +230,7 @@ std::string DownloadManager::GetAndVerifyFile(const fs::path& remote_path) {
       return "";
     }
     return contents.string();
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Error getting and verifying " << remote_path << ": " << e.what();
     return "";
   }
@@ -257,8 +255,7 @@ bool DownloadManager::PrepareDownload(const fs::path& remote_path, asio::streamb
     // Check that response is OK.  Consumes entire header.
     if (!CheckResponse(remote_path, response_stream))
       return false;
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Error preparing downloading of " << site_ << "/" << location_ << "/"
                 << remote_path << "  : " << e.what();
     return false;
@@ -304,8 +301,7 @@ std::string DownloadManager::DownloadFile(const fs::path& remote_path) {
                     << ": " << error_code.message();
       return "";
     }
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Error downloading " << site_ << "/" << location_ << "/" << remote_path << ": "
                 << e.what();
     return "";
