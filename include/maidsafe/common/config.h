@@ -25,25 +25,25 @@
 #include "boost/filesystem/path.hpp"
 
 #ifdef _MSC_VER
-# if _MSC_VER >= 1900  // VS2014
-#  define MAIDSAFE_NOEXCEPT noexcept  // conditional noexcept not supported yet
-#  define MAIDSAFE_CONSTEXPR constexpr
-#  define MAIDSAFE_CONSTEXPR_OR_CONST constexpr
-# else
-#  define MAIDSAFE_NOEXCEPT  // throw()
-#  define MAIDSAFE_CONSTEXPR
-#  define MAIDSAFE_CONSTEXPR_OR_CONST const
-# endif
+#if _MSC_VER >= 1900                // VS2014
+#define MAIDSAFE_NOEXCEPT noexcept  // conditional noexcept not supported yet
+#define MAIDSAFE_CONSTEXPR constexpr
+#define MAIDSAFE_CONSTEXPR_OR_CONST constexpr
 #else
-# define MAIDSAFE_NOEXCEPT noexcept(true)
-# define MAIDSAFE_CONSTEXPR constexpr
-# define MAIDSAFE_CONSTEXPR_OR_CONST constexpr
+#define MAIDSAFE_NOEXCEPT  // throw()
+#define MAIDSAFE_CONSTEXPR
+#define MAIDSAFE_CONSTEXPR_OR_CONST const
+#endif
+#else
+#define MAIDSAFE_NOEXCEPT noexcept(true)
+#define MAIDSAFE_CONSTEXPR constexpr
+#define MAIDSAFE_CONSTEXPR_OR_CONST constexpr
 #endif
 
 namespace maidsafe {
 
-#if defined APPLICATION_VERSION_MAJOR && defined APPLICATION_VERSION_MINOR && defined \
-    APPLICATION_VERSION_PATCH
+#if defined APPLICATION_VERSION_MAJOR && defined APPLICATION_VERSION_MINOR && \
+    defined APPLICATION_VERSION_PATCH
 inline const std::string kApplicationVersion() {
   return BOOST_PP_STRINGIZE(APPLICATION_VERSION_MAJOR) + std::string(".") +
          BOOST_PP_STRINGIZE(APPLICATION_VERSION_MINOR) + std::string(".") +

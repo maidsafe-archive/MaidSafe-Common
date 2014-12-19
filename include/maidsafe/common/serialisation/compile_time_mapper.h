@@ -132,7 +132,7 @@ ParsedType Parse(StreamType& binary_input_stream) {
 
 // ========== Serialisation/parsing using std::vector<byte> types ==================================
 template <typename TypeToSerialise>
-SerialisedData Serialise(TypeToSerialise object_to_serialise) {
+SerialisedData SerialiseMappedType(TypeToSerialise object_to_serialise) {
   return detail::Serialise<TypeToSerialise, OutputVectorStream>(object_to_serialise)->vector();
 }
 
@@ -140,16 +140,11 @@ inline SerialisableTypeTag TypeFromStream(InputVectorStream& binary_input_stream
   return detail::TypeFromStream(binary_input_stream);
 }
 
-template <typename ParsedType>
-ParsedType Parse(InputVectorStream& binary_input_stream) {
-  return detail::Parse<ParsedType, InputVectorStream>(binary_input_stream);
-}
-
 
 
 // ========== Serialisation/parsing using std::string types ========================================
 template <typename TypeToSerialise>
-std::string SerialiseToString(TypeToSerialise object_to_serialise) {
+std::string SerialiseMappedTypeToString(TypeToSerialise object_to_serialise) {
   return detail::Serialise<TypeToSerialise, std::ostringstream>(object_to_serialise)->str();
 }
 

@@ -142,9 +142,9 @@ TEST_P(DownloadManagerCommonTest, BEH_UpdateThirdFileFail) {
   EXPECT_EQ(boost::system::errc::no_such_file_or_directory, error.value());
 }
 
-INSTANTIATE_TEST_CASE_P(
-    AllFail, DownloadManagerCommonTest,
-    testing::Values("incorrect_manifest", "no_signature", "incorrect_signature"));
+INSTANTIATE_TEST_CASE_P(AllFail, DownloadManagerCommonTest,
+                        testing::Values("incorrect_manifest", "no_signature",
+                                        "incorrect_signature"));
 
 }  // namespace test
 

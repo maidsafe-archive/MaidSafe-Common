@@ -41,7 +41,7 @@ MenuItem* Menu::AddItem(std::string name, MenuItem::Functor operation) {
 
 int Menu::Run() {
   try {
-    bool clear_cli{ true };
+    bool clear_cli{true};
     for (;;) {
       if (clear_cli) {
         cli_.Clear();
@@ -51,7 +51,7 @@ int Menu::Run() {
         ShowOptions();
       }
       try {
-        int result{ cli_.Get<int>("Please enter option (0 to quit)") };
+        int result{cli_.Get<int>("Please enter option (0 to quit)")};
         if (result == 0) {
           break;
         } else if (result == 99 && current_item_->kParent_) {
@@ -59,8 +59,7 @@ int Menu::Run() {
         } else {
           current_item_ = current_item_->Child(result - 1);
         }
-      }
-      catch (const std::exception&) {
+      } catch (const std::exception&) {
         TLOG(kYellow) << "Invalid choice\n";
         continue;
       }
@@ -68,12 +67,10 @@ int Menu::Run() {
       clear_cli = true;
     }
     return 0;
-  }
-  catch (const maidsafe_error& error) {
+  } catch (const maidsafe_error& error) {
     TLOG(kRed) << boost::diagnostic_information(error) << "\n\n";
     return ErrorToInt(error);
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     TLOG(kRed) << e.what() << "\n\n";
     return ErrorToInt(MakeError(CommonErrors::unknown));
   }

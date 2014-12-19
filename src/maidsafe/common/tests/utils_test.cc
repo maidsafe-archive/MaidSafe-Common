@@ -112,7 +112,7 @@ TEST(UtilsTest, BEH_Ratios) {
   EXPECT_EQ(KiloBytes(1).count(), 1ULL);
 }
 
-TEST(UtilsTest, BEH_BytesToDecimalSiUnits ) {
+TEST(UtilsTest, BEH_BytesToDecimalSiUnits) {
   EXPECT_EQ("0 B", BytesToDecimalSiUnits(0U));
   EXPECT_EQ("1 B", BytesToDecimalSiUnits(1U));
   EXPECT_EQ("12 B", BytesToDecimalSiUnits(12U));
@@ -283,7 +283,7 @@ TEST(UtilsTest, BEH_RandomStringSingleThread) {
 }
 
 TEST(UtilsTest, BEH_HexEncodeDecode) {
-  bool expected_sizes_ok{ true }, decoded_ok{ true };
+  bool expected_sizes_ok{true}, decoded_ok{true};
 
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
@@ -310,7 +310,7 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
 }
 
 TEST(UtilsTest, BEH_Base64EncodeDecode) {
-  bool expected_sizes_ok{ true }, decoded_ok{ true };
+  bool expected_sizes_ok{true}, decoded_ok{true};
 
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
@@ -390,8 +390,8 @@ TEST(UtilsTest, BEH_Base64Substr) {
 std::string WstringToStringOldMethod(const std::wstring& input) {
   const std::locale kLocale("");
   std::string string_buffer(input.size(), 0);
-  std::use_facet<std::ctype<wchar_t>>(kLocale).narrow(
-      &input[0], &input[0] + input.size(), '?', &string_buffer[0]);
+  std::use_facet<std::ctype<wchar_t>>(kLocale)
+      .narrow(&input[0], &input[0] + input.size(), '?', &string_buffer[0]);
 
   return std::string(&string_buffer[0], input.size());
 }
@@ -408,8 +408,8 @@ TEST(UtilsTest, BEH_WstringToString) {
     try {
       auto new_method(WstringToString(input));
       ASSERT_EQ(new_method, old_method);
+    } catch (const common_error&) {
     }
-    catch(const common_error&) {}
   }
 #endif
 }
@@ -434,8 +434,8 @@ TEST(UtilsTest, BEH_StringToWstring) {
       auto new_method(StringToWstring(input));
       if (input[0] != '\0')
         ASSERT_EQ(new_method, old_method) << static_cast<int>(input[0]);
+    } catch (const common_error&) {
     }
-    catch(const common_error&) {}
   }
 #endif
 }
@@ -448,7 +448,7 @@ TEST(UtilsTest, BEH_TimeFunctions) {
 }
 
 TEST(UtilsTest, FUNC_RandomNumberGen) {
-  bool within_threshold{ true };
+  bool within_threshold{true};
   maidsafe::test::RunInParallel(10, [&] {
     std::set<int32_t> random_ints;
     std::set<uint32_t> random_uints;
@@ -536,9 +536,7 @@ TEST(UtilsTest, BEH_AppDir) {
   EXPECT_EQ(system.find(home), std::string::npos);
 }
 
-TEST(UtilsTest, BEH_Concurrency) {
-  EXPECT_TRUE(Concurrency()>= 2U);
-}
+TEST(UtilsTest, BEH_Concurrency) { EXPECT_TRUE(Concurrency() >= 2U); }
 
 namespace {
 
@@ -587,9 +585,7 @@ TEST(UtilsTest, BEH_CreateTestPath) {
   EXPECT_TRUE(!non_existent);
 }
 
-TEST(UtilsTest, BEH_GetProcessId) {
-  EXPECT_GT(process::GetProcessId(), 0);
-}
+TEST(UtilsTest, BEH_GetProcessId) { EXPECT_GT(process::GetProcessId(), 0); }
 
 }  // namespace test
 

@@ -40,9 +40,7 @@ class CliTest : public ::testing::Test {
     input_ = nullptr;
     original_cin_ = std::cin.rdbuf();
   }
-  virtual void TearDown() {
-    std::cin.rdbuf(original_cin_);
-  }
+  virtual void TearDown() { std::cin.rdbuf(original_cin_); }
 
   void SendToCin(std::string input) {
     input_ = maidsafe::make_unique<std::istringstream>(std::move(input));
@@ -58,7 +56,7 @@ class CliTest : public ::testing::Test {
 TEST_F(CliTest, BEH_GetTest) {
   SendToCin("input\n");
   CLI cli;
-  std::string result{ cli.Get<std::string>("test") };
+  std::string result{cli.Get<std::string>("test")};
   EXPECT_EQ(result, "input");
   result.clear();
 
@@ -71,7 +69,7 @@ TEST_F(CliTest, BEH_MenuFunctions) {
   auto inc = [&] { ++test_value_; };
   auto dec = [&] { --test_value_; };
 
-  Menu menu{ "Main" };
+  Menu menu{"Main"};
   menu.AddItem("Inc one", inc);
   menu.AddItem("Inc two", inc);
   menu.AddItem("Dec three", dec);
@@ -90,18 +88,21 @@ TEST_F(CliTest, BEH_MenuFunctions) {
 }
 
 TEST_F(CliTest, BEH_MenuHierarchy) {
-  Menu menu{ "Main" };
+  Menu menu{"Main"};
   menu.AddItem("Top level increment by 1", [&] { ++test_value_; });     // Action A
   menu.AddItem("Top level increment by 2", [&] { test_value_ += 2; });  // Action B
   menu.AddItem("Top level decrement by 1", [&] { --test_value_; });     // Action C
 
-  MenuItem* sub_item{ menu.AddItem("Sub-menu") };
+  MenuItem* sub_item{menu.AddItem("Sub-menu")};
   sub_item->AddChildItem("Sub-menu increment by 100", [&] { test_value_ += 100; });  // Action D
 
-  MenuItem* sub_sub_item{ sub_item->AddChildItem("Sub-sub-menu") };
-  sub_sub_item->AddChildItem("Sub-sub-menu increment by 10,000", [&] { test_value_ += 10000; });    // Action E  NOLINT
-  sub_sub_item->AddChildItem("Sub-sub-menu increment by 200,000", [&] { test_value_ += 200000; });  // Action F  NOLINT
-  sub_sub_item->AddChildItem("Sub-sub-menu decrement by 3,000", [&] { test_value_ -= 3000; });      // Action G  NOLINT
+  MenuItem* sub_sub_item{sub_item->AddChildItem("Sub-sub-menu")};
+  sub_sub_item->AddChildItem("Sub-sub-menu increment by 10,000",
+                             [&] { test_value_ += 10000; });  // Action E  NOLINT
+  sub_sub_item->AddChildItem("Sub-sub-menu increment by 200,000",
+                             [&] { test_value_ += 200000; });  // Action F  NOLINT
+  sub_sub_item->AddChildItem("Sub-sub-menu decrement by 3,000",
+                             [&] { test_value_ -= 3000; });  // Action G  NOLINT
 
   SendToCin("1\n0\n");  // A, Quit
   EXPECT_EQ(menu.Run(), 0);
@@ -131,7 +132,7 @@ TEST_F(CliTest, BEH_MenuHierarchy) {
 
 TEST(CliTokenTest, BEH_TokenTest) {
   CLI cli;
-  std::string test_str{ "this is five small tokens" };
+  std::string test_str{"this is five small tokens"};
   EXPECT_EQ((cli.TokeniseLine(test_str).size()), 5);
 }
 

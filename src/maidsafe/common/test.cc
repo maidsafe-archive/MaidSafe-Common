@@ -53,10 +53,11 @@ boost::optional<fs::path> BootstrapFilePath(const fs::path& bootstrap_file_path 
 
 po::options_description AvailableOptions() {
   po::options_description test_options("Test options");
-  test_options.add_options()
-    ("seed", po::value<uint32_t>(), "Seed for main psuedo random number generator.")
-    ("delay", po::value<uint32_t>(), "Initial delay at start of execution of 'main' (in seconds).")
-    ("bootstrap_file", po::value<std::string>(), "Path to bootstrap file.");
+  test_options.add_options()("seed", po::value<uint32_t>(),
+                             "Seed for main psuedo random number generator.")(
+      "delay", po::value<uint32_t>(),
+      "Initial delay at start of execution of 'main' (in seconds).")(
+      "bootstrap_file", po::value<std::string>(), "Path to bootstrap file.");
   return test_options;
 }
 
@@ -67,8 +68,7 @@ po::variables_map ParseOptions(int argc, char* argv[],
     po::store(po::command_line_parser(argc, argv).options(test_options).allow_unregistered().run(),
               variables_map);
     po::notify(variables_map);
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     std::cout << "Parser error:\n " << e.what() << "\nRun with -h to see all options.\n";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
@@ -172,13 +172,11 @@ void HandleTestOptions(int argc, char* argv[]) {
     HandleSeed(variables_map);
     HandleDelay(variables_map);
     HandleBootstrapFile(variables_map);
-  }
-  catch (const maidsafe::maidsafe_error& error) {
+  } catch (const maidsafe::maidsafe_error& error) {
     // Success is thrown when Help option is invoked.
     if (error.code() != maidsafe::make_error_code(maidsafe::CommonErrors::success))
       std::cout << "Exception: " << error.what() << '\n';
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     std::cout << "Exception: " << e.what() << '\n';
   }
 }
@@ -255,8 +253,7 @@ void PrepareBootstrapFile(fs::path bootstrap_file) {
       bootstrap_file = fs::current_path() / bootstrap_file;
     fs::copy_file(bootstrap_file, ThisExecutableDir() / "bootstrap_override.dat",
                   fs::copy_option::overwrite_if_exists);
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Failed to handle bootstrap override file: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   }

@@ -66,7 +66,7 @@ TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteComplexKey) {
   EXPECT_EQ(NonEmptyString("b"), data_buffer.Get(std::make_pair("a", "b")));
   EXPECT_NO_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))));
   EXPECT_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
-      std::exception);
+               std::exception);
 }
 
 TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteRange) {
@@ -78,7 +78,7 @@ TEST(DataBufferUnitTest, BEH_DiskOnlyInsertAndDeleteRange) {
   std::function<bool(const Key&)> predicate([](const Key& key) { return key.second == "b"; });
   EXPECT_NO_THROW(data_buffer.Delete(predicate));
   EXPECT_THROW(data_buffer.Delete(std::make_pair(std::string("a"), std::string("b"))),
-                  std::exception);
+               std::exception);
   EXPECT_NO_THROW(data_buffer.Delete(predicate));
 }
 

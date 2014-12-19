@@ -262,7 +262,7 @@ TEST(BoundedStringTest, BEH_Serialization) {
   EXPECT_THROW(maidsafe::ConvertToString(a), std::exception);
 
   // Valid Serialisation
-  OneThree b {RandomString(1)};
+  OneThree b{RandomString(1)};
   EXPECT_TRUE(b.IsInitialised());
 
   std::string serialised_str;

@@ -104,18 +104,6 @@ maidsafe_error IntToError(int value) {
   }
 }
 
-maidsafe_error::serialised_type Serialise(maidsafe_error error) {
-  error.value_ = ErrorToInt(error);
-  return maidsafe_error::serialised_type{ ConvertToString(error) };
-}
-
-maidsafe_error Parse(maidsafe_error::serialised_type serialised_error) {
-  maidsafe_error copy {std::error_code {}, std::string {}};
-  try { ConvertFromString(serialised_error.data, copy); }
-  catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));  }
-  return IntToError(static_cast<int>(copy.value_));
-}
-
 std::error_code make_error_code(CommonErrors code) {
   return std::error_code(static_cast<int>(code), GetCommonCategory());
 }

@@ -110,7 +110,7 @@ MatrixMap::iterator FindInMatrix(const NodeInfo& node_info, MatrixMap& matrix) {
   NodeId node_id(node_info.id);
   return std::find_if(
       std::begin(matrix), std::end(matrix),
-      [node_id](const MatrixMap::value_type & child) { return child.first->id == node_id; });
+      [node_id](const MatrixMap::value_type& child) { return child.first->id == node_id; });
 }
 
 void InsertNode(const MatrixRecord& matrix_record) {
@@ -141,8 +141,8 @@ void TakeSnapshotAndNotify() {
     return;
   }
 
-  auto& snapshot(g_snapshots.insert(std::make_pair(++g_state_id, NodeSet([](const NodeInfo & lhs,
-                                                                            const NodeInfo & rhs) {
+  auto& snapshot(g_snapshots.insert(std::make_pair(++g_state_id, NodeSet([](const NodeInfo& lhs,
+                                                                            const NodeInfo& rhs) {
                                                                    return lhs.id < rhs.id;
                                                                  }))).first->second);
   // TODO(Fraser#5#): 2013-04-10 - Optimise this
@@ -157,7 +157,7 @@ void TakeSnapshotAndNotify() {
       // Find the child in the new NodeSet
       auto g_itr(std::find_if(
           std::begin(snapshot), std::end(snapshot),
-          [&child](const NodeInfo & node_info) { return child.first->id == node_info.id; }));
+          [&child](const NodeInfo& node_info) { return child.first->id == node_info.id; }));
       snapshot_itr->matrix->insert(std::make_pair(g_itr, child.second));
     }
     ++main_itr;
@@ -210,7 +210,7 @@ ViewableNode& ViewableNode::operator=(ViewableNode other) {
 
 MatrixRecord::MatrixRecord()
     : owner_id_(),
-      matrix_ids_([](const NodeId&, const NodeId&)->bool {
+      matrix_ids_([](const NodeId&, const NodeId&) -> bool {
         // Ensure this is never actually invoked
         assert(false);
         return true;
@@ -218,22 +218,21 @@ MatrixRecord::MatrixRecord()
 
 MatrixRecord::MatrixRecord(const NodeId& owner_id)
     : owner_id_(owner_id),
-      matrix_ids_([owner_id](const NodeId & lhs, const NodeId & rhs) {
+      matrix_ids_([owner_id](const NodeId& lhs, const NodeId& rhs) {
         return NodeId::CloserToTarget(lhs, rhs, owner_id);
       }) {}
 
 MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
     : owner_id_(), matrix_ids_([](const NodeId&, const NodeId&) { return true; }) {
-  try { ConvertFromString(serialised_matrix_record, *this); }
-  catch(...) {
+  try {
+    ConvertFromString(serialised_matrix_record, *this);
+  } catch (...) {
     LOG(kError) << "Failed to construct matrix_record.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
-std::string MatrixRecord::Serialise() const {
-  return ConvertToString(*this);
-}
+std::string MatrixRecord::Serialise() const { return ConvertToString(*this); }
 
 MatrixRecord::MatrixRecord(const MatrixRecord& other)
     : owner_id_(other.owner_id_), matrix_ids_(other.matrix_ids_) {}
@@ -291,7 +290,7 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
   NodeId target_id(hex_encoded_id, NodeId::EncodingType::kHex);
   auto itr(
       std::find_if(std::begin(snapshot_itr->second), std::end(snapshot_itr->second),
-                   [&target_id](const NodeInfo & node_info) { return target_id == node_info.id; }));
+                   [&target_id](const NodeInfo& node_info) { return target_id == node_info.id; }));
 
   if (itr == std::end(snapshot_itr->second)) {
     // Data / account request
@@ -313,7 +312,7 @@ std::vector<ViewableNode> GetCloseNodes(int state_id, const std::string& hex_enc
       }
       if (needs_sorted) {
         std::sort(std::begin(children), std::end(children),
-                  [&target_id](const ViewableNode & lhs, const ViewableNode & rhs) {
+                  [&target_id](const ViewableNode& lhs, const ViewableNode& rhs) {
           return NodeId::CloserToTarget(NodeId(lhs.id, NodeId::EncodingType::kHex),
                                         NodeId(rhs.id, NodeId::EncodingType::kHex), target_id);
         });
@@ -360,8 +359,7 @@ void Run(const std::chrono::milliseconds& notify_interval) {
           UpdateNodeInfo(received);
         }
       }
-    }
-    catch (bi::interprocess_exception& ex) {
+    } catch (bi::interprocess_exception& ex) {
       LOG(kError) << ex.what();
     }
   }));
