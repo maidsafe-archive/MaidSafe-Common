@@ -24,6 +24,9 @@
 
 #include "boost/filesystem/path.hpp"
 
+#include "maidsafe/common/serialisation/serialisation.h"
+
+
 struct sqlite3;
 struct sqlite3_stmt;
 
@@ -86,12 +89,12 @@ struct Statement {
   Statement& operator=(Statement) = delete;
 
   void BindText(int index, const std::string& text);
-  void BindBlob(int row_index, const std::string& blob);
+  void BindBlob(int row_index, const SerialisedData& blob);
   StepResult Step();
   void Reset();
 
   std::string ColumnText(int col_index);
-  std::string ColumnBlob(int col_index);
+  SerialisedData ColumnBlob(int col_index);
 
  private :
   Database& database;

@@ -156,9 +156,9 @@ void Statement::BindText(int row_index, const std::string& text) {
   }
 }
 
-void Statement::BindBlob(int row_index, const std::string& blob) {
+void Statement::BindBlob(int row_index, const SerialisedData& blob) {
   auto return_value =
-      sqlite3_bind_blob(statement, row_index, blob.c_str(), static_cast<int>(blob.size()),
+      sqlite3_bind_blob(statement, row_index, &blob, static_cast<int>(blob.size()),
                         SQLITE_STATIC);
   if (return_value != SQLITE_OK) {
     LOG(kError) << " sqlite3_bind_blob returned : " << return_value;
@@ -182,10 +182,10 @@ std::string Statement::ColumnText(int col_index) {
   return std::string(column_text, bytes);
 }
 
-std::string Statement::ColumnBlob(int col_index) {
-  auto column_blob = reinterpret_cast<const char*>(sqlite3_column_blob(statement, col_index));
+SerialisedData Statement::ColumnBlob(int col_index) {
+  auto column_blob = reinterpret_cast<const unsigned char*>(sqlite3_column_blob(statement, col_index));
   int bytes = sqlite3_column_bytes(statement, col_index);
-  return std::string(column_blob, bytes);
+  return SerialisedData(column_blob, column_blob + bytes);
 }
 
 void Statement::Reset() {
