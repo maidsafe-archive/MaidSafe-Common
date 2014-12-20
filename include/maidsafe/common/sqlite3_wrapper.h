@@ -38,8 +38,8 @@ struct Statement;
 
 // Modes for file open operations
 enum class Mode {
-  kReadOnly = 0x00000001,  // SQLITE_OPEN_READONLY
-  kReadWrite = 0x00000002,  // SQLITE_OPEN_READWRITE
+  kReadOnly = 0x00000001,                     // SQLITE_OPEN_READONLY
+  kReadWrite = 0x00000002,                    // SQLITE_OPEN_READWRITE
   kReadWriteCreate = 0x00000002 | 0x00000004  // SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
 };
 
@@ -54,8 +54,9 @@ struct Database {
 
   friend struct Transaction;
   friend struct Statement;
+
  private:
-  sqlite3 *database;
+  sqlite3* database;
 };
 
 struct Transaction {
@@ -96,7 +97,7 @@ struct Statement {
   std::string ColumnText(int col_index);
   SerialisedData ColumnBlob(int col_index);
 
- private :
+ private:
   Database& database;
   sqlite3_stmt* statement;
 };

@@ -87,7 +87,7 @@ enum class CommonErrors {
   parsing_error,
   not_a_directory,
   db_busy,
-  db_not_presented,
+  db_not_present,
   db_error,
   defaulted
 };
