@@ -39,6 +39,7 @@ AsioService::AsioService(size_t thread_count)
         LOG(kError) << boost::current_exception_diagnostic_information();
         // Rethrowing here will cause the application to terminate - so flush the log message first.
         log::Logging::Instance().Flush();
+        assert(0);
         throw;
       }
     });
