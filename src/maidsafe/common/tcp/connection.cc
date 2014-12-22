@@ -28,8 +28,8 @@
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/utils.h"
 
-namespace asio = boost::asio;
-namespace ip = asio::ip;
+namespace Asio = boost::asio;
+namespace ip = Asio::ip;
 
 namespace maidsafe {
 
@@ -70,7 +70,7 @@ Connection::Connection(AsioService& asio_service, Port remote_port)
   // Try IPv6 first.
   socket_.connect(ip::tcp::endpoint{ip::address_v6::loopback(), remote_port}, connect_error);
   if (connect_error &&
-      connect_error == asio::error::make_error_code(asio::error::address_family_not_supported)) {
+      connect_error == Asio::error::make_error_code(Asio::error::address_family_not_supported)) {
     // Try IPv4 now.
     socket_.connect(ip::tcp::endpoint{ip::address_v4::loopback(), remote_port}, connect_error);
   }
@@ -117,7 +117,7 @@ void Connection::DoClose() {
 
 void Connection::ReadSize() {
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::async_read(socket_, asio::buffer(receiving_message_.size_buffer),
+  Asio::async_read(socket_, Asio::buffer(receiving_message_.size_buffer),
                    [this_ptr](const boost::system::error_code& ec, size_t bytes_transferred) {
     if (ec) {
       LOG(kInfo) << ec.message();
@@ -147,8 +147,8 @@ void Connection::ReadSize() {
 
 void Connection::ReadData() {
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::async_read(
-      socket_, asio::buffer(receiving_message_.data_buffer),
+  Asio::async_read(
+      socket_, Asio::buffer(receiving_message_.data_buffer),
       io_service_.wrap([this_ptr](const boost::system::error_code& ec, size_t bytes_transferred) {
         if (ec) {
           LOG(kError) << "Failed to read message body: " << ec.message();
@@ -177,11 +177,11 @@ void Connection::Send(std::string data) {
 }
 
 void Connection::DoSend() {
-  std::array<asio::const_buffer, 2> buffers;
-  buffers[0] = asio::buffer(send_queue_.front().size_buffer);
-  buffers[1] = asio::buffer(send_queue_.front().data.data(), send_queue_.front().data.size());
+  std::array<Asio::const_buffer, 2> buffers;
+  buffers[0] = Asio::buffer(send_queue_.front().size_buffer);
+  buffers[1] = Asio::buffer(send_queue_.front().data.data(), send_queue_.front().data.size());
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::async_write(
+  Asio::async_write(
       socket_, buffers,
       io_service_.wrap([this_ptr](const boost::system::error_code& ec, size_t bytes_transferred) {
         if (ec) {
