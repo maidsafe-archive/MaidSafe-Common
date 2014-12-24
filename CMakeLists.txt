@@ -84,7 +84,7 @@ ms_add_static_library(maidsafe_common
     ${CommonDataTypesAllFiles}
     ${CommonSerialisationAllFiles}
     ${CommonTcpAllFiles})
-add_dependencies(maidsafe_common boost_process)
+add_dependencies(maidsafe_common boost_process boost_expected)
 
 target_include_directories(maidsafe_common
   PUBLIC
