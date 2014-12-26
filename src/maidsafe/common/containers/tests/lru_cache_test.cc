@@ -48,8 +48,46 @@ TEST(LruCacheTest, BEH_SizeOnlyTest) {
 
   for (int i(1000); i > 0; --i) {
     EXPECT_TRUE(cache.Check(1000 - 1));
-    EXPECT_TRUE(cache.Get(1000 - 1).first);
-    EXPECT_EQ(cache.Get(1000 - 1).second, 1000 - 1);
+    EXPECT_TRUE(cache.Get(1000 - 1).valid());
+    EXPECT_EQ(cache.Get(1000 - 1).value(), 1000 - 1);
+  }
+}
+
+TEST(LruCacheTest, BEH_DeleteTest) {
+  auto size(10);
+  LruCache<int, int> cache(size);
+
+  {
+    for (int i(0); i < size; ++i) {
+      EXPECT_EQ(cache.size(), i);
+      cache.Add(i, i);
+      EXPECT_EQ(cache.size(), i + 1);
+    }
+
+    int random_index(RandomUint32() % size);
+    for (int i(0); i < 10; ++i) {
+      auto index((i + random_index) % size);
+      cache.Delete(index);
+      EXPECT_FALSE(cache.Get(index).valid());
+    }
+
+    EXPECT_EQ(cache.size(), 0);
+  }
+
+  {
+    for (int i(0); i < size * 2; ++i)
+      cache.Add(i, i);
+
+    EXPECT_EQ(cache.size(), size);
+
+    int random_index(RandomUint32() % size);
+    for (int i(size); i < size * 2; ++i) {
+      auto index(((i + random_index) % size) + size);
+      cache.Delete(index);
+      EXPECT_FALSE(cache.Get(index).valid());
+    }
+
+    EXPECT_EQ(cache.size(), 0);
   }
 }
 
