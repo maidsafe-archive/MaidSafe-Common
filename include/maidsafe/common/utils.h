@@ -31,8 +31,6 @@
 
 #include "asio/ip/address.hpp"
 #include "asio/ip/udp.hpp"
-#include "boost/asio/ip/address.hpp"
-#include "boost/asio/ip/udp.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
@@ -92,7 +90,7 @@ typedef std::chrono::duration<uint64_t, std::exa> ExaBytes;
 // address.
 asio::ip::address GetLocalIp(
     asio::ip::udp::endpoint peer_endpoint =
-        asio::ip::udp::endpoint(asio::ip::address_v4::from_string("203.0.113.0"), 80));
+        asio::ip::udp::endpoint(asio::ip::make_address_v4("203.0.113.0"), 80));
 
 // Takes a version as a string and returns the int form, e.g. "0.09.01" returns 901
 int VersionToInt(const std::string& version);

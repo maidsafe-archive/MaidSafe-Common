@@ -23,7 +23,7 @@
 #include <memory>
 #include <mutex>
 
-#include "boost/asio/ip/tcp.hpp"
+#include "asio/ip/tcp.hpp"
 
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/types.h"
@@ -38,23 +38,23 @@ class Listener : public std::enable_shared_from_this<Listener> {
   Listener(Listener&&) = delete;
   Listener& operator=(Listener) = delete;
 
-  static ListenerPtr MakeShared(AsioService &asio_service,
-                                NewConnectionFunctor on_new_connection, Port desired_port);
+  static ListenerPtr MakeShared(AsioService& asio_service, NewConnectionFunctor on_new_connection,
+                                Port desired_port);
   Port ListeningPort() const;
   void StopListening();
 
  private:
-  Listener(AsioService &asio_service, NewConnectionFunctor on_new_connection);
+  Listener(AsioService& asio_service, NewConnectionFunctor on_new_connection);
 
   void StartListening(Port desired_port);
   void DoStartListening(Port port);
-  void HandleAccept(ConnectionPtr accepted_connection, const boost::system::error_code& ec);
+  void HandleAccept(ConnectionPtr accepted_connection, const std::error_code& ec);
   void DoStopListening();
 
   AsioService& asio_service_;
   std::once_flag stop_listening_flag_;
   NewConnectionFunctor on_new_connection_;
-  boost::asio::ip::tcp::acceptor acceptor_;
+  asio::ip::tcp::acceptor acceptor_;
 };
 
 }  // namespace tcp

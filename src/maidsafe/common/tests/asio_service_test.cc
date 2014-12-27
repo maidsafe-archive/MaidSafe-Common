@@ -34,7 +34,13 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(AsioServiceTest, BEH_StartAndStop) {
+template <typename IoService>
+class AsioServiceTest : public testing::Test {};
+
+typedef testing::Types<asio::io_service, boost::asio::io_service> IoServiceTypes;
+TYPED_TEST_CASE(AsioServiceTest, IoServiceTypes);
+
+TYPED_TEST(AsioServiceTest, BEH_StartAndStop) {
   bool done(false);
   std::mutex mutex;
   std::condition_variable cond_var;
@@ -47,9 +53,9 @@ TEST(AsioServiceTest, BEH_StartAndStop) {
     cond_var.notify_one();
   });
 
-  EXPECT_THROW(AsioService(0), std::exception);
+  EXPECT_THROW(IoService<TypeParam>(0), maidsafe_error);
 
-  AsioService asio_service(2);
+  IoService<TypeParam> asio_service(2);
   EXPECT_EQ(asio_service.ThreadCount(), 2U);
   asio_service.service().post(task);
   std::unique_lock<std::mutex> lock(mutex);
