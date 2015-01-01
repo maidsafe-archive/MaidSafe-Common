@@ -141,7 +141,6 @@ target_compile_options(maidsafe_common
         -Wfloat-equal
         -Wstrict-overflow=5
         -Wredundant-decls
-        -Wstrict-null-sentinel
         -Wold-style-cast
         -Woverloaded-virtual
         -fPIC
@@ -166,6 +165,6 @@ target_compile_options(maidsafe_common
                 -Wno-unused-command-line-argument
             >
         >
-        $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++>
+        $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++ -Wstrict-null-sentinel>
     >
 )
