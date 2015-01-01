@@ -44,14 +44,25 @@ namespace maidsafe {
 
 using SerialisedData = std::vector<byte>;
 
-template <typename TypeToSerialise>
-SerialisedData Serialise(const TypeToSerialise& object_to_serialise) {
+template <typename... TypesToSerialise>
+OutputVectorStream& ConvertToVectorStream(OutputVectorStream& binary_output_stream,
+                                          TypesToSerialise&&... objects_to_serialise) {
+  auto binary_output_archive = BinaryOutputArchive{binary_output_stream};
+  binary_output_archive(std::forward<TypesToSerialise>(objects_to_serialise)...);
+  return binary_output_stream;
+}
+
+template <typename... TypesToSerialise>
+SerialisedData Serialise(OutputVectorStream& binary_output_stream,
+                         TypesToSerialise&&... objects_to_serialise) {
+  return ConvertToVectorStream(binary_output_stream,
+                               std::forward<TypesToSerialise>(objects_to_serialise)...).vector();
+}
+
+template <typename... TypesToSerialise>
+SerialisedData Serialise(TypesToSerialise&&... objects_to_serialise) {
   OutputVectorStream binary_output_stream;
-  {
-    auto binary_output_archive = BinaryOutputArchive{binary_output_stream};
-    binary_output_archive(object_to_serialise);
-  }
-  return binary_output_stream.vector();
+  return Serialise(binary_output_stream, std::forward<TypesToSerialise>(objects_to_serialise)...);
 }
 
 template <typename ParsedType>
@@ -68,6 +79,18 @@ template <typename ParsedType>
 ParsedType Parse(const SerialisedData& serialised_data) {
   InputVectorStream binary_input_stream{serialised_data};
   return Parse<ParsedType>(binary_input_stream);
+}
+
+template <typename... TypesToParse>
+void Parse(InputVectorStream& binary_input_stream, TypesToParse&... objects_to_parse) {
+  BinaryInputArchive binary_input_archive(binary_input_stream);
+  binary_input_archive(objects_to_parse...);
+}
+
+template <typename... TypesToParse>
+void Parse(const SerialisedData& serialised_data, TypesToParse&... objects_to_parse) {
+  InputVectorStream binary_input_stream{serialised_data};
+  Parse(binary_input_stream, objects_to_parse...);
 }
 
 
