@@ -97,7 +97,6 @@ TEST_F(RsaTest, FUNC_SignValidate) {
     EXPECT_NO_THROW(std::vector<byte> signature(Sign(vec_data, keys.private_key)));
     auto signature(Sign(kData, keys.private_key));
     auto vec_signature(Sign(vec_data, keys.private_key));
-    // EXPECT_EQ(signature.string(), std::string(vec_signature.begin(), vec_signature.end()));
     EXPECT_TRUE(CheckSignature(kData, signature, keys.public_key));
     EXPECT_TRUE(CheckSignature(vec_data, vec_signature, keys.public_key));
 
