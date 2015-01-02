@@ -20,6 +20,7 @@
 #define MAIDSAFE_COMMON_RSA_H_
 
 #include <string>
+#include <vector>
 
 // Include this first to avoid having to wrap the cryptopp includes in a pragma to disable warnings
 #include "maidsafe/common/crypto.h"  // NOLINT
