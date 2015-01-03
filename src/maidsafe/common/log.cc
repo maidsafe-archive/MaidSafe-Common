@@ -96,7 +96,7 @@ WORD GetColourAttribute(Colour colour) {
 void ColouredPrint(Colour colour, const std::string& text) {
   CONSOLE_SCREEN_BUFFER_INFO console_info_before;
   const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
-  std::lock_guard<maidsafe::detail::spinlock> lock(g_console_mutex());
+  std::lock_guard<maidsafe::detail::Spinlock> lock(g_console_mutex());
   if (kConsoleHandle != INVALID_HANDLE_VALUE) {
     int got_console_info = GetConsoleScreenBufferInfo(kConsoleHandle, &console_info_before);
     fflush(stdout);
