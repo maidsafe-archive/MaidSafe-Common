@@ -95,7 +95,7 @@ inline boost::filesystem::path GetSystemAppSupportDir() {
   return boost::filesystem::path("/Library/Application Support/") / kCompanyName() /
          kApplicationName();
 #elif defined(MAIDSAFE_LINUX)
-  return boost::filesystem::path("/opt/") / kCompanyName() / kApplicationName();
+  return boost::filesystem::path("/opt/") / kCompanyName() / boost::filesystem::path("sbin");
 #else
   LOG(kError) << "Cannot deduce system wide application directory path";
   return boost::filesystem::path();
