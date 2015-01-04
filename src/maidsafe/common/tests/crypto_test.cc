@@ -173,33 +173,29 @@ TEST(CryptoTest, BEH_Hash) {
     if (!test_data.at(j).SHA1_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA1_hex_result, HexEncode(Hash<SHA1>(input)));
       EXPECT_EQ(test_data.at(j).SHA1_raw_result, Hash<SHA1>(input).string());
-      EXPECT_EQ(std::vector<byte>(test_data.at(j).SHA1_raw_result.begin(),
-                                  test_data.at(j).SHA1_raw_result.end()),
-                Hash<SHA1>(std::vector<byte>(input.begin(), input.end())));
+      EXPECT_EQ(test_data.at(j).SHA1_raw_result,
+                Hash<SHA1>(std::vector<byte>(input.begin(), input.end())).string());
     }
 
     if (!test_data.at(j).SHA256_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(Hash<SHA256>(input)));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<SHA256>(input).string());
-      EXPECT_EQ(std::vector<byte>(test_data.at(j).SHA256_raw_result.begin(),
-                                  test_data.at(j).SHA256_raw_result.end()),
-                Hash<SHA256>(std::vector<byte>(input.begin(), input.end())));
+      EXPECT_EQ(test_data.at(j).SHA256_raw_result,
+                Hash<SHA256>(std::vector<byte>(input.begin(), input.end())).string());
     }
 
     if (!test_data.at(j).SHA384_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(Hash<SHA384>(input)));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<SHA384>(input).string());
-      EXPECT_EQ(std::vector<byte>(test_data.at(j).SHA384_raw_result.begin(),
-                                  test_data.at(j).SHA384_raw_result.end()),
-                Hash<SHA384>(std::vector<byte>(input.begin(), input.end())));
+      EXPECT_EQ(test_data.at(j).SHA384_raw_result,
+                Hash<SHA384>(std::vector<byte>(input.begin(), input.end())).string());
     }
 
     if (!test_data.at(j).SHA512_hex_result.empty()) {
       EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(Hash<SHA512>(input)));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<SHA512>(input).string());
-      EXPECT_EQ(std::vector<byte>(test_data.at(j).SHA512_raw_result.begin(),
-                                  test_data.at(j).SHA512_raw_result.end()),
-                Hash<SHA512>(std::vector<byte>(input.begin(), input.end())));
+      EXPECT_EQ(test_data.at(j).SHA512_raw_result,
+                Hash<SHA512>(std::vector<byte>(input.begin(), input.end())).string());
     }
   }
 
