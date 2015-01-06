@@ -94,21 +94,19 @@ TEST_F(RsaTest, FUNC_SignValidate) {
     const PlainText kData(RandomString(RandomUint32() % (1024 * 1024)));
     const std::vector<byte> vec_data(kData.string().begin(), kData.string().end());
     EXPECT_NO_THROW(Signature signature(Sign(kData, keys.private_key)));
-    EXPECT_NO_THROW(std::vector<byte> signature(Sign(vec_data, keys.private_key)));
+    EXPECT_NO_THROW(Signature signature(Sign(vec_data, keys.private_key)));
     auto signature(Sign(kData, keys.private_key));
-    auto vec_signature(Sign(vec_data, keys.private_key));
     EXPECT_TRUE(CheckSignature(kData, signature, keys.public_key));
-    EXPECT_TRUE(CheckSignature(vec_data, vec_signature, keys.public_key));
+    EXPECT_TRUE(CheckSignature(vec_data, signature, keys.public_key));
 
     EXPECT_THROW(Sign(kData, empty_priv_key), std::exception);
     EXPECT_THROW(Sign(vec_data, empty_priv_key), std::exception);
     EXPECT_THROW(CheckSignature(kData, signature, empty_pub_key), std::exception);
-    EXPECT_THROW(CheckSignature(vec_data, vec_signature, empty_pub_key), std::exception);
+    EXPECT_THROW(CheckSignature(vec_data, signature, empty_pub_key), std::exception);
 
     Signature bad_signature(RandomString(Keys::kSignatureByteSize));
     EXPECT_FALSE(CheckSignature(kData, bad_signature, keys.public_key));
-    EXPECT_FALSE(CheckSignature(
-        vec_data, {bad_signature.string().begin(), bad_signature.string().end()}, keys.public_key));
+    EXPECT_FALSE(CheckSignature(vec_data, bad_signature, keys.public_key));
   });
 }
 
