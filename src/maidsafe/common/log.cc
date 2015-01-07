@@ -466,8 +466,8 @@ void LogMessage::Log(const std::string& project, std::string message) const {
   auto message_ptr(std::make_shared<std::string>(message.data(), message.size()));
   auto coloured_log_entry_ptr(std::make_shared<std::string>(coloured_log_entry.data(),
                                                             coloured_log_entry.size()));
-  auto print_functor([colour, coloured_log_entry_ptr, message_ptr, colour_mode, project] {
-    SendToConsole(colour_mode, colour, *coloured_log_entry_ptr, *message_ptr);
+  auto print_functor([this, colour, coloured_log_entry_ptr, message_ptr, colour_mode, project] {
+    SendToConsole(colour_mode, colour, level_, *coloured_log_entry_ptr, *message_ptr);
     Logging::Instance().WriteToCombinedLogfile(*coloured_log_entry_ptr + *message_ptr);
     Logging::Instance().WriteToProjectLogfile(project, *coloured_log_entry_ptr + *message_ptr);
   });
