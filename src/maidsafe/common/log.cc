@@ -67,8 +67,8 @@ void UseUnreferenced() {
 std::once_flag logging_initialised;
 
 // This fellow needs to work during static data deinit
-maidsafe::detail::spinlock& g_console_mutex() {
-  static maidsafe::detail::spinlock mutex;
+maidsafe::detail::Spinlock& g_console_mutex() {
+  static maidsafe::detail::Spinlock mutex;
   return mutex;
 }
 
@@ -96,7 +96,7 @@ WORD GetColourAttribute(Colour colour) {
 void ColouredPrint(Colour colour, const std::string& text) {
   CONSOLE_SCREEN_BUFFER_INFO console_info_before;
   const HANDLE kConsoleHandle(GetStdHandle(STD_OUTPUT_HANDLE));
-  std::lock_guard<maidsafe::detail::spinlock> lock(g_console_mutex());
+  std::lock_guard<maidsafe::detail::Spinlock> lock(g_console_mutex());
   if (kConsoleHandle != INVALID_HANDLE_VALUE) {
     int got_console_info = GetConsoleScreenBufferInfo(kConsoleHandle, &console_info_before);
     fflush(stdout);
@@ -130,7 +130,7 @@ const char* GetAnsiColourCode(Colour colour) {
 
 void ColouredPrint(Colour colour, const std::string& text) {
   // On non-Windows platforms, we rely on the TERM variable.
-  std::lock_guard<maidsafe::detail::spinlock> lock(g_console_mutex());
+  std::lock_guard<maidsafe::detail::Spinlock> lock(g_console_mutex());
   auto env_ptr = std::getenv("TERM");
   const std::string kTerm(env_ptr ? env_ptr : "");
   const bool kTermSupportsColour(kTerm == "xterm" || kTerm == "xterm-color" ||
@@ -358,7 +358,7 @@ std::string Strftime(const std::time_t* now_t);
 
 template <>
 std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
-  std::lock_guard<maidsafe::detail::spinlock> lock(g_console_mutex());
+  std::lock_guard<maidsafe::detail::Spinlock> lock(g_console_mutex());
   char temp[10];
   if (!std::strftime(temp, sizeof(temp), "%H:%M:%S.", std::localtime(now_t)))  // NOLINT (Fraser)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
@@ -367,7 +367,7 @@ std::string Strftime<TimeType::kLocal>(const std::time_t* now_t) {
 
 template <>
 std::string Strftime<TimeType::kUTC>(const std::time_t* now_t) {
-  std::lock_guard<maidsafe::detail::spinlock> lock(g_console_mutex());
+  std::lock_guard<maidsafe::detail::Spinlock> lock(g_console_mutex());
   char temp[21];
   if (!std::strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M:%S.",
                      std::gmtime(now_t)))  // NOLINT (Fraser)
@@ -495,7 +495,7 @@ Logging::Logging()
       visualiser_(),
       background_() {
   // Force intialisation order to ensure g_console_mutex is available in Logging's destuctor.
-  std::lock_guard<maidsafe::detail::spinlock> lock(g_console_mutex());
+  std::lock_guard<maidsafe::detail::Spinlock> lock(g_console_mutex());
   static_cast<void>(lock);
 }
 
@@ -571,7 +571,8 @@ void Logging::InitialiseVlog(const std::string& prefix, const std::string& sessi
     visualiser_.server_name = server_name;
     visualiser_.server_port = server_port;
     visualiser_.server_dir = server_dir;
-    visualiser_.server_stream.connect(server_name, std::to_string(server_port));
+    visualiser_.server_stream.connect(server_name,
+                                      std::to_string(static_cast<unsigned>(server_port)));
     if (!visualiser_.server_stream) {
       LOG(kError) << "Failed to connect to VLOG server: "
                   << visualiser_.server_stream.error().message();
@@ -659,8 +660,9 @@ void Logging::WriteToVisualiserLogfile(const std::string& message) {
 void Logging::WriteToVisualiserServer(const std::string& message) {
   if (!visualiser_.server_stream) {
     visualiser_.server_stream.clear();
-    visualiser_.server_stream.connect(visualiser_.server_name,
-                                      std::to_string(visualiser_.server_port));
+    visualiser_.server_stream.connect(
+        visualiser_.server_name,
+        std::to_string(static_cast<unsigned>(visualiser_.server_port)));
     if (!visualiser_.server_stream) {
       LOG(kError) << "Failed to re-connect to VLOG server: "
                   << visualiser_.server_stream.error().message();

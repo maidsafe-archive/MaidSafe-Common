@@ -139,10 +139,12 @@ target_compile_options(maidsafe_common
         -Wuninitialized
         -Wparentheses
         -Wfloat-equal
-        -Wstrict-overflow
         -Wstrict-overflow=5
         -Wredundant-decls
+        -Wold-style-cast
+        -Woverloaded-virtual
         -fPIC
+        -fstrict-overflow
         -pedantic
         -pedantic-errors
         $<$<CONFIG:Debug>:
@@ -163,7 +165,6 @@ target_compile_options(maidsafe_common
                 -Wno-unused-command-line-argument
             >
         >
-        $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++>
+        $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++ -Wstrict-null-sentinel>
     >
 )
-
