@@ -22,45 +22,38 @@
 #include <cstdint>
 #include <vector>
 
-#include "boost/optional.hpp"
-#include "maidsafe/common/data_types/version_cereal.h"
+#include "boost/optional/optional.hpp"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 
 namespace maidsafe {
 
 namespace detail {
 
 struct StructuredDataVersionsBranchCereal {
-  StructuredDataVersionsBranchCereal()
-    : absent_parent_ {},
-      name_ {}
-  { }
+  StructuredDataVersionsBranchCereal() : absent_parent{}, names{} {}
 
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(absent_parent_, name_);
+  template <typename Archive>
+  Archive& serialize(Archive& archive) {
+    return archive(absent_parent, names);
   }
 
-  boost::optional<VersionCereal> absent_parent_;
-  std::vector<VersionCereal> name_;
+  boost::optional<StructuredDataVersions::VersionName> absent_parent;
+  std::vector<StructuredDataVersions::VersionName> names;
 };
 
 struct StructuredDataVersionsCereal {
-  StructuredDataVersionsCereal()
-    : max_versions_ {},
-      max_branches_ {},
-      branch_ {}
-  { }
+  StructuredDataVersionsCereal() : max_versions{0}, max_branches{0}, branches{} {}
 
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(max_versions_, max_branches_, branch_);
+  template <typename Archive>
+  Archive& serialize(Archive& archive) {
+    return archive(max_versions, max_branches, branches);
   }
 
   using Branch = StructuredDataVersionsBranchCereal;
 
-  std::uint32_t max_versions_;
-  std::uint32_t max_branches_;
-  std::vector<Branch> branch_;
+  std::uint32_t max_versions;
+  std::uint32_t max_branches;
+  std::vector<Branch> branches;
 };
 
 }  // namespace detail
