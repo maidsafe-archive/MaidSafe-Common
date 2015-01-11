@@ -30,15 +30,10 @@
 
 namespace maidsafe {
 
-#define MAIDSAFE_DATA_TYPES           \
-    (Anmaid, passport::PublicAnmaid)  \
-    (Maid, passport::PublicMaid)      \
-    (Anpmid, passport::PublicAnpmid)  \
-    (Pmid, passport::PublicPmid)      \
-    (Anmpid, passport::PublicAnmpid)  \
-    (Mpid, passport::PublicMpid)      \
-    (ImmutableData, ImmutableData)    \
-    (MutableData, MutableData)
+#define MAIDSAFE_DATA_TYPES                                                                     \
+  (Anmaid, passport::PublicAnmaid)(Maid, passport::PublicMaid)(Anpmid, passport::PublicAnpmid)( \
+      Pmid, passport::PublicPmid)(Anmpid, passport::PublicAnmpid)(Mpid, passport::PublicMpid)(  \
+      ImmutableData, ImmutableData)(MutableData, MutableData)
 
 // Defines:
 //     enum class DataTagValue : uint32_t { kAnmaid, kMaid, ... };
@@ -59,6 +54,11 @@ struct Name {
   operator Identity() const { return value; }
   Identity const* operator->() const { return &value; }
   Identity* operator->() { return &value; }
+
+  template <typename Archive>
+  Archive& serialize(Archive& archive) {
+    return archive(value);
+  }
 
   Identity value;
   typedef Parent data_type;

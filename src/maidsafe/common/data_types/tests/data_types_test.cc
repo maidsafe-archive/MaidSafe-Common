@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace test {
 
-TEST(DataTypeTests, BEH_OutputOperator) {
+TEST(DataTypeTest, BEH_OutputOperator) {
   LOG(kInfo) << DataTagValue::kAnmaidValue;
   LOG(kInfo) << DataTagValue::kMaidValue;
   LOG(kInfo) << DataTagValue::kAnpmidValue;
@@ -38,14 +38,14 @@ TEST(DataTypeTests, BEH_OutputOperator) {
   LOG(kInfo) << static_cast<DataTagValue>(-9);
 }
 
-TEST(DataTypeTests, BEH_ConstructType) {
+TEST(DataTypeTest, BEH_ConstructType) {
   ASSERT_TRUE(is_short_term_cacheable<MutableData>::value);
   ASSERT_TRUE(!is_long_term_cacheable<MutableData>::value);
   ASSERT_TRUE(!is_short_term_cacheable<ImmutableData>::value);
   ASSERT_TRUE(is_long_term_cacheable<ImmutableData>::value);
 }
 
-TEST(DataTypeTests, BEH_RetrieveType) {
+TEST(DataTypeTest, BEH_RetrieveType) {
   ASSERT_TRUE(
       (std::is_same<passport::PublicAnmaid, passport::PublicAnmaid::Name::data_type>::value));
   ASSERT_TRUE((std::is_same<passport::PublicMaid, passport::PublicMaid::Name::data_type>::value));
