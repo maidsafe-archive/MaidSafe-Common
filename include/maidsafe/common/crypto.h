@@ -54,6 +54,7 @@
 #endif
 
 #include "cryptopp/aes.h"
+#include "cryptopp/gcm.h"
 #include "cryptopp/channels.h"
 #include "cryptopp/files.h"
 #include "cryptopp/gzip.h"
