@@ -20,6 +20,7 @@
 #define MAIDSAFE_COMMON_RSA_H_
 
 #include <string>
+#include <vector>
 
 // Include this first to avoid having to wrap the cryptopp includes in a pragma to disable warnings
 #include "maidsafe/common/crypto.h"  // NOLINT
@@ -85,9 +86,14 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key);
 
 Signature Sign(const PlainText& data, const PrivateKey& private_key);
 
+std::vector<byte> Sign(const std::vector<byte>& data, const PrivateKey& private_key);
+
 Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key);
 
 bool CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
+
+bool CheckSignature(const std::vector<byte>& data, const std::vector<byte>& signature,
+                    const PublicKey& public_key);
 
 bool CheckFileSignature(const boost::filesystem::path& filename, const Signature& signature,
                         const PublicKey& public_key);
