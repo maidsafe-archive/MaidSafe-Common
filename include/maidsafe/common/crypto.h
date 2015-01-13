@@ -178,6 +178,22 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std
   return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
 }
 
+// Hash function operating on a vector<byte>.
+template <typename HashType>
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
+    const std::vector<byte>& input) {
+  std::string result;
+  HashType hash;
+  try {
+    CryptoPP::ArraySource(input.data(), input.size(), true,
+                          new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+  } catch (const CryptoPP::Exception& e) {
+    LOG(kError) << "Error hashing array: " << e.what();
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
+  }
+  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
+}
+
 // Hash function operating on a BoundedString.
 template <typename HashType, size_t min, size_t max>
 detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
