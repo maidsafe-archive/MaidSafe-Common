@@ -162,25 +162,23 @@ Signature Sign(const PlainText& data, const PrivateKey& private_key) {
   return Signature(signature);
 }
 
-std::vector<byte> Sign(const std::vector<byte>& data, const PrivateKey& private_key) {
+Signature Sign(const std::vector<byte>& data, const PrivateKey& private_key) {
   if (!private_key.Validate(crypto::random_number_generator(), 0)) {
     LOG(kError) << "Sign invalid private_key";
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_private_key));
   }
 
-  std::vector<byte> signature;
-  signature.resize(Keys::kKeyBitSize / 8);
+  std::string signature;
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
-    CryptoPP::ArraySource(
-        data.data(), data.size(), true,
-        new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
-                                   new CryptoPP::ArraySink(signature.data(), signature.size())));
+    CryptoPP::ArraySource(data.data(), data.size(), true,
+                          new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
+                                                     new CryptoPP::StringSink(signature)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::signing_error));
   }
-  return signature;
+  return Signature(signature);
 }
 
 
@@ -225,8 +223,12 @@ bool CheckSignature(const PlainText& data, const Signature& signature,
   }
 }
 
-bool CheckSignature(const std::vector<byte>& data, const std::vector<byte>& signature,
+bool CheckSignature(const std::vector<byte>& data, const Signature& signature,
                     const PublicKey& public_key) {
+  if (!signature.IsInitialised()) {
+    LOG(kError) << "CheckFileSignature signature uninitialised";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
   if (!public_key.Validate(crypto::random_number_generator(), 0)) {
     LOG(kError) << "CheckSignature invalid public_key";
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_public_key));
@@ -234,7 +236,9 @@ bool CheckSignature(const std::vector<byte>& data, const std::vector<byte>& sign
 
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Verifier verifier(public_key);
   try {
-    return verifier.VerifyMessage(data.data(), data.size(), signature.data(), signature.size());
+    return verifier.VerifyMessage(data.data(), data.size(),
+                                  reinterpret_cast<const byte*>(signature.string().data()),
+                                  signature.string().size());
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signature checking: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::signing_error));

@@ -86,13 +86,13 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key);
 
 Signature Sign(const PlainText& data, const PrivateKey& private_key);
 
-std::vector<byte> Sign(const std::vector<byte>& data, const PrivateKey& private_key);
+Signature Sign(const std::vector<byte>& data, const PrivateKey& private_key);
 
 Signature SignFile(const boost::filesystem::path& filename, const PrivateKey& private_key);
 
 bool CheckSignature(const PlainText& data, const Signature& signature, const PublicKey& public_key);
 
-bool CheckSignature(const std::vector<byte>& data, const std::vector<byte>& signature,
+bool CheckSignature(const std::vector<byte>& data, const Signature& signature,
                     const PublicKey& public_key);
 
 bool CheckFileSignature(const boost::filesystem::path& filename, const Signature& signature,
