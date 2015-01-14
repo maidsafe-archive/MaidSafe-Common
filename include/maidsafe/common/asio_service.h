@@ -20,31 +20,91 @@
 #define MAIDSAFE_COMMON_ASIO_SERVICE_H_
 
 #include <atomic>
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
 
+#include "asio/io_service.hpp"
 #include "boost/asio/io_service.hpp"
+
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/make_unique.h"
+#include "maidsafe/common/log.h"
 
 namespace maidsafe {
 
-class AsioService {
+template <typename IoServiceType>
+class IoService {
  public:
-  explicit AsioService(size_t thread_count);
-  ~AsioService();
+  explicit IoService(size_t thread_count);
+  ~IoService() { Stop(); }
   void Stop();
-  boost::asio::io_service& service();
-  size_t ThreadCount() const;
+  IoServiceType& service() { return service_; }
+  size_t ThreadCount() const { return thread_count_; }
 
  private:
   std::atomic<size_t> thread_count_;
-  boost::asio::io_service service_;
-  std::unique_ptr<boost::asio::io_service::work> work_;
+  IoServiceType service_;
+  std::unique_ptr<typename IoServiceType::work> work_;
   std::vector<std::thread> threads_;
   mutable std::mutex mutex_;
 };
+
+using AsioService = IoService<asio::io_service>;
+using BoostAsioService = IoService<boost::asio::io_service>;
+
+
+
+template <typename IoServiceType>
+IoService<IoServiceType>::IoService(size_t thread_count)
+    : thread_count_(thread_count),
+      service_(),
+      work_(make_unique<typename IoServiceType::work>(service_)),
+      threads_(),
+      mutex_() {
+  if (thread_count == 0)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+  for (size_t i(0); i != thread_count; ++i)
+    threads_.emplace_back([&] {
+      try {
+        service_.run();
+      } catch (...) {
+        LOG(kError) << boost::current_exception_diagnostic_information();
+        // Rethrowing here will cause the application to terminate - so flush the log message first.
+        log::Logging::Instance().Flush();
+        assert(0);
+        throw;
+      }
+    });
+}
+
+template <typename IoServiceType>
+void IoService<IoServiceType>::Stop() {
+  thread_count_ = 0U;
+  std::lock_guard<std::mutex> lock{mutex_};
+  if (!work_)
+    return;
+  for (const auto& asio_thread : threads_) {
+    if (std::this_thread::get_id() == asio_thread.get_id())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::cannot_invoke_from_this_thread));
+  }
+
+  work_.reset();
+
+  for (auto& asio_thread : threads_) {
+    try {
+      asio_thread.join();
+    } catch (const std::exception& e) {
+      LOG(kError) << "Exception joining asio thread: " << boost::diagnostic_information(e);
+      asio_thread.detach();
+    }
+  }
+
+  threads_.clear();
+}
 
 }  // namespace maidsafe
 
