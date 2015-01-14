@@ -220,8 +220,9 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
       "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984"
       "a6a01b2015e48a47bc46af231d2b146e54a87db43f51c2a5"));
   const CipherText kEncrypted(NonEmptyString(HexDecode(
-      "441f907b71a14c2f482c4d1fef61f3d7ffc0f14953f4f575"
-      "601803ffa6f13e9f3097a0d93c85f1dd10b815822b969644")));
+      "8990a7193f1e2ecce585b28062ef423c33c31b6705fc428b"
+      "582bec8a21fa96f0d4ace2d65f71d0e9a76ee867834858b5"
+      "7d4bd8f1dc69684516b33d0b912eeff7")));
   const AES256Key kBadKey(CorruptData(kKey.string()));
   const AES256InitialisationVector kBadIV(CorruptData(kIV.string()));
   const PlainText kBadUnencrypted(CorruptData(kUnencrypted.string()));
@@ -235,7 +236,6 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
   EXPECT_NO_THROW(AES256InitialisationVector(std::string(AES256_IVSize, 0)));
   EXPECT_THROW(AES256Key(std::string(AES256_KeySize + 1, 0)), std::exception);
   EXPECT_THROW(AES256InitialisationVector(std::string(AES256_IVSize + 1, 0)), std::exception);
-
   // Encryption string to string
   EXPECT_EQ(kEncrypted, SymmEncrypt(kUnencrypted, kKey, kIV));
   EXPECT_NE(kEncrypted, SymmEncrypt(kBadUnencrypted, kKey, kIV));
@@ -246,8 +246,8 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
 
   // Decryption string to string
   EXPECT_EQ(kUnencrypted, SymmDecrypt(kEncrypted, kKey, kIV));
-  EXPECT_NE(kUnencrypted, SymmDecrypt(kBadEncrypted, kKey, kIV));
-  EXPECT_NE(kUnencrypted, SymmDecrypt(kEncrypted, kBadKey, kBadIV));
+  EXPECT_THROW(SymmDecrypt(kBadEncrypted, kKey, kIV), std::exception);
+  EXPECT_THROW(SymmDecrypt(kEncrypted, kBadKey, kBadIV), std::exception);
   EXPECT_THROW(SymmDecrypt(CipherText(NonEmptyString()), kKey, kIV), std::exception);
   EXPECT_THROW(SymmDecrypt(kEncrypted, AES256Key(), kIV), std::exception);
   EXPECT_THROW(SymmDecrypt(kEncrypted, kKey, AES256InitialisationVector()), std::exception);
