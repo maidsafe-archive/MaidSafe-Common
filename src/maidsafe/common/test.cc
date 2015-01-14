@@ -161,6 +161,21 @@ uint16_t GetRandomPort() {
   return port;
 }
 
+std::string GetRandomIPv4AddressAsString() {
+  auto address = std::to_string(RandomUint32() % 256);
+  for (int i = 0; i != 3; ++i)
+    address += '.' + std::to_string(RandomUint32() % 256);
+  return address;
+}
+
+std::string GetRandomIPv6AddressAsString() {
+  std::stringstream address;
+  address << std::hex << (RandomUint32() % 65536);
+  for (int i = 0; i != 7; ++i)
+    address << ':' << RandomUint32() % 65536;
+  return address.str();
+}
+
 #ifdef TESTING
 
 void HandleTestOptions(int argc, char* argv[]) {
