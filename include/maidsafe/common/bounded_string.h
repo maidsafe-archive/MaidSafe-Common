@@ -115,9 +115,9 @@ class BoundedString {
   template <typename Archive>
   Archive& load(Archive& ref_archive) {
     StringType temp_str_type;
-    auto& archive = ref_archive(temp_str_type);
+    ref_archive(temp_str_type);
     *this = BoundedString{std::move(temp_str_type)};
-    return archive;
+    return ref_archive;
   }
 
   template <typename Archive>
