@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "boost/asio/buffer.hpp"
-#include "boost/asio/io_service.hpp"
-#include "boost/asio/ip/tcp.hpp"
+#include "asio/buffer.hpp"
+#include "asio/io_service.hpp"
+#include "asio/ip/tcp.hpp"
 
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/error.h"
@@ -49,9 +49,9 @@ class Connection : public std::enable_shared_from_this<Connection> {
   Connection& operator=(Connection) = delete;
 
   // Used when accepting an incoming connection.
-  static ConnectionPtr MakeShared(AsioService &asio_service);
+  static ConnectionPtr MakeShared(AsioService& asio_service);
   // Used to attempt to connect to 'remote_port' on loopback address.
-  static ConnectionPtr MakeShared(AsioService &asio_service, Port remote_port);
+  static ConnectionPtr MakeShared(AsioService& asio_service, Port remote_port);
 
   void Start(MessageReceivedFunctor on_message_received,
              ConnectionClosedFunctor on_connection_closed);
@@ -60,13 +60,13 @@ class Connection : public std::enable_shared_from_this<Connection> {
 
   void Send(std::string data);
 
-  boost::asio::ip::tcp::socket& Socket() { return socket_; }
+  asio::ip::tcp::socket& Socket() { return socket_; }
 
   static size_t MaxMessageSize() { return 1024 * 1024; }  // bytes
 
  private:
-  explicit Connection(AsioService &asio_service);
-  Connection(AsioService &asio_service, Port remote_port);
+  explicit Connection(AsioService& asio_service);
+  Connection(AsioService& asio_service, Port remote_port);
 
   struct ReceivingMessage {
     std::array<unsigned char, 4> size_buffer;
@@ -86,9 +86,9 @@ class Connection : public std::enable_shared_from_this<Connection> {
   void DoSend();
   SendingMessage EncodeData(std::string data) const;
 
-  boost::asio::io_service& io_service_;
+  asio::io_service& io_service_;
   std::once_flag start_flag_, socket_close_flag_;
-  boost::asio::ip::tcp::socket socket_;
+  asio::ip::tcp::socket socket_;
   MessageReceivedFunctor on_message_received_;
   ConnectionClosedFunctor on_connection_closed_;
   ReceivingMessage receiving_message_;

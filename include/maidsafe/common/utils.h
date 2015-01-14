@@ -29,8 +29,8 @@
 #include <ratio>
 #include <string>
 
-#include "boost/asio/ip/address.hpp"
-#include "boost/asio/ip/udp.hpp"
+#include "asio/ip/address.hpp"
+#include "asio/ip/udp.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
@@ -43,9 +43,9 @@ namespace maidsafe {
 
 namespace detail {
 
-class spinlock {
+class Spinlock {
  public:
-  spinlock() : flag(false) { }
+  Spinlock() : flag(false) {}
   void lock() {
     bool v;
     while (v = 0, !flag.compare_exchange_weak(v, 1, std::memory_order_acquire,
@@ -88,10 +88,9 @@ typedef std::chrono::duration<uint64_t, std::exa> ExaBytes;
 // the validity or availability of the peer is deduced.  If the retrieved local endpoint is
 // unspecified or is the loopback address, the function returns a default-constructed (unspecified)
 // address.
-boost::asio::ip::address GetLocalIp(
-    boost::asio::ip::udp::endpoint peer_endpoint =
-        boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string("203.0.113.0"),
-                                       80));
+asio::ip::address GetLocalIp(
+    asio::ip::udp::endpoint peer_endpoint =
+        asio::ip::udp::endpoint(asio::ip::make_address_v4("203.0.113.0"), 80));
 
 // Takes a version as a string and returns the int form, e.g. "0.09.01" returns 901
 int VersionToInt(const std::string& version);
@@ -104,29 +103,33 @@ std::string BytesToBinarySiUnits(uint64_t num);
 
 // Borrowed from http://burtleburtle.net/bob/rand/smallprng.html
 // Useful for a wait free very fast prng which passes DIEHARD
-namespace smallprng {
-  typedef uint32_t  u4;
-  typedef struct ranctx { u4 a; u4 b; u4 c; u4 d; } ranctx;
+namespace small_prng {
 
-#define smallprng_rot(x, k) (((x) << (k))|((x) >> (32 - (k))))
-  inline u4 ranval(ranctx *x) {
-    u4 e = x->a - smallprng_rot(x->b, 27);
-    x->a = x->b ^ smallprng_rot(x->c, 17);
-    x->b = x->c + x->d;
-    x->c = x->d + e;
-    x->d = e + x->a;
-    return x->d;
-  }
-#undef smallprng_rot
+using u4 = uint32_t;
 
-  inline void raninit(ranctx *x, u4 seed) {
-    u4 i;
-    x->a = 0xf1ea5eed, x->b = x->c = x->d = seed;
-    for (i = 0; i < 20; ++i) {
-        (void) ranval(x);
-    }
-  }
-}  // namespace smallprng
+struct RandomContext { u4 a, b, c, d; };
+
+#define SMALL_PRNG_ROTATION(x, k) (((x) << (k))|((x) >> (32 - (k))))
+
+inline u4 RandomValue(RandomContext *x) {
+  u4 e = x->a - SMALL_PRNG_ROTATION(x->b, 27);
+  x->a = x->b ^ SMALL_PRNG_ROTATION(x->c, 17);
+  x->b = x->c + x->d;
+  x->c = x->d + e;
+  x->d = e + x->a;
+  return x->d;
+}
+
+#undef SMALL_PRNG_ROTATION
+
+inline void Initialise(RandomContext *x, u4 seed) {
+  u4 i;
+  x->a = 0xf1ea5eed, x->b = x->c = x->d = seed;
+  for (i = 0; i < 20; ++i)
+    static_cast<void>(RandomValue(x));
+}
+
+}  // namespace small_prng
 
 // Generates a non-cryptographically-secure 32bit signed integer.
 int32_t RandomInt32();

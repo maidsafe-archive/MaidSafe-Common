@@ -18,7 +18,7 @@
 
 /*
 
-     7-yyy       0-aaa
+     7-yyy       0-aaa (root)
        |           |
        |           |
      8-zzz       1-bbb
@@ -47,28 +47,44 @@ one root.  If the current root is erased, a new root is chosen from the remainin
 will be the child of the deleted root, or if the entire branch containing the root was erased, an
 orphan will be chosen.
 
-The "tips of trees" are '8-zzz', '4-iii', '5-nnn', '4-lll' and '4-mmm'.
+While versions can have multiple children, each will have a single parent.
+
+The "tips of trees" are '8-zzz', '4-iii', '4-jjj', '5-nnn', '4-lll' and '4-mmm'.
+
+For the purposes of retrieving versions (see 'GetBranch' below), the branches are:
+  * '8-zzz' -> '7-yyy'
+  * '4-iii' -> '0-aaa'
+  * '4-jjj' -> '0-aaa'
+  * '5-nnn' -> '0-aaa'
+  * '4-lll' -> '0-aaa'
+  * '4-mmm' -> '0-aaa'
+
+For the purposes of deleting versions (see 'DeleteBranchUntilFork' below), the branches are:
+  * '8-zzz' -> '7-yyy'
+  * '4-iii' -> '2-ccc'
+  * '4-jjj'
+  * '5-nnn' -> '4-kkk'
+  * '4-lll'
+  * '4-mmm'
+
 */
 
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_STRUCTURED_DATA_VERSIONS_H_
 
-#include <algorithm>
 #include <cstdint>
-#include <functional>
 #include <future>
 #include <map>
 #include <memory>
 #include <set>
-#include <tuple>
 #include <utility>
 #include <vector>
-#include <string>
 
 #include "boost/optional/optional.hpp"
 
-#include "maidsafe/common/types.h"
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/immutable_data.h"
 
 namespace maidsafe {
@@ -77,7 +93,6 @@ namespace detail {
 
 struct StructuredDataVersionsCereal;
 struct StructuredDataVersionsBranchCereal;
-struct VersionCereal;
 
 }  // namespace detail
 
@@ -88,24 +103,35 @@ class StructuredDataVersions {
 
  public:
   struct VersionName {
-    VersionName();
-    VersionName(uint64_t index_in, ImmutableData::Name id_in);
-    explicit VersionName(const std::string& serialised_version_name);
-    VersionName(const VersionName& other);
-    VersionName(VersionName&& other);
-    VersionName& operator=(VersionName other);
-    std::string Serialise() const;
+    using Index = uint64_t;
+    using Id = ImmutableData::Name;
 
-    uint64_t index;
-    ImmutableData::Name id;
+    VersionName();
+    VersionName(Index index_in, ImmutableData::Name id_in);
+    VersionName(const VersionName&) = default;
+    VersionName(VersionName&& other) MAIDSAFE_NOEXCEPT;
+    VersionName& operator=(VersionName other);
+
+    template <typename Archive>
+    Archive& serialize(Archive& archive) {
+      return archive(index, id, forking_child_count);
+    }
+
+    Index index;
+    Id id;
+    // Only used during serialisation/parsing of StructuredDataVersions
+    boost::optional<uint32_t> forking_child_count;
   };
 
-  typedef TaggedValue<NonEmptyString, StructuredDataVersionsTag> serialised_type;
+  using serialised_type = TaggedValue<NonEmptyString, StructuredDataVersionsTag>;
 
+  StructuredDataVersions() = delete;
   // Construct with a limit of 'max_versions' different versions and 'max_branches' different
   // branches (or "tips of trees").  Both must be >= 1 otherwise CommonErrors::invalid_parameter is
   // thrown.
   StructuredDataVersions(uint32_t max_versions, uint32_t max_branches);
+  StructuredDataVersions(const StructuredDataVersions&) = delete;
+  StructuredDataVersions(StructuredDataVersions&&) = delete;
   StructuredDataVersions& operator=(StructuredDataVersions other);
   friend void swap(StructuredDataVersions& lhs, StructuredDataVersions& rhs) MAIDSAFE_NOEXCEPT;
 
@@ -121,24 +147,26 @@ class StructuredDataVersions {
   // Inserts the 'new_version' into the map with 'old_version' as the parent.  Returns the version
   // which was removed if any.
   // * If 'old_version' doesn't exist in the tree, the version is added as an orphan.  For the root
-  //   entry, 'old_version.id' should be uninitialised (a default-constructed VersionName will do).
-  //   A root should only be provided once for a given SDV.  All non-root versions should have
-  //   index > 0 and an initialised ID.
+  //   entry, 'old_version.id' must be uninitialised (a default-constructed VersionName will do).
+  //   A root must only be provided once for a given SDV.  A root version can have index == 0, but
+  //   all non-root versions must have index > 0.  All versions (root and non-root) must have an
+  //   initialised ID, i.e. 'new_version.id' must be initialised.
   // * If adding the version causes 'max_versions_' to be exceeded, the root will be erased and one
   //   of its immediate children assigned as the new root.  If the current root has > 1 children,
-  //   the child with the lowest VersionName will be chosen.  If the root has no children, the
-  //   orphan with the lowest VersionName will be chosen.
+  //   the child with the lowest VersionName will be chosen as the new root.  If the root has no
+  //   children, the orphan with the lowest VersionName will be chosen as the new root.
   // * If 'old_version.id' is uninitialised and the existing root's parent is uninitialised (i.e.
   //   two roots have deliberately been passed), CommonErrors::invalid_parameter is thrown.
   // * If adding the version causes 'max_branches_' to be exceeded, the root is considered for
-  //   deletion.  If deletion avoids exceeding 'max_branches_', it's done, otherwise the root is
-  //   left as is, and CommonErrors::cannot_exceed_limit is thrown.
+  //   deletion.  If deletion avoids exceeding 'max_branches_', it's done (this would only be the
+  //   case where root itself fully comprised a single branch, i.e. it had no children), otherwise
+  //   the root is left as is, and CommonErrors::cannot_exceed_limit is thrown.
   // * If 'new_version' already exists but with a different 'old_version' parent,
   //   CommonErrors::invalid_parameter is thrown.
   // * If inserting the new version causes a circular chain parent->child->parent,
   //   CommonErrors::invalid_parameter is thrown.
   boost::optional<VersionName> Put(const VersionName& old_version, const VersionName& new_version);
-  // Returns all the "tips of trees" in order starting from least.
+  // Returns all the "tips of trees" ordered from highest to lowest.
   std::vector<VersionName> Get() const;
   // Returns all the versions comprising a branch, starting at the tip, through to (including) the
   // root or the orphan at the start of that branch.  e.g., in the diagram above, GetBranch(4-jjj)
@@ -169,20 +197,17 @@ class StructuredDataVersions {
   //                  conflicts?
 
  private:
-  StructuredDataVersions(const StructuredDataVersions& other);
-  StructuredDataVersions(StructuredDataVersions&& other);
-
   struct Details;
-  typedef std::map<VersionName, std::shared_ptr<Details>> Versions;
-  typedef Versions::value_type Version;
-  typedef Versions::iterator VersionsItr;
-  typedef std::set<VersionsItr, std::function<bool(VersionsItr, VersionsItr)>> SortedVersionsItrs;
+  using Versions = std::map<VersionName, std::shared_ptr<Details>>;
+  using Version = Versions::value_type;
+  using VersionsItr = Versions::iterator;
+  using SortedVersionsItrs = std::set<VersionsItr, std::function<bool(VersionsItr, VersionsItr)>>;
   // The first value of the pair is the "old version" or parent ID which the orphan was added under.
   // The expectation is that the missing parent will soon be added, allowing the second value(s) of
   // the pair to become "un-orphaned".
-  typedef std::map<VersionName, SortedVersionsItrs> Orphans;
-  typedef std::pair<Orphans::iterator, SortedVersionsItrs::iterator> OrphanItr;
-  typedef std::pair<Orphans::const_iterator, SortedVersionsItrs::const_iterator> OrphanConstItr;
+  using Orphans = std::map<VersionName, SortedVersionsItrs>;
+  using OrphanItr = std::pair<Orphans::iterator, SortedVersionsItrs::iterator>;
+  using OrphanConstItr = std::pair<Orphans::const_iterator, SortedVersionsItrs::const_iterator>;
 
   struct Details {
     Details();
@@ -197,23 +222,20 @@ class StructuredDataVersions {
   friend void swap(Details& lhs, Details& rhs) MAIDSAFE_NOEXCEPT;
 
   void ValidateLimits() const;
+
   void BranchFromCereal(VersionsItr parent_itr,
-                        const detail::StructuredDataVersionsCereal& serialised_versions,
+                        detail::StructuredDataVersionsCereal& serialised_versions,
                         std::size_t& serialised_branch_index);
   VersionsItr HandleFirstVersionInBranchFromCereal(
-      VersionsItr parent_itr,
-      const detail::StructuredDataVersionsBranchCereal& serialised_branch);
+      VersionsItr parent_itr, detail::StructuredDataVersionsBranchCereal& serialised_branch);
 
-  VersionsItr CheckedInsert(const detail::VersionCereal& serialised_version);
-  void BranchToCereal(VersionsItr itr,
-                      detail::StructuredDataVersionsCereal& serialised_versions,
+  VersionsItr CheckedInsert(VersionName&& version);
+  void BranchToCereal(VersionsItr itr, detail::StructuredDataVersionsCereal& serialised_versions,
                       const VersionName& absent_parent) const;
-  void BranchToCereal(VersionsItr itr,
-                      detail::StructuredDataVersionsCereal& serialised_versions,
+  void BranchToCereal(VersionsItr itr, detail::StructuredDataVersionsCereal& serialised_versions,
                       detail::StructuredDataVersionsBranchCereal* serialised_branch) const;
 
-  void ApplyBranch(VersionName parent, VersionsItr itr,
-                   StructuredDataVersions& new_versions) const;
+  void ApplyBranch(VersionName parent, VersionsItr itr, StructuredDataVersions& new_versions) const;
   VersionName ParentName(VersionsItr itr) const;
   VersionName ParentName(Versions::const_iterator itr) const;
   VersionName RootParentName() const;

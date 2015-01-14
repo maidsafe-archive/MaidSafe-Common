@@ -207,19 +207,19 @@ const int kInvalidVersion(-1);
 const uint16_t kLivePort(5483);
 const bptime::ptime kMaidSafeEpoch(bptime::from_iso_string("20000101T000000"));  // 01 Jan 2000
 
-boost::asio::ip::address GetLocalIp(boost::asio::ip::udp::endpoint peer_endpoint) {
-  boost::asio::io_service io_service;
+asio::ip::address GetLocalIp(asio::ip::udp::endpoint peer_endpoint) {
+  asio::io_service io_service;
   try {
-    boost::asio::ip::udp::socket socket(io_service);
+    asio::ip::udp::socket socket(io_service);
     socket.connect(peer_endpoint);
     if (socket.local_endpoint().address().is_unspecified() ||
         socket.local_endpoint().address().is_loopback())
-      return boost::asio::ip::address();
+      return asio::ip::address();
     return socket.local_endpoint().address();
   } catch (const std::exception& e) {
     LOG(kError) << "Failed trying to connect to " << peer_endpoint << " - "
                 << boost::diagnostic_information(e);
-    return boost::asio::ip::address();
+    return asio::ip::address();
   }
 }
 
