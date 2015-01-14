@@ -57,7 +57,9 @@ ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
 ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
+ms_glob_dir(CommonSerialisationTypes ${CommonSourcesDir}/serialisation/types "Serialisation Types")
 ms_glob_dir(CommonSerialisationTests ${CommonSourcesDir}/serialisation/tests "Serialisation Tests")
+ms_glob_dir(CommonSerialisationTypesTests ${CommonSourcesDir}/serialisation/types/tests "Serialisation Types Tests")
 
 ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
 ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
@@ -83,6 +85,7 @@ ms_add_static_library(maidsafe_common
     ${CommonContainersAllFiles}
     ${CommonDataTypesAllFiles}
     ${CommonSerialisationAllFiles}
+    ${CommonSerialisationTypesAllFiles}
     ${CommonTcpAllFiles})
 add_dependencies(maidsafe_common boost_process boost_expected)
 
@@ -170,7 +173,8 @@ if(INCLUDE_TESTS)
       ${CommonTcpTestsAllFiles}
       ${CommonContainersTestsAllFiles}
       ${CommonDataTypesTestsAllFiles}
-      ${CommonSerialisationTestsAllFiles})
+      ${CommonSerialisationTestsAllFiles}
+      ${CommonSerialisationTypesTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
   # TODO(Fraser#5#): 2014-12-08 - BEFORE_RELEASE - remove this define and all associated C++ code.
