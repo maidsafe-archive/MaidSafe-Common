@@ -32,19 +32,23 @@ class IpAddressSerialisationTest : public testing::Test {
   typename maidsafe::detail::AddressTypes<T>::V6 GetRandomIPv6Address();
 };
 
+template <>
 asio::ip::address_v4 IpAddressSerialisationTest<asio::ip::address>::GetRandomIPv4Address() {
   return asio::ip::make_address_v4(GetRandomIPv4AddressAsString());
 }
 
+template <>
 asio::ip::address_v6 IpAddressSerialisationTest<asio::ip::address>::GetRandomIPv6Address() {
   return asio::ip::make_address_v6(GetRandomIPv6AddressAsString());
 }
 
+template <>
 boost::asio::ip::address_v4
     IpAddressSerialisationTest<boost::asio::ip::address>::GetRandomIPv4Address() {
   return boost::asio::ip::address_v4::from_string(GetRandomIPv4AddressAsString());
 }
 
+template <>
 boost::asio::ip::address_v6
     IpAddressSerialisationTest<boost::asio::ip::address>::GetRandomIPv6Address() {
   return boost::asio::ip::address_v6::from_string(GetRandomIPv6AddressAsString());
