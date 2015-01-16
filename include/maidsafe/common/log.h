@@ -34,7 +34,7 @@
 #include <type_traits>
 #include <vector>
 
-#include "boost/asio/ip/tcp.hpp"
+#include "asio/ip/tcp.hpp"
 #include "boost/current_function.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/optional.hpp"
@@ -204,7 +204,7 @@ class Logging {
           initialised_once_flag() {}
     std::string prefix, session_id;
     LogFile logfile;
-    boost::asio::ip::tcp::iostream server_stream;
+    asio::ip::tcp::iostream server_stream;
     std::string server_name, server_dir;
     uint16_t server_port;
     std::atomic<bool> initialised;
