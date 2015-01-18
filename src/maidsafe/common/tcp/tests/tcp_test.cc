@@ -25,11 +25,11 @@
 #include <utility>
 #include <vector>
 
-#include "boost/asio/buffer.hpp"
-#include "boost/asio/error.hpp"
-#include "boost/asio/io_service.hpp"
-#include "boost/asio/ip/tcp.hpp"
-#include "boost/asio/write.hpp"
+#include "asio/buffer.hpp"
+#include "asio/error.hpp"
+#include "asio/io_service.hpp"
+#include "asio/ip/tcp.hpp"
+#include "asio/write.hpp"
 
 #include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/make_unique.h"
@@ -239,14 +239,14 @@ TEST_F(TcpTest, BEH_InvalidMessageSizes) {
 
   // Try to make server receive a message which shows its size as too large
   AsioService bad_asio_service{1};
-  boost::asio::ip::tcp::socket bad_socket(bad_asio_service.service());
+  asio::ip::tcp::socket bad_socket(bad_asio_service.service());
   bool is_v6{client_connection_and_closer.first->Socket().local_endpoint().address().is_v6()};
   if (is_v6) {
-    bad_socket.connect(boost::asio::ip::tcp::endpoint{boost::asio::ip::address_v6::loopback(),
-                                                      listener_and_closer.first->ListeningPort()});
+    bad_socket.connect(asio::ip::tcp::endpoint{asio::ip::address_v6::loopback(),
+                                               listener_and_closer.first->ListeningPort()});
   } else {
-    bad_socket.connect(boost::asio::ip::tcp::endpoint{boost::asio::ip::address_v4::loopback(),
-                                                      listener_and_closer.first->ListeningPort()});
+    bad_socket.connect(asio::ip::tcp::endpoint{asio::ip::address_v4::loopback(),
+                                               listener_and_closer.first->ListeningPort()});
   }
   ASSERT_TRUE(bad_socket.is_open());
 
@@ -260,31 +260,31 @@ TEST_F(TcpTest, BEH_InvalidMessageSizes) {
   for (int i = 0; i != 4; ++i)
     size_buffer[i] = static_cast<char>(large_data.size() >> (8 * (3 - i)));
 
-  std::array<boost::asio::const_buffer, 2> buffers;
-  buffers[0] = boost::asio::buffer(size_buffer);
-  buffers[1] = boost::asio::buffer(large_data.data(), large_data.size());
+  std::array<asio::const_buffer, 2> buffers;
+  buffers[0] = asio::buffer(size_buffer);
+  buffers[1] = asio::buffer(large_data.data(), large_data.size());
   try {
     // N.B. This may or may not throw depending on how quickly the server closes the connection at
     // its end.  However, we're only interested in the server dropping the message.
-    boost::asio::write(bad_socket, buffers);
-  } catch (const boost::system::system_error&) {
+    asio::write(bad_socket, buffers);
+  } catch (const std::system_error&) {
   }
   EXPECT_EQ(messages_received_by_server_->MessagesMatch(), Messages::Status::kTimedOut);
 
   // Try to make server receive a message which is too large by lying about its size
   InitialiseMessagesToServer();
-  bad_socket = boost::asio::ip::tcp::socket(bad_asio_service.service());
+  bad_socket = asio::ip::tcp::socket(bad_asio_service.service());
   if (is_v6) {
-    bad_socket.connect(boost::asio::ip::tcp::endpoint{boost::asio::ip::address_v6::loopback(),
-                                                      listener_and_closer.first->ListeningPort()});
+    bad_socket.connect(asio::ip::tcp::endpoint{asio::ip::address_v6::loopback(),
+                                               listener_and_closer.first->ListeningPort()});
   } else {
-    bad_socket.connect(boost::asio::ip::tcp::endpoint{boost::asio::ip::address_v4::loopback(),
-                                                      listener_and_closer.first->ListeningPort()});
+    bad_socket.connect(asio::ip::tcp::endpoint{asio::ip::address_v4::loopback(),
+                                               listener_and_closer.first->ListeningPort()});
   }
   ASSERT_TRUE(bad_socket.is_open());
   --size_buffer[3];
-  buffers[0] = boost::asio::buffer(size_buffer);
-  EXPECT_EQ(boost::asio::write(bad_socket, buffers), large_data.size() + 4U);
+  buffers[0] = asio::buffer(size_buffer);
+  EXPECT_EQ(asio::write(bad_socket, buffers), large_data.size() + 4U);
   EXPECT_EQ(messages_received_by_server_->MessagesMatch(), Messages::Status::kMismatch);
 }
 

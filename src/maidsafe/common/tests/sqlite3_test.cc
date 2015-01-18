@@ -32,7 +32,7 @@ namespace maidsafe {
 namespace test {
 
 
-TEST(Sqlite3WrapperTest, FUNC_ReadInvalidDataBase) {
+TEST(Sqlite3WrapperTest, FUNC_ReadInvalidDatabase) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   fs::path test_db(*test_path / "test_db-file");
   std::string file_content(RandomString(3000 + RandomUint32() % 1000));
@@ -47,7 +47,7 @@ TEST(Sqlite3WrapperTest, FUNC_ReadInvalidDataBase) {
   EXPECT_THROW(sqlite::Statement(database, query), std::exception);
 }
 
-TEST(Sqlite3WrapperTest, FUNC_WriteEmptDataBase) {
+TEST(Sqlite3WrapperTest, FUNC_WriteEmptyDatabase) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   fs::path test_db(*test_path / "test_db-file");
   ASSERT_FALSE(fs::exists(test_db));
@@ -64,7 +64,7 @@ TEST(Sqlite3WrapperTest, FUNC_WriteEmptDataBase) {
   statement.Reset();
 }
 
-TEST(Sqlite3WrapperTest, FUNC_WriteNewDataBase) {
+TEST(Sqlite3WrapperTest, FUNC_WriteNewDatabase) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   fs::path test_db(*test_path / "test_db-file");
 
@@ -78,7 +78,7 @@ TEST(Sqlite3WrapperTest, FUNC_WriteNewDataBase) {
   statement.Reset();
 }
 
-TEST(Sqlite3WrapperTest, FUNC_WriteExistingDataBase) {
+TEST(Sqlite3WrapperTest, FUNC_WriteExistingDatabase) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   fs::path test_db(*test_path / "test_db-file");
 

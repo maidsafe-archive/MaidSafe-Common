@@ -54,6 +54,7 @@
 #endif
 
 #include "cryptopp/aes.h"
+#include "cryptopp/gcm.h"
 #include "cryptopp/channels.h"
 #include "cryptopp/files.h"
 #include "cryptopp/gzip.h"
@@ -173,6 +174,22 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std
                            new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
+  }
+  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
+}
+
+// Hash function operating on a vector<byte>.
+template <typename HashType>
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
+    const std::vector<byte>& input) {
+  std::string result;
+  HashType hash;
+  try {
+    CryptoPP::ArraySource(input.data(), input.size(), true,
+                          new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+  } catch (const CryptoPP::Exception& e) {
+    LOG(kError) << "Error hashing array: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
   return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);

@@ -21,13 +21,13 @@
 #include <condition_variable>
 #include <limits>
 
+#include "asio/post.hpp"
+#include "asio/wrap.hpp"
+
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/on_scope_exit.h"
-
 #include "maidsafe/common/tcp/connection.h"
-
-namespace asio = boost::asio;
 
 namespace maidsafe {
 
@@ -76,14 +76,14 @@ void Listener::DoStartListening(Port port) {
   // Try IPv6 first.
   asio::ip::tcp::endpoint endpoint{asio::ip::address_v6::loopback(), port};
   on_scope_exit cleanup_on_error([&] {
-    boost::system::error_code ec;
+    std::error_code ec;
     acceptor_.close(ec);
   });
 
   try {
     acceptor_.open(endpoint.protocol());
-  } catch (const boost::system::system_error& error) {
-    if (error.code() == asio::error::make_error_code(asio::error::address_family_not_supported)) {
+  } catch (const std::system_error& error) {
+    if (error.code() == std::make_error_code(std::errc::address_family_not_supported)) {
       // Try IPv4 now.
       endpoint = asio::ip::tcp::endpoint{asio::ip::address_v4::loopback(), port};
       acceptor_.open(endpoint.protocol());
@@ -110,15 +110,14 @@ void Listener::DoStartListening(Port port) {
   ConnectionPtr connection{Connection::MakeShared(asio_service_)};
   ListenerPtr this_ptr{shared_from_this()};
   acceptor_.async_accept(connection->Socket(), asio_service_.service().wrap([this_ptr, connection](
-                                                   const boost::system::error_code& error) {
+                                                   const std::error_code& error) {
                                                  this_ptr->HandleAccept(connection, error);
                                                }));
 
   cleanup_on_error.Release();
 }
 
-void Listener::HandleAccept(ConnectionPtr accepted_connection,
-                            const boost::system::error_code& ec) {
+void Listener::HandleAccept(ConnectionPtr accepted_connection, const std::error_code& ec) {
   if (!acceptor_.is_open() || asio_service_.service().stopped())
     return;
 
@@ -131,18 +130,18 @@ void Listener::HandleAccept(ConnectionPtr accepted_connection,
   ConnectionPtr connection{Connection::MakeShared(asio_service_)};
   ListenerPtr this_ptr{shared_from_this()};
   acceptor_.async_accept(connection->Socket(), asio_service_.service().wrap([this_ptr, connection](
-                                                   const boost::system::error_code& error) {
+                                                   const std::error_code& error) {
                                                  this_ptr->HandleAccept(connection, error);
                                                }));
 }
 
 void Listener::StopListening() {
-  asio_service_.service().post([this] { DoStopListening(); });
+  asio::post(asio_service_.service().get_executor(), [this] { DoStopListening(); });
 }
 
 void Listener::DoStopListening() {
   std::call_once(stop_listening_flag_, [this] {
-    boost::system::error_code ec;
+    std::error_code ec;
     if (acceptor_.is_open())
       acceptor_.close(ec);
     if (ec.value() != 0)

@@ -29,8 +29,13 @@
 #include <ratio>
 #include <string>
 
+#include "asio/ip/address.hpp"
+#include "asio/ip/address_v4.hpp"
+#include "asio/ip/address_v6.hpp"
+#include "asio/ip/udp.hpp"
 #include "boost/asio/ip/address.hpp"
-#include "boost/asio/ip/udp.hpp"
+#include "boost/asio/ip/address_v4.hpp"
+#include "boost/asio/ip/address_v6.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
@@ -88,10 +93,17 @@ typedef std::chrono::duration<uint64_t, std::exa> ExaBytes;
 // the validity or availability of the peer is deduced.  If the retrieved local endpoint is
 // unspecified or is the loopback address, the function returns a default-constructed (unspecified)
 // address.
-boost::asio::ip::address GetLocalIp(
-    boost::asio::ip::udp::endpoint peer_endpoint =
-        boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string("203.0.113.0"),
-                                       80));
+asio::ip::address GetLocalIp(
+    asio::ip::udp::endpoint peer_endpoint =
+        asio::ip::udp::endpoint(asio::ip::make_address_v4("203.0.113.0"), 80));
+
+// Convertion functions to/from Asio addresses and corresponding Boost.Asio addresses
+boost::asio::ip::address AsioToBoostAsio(const asio::ip::address address);
+boost::asio::ip::address_v4 AsioToBoostAsio(const asio::ip::address_v4 address_v4);
+boost::asio::ip::address_v6 AsioToBoostAsio(const asio::ip::address_v6 address_v6);
+asio::ip::address BoostAsioToAsio(const boost::asio::ip::address address);
+asio::ip::address_v4 BoostAsioToAsio(const boost::asio::ip::address_v4 address_v4);
+asio::ip::address_v6 BoostAsioToAsio(const boost::asio::ip::address_v6 address_v6);
 
 // Takes a version as a string and returns the int form, e.g. "0.09.01" returns 901
 int VersionToInt(const std::string& version);
