@@ -32,7 +32,8 @@ namespace maidsafe {
 
 namespace sqlite {
 
-Database::Database(const boost::filesystem::path& filename, Mode mode) : database(nullptr) {
+Database::Database(const boost::filesystem::path& filename, Mode mode)
+  : database(nullptr), insertlimit(-1) {
   auto flags = static_cast<int>(mode);
   if (sqlite3_open_v2(filename.string().c_str(), &database, flags, NULL) != SQLITE_OK) {
     LOG(kError) << "Could not open DB at: " << filename << ".  Error: " << sqlite3_errmsg(database);
@@ -44,6 +45,7 @@ Database::Database(const boost::filesystem::path& filename, Mode mode) : databas
   sqlite3_exec(database, "PRAGMA journal_mode = WAL", NULL, 0, &error_message);
   sqlite3_exec(database, "PRAGMA wal_autocheckpoint = 0", NULL, 0, &error_message);
   sqlite3_busy_timeout(database, 250);
+  insertlimit = sqlite3_limit(database, SQLITE_LIMIT_VARIABLE_NUMBER, -1);
 }
 
 Database::~Database() {
