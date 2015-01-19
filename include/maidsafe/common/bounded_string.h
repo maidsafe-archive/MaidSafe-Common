@@ -140,7 +140,6 @@ class BoundedString {
 
  private:
   bool SizeOutOfBounds(std::string::size_type size) const {
-    static_assert(min, "Lower bound of BoundedString must be non-zero");
     static_assert(min <= max,
                   "Lower bound of BoundedString must be less than or equal to upper bound");
     return (size < min) || (size > max);
