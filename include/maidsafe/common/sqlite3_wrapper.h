@@ -51,12 +51,14 @@ struct Database {
   Database& operator=(Database) = delete;
 
   void CheckPoint();
+  int InsertLimit() const { return insertlimit; }
 
   friend struct Transaction;
   friend struct Statement;
 
  private:
   sqlite3* database;
+  int insertlimit;
 };
 
 struct Transaction {
