@@ -200,7 +200,7 @@ void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
   ++current_seed_;
 }
 
-#ifndef MAIDSAFE_WIN32
+#if !defined(MAIDSAFE_WIN32) && !defined(__ANDROID__)
 UlimitConfigurer::UlimitConfigurer()
     : prev_open_files_(0),
       prev_file_size_(ulimit(UL_GETFSIZE)),
@@ -278,7 +278,7 @@ int ExecuteGTestMain(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
   testing::UnitTest* unit_test{testing::UnitTest::GetInstance()};
   unit_test->listeners().Append(new BootstrapFileHandler);
-#ifndef MAIDSAFE_WIN32
+#if !defined(MAIDSAFE_WIN32) && !defined(__ANDROID__)
   unit_test->listeners().Append(new UlimitConfigurer);
 #endif
   unit_test->listeners().Append(new RandomNumberSeeder);
