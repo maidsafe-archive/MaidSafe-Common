@@ -60,9 +60,6 @@ TYPED_TEST_CASE(IpAddressSerialisationTest, TestTypes);
 
 TYPED_TEST(IpAddressSerialisationTest, BEH_SaveAndLoad) {
   using Address = TypeParam;
-  using AddressV4 = typename maidsafe::detail::AddressTypes<Address>::V4;
-  using AddressV6 = typename maidsafe::detail::AddressTypes<Address>::V6;
-
   Address address = this->GetRandomIPv4Address();
   auto serialised_address_v4(Serialise(address));
   auto parsed_address(Parse<Address>(serialised_address_v4));
