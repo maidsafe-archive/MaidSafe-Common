@@ -458,22 +458,23 @@ boost::optional<LogMessage::FileInfo> LogMessage::ShouldLog() const {
 void LogMessage::Log(const std::string& project, std::string message) const {
   char log_level(' ');
   Colour colour(Colour::kDefaultColour);
-  GetColourAndLevel(log_level, colour, level_);
+  const int level(level_);
+  GetColourAndLevel(log_level, colour, level);
   std::string coloured_log_entry(GetColouredLogEntry(log_level));
   ColourMode colour_mode(Logging::Instance().Colour());
 #if defined(__GLIBCXX__)
-//  && __GLIBCXX__ < date (date in format of 20141218 as the date of fix of COW string)
+  //  && __GLIBCXX__ < date (date in format of 20141218 as the date of fix of COW string)
   auto message_ptr(std::make_shared<std::string>(message.data(), message.size()));
-  auto coloured_log_entry_ptr(std::make_shared<std::string>(coloured_log_entry.data(),
-                                                            coloured_log_entry.size()));
-  auto print_functor([this, colour, coloured_log_entry_ptr, message_ptr, colour_mode, project] {
-    SendToConsole(colour_mode, colour, level_, *coloured_log_entry_ptr, *message_ptr);
+  auto coloured_log_entry_ptr(
+      std::make_shared<std::string>(coloured_log_entry.data(), coloured_log_entry.size()));
+  auto print_functor([level, colour, coloured_log_entry_ptr, message_ptr, colour_mode, project] {
+    SendToConsole(colour_mode, colour, level, *coloured_log_entry_ptr, *message_ptr);
     Logging::Instance().WriteToCombinedLogfile(*coloured_log_entry_ptr + *message_ptr);
     Logging::Instance().WriteToProjectLogfile(project, *coloured_log_entry_ptr + *message_ptr);
   });
 #else
-  auto print_functor([this, colour, coloured_log_entry, message, colour_mode, project] {
-    SendToConsole(colour_mode, colour, level_, coloured_log_entry, message);
+  auto print_functor([level, colour, coloured_log_entry, message, colour_mode, project] {
+    SendToConsole(colour_mode, colour, level, coloured_log_entry, message);
     Logging::Instance().WriteToCombinedLogfile(coloured_log_entry + message);
     Logging::Instance().WriteToProjectLogfile(project, coloured_log_entry + message);
   });
@@ -491,13 +492,10 @@ TestLogMessage::~TestLogMessage() {
   Colour colour(kColour_);
   FilterMap filter(Logging::Instance().Filter());
 #if defined(__GLIBCXX__)
-//  && __GLIBCXX__ < date (date in format of 20141218 as the date of fix of COW string)
+  //  && __GLIBCXX__ < date (date in format of 20141218 as the date of fix of COW string)
   auto log_entry(std::make_shared<std::string>(stream_.str()));
   auto print_functor([colour, log_entry, filter] {
-//     if (Logging::Instance().LogToConsole())
     ColouredPrint(colour, *log_entry);
-//     for (auto& entry : filter)
-//       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
     if (filter.size() == 1)
       Logging::Instance().WriteToProjectLogfile(filter.begin()->first, *log_entry);
     else
@@ -506,10 +504,7 @@ TestLogMessage::~TestLogMessage() {
 #else
   std::string log_entry(stream_.str());
   auto print_functor([colour, log_entry, filter] {
-    //     if (Logging::Instance().LogToConsole())
     ColouredPrint(colour, log_entry);
-    //     for (auto& entry : filter)
-    //       Logging::Instance().WriteToProjectLogfile(entry.first, log_entry);
     if (filter.size() == 1)
       Logging::Instance().WriteToProjectLogfile(filter.begin()->first, log_entry);
     else
@@ -701,8 +696,7 @@ void Logging::WriteToVisualiserServer(const std::string& message) {
   if (!visualiser_.server_stream) {
     visualiser_.server_stream.clear();
     visualiser_.server_stream.connect(
-        visualiser_.server_name,
-        std::to_string(static_cast<unsigned>(visualiser_.server_port)));
+        visualiser_.server_name, std::to_string(static_cast<unsigned>(visualiser_.server_port)));
     if (!visualiser_.server_stream) {
       LOG(kError) << "Failed to re-connect to VLOG server: "
                   << visualiser_.server_stream.error().message();
