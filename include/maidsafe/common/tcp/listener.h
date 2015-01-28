@@ -24,8 +24,9 @@
 #include <mutex>
 
 #include "asio/ip/tcp.hpp"
+#include "asio/io_service.hpp"
+#include "asio/strand.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/types.h"
 
 namespace maidsafe {
@@ -38,20 +39,20 @@ class Listener : public std::enable_shared_from_this<Listener> {
   Listener(Listener&&) = delete;
   Listener& operator=(Listener) = delete;
 
-  static ListenerPtr MakeShared(AsioService& asio_service, NewConnectionFunctor on_new_connection,
-                                Port desired_port);
+  static ListenerPtr MakeShared(asio::io_service::strand& strand,
+                                NewConnectionFunctor on_new_connection, Port desired_port);
   Port ListeningPort() const;
   void StopListening();
 
  private:
-  Listener(AsioService& asio_service, NewConnectionFunctor on_new_connection);
+  Listener(asio::io_service::strand& strand, NewConnectionFunctor on_new_connection);
 
   void StartListening(Port desired_port);
   void DoStartListening(Port port);
   void HandleAccept(ConnectionPtr accepted_connection, const std::error_code& ec);
   void DoStopListening();
 
-  AsioService& asio_service_;
+  asio::io_service::strand& strand_;
   std::once_flag stop_listening_flag_;
   NewConnectionFunctor on_new_connection_;
   asio::ip::tcp::acceptor acceptor_;
