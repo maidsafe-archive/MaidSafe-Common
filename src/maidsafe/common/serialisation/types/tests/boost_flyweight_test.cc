@@ -18,9 +18,16 @@
 #include <memory>
 #include <string>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4520)
+#endif
 #include "boost/flyweight.hpp"
 #include "boost/flyweight/no_locking.hpp"
 #include "boost/flyweight/refcounted.hpp"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #include "cereal/cereal.hpp"
 #include "cereal/types/string.hpp"
 
@@ -52,7 +59,7 @@ TEST(FlyweightSerialisationTest, BEH_OneArgument) {
     EXPECT_EQ(std::addressof(three.get()), std::addressof(five.get()));
 
     serialised = Serialise(one, two, three, four, five);
-    
+
     const auto larger = Serialise(one.get(), two.get(), three.get(), four.get(), five.get());
     EXPECT_LT(serialised.size(), larger.size());
   }
@@ -92,7 +99,7 @@ TEST(FlyweightSerialisationTest, BEH_MultipleArguments) {
     EXPECT_EQ(std::addressof(three.get()), std::addressof(five.get()));
 
     serialised = Serialise(one, two, three, four, five);
-    
+
     const auto larger = Serialise(one.get(), two.get(), three.get(), four.get(), five.get());
     EXPECT_LT(serialised.size(), larger.size());
   }

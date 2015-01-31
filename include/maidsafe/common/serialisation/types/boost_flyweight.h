@@ -22,7 +22,15 @@
 #include <cassert>
 #include <memory>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4520)
+#endif
 #include "boost/flyweight.hpp"
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
 #include "cereal/cereal.hpp"
 
 namespace cereal {
@@ -51,7 +59,7 @@ void load(Archive& archive, boost::flyweight<Type, Params...>& flyweight) {
   uint32_t id{};
   archive(make_nvp("id", id));
 
-  if(id & detail::msb_32bit) {
+  if (id & detail::msb_32bit) {
     Type object{};
     archive(make_nvp("data", object));
     ptr = std::make_shared<Helper>(boost::flyweight<Type, Params...>{object});
