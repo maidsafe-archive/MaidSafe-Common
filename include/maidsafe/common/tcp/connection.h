@@ -25,14 +25,13 @@
 #include <future>
 #include <memory>
 #include <mutex>
-#include <string>
 #include <vector>
 
 #include "asio/buffer.hpp"
 #include "asio/io_service.hpp"
+#include "asio/strand.hpp"
 #include "asio/ip/tcp.hpp"
 
-#include "maidsafe/common/asio_service.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/types.h"
 
@@ -49,33 +48,33 @@ class Connection : public std::enable_shared_from_this<Connection> {
   Connection& operator=(Connection) = delete;
 
   // Used when accepting an incoming connection.
-  static ConnectionPtr MakeShared(AsioService& asio_service);
+  static ConnectionPtr MakeShared(asio::io_service::strand& strand);
   // Used to attempt to connect to 'remote_port' on loopback address.
-  static ConnectionPtr MakeShared(AsioService& asio_service, Port remote_port);
+  static ConnectionPtr MakeShared(asio::io_service::strand& strand, Port remote_port);
 
   void Start(MessageReceivedFunctor on_message_received,
              ConnectionClosedFunctor on_connection_closed);
 
   void Close();
 
-  void Send(std::string data);
+  void Send(Message data);
 
   asio::ip::tcp::socket& Socket() { return socket_; }
 
   static size_t MaxMessageSize() { return 1024 * 1024; }  // bytes
 
  private:
-  explicit Connection(AsioService& asio_service);
-  Connection(AsioService& asio_service, Port remote_port);
+  explicit Connection(asio::io_service::strand& strand);
+  Connection(asio::io_service::strand& strand, Port remote_port);
 
   struct ReceivingMessage {
     std::array<unsigned char, 4> size_buffer;
-    std::vector<unsigned char> data_buffer;
+    Message data_buffer;
   };
 
   struct SendingMessage {
     std::array<unsigned char, 4> size_buffer;
-    std::string data;
+    Message data;
   };
 
   void DoClose();
@@ -84,9 +83,9 @@ class Connection : public std::enable_shared_from_this<Connection> {
   void ReadData();
 
   void DoSend();
-  SendingMessage EncodeData(std::string data) const;
+  SendingMessage EncodeData(Message data) const;
 
-  asio::io_service& io_service_;
+  asio::io_service::strand& strand_;
   std::once_flag start_flag_, socket_close_flag_;
   asio::ip::tcp::socket socket_;
   MessageReceivedFunctor on_message_received_;
