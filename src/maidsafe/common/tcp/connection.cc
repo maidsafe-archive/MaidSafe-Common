@@ -36,37 +36,28 @@ namespace maidsafe {
 
 namespace tcp {
 
-Connection::Connection(AsioService& asio_service)
-    : io_service_(asio_service.service()),
+Connection::Connection(asio::io_service::strand& strand)
+    : strand_(strand),
       start_flag_(),
       socket_close_flag_(),
-      socket_(io_service_),
+      socket_(strand_.context()),
       on_message_received_(),
       on_connection_closed_(),
       receiving_message_(),
       send_queue_() {
   static_assert((sizeof(DataSize)) == 4, "DataSize must be 4 bytes.");
   assert(!socket_.is_open());
-  if (asio_service.ThreadCount() != 1U) {
-    LOG(kError) << "This must be a single-threaded io_service, or an asio strand will be required.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
 }
 
-Connection::Connection(AsioService& asio_service, Port remote_port)
-    : io_service_(asio_service.service()),
+Connection::Connection(asio::io_service::strand& strand, Port remote_port)
+    : strand_(strand),
       start_flag_(),
       socket_close_flag_(),
-      socket_(io_service_),
+      socket_(strand_.context()),
       on_message_received_(),
       on_connection_closed_(),
       receiving_message_(),
       send_queue_() {
-  if (asio_service.ThreadCount() != 1U) {
-    LOG(kError) << "This must be a single-threaded io_service, or an asio strand will be required.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-
   std::error_code connect_error;
   // Try IPv6 first.
   socket_.connect(ip::tcp::endpoint{ip::address_v6::loopback(), remote_port}, connect_error);
@@ -83,12 +74,12 @@ Connection::Connection(AsioService& asio_service, Port remote_port)
   }
 }
 
-ConnectionPtr Connection::MakeShared(AsioService& asio_service) {
-  return ConnectionPtr{new Connection{asio_service}};
+ConnectionPtr Connection::MakeShared(asio::io_service::strand& strand) {
+  return ConnectionPtr{new Connection{strand}};
 }
 
-ConnectionPtr Connection::MakeShared(AsioService& asio_service, Port remote_port) {
-  return ConnectionPtr{new Connection{asio_service, remote_port}};
+ConnectionPtr Connection::MakeShared(asio::io_service::strand& strand, Port remote_port) {
+  return ConnectionPtr{new Connection{strand, remote_port}};
 }
 
 void Connection::Start(MessageReceivedFunctor on_message_received,
@@ -97,13 +88,13 @@ void Connection::Start(MessageReceivedFunctor on_message_received,
     on_message_received_ = on_message_received;
     on_connection_closed_ = on_connection_closed;
     ConnectionPtr this_ptr{shared_from_this()};
-    asio::dispatch(io_service_.get_executor(), [this_ptr] { this_ptr->ReadSize(); });
+    asio::dispatch(strand_, [this_ptr] { this_ptr->ReadSize(); });
   });
 }
 
 void Connection::Close() {
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::post(io_service_.get_executor(), [this_ptr] { this_ptr->DoClose(); });
+  asio::post(strand_, [this_ptr] { this_ptr->DoClose(); });
 }
 
 void Connection::DoClose() {
@@ -148,29 +139,28 @@ void Connection::ReadSize() {
 
 void Connection::ReadData() {
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::async_read(
-      socket_, asio::buffer(receiving_message_.data_buffer),
-      io_service_.wrap([this_ptr](const std::error_code& ec, size_t bytes_transferred) {
-        if (ec) {
-          LOG(kError) << "Failed to read message body: " << ec.message();
-          return this_ptr->DoClose();
-        }
-        assert(bytes_transferred == this_ptr->receiving_message_.data_buffer.size());
-        static_cast<void>(bytes_transferred);
+  asio::async_read(socket_, asio::buffer(receiving_message_.data_buffer),
+                   strand_.wrap([this_ptr](const std::error_code& ec, size_t bytes_transferred) {
+                     if (ec) {
+                       LOG(kError) << "Failed to read message body: " << ec.message();
+                       return this_ptr->DoClose();
+                     }
+                     assert(bytes_transferred == this_ptr->receiving_message_.data_buffer.size());
+                     static_cast<void>(bytes_transferred);
 
-        // Dispatch the message outside the strand.
-        std::string data{std::begin(this_ptr->receiving_message_.data_buffer),
-                         std::end(this_ptr->receiving_message_.data_buffer)};
-        asio::post(this_ptr->io_service_.get_executor(),
-                   [=] { this_ptr->on_message_received_(std::move(data)); });
-        asio::dispatch(this_ptr->io_service_.get_executor(), [this_ptr] { this_ptr->ReadSize(); });
-      }));
+                     // Dispatch the message outside the strand.
+                     Message data{std::begin(this_ptr->receiving_message_.data_buffer),
+                                      std::end(this_ptr->receiving_message_.data_buffer)};
+                     asio::post(this_ptr->strand_,
+                                [=] { this_ptr->on_message_received_(std::move(data)); });
+                     asio::dispatch(this_ptr->strand_, [this_ptr] { this_ptr->ReadSize(); });
+                   }));
 }
 
-void Connection::Send(std::string data) {
+void Connection::Send(Message data) {
   SendingMessage message(EncodeData(std::move(data)));
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::post(io_service_.get_executor(), [this_ptr, message] {
+  asio::post(strand_, [this_ptr, message] {
     bool currently_sending{!this_ptr->send_queue_.empty()};
     this_ptr->send_queue_.emplace_back(std::move(message));
     if (!currently_sending)
@@ -183,24 +173,24 @@ void Connection::DoSend() {
   buffers[0] = asio::buffer(send_queue_.front().size_buffer);
   buffers[1] = asio::buffer(send_queue_.front().data.data(), send_queue_.front().data.size());
   ConnectionPtr this_ptr{shared_from_this()};
-  asio::async_write(socket_, buffers, io_service_.wrap([this_ptr](const std::error_code& ec,
-                                                                  size_t bytes_transferred) {
-                                        if (ec) {
-                                          LOG(kError) << "Failed to send message: " << ec.message();
-                                          return this_ptr->DoClose();
-                                        }
-                                        assert(bytes_transferred ==
-                                               this_ptr->send_queue_.front().size_buffer.size() +
-                                                   this_ptr->send_queue_.front().data.size());
-                                        static_cast<void>(bytes_transferred);
+  asio::async_write(socket_, buffers,
+                    strand_.wrap([this_ptr](const std::error_code& ec, size_t bytes_transferred) {
+                      if (ec) {
+                        LOG(kError) << "Failed to send message: " << ec.message();
+                        return this_ptr->DoClose();
+                      }
+                      assert(bytes_transferred ==
+                             this_ptr->send_queue_.front().size_buffer.size() +
+                                 this_ptr->send_queue_.front().data.size());
+                      static_cast<void>(bytes_transferred);
 
-                                        this_ptr->send_queue_.pop_front();
-                                        if (!this_ptr->send_queue_.empty())
-                                          this_ptr->DoSend();
-                                      }));
+                      this_ptr->send_queue_.pop_front();
+                      if (!this_ptr->send_queue_.empty())
+                        this_ptr->DoSend();
+                    }));
 }
 
-Connection::SendingMessage Connection::EncodeData(std::string data) const {
+Connection::SendingMessage Connection::EncodeData(Message data) const {
   if (data.empty())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
   if (data.size() > MaxMessageSize())
