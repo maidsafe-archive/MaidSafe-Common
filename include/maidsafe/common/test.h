@@ -19,7 +19,7 @@
 #ifndef MAIDSAFE_COMMON_TEST_H_
 #define MAIDSAFE_COMMON_TEST_H_
 
-#ifndef MAIDSAFE_WIN32
+#if !defined(MAIDSAFE_WIN32) && !defined(__ANDROID__)
 #include <ulimit.h>
 #endif
 #include <functional>
@@ -52,6 +52,10 @@ void RunInParallel(int thread_count, std::function<void()> functor);
 // Returns a random port in the range [1025, 65535].
 uint16_t GetRandomPort();
 
+std::string GetRandomIPv4AddressAsString();
+
+std::string GetRandomIPv6AddressAsString();
+
 #ifdef TESTING
 
 // Allows:
@@ -69,6 +73,7 @@ void HandleTestOptions(int argc, char* argv[]);
 class RandomNumberSeeder : public testing::EmptyTestEventListener {
  public:
   RandomNumberSeeder();
+
  private:
   virtual void OnTestStart(const testing::TestInfo& test_info);
   virtual void OnTestEnd(const testing::TestInfo& test_info);
@@ -79,6 +84,7 @@ class RandomNumberSeeder : public testing::EmptyTestEventListener {
 class UlimitConfigurer : public testing::EmptyTestEventListener {
  public:
   UlimitConfigurer();
+
  private:
   virtual void OnTestProgramStart(const testing::UnitTest& uinit_test);
   virtual void OnTestProgramEnd(const testing::UnitTest& uint_testinfo);
@@ -113,9 +119,7 @@ int ExecuteGTestMain(int argc, char* argv[]);
 
 }  // namespace detail
 
-inline int ExecuteMain(int argc, char* argv[]) {
-  return detail::ExecuteGTestMain(argc, argv);
-}
+inline int ExecuteMain(int argc, char* argv[]) { return detail::ExecuteGTestMain(argc, argv); }
 
 }  // namespace test
 

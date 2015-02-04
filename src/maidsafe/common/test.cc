@@ -161,6 +161,21 @@ uint16_t GetRandomPort() {
   return port;
 }
 
+std::string GetRandomIPv4AddressAsString() {
+  auto address = std::to_string(RandomUint32() % 256);
+  for (int i = 0; i != 3; ++i)
+    address += '.' + std::to_string(RandomUint32() % 256);
+  return address;
+}
+
+std::string GetRandomIPv6AddressAsString() {
+  std::stringstream address;
+  address << std::hex << (RandomUint32() % 65536);
+  for (int i = 0; i != 7; ++i)
+    address << ':' << RandomUint32() % 65536;
+  return address.str();
+}
+
 #ifdef TESTING
 
 void HandleTestOptions(int argc, char* argv[]) {
@@ -200,7 +215,7 @@ void RandomNumberSeeder::OnTestEnd(const testing::TestInfo& test_info) {
   ++current_seed_;
 }
 
-#ifndef MAIDSAFE_WIN32
+#if !defined(MAIDSAFE_WIN32) && !defined(__ANDROID__)
 UlimitConfigurer::UlimitConfigurer()
     : prev_open_files_(0),
       prev_file_size_(ulimit(UL_GETFSIZE)),
@@ -278,7 +293,7 @@ int ExecuteGTestMain(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
   testing::UnitTest* unit_test{testing::UnitTest::GetInstance()};
   unit_test->listeners().Append(new BootstrapFileHandler);
-#ifndef MAIDSAFE_WIN32
+#if !defined(MAIDSAFE_WIN32) && !defined(__ANDROID__)
   unit_test->listeners().Append(new UlimitConfigurer);
 #endif
   unit_test->listeners().Append(new RandomNumberSeeder);

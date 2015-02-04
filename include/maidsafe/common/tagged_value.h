@@ -21,17 +21,35 @@
 
 #include <utility>
 
+#include "maidsafe/common/config.h"
+
 namespace maidsafe {
 
 template <typename T, typename Tag>
 struct TaggedValue {
-  typedef T value_type;
-  typedef Tag tag_type;
+  using value_type = T;
+  using tag_type = Tag;
+
   explicit TaggedValue(T data_in) : data(std::move(data_in)) {}
-  TaggedValue() : data() {}
+
+  TaggedValue() = default;
+  TaggedValue(const TaggedValue&) = default;
+  TaggedValue(TaggedValue&& other) MAIDSAFE_NOEXCEPT : data(std::move(other.data)) {}
+  TaggedValue& operator=(const TaggedValue&) = default;
+  TaggedValue& operator=(TaggedValue&& other) {
+    data = std::move(other.data);
+    return *this;
+  }
+
   operator T() const { return data; }
   T const* operator->() const { return &data; }
   T* operator->() { return &data; }
+
+  template <typename Archive>
+  Archive& serialize(Archive& archive) {
+    return archive(data);
+  }
+
   T data;
 };
 

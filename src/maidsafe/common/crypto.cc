@@ -89,15 +89,15 @@ std::string XOR(const std::string& first, const std::string& second) {
 CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
                        const AES256InitialisationVector& initialisation_vector) {
   if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
-    LOG(kError) << "SymmEncrypt one of class uninitialised";
+    LOG(kError) << "SymmEncrypt one member of class uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   std::string result;
   try {
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Encryption encryptor(
-        reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-        reinterpret_cast<const byte*>(initialisation_vector.string().data()));
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::StreamTransformationFilter(
+    CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Encryption encryptor;
+    encryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
+                           reinterpret_cast<const byte*>(initialisation_vector.string().data()));
+    CryptoPP::StringSource(input.string(), true, new CryptoPP::AuthenticatedEncryptionFilter(
                                                      encryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
@@ -114,13 +114,14 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
   }
   std::string result;
   try {
-    CryptoPP::CFB_Mode<CryptoPP::AES>::Decryption decryptor(
-        reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-        reinterpret_cast<const byte*>(initialisation_vector.string().data()));
-    CryptoPP::StringSource(input->string(), true, new CryptoPP::StreamTransformationFilter(
+    CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Decryption decryptor;
+    decryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
+                           reinterpret_cast<const byte*>(initialisation_vector.string().data()));
+    CryptoPP::StringSource(input->string(), true, new CryptoPP::AuthenticatedDecryptionFilter(
                                                       decryptor, new CryptoPP::StringSink(result)));
-  } catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Failed symmetric decryption: " << e.what();
+  } catch (const CryptoPP::Exception&) {
+    LOG(kError) << "Failed symmetric decryption: "
+                << boost::current_exception_diagnostic_information(true);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_decryption_error));
   }
   return PlainText(result);
@@ -141,8 +142,8 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   try {
     CryptoPP::StringSource(input.string(), true,
                            new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
-  } catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Failed compressing: " << e.what();
+  } catch (const CryptoPP::Exception&) {
+    LOG(kError) << "Failed compressing: " << boost::current_exception_diagnostic_information(true);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
   }
   return CompressedText(NonEmptyString(result));

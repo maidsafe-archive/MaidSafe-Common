@@ -57,7 +57,9 @@ ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
 ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
+ms_glob_dir(CommonSerialisationTypes ${CommonSourcesDir}/serialisation/types "Serialisation Types")
 ms_glob_dir(CommonSerialisationTests ${CommonSourcesDir}/serialisation/tests "Serialisation Tests")
+ms_glob_dir(CommonSerialisationTypesTests ${CommonSourcesDir}/serialisation/types/tests "Serialisation Types Tests")
 
 ms_glob_dir(CommonTcp ${CommonSourcesDir}/tcp "TCP")
 ms_glob_dir(CommonTcpTests ${CommonSourcesDir}/tcp/tests "TCP Tests")
@@ -83,6 +85,7 @@ ms_add_static_library(maidsafe_common
     ${CommonContainersAllFiles}
     ${CommonDataTypesAllFiles}
     ${CommonSerialisationAllFiles}
+    ${CommonSerialisationTypesAllFiles}
     ${CommonTcpAllFiles})
 add_dependencies(maidsafe_common boost_process boost_expected)
 
@@ -99,7 +102,7 @@ endif()
 if(CMAKE_VERSION VERSION_LESS "3.0")
   set(AsioLib)
   set(CerealLib)
-  target_include_directories(maidsafe_common PUBLIC ${CMAKE_SOURCE_DIR}/src/third_party_libs/header_only)
+  ms_target_include_system_dirs(maidsafe_common PUBLIC "${CMAKE_SOURCE_DIR}/src/third_party_libs/header_only")
 else()
   set(AsioLib asio)
   set(CerealLib cereal)
@@ -120,6 +123,9 @@ target_link_libraries(maidsafe_common
     ${BoostProgramOptionsLibs}
     ${JustThread_LIBRARIES}
     ${SYS_LIB})
+if(ANDROID_BUILD)
+  target_link_libraries(maidsafe_common "${ANDROID_NDK_TOOLCHAIN_ROOT}/sysroot/usr/lib/liblog.so")
+endif()
 if(TARGET check_sanitizer_blacklist)
   add_dependencies(maidsafe_common check_sanitizer_blacklist)
 endif()
@@ -170,7 +176,8 @@ if(INCLUDE_TESTS)
       ${CommonTcpTestsAllFiles}
       ${CommonContainersTestsAllFiles}
       ${CommonDataTypesTestsAllFiles}
-      ${CommonSerialisationTestsAllFiles})
+      ${CommonSerialisationTestsAllFiles}
+      ${CommonSerialisationTypesTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
 
