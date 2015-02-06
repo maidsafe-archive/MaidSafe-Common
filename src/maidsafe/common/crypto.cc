@@ -96,7 +96,8 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
   try {
     CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Encryption encryptor;
     encryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-                           reinterpret_cast<const byte*>(initialisation_vector.string().data()));
+                           reinterpret_cast<const byte*>(initialisation_vector.string().data()),
+                           initialisation_vector.string().size());
     CryptoPP::StringSource(input.string(), true, new CryptoPP::AuthenticatedEncryptionFilter(
                                                      encryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
@@ -116,7 +117,8 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
   try {
     CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Decryption decryptor;
     decryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-                           reinterpret_cast<const byte*>(initialisation_vector.string().data()));
+                           reinterpret_cast<const byte*>(initialisation_vector.string().data()),
+                           initialisation_vector.string().size());
     CryptoPP::StringSource(input->string(), true, new CryptoPP::AuthenticatedDecryptionFilter(
                                                       decryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception&) {

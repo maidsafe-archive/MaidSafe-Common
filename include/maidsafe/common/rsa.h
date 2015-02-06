@@ -76,7 +76,8 @@ using EncodedPrivateKey = detail::BoundedString<3>;
 
 using PlainText = NonEmptyString;
 using CipherText = NonEmptyString;
-using Signature = maidsafe::detail::BoundedString<Keys::kSignatureByteSize>;
+using Signature =
+    maidsafe::detail::BoundedString<Keys::kSignatureByteSize, Keys::kSignatureByteSize>;
 
 Keys GenerateKeyPair();
 
