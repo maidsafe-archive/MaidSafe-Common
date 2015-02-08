@@ -128,22 +128,22 @@ void Load(Archive& archive, Address& address) {
 namespace cereal {
 
 template <typename Archive>
-void save(Archive& archive, const asio::ip::address& address) {
+void CEREAL_SAVE_FUNCTION_NAME(Archive& archive, const asio::ip::address& address) {
   maidsafe::detail::Save<Archive, asio::ip::address>(archive, address);
 }
 
 template <typename Archive>
-void load(Archive& archive, asio::ip::address& address) {
+void CEREAL_LOAD_FUNCTION_NAME(Archive& archive, asio::ip::address& address) {
   maidsafe::detail::Load<Archive, asio::ip::address>(archive, address);
 }
 
 template <typename Archive>
-void save(Archive& archive, const boost::asio::ip::address& address) {
+void CEREAL_SAVE_FUNCTION_NAME(Archive& archive, const boost::asio::ip::address& address) {
   maidsafe::detail::Save<Archive, boost::asio::ip::address>(archive, address);
 }
 
 template <typename Archive>
-void load(Archive& archive, boost::asio::ip::address& address) {
+void CEREAL_LOAD_FUNCTION_NAME(Archive& archive, boost::asio::ip::address& address) {
   maidsafe::detail::Load<Archive, boost::asio::ip::address>(archive, address);
 }
 

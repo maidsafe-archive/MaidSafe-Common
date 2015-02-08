@@ -29,12 +29,12 @@
 namespace cereal {
 
 template <typename Archive>
-void save(Archive& archive, const boost::filesystem::path& path) {
+void CEREAL_SAVE_FUNCTION_NAME(Archive& archive, const boost::filesystem::path& path) {
   archive(path.native());
 }
 
 template <typename Archive>
-void load(Archive& archive, boost::filesystem::path& path) {
+void CEREAL_LOAD_FUNCTION_NAME(Archive& archive, boost::filesystem::path& path) {
   boost::filesystem::path::string_type native_path;
   archive(native_path);
   path = native_path;
