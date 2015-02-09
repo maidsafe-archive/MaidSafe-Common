@@ -23,11 +23,6 @@ namespace maidsafe {
 
 namespace test {
 
-struct Conversions : public ::testing::Test {
-  virtual void SetUp() { }
-  virtual void TearDown() { }
-};
-
 template <class T>
 void ToBoostThenBack(const T& value) {
   auto boost_value = common::convert::ToBoost(value);
@@ -42,19 +37,19 @@ void ToAsioThenBack(const T& value) {
   EXPECT_EQ(value, second_value);
 }
 
-TEST_F(Conversions, BEH_Address_v4) {
+TEST(Conversions, BEH_Address_v4) {
   auto ip = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address_v4::from_string(ip));
   ToAsioThenBack(boost::asio::ip::address_v4::from_string(ip));
 }
 
-TEST_F(Conversions, BEH_Address_v6) {
+TEST(Conversions, BEH_Address_v6) {
   auto ip = GetRandomIPv6AddressAsString();
   ToBoostThenBack(asio::ip::address_v6::from_string(ip));
   ToAsioThenBack(boost::asio::ip::address_v6::from_string(ip));
 }
 
-TEST_F(Conversions, BEH_Address) {
+TEST(Conversions, BEH_Address) {
   auto ip_v4 = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v4));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v4));
@@ -63,7 +58,7 @@ TEST_F(Conversions, BEH_Address) {
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v6));
 }
 
-TEST_F(Conversions, BEH_Endpoint) {
+TEST(Conversions, BEH_Endpoint) {
   using asio_endpoint = asio::ip::udp::endpoint;
   using boost_endpoint = boost::asio::ip::udp::endpoint;
   auto port = GetRandomPort();
