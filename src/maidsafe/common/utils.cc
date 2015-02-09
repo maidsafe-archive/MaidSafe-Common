@@ -223,36 +223,6 @@ asio::ip::address GetLocalIp(asio::ip::udp::endpoint peer_endpoint) {
   }
 }
 
-boost::asio::ip::address AsioToBoostAsio(const asio::ip::address address) {
-  if (address.is_v4())
-    return boost::asio::ip::address(AsioToBoostAsio(address.to_v4()));
-  else
-    return boost::asio::ip::address(AsioToBoostAsio(address.to_v6()));
-}
-
-boost::asio::ip::address_v4 AsioToBoostAsio(const asio::ip::address_v4 address_v4) {
-  return boost::asio::ip::address_v4(address_v4.to_bytes());
-}
-
-boost::asio::ip::address_v6 AsioToBoostAsio(const asio::ip::address_v6 address_v6) {
-  return boost::asio::ip::address_v6(address_v6.to_bytes());
-}
-
-asio::ip::address BoostAsioToAsio(const boost::asio::ip::address address) {
-  if (address.is_v4())
-    return asio::ip::address(BoostAsioToAsio(address.to_v4()));
-  else
-    return asio::ip::address(BoostAsioToAsio(address.to_v6()));
-}
-
-asio::ip::address_v4 BoostAsioToAsio(const boost::asio::ip::address_v4 address_v4) {
-  return asio::ip::address_v4(address_v4.to_bytes());
-}
-
-asio::ip::address_v6 BoostAsioToAsio(const boost::asio::ip::address_v6 address_v6) {
-  return asio::ip::address_v6(address_v6.to_bytes());
-}
-
 int VersionToInt(const std::string& version) {
   boost::tokenizer<boost::char_separator<char>> tokens(version, boost::char_separator<char>("."));
   if (std::distance(tokens.begin(), tokens.end()) != 3)
