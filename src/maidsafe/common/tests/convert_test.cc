@@ -44,15 +44,26 @@ TEST(Conversions, BEH_Address_v4) {
 }
 
 TEST(Conversions, BEH_Address_v6) {
-  auto ip = GetRandomIPv6AddressAsString();
-  ToBoostThenBack(asio::ip::address_v6::from_string(ip));
-  ToAsioThenBack(boost::asio::ip::address_v6::from_string(ip));
+  const unsigned long scope_ids[] = { 0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf };
+
+  for (auto scope_id : scope_ids) {
+    auto ip = GetRandomIPv6AddressAsString();
+
+    auto asio_addr = asio::ip::address_v6::from_string(ip);
+    asio_addr.scope_id(scope_id);
+    ToBoostThenBack(asio_addr);
+
+    auto boost_addr = boost::asio::ip::address_v6::from_string(ip);
+    boost_addr.scope_id(scope_id);
+    ToAsioThenBack(boost_addr);
+  }
 }
 
 TEST(Conversions, BEH_Address) {
   auto ip_v4 = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v4));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v4));
+
   auto ip_v6 = GetRandomIPv6AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v6));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v6));
@@ -62,9 +73,11 @@ TEST(Conversions, BEH_Endpoint) {
   using asio_endpoint = asio::ip::udp::endpoint;
   using boost_endpoint = boost::asio::ip::udp::endpoint;
   auto port = GetRandomPort();
+
   auto ip_v4 = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v4), port));
   ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v4), port));
+
   auto ip_v6 = GetRandomIPv6AddressAsString();
   ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v6), port));
   ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v6), port));
