@@ -16,7 +16,6 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/convert.h"
 
@@ -29,35 +28,37 @@ struct Conversions : public ::testing::Test {
   virtual void TearDown() { }
 };
 
-template<class T> void ToBoostThenBack(const T& value) {
+template <class T>
+void ToBoostThenBack(const T& value) {
   auto boost_value = common::convert::ToBoost(value);
   auto second_value = common::convert::ToAsio(boost_value);
   EXPECT_EQ(value, second_value);
 }
 
-template<class T> void ToAsioThenBack(const T& value) {
+template <class T>
+void ToAsioThenBack(const T& value) {
   auto boost_value = common::convert::ToAsio(value);
   auto second_value = common::convert::ToBoost(boost_value);
   EXPECT_EQ(value, second_value);
 }
 
 TEST_F(Conversions, BEH_Address_v4) {
-  const char* ip = "123.231.213.213";
+  auto ip = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address_v4::from_string(ip));
   ToAsioThenBack(boost::asio::ip::address_v4::from_string(ip));
 }
 
 TEST_F(Conversions, BEH_Address_v6) {
-  const char* ip = "2001:0db8:ac10:fe01:0000:0000:0000:0000";
+  auto ip = GetRandomIPv6AddressAsString();
   ToBoostThenBack(asio::ip::address_v6::from_string(ip));
   ToAsioThenBack(boost::asio::ip::address_v6::from_string(ip));
 }
 
 TEST_F(Conversions, BEH_Address) {
-  const char* ip_v4 = "123.231.213.213";
+  auto ip_v4 = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v4));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v4));
-  const char* ip_v6 = "2001:0db8:ac10:fe01:0000:0000:0000:0000";
+  auto ip_v6 = GetRandomIPv6AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v6));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v6));
 }
@@ -65,12 +66,13 @@ TEST_F(Conversions, BEH_Address) {
 TEST_F(Conversions, BEH_Endpoint) {
   using asio_endpoint = asio::ip::udp::endpoint;
   using boost_endpoint = boost::asio::ip::udp::endpoint;
-  const char* ip_v4 = "123.231.213.213";
-  ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v4), 8080));
-  ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v4), 8080));
-  const char* ip_v6 = "2001:0db8:ac10:fe01:0000:0000:0000:0000";
-  ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v6), 8080));
-  ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v6), 8080));
+  auto port = GetRandomPort();
+  auto ip_v4 = GetRandomIPv4AddressAsString();
+  ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v4), port));
+  ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v4), port));
+  auto ip_v6 = GetRandomIPv6AddressAsString();
+  ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v6), port));
+  ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v6), port));
 }
 
 }  // namespace test

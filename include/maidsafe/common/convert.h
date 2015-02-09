@@ -19,6 +19,10 @@
 #ifndef MAIDSAFE_COMMON_CONVERT_H_
 #define MAIDSAFE_COMMON_CONVERT_H_
 
+#include <cassert>
+#include <system_error>
+#include "boost/system/error_code.hpp"
+
 #include "asio/ip/address.hpp"
 #include "asio/ip/address_v4.hpp"
 #include "asio/ip/address_v6.hpp"
