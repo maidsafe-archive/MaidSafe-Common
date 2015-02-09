@@ -29,7 +29,11 @@
 #include "boost/asio/ip/address_v6.hpp"
 #include "boost/asio/ip/udp.hpp"
 
-namespace maidsafe { namespace common { namespace convert {
+namespace maidsafe {
+
+namespace common {
+
+namespace convert {
 
 // Warning: Will map error from any error_category to an error
 // in the generic_category. Even boost asio category maps to
