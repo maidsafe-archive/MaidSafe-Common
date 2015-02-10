@@ -21,6 +21,7 @@
 #include <type_traits>
 
 #include "maidsafe/common/hash/hash_contiguous.h"
+#include "maidsafe/common/types.h"
 
 namespace maidsafe {
 
@@ -46,7 +47,7 @@ typename std::enable_if<std::is_floating_point<FloatType>::value>::type HashAppe
 #pragma GCC diagnostic pop
 #endif
 
-  hash.Update(reinterpret_cast<const std::uint8_t*>(&value), sizeof(value));
+  hash.Update(reinterpret_cast<const byte*>(&value), sizeof(value));
 }
 
 }  // namespace maidsafe

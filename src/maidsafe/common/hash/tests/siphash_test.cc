@@ -180,21 +180,21 @@ int siphash(uint8_t *out, const uint8_t *in, uint64_t inlen, const uint8_t *k) {
   return 0;
 }
 
-std::array<std::uint8_t, 16> GetRandomSeed() {
-  std::array<std::uint8_t, 16> seed{{}};
+std::array<byte, 16> GetRandomSeed() {
+  std::array<byte, 16> seed{{}};
   CryptoPP::RandomNumberGenerator& random = maidsafe::crypto::random_number_generator();
   random.GenerateBlock(seed.data(), seed.size());
   return seed;
 }
 
 std::uint64_t SiphashReference(
-    const std::array<std::uint8_t, 16>& seed,
+    const std::array<byte, 16>& seed,
     const char* in,
     const std::uint64_t inlen) {
   std::uint64_t out{};
   siphash(
-      reinterpret_cast<std::uint8_t*>(&out),
-      reinterpret_cast<const std::uint8_t*>(in),
+      reinterpret_cast<byte*>(&out),
+      reinterpret_cast<const byte*>(in),
       inlen,
       seed.data());
   return out;
@@ -211,9 +211,9 @@ TEST(SipHash, BEH_FixedString) {
   // Split the string at every possible point
   for (unsigned count = 0; count <= string_size; ++count) {
     maidsafe::SipHash hash(random_seed);
-    hash.Update(reinterpret_cast<const std::uint8_t*>(test_string), count);
+    hash.Update(reinterpret_cast<const byte*>(test_string), count);
     hash.Update(
-        reinterpret_cast<const std::uint8_t*>(test_string) + count, string_size - count);
+        reinterpret_cast<const byte*>(test_string) + count, string_size - count);
     EXPECT_EQ(reference_hash, hash.Finalize()) << "Failed on count " << count;
   }
 
@@ -221,7 +221,7 @@ TEST(SipHash, BEH_FixedString) {
   {
     maidsafe::SipHash hash(random_seed);
     for (unsigned count = 0; count < string_size; ++count) {
-      hash.Update(reinterpret_cast<const std::uint8_t*>(&test_string[count]), 1);
+      hash.Update(reinterpret_cast<const byte*>(&test_string[count]), 1);
     }
     EXPECT_EQ(reference_hash, hash.Finalize());
   }
@@ -236,9 +236,9 @@ TEST(SipHash, BEH_RandomString) {
   // Split the string at every possible point
   for (unsigned count = 0; count <= test_string.size(); ++count) {
     maidsafe::SipHash hash(random_seed);
-    hash.Update(reinterpret_cast<const std::uint8_t*>(test_string.data()), count);
+    hash.Update(reinterpret_cast<const byte*>(test_string.data()), count);
     hash.Update(
-        reinterpret_cast<const std::uint8_t*>(test_string.data()) + count,
+        reinterpret_cast<const byte*>(test_string.data()) + count,
         test_string.size() - count);
     EXPECT_EQ(reference_hash, hash.Finalize()) << "Failed on count " << count;
   }
@@ -247,7 +247,7 @@ TEST(SipHash, BEH_RandomString) {
   {
     maidsafe::SipHash hash(random_seed);
     for (unsigned count = 0; count < test_string.size(); ++count) {
-      hash.Update(reinterpret_cast<const std::uint8_t*>(test_string.data() + count), 1);
+      hash.Update(reinterpret_cast<const byte*>(test_string.data() + count), 1);
     }
     EXPECT_EQ(reference_hash, hash.Finalize());
   }

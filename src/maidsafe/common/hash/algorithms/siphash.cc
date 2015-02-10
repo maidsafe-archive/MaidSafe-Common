@@ -94,7 +94,7 @@ std::uint64_t FinalizeInternal(
     std::uint64_t v2,
     std::uint64_t v3,
     std::uint8_t b_in,
-    const std::uint8_t* in,
+    const byte* in,
     unsigned inlen) MAIDSAFE_NOEXCEPT {
   assert(inlen < 8);
 
@@ -131,7 +131,7 @@ std::uint64_t FinalizeInternal(
 }
 }  // namespace
 
-SipHash::SipHash(const std::array<std::uint8_t, kKeySize>& seed) MAIDSAFE_NOEXCEPT
+SipHash::SipHash(const std::array<byte, kKeySize>& seed) MAIDSAFE_NOEXCEPT
   : /* "somepseudorandomlygeneratedbytes" */
     v0(0x736f6d6570736575ULL),
     v1(0x646f72616e646f6dULL),
@@ -149,7 +149,7 @@ SipHash::SipHash(const std::array<std::uint8_t, kKeySize>& seed) MAIDSAFE_NOEXCE
   v0 ^= k0;
 }
 
-unsigned SipHash::Compress(const std::uint8_t* in, std::uint64_t inlen) MAIDSAFE_NOEXCEPT {
+unsigned SipHash::Compress(const byte* in, std::uint64_t inlen) MAIDSAFE_NOEXCEPT {
   const uint8_t* const end = in + inlen - (inlen % sizeof(uint64_t));
   const unsigned left = inlen & 7;
 
@@ -165,7 +165,7 @@ unsigned SipHash::Compress(const std::uint8_t* in, std::uint64_t inlen) MAIDSAFE
   return left;
 }
 
-void SipHash::Update(const std::uint8_t* in, std::uint64_t inlen) MAIDSAFE_NOEXCEPT {
+void SipHash::Update(const byte* in, std::uint64_t inlen) MAIDSAFE_NOEXCEPT {
   assert(remainder_length_ < remainder_.size());
 
   if (remainder_length_ > 0) {

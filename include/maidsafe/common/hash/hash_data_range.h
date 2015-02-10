@@ -22,6 +22,7 @@
 
 #include "maidsafe/common/hash/hash_contiguous.h"
 #include "maidsafe/common/hash/hash_range.h"
+#include "maidsafe/common/types.h"
 
 namespace maidsafe {
 
@@ -79,7 +80,7 @@ HashAppend(HashAlgorithm& hash, const HashableDataRange& value) {
   using DataType = typename std::remove_pointer<IteratorType>::type;
 
   hash.Update(
-      reinterpret_cast<const std::uint8_t*>(value.data()),
+      reinterpret_cast<const byte*>(value.data()),
       value.size() * sizeof(DataType));
   hash(value.size());
 }

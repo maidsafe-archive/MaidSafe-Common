@@ -20,9 +20,8 @@
 #define MAIDSAFE_COMMON_HASH_WRAPPERS_SEEDED_HASH_H_
 
 #include <array>
-#include <cstdint>
 
-#include "maidsafe/common/config.h"
+#include "maidsafe/common/types.h"
 #include "maidsafe/common/crypto.h"
 
 namespace maidsafe {
@@ -43,7 +42,7 @@ class SeededHash {
     return hash.Finalize();
   }
  private:
-  std::array<std::uint8_t, 16> seed_128bit_;
+  std::array<byte, 16> seed_128bit_;
 };
 
 }  // namespace maidsafe

@@ -20,6 +20,8 @@
 
 #include <type_traits>
 
+#include "maidsafe/common/types.h"
+
 namespace maidsafe {
 
 // Integral types are hashed directly.
@@ -30,7 +32,7 @@ template<typename HashAlgorithm, typename Contiguous>
 inline
 typename std::enable_if<IsContiguousHashable<Contiguous>::value>::type HashAppend(
     HashAlgorithm& hash, const Contiguous& value) {
-  hash.Update(reinterpret_cast<const std::uint8_t*>(&value), sizeof(value));
+  hash.Update(reinterpret_cast<const byte*>(&value), sizeof(value));
 }
 
 }  // namespace maidsafe

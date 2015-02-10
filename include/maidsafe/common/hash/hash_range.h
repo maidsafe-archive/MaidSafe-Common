@@ -22,6 +22,7 @@
 #include <type_traits>
 
 #include "maidsafe/common/hash/hash_contiguous.h"
+#include "maidsafe/common/types.h"
 
 namespace maidsafe {
 
@@ -145,7 +146,7 @@ inline detail::EnableContinousRange<HashableRange> HashAppend(
 
   const auto size = std::distance(std::begin(value), std::end(value));
   hash.Update(
-      reinterpret_cast<const std::uint8_t*>(std::begin(value)),
+      reinterpret_cast<const byte*>(std::begin(value)),
       size * sizeof(ContainedType));
 
   // in case iterable is empty, make some noise
