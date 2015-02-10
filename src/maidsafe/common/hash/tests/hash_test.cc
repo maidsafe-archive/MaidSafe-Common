@@ -146,9 +146,10 @@ namespace test {
 
 TEST(HashTest, BEH_NumericRange) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  const int data[] = { 10, 20, 30 };
+  const int data[] = {10, 20, 30};
   const std::uint64_t reference = hash(data);
 
+  EXPECT_EQ(reference, hash(10, 20, 30, std::size_t(3)));
   EXPECT_EQ(reference, hash(std::array<int, 3>({{10, 20, 30}})));
   EXPECT_EQ(
       reference,

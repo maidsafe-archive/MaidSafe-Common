@@ -35,10 +35,11 @@ class SeededHash {
     random.GenerateBlock(seed_128bit_.data(), seed_128bit_.size());
   }
 
-  template<typename Type>
-  decltype(std::declval<HashAlgorithm>().Finalize()) operator()(Type&& value) const {
+  template<typename Type, typename... Types>
+  decltype(std::declval<HashAlgorithm>().Finalize()) operator()(
+      Type&& value, Types&&... values) const {
     HashAlgorithm hash{seed_128bit_};
-    hash(std::forward<Type>(value));
+    hash(std::forward<Type>(value), std::forward<Types>(values)...);
     return hash.Finalize();
   }
  private:

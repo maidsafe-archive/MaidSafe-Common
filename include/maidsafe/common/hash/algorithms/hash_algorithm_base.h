@@ -32,9 +32,9 @@ class HashAlgorithmBase {
   static_assert(!std::is_reference<Derived>::value, "Bad used of CRTP");
 
  public:
-  template<typename... Args>
-  void operator()(Args&&... param) {
-    Process(std::forward<Args>(param)...);
+  template<typename Arg, typename... Args>
+  void operator()(Arg&& param, Args&&... params) {
+    Process(std::forward<Arg>(param), std::forward<Args>(params)...);
   }
 
   template<typename Arg>
