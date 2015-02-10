@@ -96,7 +96,7 @@ std::uint64_t FinalizeInternal(
     std::uint8_t b_in,
     const std::uint8_t* in,
     unsigned inlen) MAIDSAFE_NOEXCEPT {
-  assert(inlen <= 8);
+  assert(inlen < 8);
 
   //
   // Compress remainder bytes
@@ -185,6 +185,7 @@ void SipHash::Update(const std::uint8_t* in, std::uint64_t inlen) MAIDSAFE_NOEXC
 
   const unsigned left = Compress(in, inlen);
 
+  assert(left <= inlen);
   assert(remainder_length_ + left < remainder_.size());
   std::copy(in + (inlen - left), in + inlen, remainder_.data() + remainder_length_);
 
@@ -194,7 +195,7 @@ void SipHash::Update(const std::uint8_t* in, std::uint64_t inlen) MAIDSAFE_NOEXC
 
 std::uint64_t SipHash::Finalize() const MAIDSAFE_NOEXCEPT {
   // Copy state, so this object isn't actually finalized
-  assert(remainder_length_ <= remainder_.size());
+  assert(remainder_length_ < remainder_.size());
   return FinalizeInternal(v0, v1, v2, v3, b, remainder_.data(), remainder_length_);
 }
 
