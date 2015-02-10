@@ -119,7 +119,6 @@ target_compile_options(maidsafe_common
                  #      GF (eliminate duplicate strings),
                  #      Gy (allows the compiler to package individual functions in the form of
                  #          packaged functions)
-            /GL  # Whole program optimisation.
             /MD  # Use the multithread, dynamic version of the C run-time library.
         >
         $<$<CONFIG:Debug>:
@@ -133,7 +132,6 @@ target_compile_options(maidsafe_common
         >
         $<$<CONFIG:RelWithDebInfo>:
             /O2  # Optimise code for maximum speed.
-            /GL  # Whole program optimisation.
             /MD  # Use the multithread, dynamic version of the C run-time library.
             /Zi  # Produce a program database (.pdb) that contains type information and symbolic debugging information.
         >
