@@ -25,6 +25,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/tagged_value.h"
@@ -35,8 +36,8 @@ using NonEmptyString = detail::BoundedString<1>;
 using Identity = detail::BoundedString<64, 64>;
 using byte = unsigned char;
 
-using MemoryUsage = TaggedValue<uint64_t, struct memory_usage_tag>;
-using DiskUsage = TaggedValue<uint64_t, struct disk_usage_tag>;
+using MemoryUsage = TaggedValue<std::uint64_t, struct memory_usage_tag>;
+using DiskUsage = TaggedValue<std::uint64_t, struct disk_usage_tag>;
 
 template <typename T>
 struct is_long_term_cacheable : public std::false_type {};
@@ -45,8 +46,9 @@ template <typename T>
 struct is_short_term_cacheable : public std::false_type {};
 
 template <typename T>
-struct is_cacheable : public std::integral_constant<
-    bool, is_long_term_cacheable<T>::value || is_short_term_cacheable<T>::value> {};  // NOLINT
+struct is_cacheable : public std::integral_constant<bool, is_long_term_cacheable<T>::value ||
+                                                              is_short_term_cacheable<T>::value> {
+};  // NOLINT
 
 template <typename T>
 struct is_payable : public std::true_type {};
@@ -59,12 +61,13 @@ namespace tcp {
 class Connection;
 class Listener;
 
-typedef std::shared_ptr<Connection> ConnectionPtr;
-typedef std::shared_ptr<Listener> ListenerPtr;
-typedef std::function<void(std::string)> MessageReceivedFunctor;
-typedef std::function<void()> ConnectionClosedFunctor;
-typedef std::function<void(ConnectionPtr)> NewConnectionFunctor;
-typedef uint16_t Port;
+using Message = std::vector<byte>;
+using ConnectionPtr = std::shared_ptr<Connection>;
+using ListenerPtr = std::shared_ptr<Listener>;
+using MessageReceivedFunctor = std::function<void(Message)>;
+using ConnectionClosedFunctor = std::function<void()>;
+using NewConnectionFunctor = std::function<void(ConnectionPtr)>;
+using Port = std::uint16_t;
 
 }  // namespace tcp
 

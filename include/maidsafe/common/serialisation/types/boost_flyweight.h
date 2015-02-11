@@ -36,7 +36,8 @@
 namespace cereal {
 
 template <typename Archive, typename Type, typename... Params>
-void save(Archive& archive, const boost::flyweight<Type, Params...>& flyweight) {
+void CEREAL_SAVE_FUNCTION_NAME(Archive& archive,
+                               const boost::flyweight<Type, Params...>& flyweight) {
   const uint32_t id = archive.registerSharedPointer(std::addressof(flyweight.get()));
   archive(make_nvp("id", id));
 
@@ -46,7 +47,7 @@ void save(Archive& archive, const boost::flyweight<Type, Params...>& flyweight) 
 }
 
 template <typename Archive, typename Type, typename... Params>
-void load(Archive& archive, boost::flyweight<Type, Params...>& flyweight) {
+void CEREAL_LOAD_FUNCTION_NAME(Archive& archive, boost::flyweight<Type, Params...>& flyweight) {
   struct Helper {
     explicit Helper(boost::flyweight<Type, Params...> value_in)
       : value(std::move(value_in)) {

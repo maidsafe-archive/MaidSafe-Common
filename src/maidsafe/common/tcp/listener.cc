@@ -33,20 +33,15 @@ namespace maidsafe {
 
 namespace tcp {
 
-Listener::Listener(AsioService& asio_service, NewConnectionFunctor on_new_connection)
-    : asio_service_(asio_service),
+Listener::Listener(asio::io_service::strand& strand, NewConnectionFunctor on_new_connection)
+    : strand_(strand),
       stop_listening_flag_(),
       on_new_connection_(on_new_connection),
-      acceptor_(asio_service_.service()) {
-  if (asio_service.ThreadCount() != 1U) {
-    LOG(kError) << "This must be a single-threaded io_service, or an asio strand will be required.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-}
+      acceptor_(strand.context()) {}
 
-ListenerPtr Listener::MakeShared(AsioService& asio_service, NewConnectionFunctor on_new_connection,
-                                 Port desired_port) {
-  ListenerPtr listener{new Listener{asio_service, on_new_connection}};
+ListenerPtr Listener::MakeShared(asio::io_service::strand& strand,
+                                 NewConnectionFunctor on_new_connection, Port desired_port) {
+  ListenerPtr listener{new Listener{strand, on_new_connection}};
   listener->StartListening(desired_port);
   return listener;
 }
@@ -107,9 +102,9 @@ void Listener::DoStartListening(Port port) {
   acceptor_.listen(asio::socket_base::max_connections);
 
   // The connection object is kept alive in the acceptor handler until HandleAccept() is called.
-  ConnectionPtr connection{Connection::MakeShared(asio_service_)};
+  ConnectionPtr connection{Connection::MakeShared(strand_)};
   ListenerPtr this_ptr{shared_from_this()};
-  acceptor_.async_accept(connection->Socket(), asio_service_.service().wrap([this_ptr, connection](
+  acceptor_.async_accept(connection->Socket(), strand_.wrap([this_ptr, connection](
                                                    const std::error_code& error) {
                                                  this_ptr->HandleAccept(connection, error);
                                                }));
@@ -118,7 +113,7 @@ void Listener::DoStartListening(Port port) {
 }
 
 void Listener::HandleAccept(ConnectionPtr accepted_connection, const std::error_code& ec) {
-  if (!acceptor_.is_open() || asio_service_.service().stopped())
+  if (!acceptor_.is_open() || strand_.context().stopped())
     return;
 
   if (ec)
@@ -127,16 +122,16 @@ void Listener::HandleAccept(ConnectionPtr accepted_connection, const std::error_
     on_new_connection_(accepted_connection);
 
   // The connection object is kept alive in the acceptor handler until HandleAccept() is called.
-  ConnectionPtr connection{Connection::MakeShared(asio_service_)};
+  ConnectionPtr connection{ Connection::MakeShared(strand_) };
   ListenerPtr this_ptr{shared_from_this()};
-  acceptor_.async_accept(connection->Socket(), asio_service_.service().wrap([this_ptr, connection](
+  acceptor_.async_accept(connection->Socket(), strand_.wrap([this_ptr, connection](
                                                    const std::error_code& error) {
                                                  this_ptr->HandleAccept(connection, error);
                                                }));
 }
 
 void Listener::StopListening() {
-  asio::post(asio_service_.service().get_executor(), [this] { DoStopListening(); });
+  asio::post(strand_.context().get_executor(), [this] { DoStopListening(); });
 }
 
 void Listener::DoStopListening() {

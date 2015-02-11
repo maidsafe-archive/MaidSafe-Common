@@ -206,9 +206,9 @@ TEST(CryptoTest, BEH_Hash) {
 
 std::string CorruptData(const std::string& input) {
   // Replace a single char of input to a different random char.
-  std::string output(input);
-  output.back() += (RandomUint32() % 254) + 1;
-  return output;
+  std::vector<byte> input_copy(input.begin(), input.end());
+  ++input_copy[RandomUint32() % input_copy.size()];
+  return std::string(input_copy.begin(), input_copy.end());
 }
 
 TEST(CryptoTest, BEH_SymmEncrypt) {
@@ -217,12 +217,11 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
       HexDecode("0a89927670e292af98080a3c3e2bdee4289b768de74570f9f470282756390fe3"));
   const AES256InitialisationVector kIV(HexDecode("92af98080a3c3e2bdee4289b768de7af"));
   const PlainText kUnencrypted(HexDecode(
-      "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984"
-      "a6a01b2015e48a47bc46af231d2b146e54a87db43f51c2a5"));
+      "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984a6a01b2015e48a47bc46af231d2b146e54a87db43f51"
+      "c2a5"));
   const CipherText kEncrypted(NonEmptyString(HexDecode(
-      "8990a7193f1e2ecce585b28062ef423c33c31b6705fc428b"
-      "582bec8a21fa96f0d4ace2d65f71d0e9a76ee867834858b5"
-      "7d4bd8f1dc69684516b33d0b912eeff7")));
+      "f7b043e78bc86c801a9f37850238d07702ffc59945473f5c88ff1854fcbeedb2c1fe6fdfc7ccb040ee608e8f60b3"
+      "00e4b969aef8ac9a7b1d00c52d9133c6b1d9")));
   const AES256Key kBadKey(CorruptData(kKey.string()));
   const AES256InitialisationVector kBadIV(CorruptData(kIV.string()));
   const PlainText kBadUnencrypted(CorruptData(kUnencrypted.string()));

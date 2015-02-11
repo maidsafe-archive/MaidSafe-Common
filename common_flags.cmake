@@ -84,9 +84,6 @@ target_compile_definitions(maidsafe_common
     $<$<CONFIG:Release>:NDEBUG>
     $<$<AND:$<BOOL:${JUST_THREAD_DEADLOCK_CHECK}>,$<CONFIG:Debug>>:_JUST_THREAD_DEADLOCK_CHECK>
     $<$<BOOL:${BOOST_DISABLE_ASSERTS}>:BOOST_DISABLE_ASSERTS>
-  PRIVATE
-    # TODO(Fraser#5#): 2014-12-08 - BEFORE_RELEASE - remove this define and all associated C++ code.
-    USE_DEPRECATED_NODE_ID_BEHAVIOUR
 )
 
 target_compile_options(maidsafe_common
@@ -119,7 +116,6 @@ target_compile_options(maidsafe_common
                  #      GF (eliminate duplicate strings),
                  #      Gy (allows the compiler to package individual functions in the form of
                  #          packaged functions)
-            /GL  # Whole program optimisation.
             /MD  # Use the multithread, dynamic version of the C run-time library.
         >
         $<$<CONFIG:Debug>:
@@ -133,7 +129,6 @@ target_compile_options(maidsafe_common
         >
         $<$<CONFIG:RelWithDebInfo>:
             /O2  # Optimise code for maximum speed.
-            /GL  # Whole program optimisation.
             /MD  # Use the multithread, dynamic version of the C run-time library.
             /Zi  # Produce a program database (.pdb) that contains type information and symbolic debugging information.
         >

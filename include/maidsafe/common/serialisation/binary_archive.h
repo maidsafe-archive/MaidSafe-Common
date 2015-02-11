@@ -75,14 +75,14 @@ class BinaryInputArchive : public cereal::InputArchive<BinaryInputArchive> {
 
 // Saving for POD types to binary
 template <class T>
-inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type save(
+inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type CEREAL_SAVE_FUNCTION_NAME(
     BinaryOutputArchive& ar, T const& t) {
   ar.saveBinary(std::addressof(t), sizeof(t));
 }
 
 // Loading for POD types from binary
 template <class T>
-inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type load(
+inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type CEREAL_LOAD_FUNCTION_NAME(
     BinaryInputArchive& ar, T& t) {
   ar.loadBinary(std::addressof(t), sizeof(t));
 }
@@ -90,26 +90,26 @@ inline typename std::enable_if<std::is_arithmetic<T>::value, void>::type load(
 // Serializing NVP types to binary
 template <class Archive, class T>
 inline CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
-    serialize(Archive& ar, cereal::NameValuePair<T>& t) {
+    CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, cereal::NameValuePair<T>& t) {
   ar(t.value);
 }
 
 // Serializing SizeTags to binary
 template <class Archive, class T>
 inline CEREAL_ARCHIVE_RESTRICT(BinaryInputArchive, BinaryOutputArchive)
-    serialize(Archive& ar, cereal::SizeTag<T>& t) {
+    CEREAL_SERIALIZE_FUNCTION_NAME(Archive& ar, cereal::SizeTag<T>& t) {
   ar(t.size);
 }
 
 // Saving binary data
 template <class T>
-inline void save(BinaryOutputArchive& ar, cereal::BinaryData<T> const& bd) {
+inline void CEREAL_SAVE_FUNCTION_NAME(BinaryOutputArchive& ar, cereal::BinaryData<T> const& bd) {
   ar.saveBinary(bd.data, static_cast<std::size_t>(bd.size));
 }
 
 // Loading binary data
 template <class T>
-inline void load(BinaryInputArchive& ar, cereal::BinaryData<T>& bd) {
+inline void CEREAL_LOAD_FUNCTION_NAME(BinaryInputArchive& ar, cereal::BinaryData<T>& bd) {
   ar.loadBinary(bd.data, static_cast<std::size_t>(bd.size));
 }
 
@@ -118,5 +118,8 @@ inline void load(BinaryInputArchive& ar, cereal::BinaryData<T>& bd) {
 // Register archives for polymorphic support
 CEREAL_REGISTER_ARCHIVE(maidsafe::BinaryOutputArchive)
 CEREAL_REGISTER_ARCHIVE(maidsafe::BinaryInputArchive)
+
+// tie input and output archives together
+CEREAL_SETUP_ARCHIVE_TRAITS(maidsafe::BinaryInputArchive, maidsafe::BinaryOutputArchive)
 
 #endif  // MAIDSAFE_COMMON_SERIALISATION_BINARY_ARCHIVE_H_
