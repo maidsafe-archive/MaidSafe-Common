@@ -160,38 +160,6 @@ std::error_condition make_error_condition(PassportErrors code);
 const std::error_category& GetPassportCategory();
 passport_error MakeError(PassportErrors code);
 
-enum class RudpErrors {
-  operation_aborted = 1,
-  failed_to_bootstrap,
-  failed_to_connect,
-  connection_already_in_progress,
-  already_connected,
-  already_started,
-  not_connected,
-  operation_not_supported,
-  message_size,
-  bad_message,
-  timed_out,
-  shut_down
-};
-
-class rudp_error : public maidsafe_error {
- public:
-  rudp_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
-  rudp_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
-  explicit rudp_error(std::error_code ec) : maidsafe_error(ec) {}
-  rudp_error(int ev, const std::error_category& ecat, const std::string& what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  rudp_error(int ev, const std::error_category& ecat, const char* what_arg)
-      : maidsafe_error(ev, ecat, what_arg) {}
-  rudp_error(int ev, const std::error_category& ecat) : maidsafe_error(ev, ecat) {}
-};
-
-std::error_code make_error_code(RudpErrors code);
-std::error_condition make_error_condition(RudpErrors code);
-const std::error_category& GetRudpCategory();
-rudp_error MakeError(RudpErrors code);
-
 enum class EncryptErrors {
   bad_sequence = 1,
   no_data,
@@ -379,9 +347,6 @@ struct is_error_code_enum<maidsafe::AsymmErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::PassportErrors> : public true_type {};
-
-template <>
-struct is_error_code_enum<maidsafe::RudpErrors> : public true_type {};
 
 template <>
 struct is_error_code_enum<maidsafe::EncryptErrors> : public true_type {};

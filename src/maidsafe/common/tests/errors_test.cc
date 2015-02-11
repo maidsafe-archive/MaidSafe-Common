@@ -148,11 +148,6 @@ struct EnumClass<passport_error> {
 };
 
 template <>
-struct EnumClass<rudp_error> {
-  typedef RudpErrors type;
-};
-
-template <>
 struct EnumClass<encrypt_error> {
   typedef EncryptErrors type;
 };
@@ -187,8 +182,8 @@ struct EnumClass<api_error> {
   typedef ApiErrors type;
 };
 
-typedef testing::Types<common_error, asymm_error, passport_error, rudp_error, encrypt_error,
-                       routing_error, nfs_error, drive_error, vault_error, vault_manager_error,
+typedef testing::Types<common_error, asymm_error, passport_error, encrypt_error, routing_error,
+                       nfs_error, drive_error, vault_error, vault_manager_error,
                        api_error> AllErrorTypes;
 
 TYPED_TEST_CASE(MaidSafeErrorTest, AllErrorTypes);
