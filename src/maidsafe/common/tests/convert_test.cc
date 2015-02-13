@@ -1,4 +1,4 @@
-/*  Copyright 2009 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -44,7 +44,7 @@ TEST(Conversions, BEH_Address_v4) {
 }
 
 TEST(Conversions, BEH_Address_v6) {
-  const unsigned long scope_ids[] = { 0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf };
+  const unsigned long scope_ids[] = {0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf};
 
   for (auto scope_id : scope_ids) {
     auto ip = GetRandomIPv6AddressAsString();
@@ -86,4 +86,3 @@ TEST(Conversions, BEH_Endpoint) {
 }  // namespace test
 
 }  // namespace maidsafe
-
