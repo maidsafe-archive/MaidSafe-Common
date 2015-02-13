@@ -76,9 +76,9 @@ maidsafe::detail::Spinlock& g_console_mutex() {
   return mutex;
 }
 
-const std::array<std::string, 12> kProjects = {{"api", "common", "crux", "drive", "encrypt",
-                                                "launcher", "nfs", "passport", "routing", "rudp",
-                                                "vault", "vault_manager"}};
+const std::array<std::string, 11> kProjects = {{"api", "common", "crux", "drive", "encrypt",
+                                                "launcher", "nfs", "passport", "routing", "vault",
+                                                "vault_manager"}};
 
 #ifdef MAIDSAFE_WIN32
 

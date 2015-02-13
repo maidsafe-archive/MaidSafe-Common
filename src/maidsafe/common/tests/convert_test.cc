@@ -1,4 +1,4 @@
-/*  Copyright 2009 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -25,26 +25,26 @@ namespace test {
 
 template <class T>
 void ToBoostThenBack(const T& value) {
-  auto boost_value = common::convert::ToBoost(value);
-  auto second_value = common::convert::ToAsio(boost_value);
+  auto boost_value = convert::ToBoost(value);
+  auto second_value = convert::ToAsio(boost_value);
   EXPECT_EQ(value, second_value);
 }
 
 template <class T>
 void ToAsioThenBack(const T& value) {
-  auto boost_value = common::convert::ToAsio(value);
-  auto second_value = common::convert::ToBoost(boost_value);
+  auto boost_value = convert::ToAsio(value);
+  auto second_value = convert::ToBoost(boost_value);
   EXPECT_EQ(value, second_value);
 }
 
-TEST(Conversions, BEH_Address_v4) {
+TEST(ConversionsTest, BEH_Address_v4) {
   auto ip = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address_v4::from_string(ip));
   ToAsioThenBack(boost::asio::ip::address_v4::from_string(ip));
 }
 
-TEST(Conversions, BEH_Address_v6) {
-  const unsigned long scope_ids[] = { 0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf };
+TEST(ConversionsTest, BEH_Address_v6) {
+  const unsigned long scope_ids[] = {0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf};
 
   for (auto scope_id : scope_ids) {
     auto ip = GetRandomIPv6AddressAsString();
@@ -59,7 +59,7 @@ TEST(Conversions, BEH_Address_v6) {
   }
 }
 
-TEST(Conversions, BEH_Address) {
+TEST(ConversionsTest, BEH_Address) {
   auto ip_v4 = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v4));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v4));
@@ -69,7 +69,7 @@ TEST(Conversions, BEH_Address) {
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v6));
 }
 
-TEST(Conversions, BEH_Endpoint) {
+TEST(ConversionsTest, BEH_Endpoint) {
   using asio_endpoint = asio::ip::udp::endpoint;
   using boost_endpoint = boost::asio::ip::udp::endpoint;
   auto port = GetRandomPort();
@@ -86,4 +86,3 @@ TEST(Conversions, BEH_Endpoint) {
 }  // namespace test
 
 }  // namespace maidsafe
-

@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -21,7 +21,6 @@
 
 #include <cassert>
 #include <system_error>
-#include "boost/system/error_code.hpp"
 
 #include "asio/ip/address.hpp"
 #include "asio/ip/address_v4.hpp"
@@ -32,10 +31,9 @@
 #include "boost/asio/ip/address_v4.hpp"
 #include "boost/asio/ip/address_v6.hpp"
 #include "boost/asio/ip/udp.hpp"
+#include "boost/system/error_code.hpp"
 
 namespace maidsafe {
-
-namespace common {
 
 namespace convert {
 
@@ -95,7 +93,7 @@ inline asio::ip::udp::endpoint ToAsio(const boost::asio::ip::udp::endpoint& e) {
 }
 
 }  // namespace convert
-}  // namespace common
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_CONVERT_H_
