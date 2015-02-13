@@ -96,7 +96,7 @@ struct Archive<std::istringstream> {
 };
 
 template <typename TypeToSerialise, typename StreamType>
-std::unique_ptr<StreamType> Serialise(TypeToSerialise object_to_serialise) {
+std::unique_ptr<StreamType> Serialise(TypeToSerialise&& object_to_serialise) {
   auto binary_output_stream = maidsafe::make_unique<StreamType>();
   {
     typename Archive<StreamType>::type binary_output_archive(*binary_output_stream);
