@@ -37,13 +37,13 @@ void ToAsioThenBack(const T& value) {
   EXPECT_EQ(value, second_value);
 }
 
-TEST(Conversions, BEH_Address_v4) {
+TEST(ConversionsTest, BEH_Address_v4) {
   auto ip = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address_v4::from_string(ip));
   ToAsioThenBack(boost::asio::ip::address_v4::from_string(ip));
 }
 
-TEST(Conversions, BEH_Address_v6) {
+TEST(ConversionsTest, BEH_Address_v6) {
   const unsigned long scope_ids[] = {0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf};
 
   for (auto scope_id : scope_ids) {
@@ -59,7 +59,7 @@ TEST(Conversions, BEH_Address_v6) {
   }
 }
 
-TEST(Conversions, BEH_Address) {
+TEST(ConversionsTest, BEH_Address) {
   auto ip_v4 = GetRandomIPv4AddressAsString();
   ToBoostThenBack(asio::ip::address::from_string(ip_v4));
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v4));
@@ -69,7 +69,7 @@ TEST(Conversions, BEH_Address) {
   ToAsioThenBack(boost::asio::ip::address::from_string(ip_v6));
 }
 
-TEST(Conversions, BEH_Endpoint) {
+TEST(ConversionsTest, BEH_Endpoint) {
   using asio_endpoint = asio::ip::udp::endpoint;
   using boost_endpoint = boost::asio::ip::udp::endpoint;
   auto port = GetRandomPort();
