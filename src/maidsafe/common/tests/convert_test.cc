@@ -25,15 +25,15 @@ namespace test {
 
 template <class T>
 void ToBoostThenBack(const T& value) {
-  auto boost_value = common::convert::ToBoost(value);
-  auto second_value = common::convert::ToAsio(boost_value);
+  auto boost_value = convert::ToBoost(value);
+  auto second_value = convert::ToAsio(boost_value);
   EXPECT_EQ(value, second_value);
 }
 
 template <class T>
 void ToAsioThenBack(const T& value) {
-  auto boost_value = common::convert::ToAsio(value);
-  auto second_value = common::convert::ToBoost(boost_value);
+  auto boost_value = convert::ToAsio(value);
+  auto second_value = convert::ToBoost(boost_value);
   EXPECT_EQ(value, second_value);
 }
 

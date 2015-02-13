@@ -35,8 +35,6 @@
 
 namespace maidsafe {
 
-namespace common {
-
 namespace convert {
 
 // Warning: Will map error from any error_category to an error
@@ -95,7 +93,7 @@ inline asio::ip::udp::endpoint ToAsio(const boost::asio::ip::udp::endpoint& e) {
 }
 
 }  // namespace convert
-}  // namespace common
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_CONVERT_H_
