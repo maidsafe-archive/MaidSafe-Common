@@ -44,7 +44,6 @@
 #pragma warning (disable: 4127)
 #endif
 
-
 #if defined(ROTL)      || \
     defined(U32TO8_LE) || \
     defined(U64TO8_LE) || \
@@ -53,25 +52,25 @@
 #error Previous definition for these macros not expected
 #endif
 
-#define ROTL(x,b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) ) /*NOLINT*/
+#define ROTL(x,b) static_cast<uint64_t>( ((x) << (b)) | ( (x) >> (64 - (b))) ) /*NOLINT*/
 
-#define U32TO8_LE(p, v)                                         \
-  (p)[0] = (uint8_t)((v)      ); (p)[1] = (uint8_t)((v) >>  8); \
-  (p)[2] = (uint8_t)((v) >> 16); (p)[3] = (uint8_t)((v) >> 24);
+#define U32TO8_LE(p, v)                                                               \
+  (p)[0] = static_cast<uint8_t>((v)      ); (p)[1] = static_cast<uint8_t>((v) >>  8); \
+  (p)[2] = static_cast<uint8_t>((v) >> 16); (p)[3] = static_cast<uint8_t>((v) >> 24);
 
-#define U64TO8_LE(p, v)                        \
-  U32TO8_LE((p),     (uint32_t)((v)      ));   \
-  U32TO8_LE((p) + 4, (uint32_t)((v) >> 32));
+#define U64TO8_LE(p, v)                                             \
+  U32TO8_LE((p),     static_cast<uint32_t>((v)      )); /*NOLINT*/  \
+  U32TO8_LE((p) + 4, static_cast<uint32_t>((v) >> 32));
 
-#define U8TO64_LE(p)            \
-  (((uint64_t)((p)[0])      ) | \
-   ((uint64_t)((p)[1]) <<  8) | /*NOLINT*/ \
-   ((uint64_t)((p)[2]) << 16) | /*NOLINT*/ \
-   ((uint64_t)((p)[3]) << 24) | /*NOLINT*/ \
-   ((uint64_t)((p)[4]) << 32) | /*NOLINT*/ \
-   ((uint64_t)((p)[5]) << 40) | /*NOLINT*/ \
-   ((uint64_t)((p)[6]) << 48) | /*NOLINT*/ \
-   ((uint64_t)((p)[7]) << 56))  /*NOLINT*/
+#define U8TO64_LE(p)                                  \
+  ((static_cast<uint64_t>((p)[0])      ) |            \
+   (static_cast<uint64_t>((p)[1]) <<  8) | /*NOLINT*/ \
+   (static_cast<uint64_t>((p)[2]) << 16) | /*NOLINT*/ \
+   (static_cast<uint64_t>((p)[3]) << 24) | /*NOLINT*/ \
+   (static_cast<uint64_t>((p)[4]) << 32) | /*NOLINT*/ \
+   (static_cast<uint64_t>((p)[5]) << 40) | /*NOLINT*/ \
+   (static_cast<uint64_t>((p)[6]) << 48) | /*NOLINT*/ \
+   (static_cast<uint64_t>((p)[7]) << 56))  /*NOLINT*/
 
 #define SIPROUND                                              \
   do {                                                        \

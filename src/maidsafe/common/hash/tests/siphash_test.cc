@@ -54,6 +54,11 @@ namespace {
    this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
 
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
+
 /* default: SipHash-2-4 */
 #define cROUNDS 2
 #define dROUNDS 4
@@ -179,6 +184,10 @@ int siphash(uint8_t *out, const uint8_t *in, uint64_t inlen, const uint8_t *k) {
 
   return 0;
 }
+
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 std::array<byte, 16> GetRandomSeed() {
   std::array<byte, 16> seed{{}};
