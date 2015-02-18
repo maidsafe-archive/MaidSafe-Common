@@ -15,16 +15,18 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_USE_SERIALIZE_H_
 #define MAIDSAFE_COMMON_HASH_HASH_USE_SERIALIZE_H_
 
+#include <cstdint>
 #include <type_traits>
 
 #define MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER) \
   CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER)                         \
   namespace maidsafe {                                               \
     template<> struct HashVersion<TYPE> :                            \
-      std::integral_constant<unsigned, VERSION_NUMBER> {};           \
+      std::integral_constant<std::uint32_t, VERSION_NUMBER> {};           \
   }
 
 namespace maidsafe {
@@ -52,7 +54,7 @@ struct UseSerializeForHashing<
   MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(type, number)
 */
 template<typename, typename Enable = void>
-struct HashVersion : std::integral_constant<unsigned, 0> {};
+struct HashVersion : std::integral_constant<std::uint32_t, 0> {};
 
 }  // namespace maidsafe
 

@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_ALGORITHMS_SIPHASH_H_
 #define MAIDSAFE_COMMON_HASH_ALGORITHMS_SIPHASH_H_
 
@@ -28,9 +29,11 @@
 namespace maidsafe {
 
 class SipHash : public detail::HashAlgorithmBase<SipHash> {
+ private:
   static const std::size_t kKeySize = 16;
+
  public:
-  SipHash(const std::array<byte, kKeySize>& seed) MAIDSAFE_NOEXCEPT;
+  explicit SipHash(const std::array<byte, kKeySize>& seed) MAIDSAFE_NOEXCEPT;
 
   void Update(const byte* in, std::uint64_t inlen) MAIDSAFE_NOEXCEPT;
 
@@ -41,7 +44,6 @@ class SipHash : public detail::HashAlgorithmBase<SipHash> {
  private:
   unsigned Compress(const byte* in, std::uint64_t inlen) MAIDSAFE_NOEXCEPT;
 
- private:
   std::uint64_t v0;
   std::uint64_t v1;
   std::uint64_t v2;
