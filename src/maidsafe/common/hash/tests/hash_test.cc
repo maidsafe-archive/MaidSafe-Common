@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #include <forward_list>
 #include <initializer_list>
 #include <list>
@@ -34,13 +35,18 @@
 
 #include "maidsafe/common/hash.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace {
+
+int serialize_call_count = 0;
+
 struct IgnoreInternalSerialize {
   int one, two, three;
 
   template<typename Archive>
   void serialize(Archive& archive) {
+    ++serialize_call_count;
     archive(three, two, one);
   }
 
@@ -55,9 +61,10 @@ struct UseInternalSerializeWithVersion {
   int one, two, three;
 
   template<typename Archive>
-  void serialize(Archive& archive, const unsigned version) {
+  void serialize(Archive& archive, const std::uint32_t version) {
+    ++serialize_call_count;
     EXPECT_EQ(0u, version);
-    archive & one & two & three;
+    archive(one, two, three);
   }
 };
 
@@ -67,7 +74,8 @@ struct UseInternalSerializeWithoutVersion {
 
   template<typename Archive>
   void serialize(Archive& archive) {
-    archive & one & two & three;
+    ++serialize_call_count;
+    archive(one, two, three);
   }
 };
 
@@ -86,6 +94,7 @@ struct UseExternalSerializeWithoutVersion {
 
 template<typename Archive>
 void serialize(Archive& archive, IgnoreExternalSerialize& value) {
+  ++serialize_call_count;
   archive(value.three, value.two, value.one);
 }
 
@@ -96,41 +105,32 @@ void HashAppend(HashAlgorithm& hash, const IgnoreExternalSerialize& value) {
 
 template<typename Archive>
 void serialize(
-    Archive& archive, UseExternalSerializeWithVersion& value, const unsigned version) {
+    Archive& archive, UseExternalSerializeWithVersion& value, const std::uint32_t version) {
+  ++serialize_call_count;
   EXPECT_EQ(10u, version);
-  archive & value.one & value.two & value.three;
+  archive(value.one, value.two, value.three);
 }
 
 template<typename Archive>
 void serialize(Archive& archive, UseExternalSerializeWithoutVersion& value) {
-  archive & value.one & value.two & value.three;
+  ++serialize_call_count;
+  archive(value.one, value.two, value.three);
 }
 
 template<typename CustomType>
-void TestCustomType() {
-  const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  CustomType original = {-500, 5000, 50000};
-  const std::uint64_t original_hash = hash(original);
+struct ExpectedSerializeCallCount {
+  enum { value = 1 };
+};
 
-  std::string serialized;
-  {
-    std::ostringstream out;
-    {
-      cereal::BinaryOutputArchive archive(out);
-      archive(original);
-    }
-    serialized = out.str();
-  }
+template<>
+struct ExpectedSerializeCallCount<IgnoreInternalSerialize> {
+  enum { value = 0 };
+};
 
-  CustomType copy{0, 0, 0};
-  EXPECT_NE(original_hash, hash(copy));
-  {
-    std::istringstream in(serialized);
-    cereal::BinaryInputArchive archive(in);
-    archive(copy);
-  }
-  EXPECT_EQ(original_hash, hash(copy));
-}
+template<>
+struct ExpectedSerializeCallCount<IgnoreExternalSerialize> {
+  enum { value = 0 };
+};
 
 }  // namespace
 
@@ -297,23 +297,35 @@ TEST(HashTest, BEH_StringRange) {
   EXPECT_EQ(reference, hash(ref_data));
 }
 
-TEST(HashTest, BEH_PreferHashAppend) {
+template <typename T>
+class TypedHashTest : public testing::Test {};
+
+using CustomTypes = testing::Types<
+    IgnoreInternalSerialize, UseInternalSerializeWithVersion, UseInternalSerializeWithoutVersion,
+    IgnoreExternalSerialize, UseExternalSerializeWithVersion, UseExternalSerializeWithoutVersion>;
+
+TYPED_TEST_CASE(TypedHashTest, CustomTypes);
+
+TYPED_TEST(TypedHashTest, BEH_PreferHashAppend) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  EXPECT_EQ(
-      hash(UseInternalSerializeWithVersion{10, 20, 30}),
-      hash(IgnoreInternalSerialize{10, 20, 30}));
-  EXPECT_EQ(
-      hash(UseInternalSerializeWithVersion{10, 20, 30}),
-      hash(IgnoreExternalSerialize{10, 20, 30}));
+  serialize_call_count = 0;
+  const std::uint64_t expected_result{hash(10, 20, 30)};
+  const std::uint64_t actual_result{hash(TypeParam{10, 20, 30})};
+
+  EXPECT_EQ(ExpectedSerializeCallCount<TypeParam>::value, serialize_call_count);
+  EXPECT_EQ(expected_result, actual_result);
 }
 
-TEST(HashTest, BEH_CerealAndHashing) {
-  TestCustomType<IgnoreInternalSerialize>();
-  TestCustomType<UseInternalSerializeWithVersion>();
-  TestCustomType<UseInternalSerializeWithoutVersion>();
-  TestCustomType<IgnoreExternalSerialize>();
-  TestCustomType<UseExternalSerializeWithVersion>();
-  TestCustomType<UseExternalSerializeWithoutVersion>();
+TYPED_TEST(TypedHashTest, BEH_CerealAndHashing) {
+  const maidsafe::SeededHash<maidsafe::SipHash> hash{};
+  TypeParam original = {-500, 5000, 50000};
+  const std::uint64_t original_hash = hash(original);
+
+  SerialisedData serialised{Serialise(original)};
+  TypeParam copy{0, 0, 0};
+  EXPECT_NE(original_hash, hash(copy));
+  Parse(serialised, copy);
+  EXPECT_EQ(original_hash, hash(copy));
 }
 
 TEST(HashTest, BEH_InHashMap) {
@@ -336,4 +348,5 @@ TEST(HashTest, BEH_InHashMap) {
 }
 
 }  // namespace test
+
 }  // namespace maidsafe
