@@ -110,7 +110,7 @@ template <typename HashAlgorithm, typename HashableRange>
 inline detail::EnableBasicRange<HashableRange> HashAppend(HashAlgorithm& hash,
                                                           HashableRange&& value) {
   std::size_t count = 0;
-  for (const auto& one_value : value) {
+  for (auto& one_value : value) {
     hash(one_value);
     ++count;
   }
@@ -123,7 +123,7 @@ inline detail::EnableBasicRange<HashableRange> HashAppend(HashAlgorithm& hash,
 template <typename HashAlgorithm, typename HashableRange>
 inline detail::EnableRandomRange<HashableRange> HashAppend(HashAlgorithm& hash,
                                                            HashableRange&& value) {
-  for (const auto& one_value : value) {
+  for (auto& one_value : value) {
     hash(one_value);
   }
 

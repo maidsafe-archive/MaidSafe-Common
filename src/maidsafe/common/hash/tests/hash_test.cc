@@ -658,6 +658,25 @@ TYPED_TEST(TypedHashTest, BEH_CerealAndHashing) {
   EXPECT_EQ(original_hash, hash(copy));
 }
 
+TYPED_TEST(TypedHashTest, BEH_CustomTypesInContainer) {
+  const maidsafe::SeededHash<maidsafe::SipHash> hash{};
+  TypeParam data[] = {TypeParam{10, 20, 30}, TypeParam{30, 20, 10}};
+  const std::uint64_t reference = hash(data);
+
+  EXPECT_EQ(reference, hash(10, 20, 30, 30, 20, 10, std::size_t(2)));
+  EXPECT_EQ(reference,
+            hash(std::array<TypeParam, 2>{{TypeParam{10, 20, 30}, TypeParam{30, 20, 10}}}));
+  {
+    std::map<int, TypeParam> test_map{{1, TypeParam{10, 20, 30}}, {2, TypeParam{30, 20, 10}}};
+    EXPECT_EQ(reference, hash(test_map | boost::adaptors::map_values));
+  }
+  EXPECT_EQ(reference,
+            hash(std::forward_list<TypeParam>{TypeParam{10, 20, 30}, TypeParam{30, 20, 10}}));
+  EXPECT_EQ(reference, hash(std::list<TypeParam>{TypeParam{10, 20, 30}, TypeParam{30, 20, 10}}));
+  EXPECT_EQ(reference,
+            hash(std::vector<TypeParam>{TypeParam{10, 20, 30}, TypeParam{30, 20, 10}}));
+}
+
 TEST(HashTest, BEH_InHashMap) {
   std::unordered_map<std::pair<std::string, std::string>, int,
                      maidsafe::SeededHash<maidsafe::SipHash>> hash_table;

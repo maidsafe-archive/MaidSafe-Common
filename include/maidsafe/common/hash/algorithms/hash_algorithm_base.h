@@ -117,32 +117,24 @@ class HashAlgorithmBase {
     // There's no need to incude Cereal save/serialize minimal functions since they relate to types
     // which are so basic they shouldn't be using serialisation to hash.
     template <typename T>
-    using HasMemberSave =
-        cereal::traits::has_member_save<typename std::remove_reference<T>::type, Derived>;
+    using HasMemberSave = cereal::traits::has_member_save<Normalize<T>, Derived>;
     template <typename T>
-    using HasNonMemberSave =
-        cereal::traits::has_non_member_save<typename std::remove_reference<T>::type, Derived>;
+    using HasNonMemberSave = cereal::traits::has_non_member_save<Normalize<T>, Derived>;
     template <typename T>
-    using HasMemberSerialize =
-        cereal::traits::has_member_serialize<typename std::remove_reference<T>::type, Derived>;
+    using HasMemberSerialize = cereal::traits::has_member_serialize<Normalize<T>, Derived>;
     template <typename T>
-    using HasNonMemberSerialize =
-        cereal::traits::has_non_member_serialize<typename std::remove_reference<T>::type, Derived>;
+    using HasNonMemberSerialize = cereal::traits::has_non_member_serialize<Normalize<T>, Derived>;
     template <typename T>
-    using HasMemberVersionedSave =
-        cereal::traits::has_member_versioned_save<typename std::remove_reference<T>::type, Derived>;
+    using HasMemberVersionedSave = cereal::traits::has_member_versioned_save<Normalize<T>, Derived>;
     template <typename T>
     using HasNonMemberVersionedSave =
-        cereal::traits::has_non_member_versioned_save<typename std::remove_reference<T>::type,
-                                                      Derived>;
+        cereal::traits::has_non_member_versioned_save<Normalize<T>, Derived>;
     template <typename T>
     using HasMemberVersionedSerialize =
-        cereal::traits::has_member_versioned_serialize<typename std::remove_reference<T>::type,
-                                                       Derived>;
+        cereal::traits::has_member_versioned_serialize<Normalize<T>, Derived>;
     template <typename T>
     using HasNonMemberVersionedSerialize =
-        cereal::traits::has_non_member_versioned_serialize<typename std::remove_reference<T>::type,
-                                                           Derived>;
+        cereal::traits::has_non_member_versioned_serialize<Normalize<T>, Derived>;
 
    public:
     template <typename Type>
