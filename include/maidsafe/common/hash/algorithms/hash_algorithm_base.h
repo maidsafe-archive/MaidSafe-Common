@@ -15,15 +15,20 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_ALGORITHMS_HASH_ALGORITHM_BASE_H_
 #define MAIDSAFE_COMMON_HASH_ALGORITHMS_HASH_ALGORITHM_BASE_H_
 
+#include <cstdint>
 #include <type_traits>
 #include <utility>
+
+#include "cereal/details/traits.hpp"
 
 #include "maidsafe/common/hash/hash_use_serialize.h"
 
 namespace maidsafe {
+
 namespace detail {
 
 template<typename Derived>
@@ -113,73 +118,95 @@ class HashAlgorithmBase {
   };
 
   struct SerializeFunction {
-    struct MemberFunction {
-      template<typename Type>
-      auto operator()(Derived& hash, Type&& type) const
-          -> decltype(std::forward<Type>(type).serialize(hash)) {
-        return std::forward<Type>(type).serialize(hash);
-      }
-    };
+    // There's no need to incude Cereal save/serialize minimal functions since they relate to types
+    // which are so basic they shouldn't be using serialisation to hash.
+    template <typename T>
+    using HasMemberSave =
+        cereal::traits::has_member_save<typename std::remove_reference<T>::type, Derived>;
+    template <typename T>
+    using HasNonMemberSave =
+        cereal::traits::has_non_member_save<typename std::remove_reference<T>::type, Derived>;
+    template <typename T>
+    using HasMemberSerialize =
+        cereal::traits::has_member_serialize<typename std::remove_reference<T>::type, Derived>;
+    template <typename T>
+    using HasNonMemberSerialize =
+        cereal::traits::has_non_member_serialize<typename std::remove_reference<T>::type, Derived>;
+    template <typename T>
+    using HasMemberVersionedSave =
+        cereal::traits::has_member_versioned_save<typename std::remove_reference<T>::type, Derived>;
+    template <typename T>
+    using HasNonMemberVersionedSave =
+        cereal::traits::has_non_member_versioned_save<typename std::remove_reference<T>::type,
+                                                      Derived>;
+    template <typename T>
+    using HasMemberVersionedSerialize =
+        cereal::traits::has_member_versioned_serialize<typename std::remove_reference<T>::type,
+                                                       Derived>;
+    template <typename T>
+    using HasNonMemberVersionedSerialize =
+        cereal::traits::has_non_member_versioned_serialize<typename std::remove_reference<T>::type,
+                                                           Derived>;
 
-    struct MemberFunctionWithVersion {
-      template<typename Type>
-      auto operator()(Derived& hash, Type&& type) const
-          -> decltype(std::forward<Type>(type).serialize(hash, std::declval<unsigned>())) {
-        static_assert(
-            IsVersionIntegral<Normalize<Type>>::value,
-            "version must provide integral value");
-        return std::forward<Type>(type).serialize(hash, HashVersion<Normalize<Type>>{});
-      }
-    };
-
-    struct NonMemberFunction {
-      template<typename Type>
-      auto operator()(Derived& hash, Type&& type) const
-          -> decltype(serialize(hash, std::forward<Type>(type))) {
-        return serialize(hash, std::forward<Type>(type));
-      }
-    };
-
-    struct NonMemberFunctionWithVersion {
-      template<typename Type>
-      auto operator()(Derived& hash, Type&& type) const
-          -> decltype(serialize(hash, std::forward<Type>(type), std::declval<unsigned>())) {
-        static_assert(
-            IsVersionIntegral<Normalize<Type>>::value,
-            "version must provide integral value");
-        return serialize(hash, std::forward<Type>(type), HashVersion<Normalize<Type>>{});
-      }
-    };
-
-    template<typename Type>
-    EnableIfHas<MemberFunction(Derived&, Type)> operator()(
-        Derived& hash, Type&& type) const {
-      MemberFunction{}(hash, std::forward<Type>(type));
+   public:
+    template <typename Type>
+    typename std::enable_if<HasMemberSave<Type>::value>::type operator()(Derived& hash,
+                                                                         Type&& type) const {
+      std::forward<Type>(type).save(hash);
     }
 
-    template<typename Type>
-    EnableIfHas<NonMemberFunction(Derived&, Type)> operator()(
-        Derived& hash, Type&& type) const {
-      NonMemberFunction{}(hash, std::forward<Type>(type));
+    template <typename Type>
+    typename std::enable_if<HasNonMemberSave<Type>::value>::type operator()(Derived& hash,
+                                                                            Type&& type) const {
+      save(hash, type);
     }
 
-    template<typename Type>
-    EnableIfHas<MemberFunctionWithVersion(Derived&, Type)> operator()(
-        Derived& hash, Type&& type) const {
-      MemberFunctionWithVersion{}(hash, std::forward<Type>(type));
+    template <typename Type>
+    typename std::enable_if<HasMemberSerialize<Type>::value>::type operator()(Derived& hash,
+                                                                              Type&& type) const {
+      std::forward<Type>(type).serialize(hash);
     }
 
-    template<typename Type>
-    EnableIfHas<NonMemberFunctionWithVersion(Derived&, Type)> operator()(
+    template <typename Type>
+    typename std::enable_if<HasNonMemberSerialize<Type>::value>::type operator()(
         Derived& hash, Type&& type) const {
-      NonMemberFunctionWithVersion{}(hash, std::forward<Type>(type));
+      serialize(hash, type);
+    }
+
+    template <typename Type>
+    typename std::enable_if<HasMemberVersionedSave<Type>::value>::type operator()(
+        Derived& hash, Type&& type) const {
+      static_assert(IsVersionIntegral<Normalize<Type>>::value,
+                    "version must provide integral value");
+      std::forward<Type>(type).save(hash, HashVersion<Normalize<Type>>{});
+    }
+
+    template <typename Type>
+    typename std::enable_if<HasNonMemberVersionedSave<Type>::value>::type operator()(
+        Derived& hash, Type&& type) const {
+      static_assert(IsVersionIntegral<Normalize<Type>>::value,
+                    "version must provide integral value");
+      save(hash, type, HashVersion<Normalize<Type>>{});
+    }
+
+    template <typename Type>
+    typename std::enable_if<HasMemberVersionedSerialize<Type>::value>::type operator()(
+        Derived& hash, Type&& type) const {
+      static_assert(IsVersionIntegral<Normalize<Type>>::value,
+                    "version must provide integral value");
+      std::forward<Type>(type).serialize(hash, HashVersion<Normalize<Type>>{});
+    }
+
+    template <typename Type>
+    typename std::enable_if<HasNonMemberVersionedSerialize<Type>::value>::type operator()(
+        Derived& hash, Type&& type) const {
+      static_assert(IsVersionIntegral<Normalize<Type>>::value,
+                    "version must provide integral value");
+      serialize(hash, type, HashVersion<Normalize<Type>>{});
     }
   };
 
-  //
-  // Process function which select which stand-alone function
-  // to call (or signal failure)
-  //
+  // Process function which select which stand-alone function to call (or signal failure)
   template<typename Head, typename... Tail>
   void Process(Head&& param, Tail&&... params) {
     Process(std::forward<Head>(param));
@@ -210,7 +237,7 @@ class HashAlgorithmBase {
   void InvokeSerialize(Arg&& param, std::true_type) {
     static_assert(
         UseSerializeForHashing<typename std::remove_reference<Arg>::type>::value,
-        "This type has a serialize method, but hash support has not been enabled");
+        "This type has a serialize/save method, but hash support has not been enabled");
     SerializeFunction{}(*self(), std::forward<Arg>(param));
   }
 
@@ -219,6 +246,7 @@ class HashAlgorithmBase {
 };
 
 }  // namespace detail
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_HASH_ALGORITHMS_HASH_ALGORITHM_BASE_H_
