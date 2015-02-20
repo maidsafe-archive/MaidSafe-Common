@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_WRAPPERS_H_
 #define MAIDSAFE_COMMON_HASH_HASH_WRAPPERS_H_
 

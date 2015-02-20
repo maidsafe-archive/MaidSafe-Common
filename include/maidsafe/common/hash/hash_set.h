@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_SET_H_
 #define MAIDSAFE_COMMON_HASH_HASH_SET_H_
 
@@ -25,7 +26,7 @@
 
 namespace maidsafe {
 
-template<typename Key, typename Compare, typename Allocator>
+template <typename Key, typename Compare, typename Allocator>
 struct IsHashableRange<std::set<Key, Compare, Allocator>> : std::true_type {};
 
 }  // namespace maidsafe

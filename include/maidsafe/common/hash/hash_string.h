@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_STRING_H_
 #define MAIDSAFE_COMMON_HASH_HASH_STRING_H_
 
@@ -25,7 +26,7 @@
 
 namespace maidsafe {
 
-template<typename CharT, typename Traits, typename Allocator>
+template <typename CharT, typename Traits, typename Allocator>
 struct IsHashableDataRange<std::basic_string<CharT, Traits, Allocator>> : std::true_type {};
 
 }  // namespace maidsafe

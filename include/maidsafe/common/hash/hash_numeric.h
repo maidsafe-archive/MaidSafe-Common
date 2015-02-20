@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_NUMERIC_H_
 #define MAIDSAFE_COMMON_HASH_HASH_NUMERIC_H_
 
@@ -29,7 +30,7 @@ namespace maidsafe {
 // Integral types default to IsContiguousHashable
 //
 
-template<typename HashAlgorithm, typename FloatType>
+template <typename HashAlgorithm, typename FloatType>
 typename std::enable_if<std::is_floating_point<FloatType>::value>::type HashAppend(
     HashAlgorithm& hash, FloatType value) {
 

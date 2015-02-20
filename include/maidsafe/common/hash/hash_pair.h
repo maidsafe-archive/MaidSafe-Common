@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_PAIR_H_
 #define MAIDSAFE_COMMON_HASH_HASH_PAIR_H_
 
@@ -26,18 +27,16 @@
 namespace maidsafe {
 
 // If both elements can be "hashed over", and there is no padding
-template<typename First, typename Second>
+template <typename First, typename Second>
 struct IsContiguousHashable<std::pair<First, Second>>
-  : std::integral_constant<
-      bool,
-      IsContiguousHashable<First>::value &&
-      IsContiguousHashable<Second>::value &&
-      sizeof(std::pair<First, Second>) == sizeof(First) + sizeof(Second)> {};
+    : std::integral_constant<
+          bool, IsContiguousHashable<First>::value && IsContiguousHashable<Second>::value &&
+                    sizeof(std::pair<First, Second>) == sizeof(First) + sizeof(Second)> {};
 
 
 // This is simple, avoid bringing in cereal headers. Invoked when pair has
 // padding or internal types cannot be hashed over directly.
-template<typename HashAlgorithm, typename First, typename Second>
+template <typename HashAlgorithm, typename First, typename Second>
 typename std::enable_if<!IsContiguousHashable<std::pair<First, Second>>::value>::type HashAppend(
     HashAlgorithm& hash, const std::pair<First, Second>& value) {
   hash(value.first, value.second);

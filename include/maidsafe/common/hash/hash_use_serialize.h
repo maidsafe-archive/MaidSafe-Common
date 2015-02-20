@@ -15,16 +15,18 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_USE_SERIALIZE_H_
 #define MAIDSAFE_COMMON_HASH_HASH_USE_SERIALIZE_H_
 
+#include <cstdint>
 #include <type_traits>
 
-#define MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER) \
-  CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER)                         \
-  namespace maidsafe {                                               \
-    template<> struct HashVersion<TYPE> :                            \
-      std::integral_constant<unsigned, VERSION_NUMBER> {};           \
+#define MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER)                   \
+  CEREAL_CLASS_VERSION(TYPE, VERSION_NUMBER)                                           \
+  namespace maidsafe {                                                                 \
+  template <>                                                                          \
+  struct HashVersion<TYPE> : std::integral_constant<std::uint32_t, VERSION_NUMBER> {}; \
   }
 
 namespace maidsafe {
@@ -36,13 +38,12 @@ namespace maidsafe {
    your type. If that isn't possible, overload the trait:
    template<> struct UseSerializeForHashing<YourType> : std::true_type {};
 */
-template<typename, typename Enable = void>
+template <typename, typename Enable = void>
 struct UseSerializeForHashing : std::false_type {};
 
-template<typename Type>
-struct UseSerializeForHashing<
-    Type, typename std::enable_if<Type::use_serialize_for_hashing>::type> :
-  std::true_type {};
+template <typename Type>
+struct UseSerializeForHashing<Type, typename std::enable_if<Type::use_serialize_for_hashing>::type>
+    : std::true_type {};
 
 
 /*
@@ -51,8 +52,8 @@ struct UseSerializeForHashing<
   version to use while hashing. If using Cereal too, use the macro
   MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(type, number)
 */
-template<typename, typename Enable = void>
-struct HashVersion : std::integral_constant<unsigned, 0> {};
+template <typename, typename Enable = void>
+struct HashVersion : std::integral_constant<std::uint32_t, 0> {};
 
 }  // namespace maidsafe
 

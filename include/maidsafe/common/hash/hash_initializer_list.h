@@ -27,7 +27,7 @@
 namespace maidsafe {
 
 // Only iterate if inner type can NOT be hashed over directly
-template<typename Type>
+template <typename Type>
 struct IsHashableRange<std::initializer_list<Type>> : std::true_type {};
 
 }  // namespace maidsafe

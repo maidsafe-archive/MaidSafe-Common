@@ -56,8 +56,9 @@ ms_glob_dir(CommonContainersTests ${CommonSourcesDir}/containers/tests "Containe
 ms_glob_dir(CommonDataTypes ${CommonSourcesDir}/data_types "Data Types")
 ms_glob_dir(CommonDataTypesTests ${CommonSourcesDir}/data_types/tests "Data Types Tests")
 
-ms_glob_dir(CommonHashAlgorithms ${CommonSourcesDir}/hash/algorithms "Hash algorithms")
-ms_glob_dir(CommonHashDefinitions ${CommonSourcesDir}/hash "Hash definitions")
+ms_glob_dir(CommonHashAlgorithms ${CommonSourcesDir}/hash/algorithms "Hash Algorithms")
+ms_glob_dir(CommonHashDefinitions ${CommonSourcesDir}/hash "Hash Definitions")
+ms_glob_dir(CommonHashWrappers ${CommonSourcesDir}/hash/wrappers "Hash Wrappers")
 ms_glob_dir(CommonHashTests ${CommonSourcesDir}/hash/tests "Hash Tests")
 
 ms_glob_dir(CommonSerialisation ${CommonSourcesDir}/serialisation "Serialisation")
@@ -90,6 +91,7 @@ ms_add_static_library(maidsafe_common
     ${CommonDataTypesAllFiles}
     ${CommonHashAlgorithmsAllFiles}
     ${CommonHashDefinitionsAllFiles}
+    ${CommonHashWrappersAllFiles}
     ${CommonSerialisationAllFiles}
     ${CommonSerialisationTypesAllFiles}
     ${CommonTcpAllFiles})

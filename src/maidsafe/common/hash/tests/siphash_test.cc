@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -27,10 +28,11 @@
 // Visual studio warns about the do {} while (0) loop in the macro from SipHash.
 // Do not change the reference implementation for testing.
 #ifdef _MSC_VER
-#pragma warning (disable: 4127)
+#pragma warning(disable : 4127)
 #endif
 
 namespace maidsafe {
+
 namespace test {
 
 namespace {
@@ -63,65 +65,72 @@ namespace {
 #define cROUNDS 2
 #define dROUNDS 4
 
-#define ROTL(x,b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) ) /*NOLINT*/
+#define ROTL(x, b) (uint64_t)(((x) << (b)) | ((x) >> (64 - (b)))) /*NOLINT*/
 
-#define U32TO8_LE(p, v)                                         \
-  (p)[0] = (uint8_t)((v)      ); (p)[1] = (uint8_t)((v) >>  8); \
-  (p)[2] = (uint8_t)((v) >> 16); (p)[3] = (uint8_t)((v) >> 24);
+#define U32TO8_LE(p, v)          \
+  (p)[0] = (uint8_t)((v));       \
+  (p)[1] = (uint8_t)((v) >> 8);  \
+  (p)[2] = (uint8_t)((v) >> 16); \
+  (p)[3] = (uint8_t)((v) >> 24);
 
-#define U64TO8_LE(p, v)                        \
-  U32TO8_LE((p),     (uint32_t)((v)      ));   \
+#define U64TO8_LE(p, v)            \
+  U32TO8_LE((p), (uint32_t)((v))); \
   U32TO8_LE((p) + 4, (uint32_t)((v) >> 32));
 
 
-#define U8TO64_LE(p)            \
-  (((uint64_t)((p)[0])      ) | \
-   ((uint64_t)((p)[1]) <<  8) | /*NOLINT*/ \
-   ((uint64_t)((p)[2]) << 16) | /*NOLINT*/ \
-   ((uint64_t)((p)[3]) << 24) | /*NOLINT*/ \
-   ((uint64_t)((p)[4]) << 32) | /*NOLINT*/ \
-   ((uint64_t)((p)[5]) << 40) | /*NOLINT*/ \
-   ((uint64_t)((p)[6]) << 48) | /*NOLINT*/ \
-   ((uint64_t)((p)[7]) << 56))  /*NOLINT*/
+#define U8TO64_LE(p)                                             \
+  (((uint64_t)((p)[0])) | ((uint64_t)((p)[1]) << 8) | /*NOLINT*/ \
+   ((uint64_t)((p)[2]) << 16) |                       /*NOLINT*/ \
+   ((uint64_t)((p)[3]) << 24) |                       /*NOLINT*/ \
+   ((uint64_t)((p)[4]) << 32) |                       /*NOLINT*/ \
+   ((uint64_t)((p)[5]) << 40) |                       /*NOLINT*/ \
+   ((uint64_t)((p)[6]) << 48) |                       /*NOLINT*/ \
+   ((uint64_t)((p)[7]) << 56))                        /*NOLINT*/
 
-#define SIPROUND                                                   \
-  do {                                                             \
-    v0 += v1; v1=ROTL(v1,13); v1 ^= v0; v0=ROTL(v0,32); /*NOLINT*/ \
-    v2 += v3; v3=ROTL(v3,16); v3 ^= v2;                 /*NOLINT*/ \
-    v0 += v3; v3=ROTL(v3,21); v3 ^= v0;                 /*NOLINT*/ \
-    v2 += v1; v1=ROTL(v1,17); v1 ^= v2; v2=ROTL(v2,32); /*NOLINT*/ \
-  } while(0)                                            /*NOLINT*/
+#define SIPROUND                  \
+  do {                            \
+    v0 += v1;                     \
+    v1 = ROTL(v1, 13);            \
+    v1 ^= v0;                     \
+    v0 = ROTL(v0, 32); /*NOLINT*/ \
+    v2 += v3;                     \
+    v3 = ROTL(v3, 16);            \
+    v3 ^= v2; /*NOLINT*/          \
+    v0 += v3;                     \
+    v3 = ROTL(v3, 21);            \
+    v3 ^= v0; /*NOLINT*/          \
+    v2 += v1;                     \
+    v1 = ROTL(v1, 17);            \
+    v1 ^= v2;                     \
+    v2 = ROTL(v2, 32); /*NOLINT*/ \
+  } while (0)          /*NOLINT*/
 
 #ifdef DEBUG
-#define TRACE                                                                \
-    do {                                                                     \
-    printf( "(%3d) v0 %08x %08x\n",                               /*NOLINT*/ \
-        ( int )inlen, ( uint32_t )( v0 >> 32 ), ( uint32_t )v0 );            \
-    printf( "(%3d) v1 %08x %08x\n",                               /*NOLINT*/ \
-        ( int )inlen, ( uint32_t )( v1 >> 32 ), ( uint32_t )v1 );            \
-    printf( "(%3d) v2 %08x %08x\n",                               /*NOLINT*/ \
-        ( int )inlen, ( uint32_t )( v2 >> 32 ), ( uint32_t )v2 );            \
-    printf( "(%3d) v3 %08x %08x\n",                               /*NOLINT*/ \
-        ( int )inlen, ( uint32_t )( v3 >> 32 ), ( uint32_t )v3 );            \
-    } while(0)  /*NOLINT*/
+#define TRACE                                                                                  \
+  do {                                                                                         \
+    printf("(%3d) v0 %08x %08x\n", (int)inlen, (uint32_t)(v0 >> 32), (uint32_t)v0); /*NOLINT*/ \
+    printf("(%3d) v1 %08x %08x\n", (int)inlen, (uint32_t)(v1 >> 32), (uint32_t)v1); /*NOLINT*/ \
+    printf("(%3d) v2 %08x %08x\n", (int)inlen, (uint32_t)(v2 >> 32), (uint32_t)v2); /*NOLINT*/ \
+    printf("(%3d) v3 %08x %08x\n", (int)inlen, (uint32_t)(v3 >> 32), (uint32_t)v3); /*NOLINT*/ \
+  } while (0)                                                                       /*NOLINT*/
 #else
 #define TRACE
 #endif
 
-int siphash(uint8_t *out, const uint8_t *in, uint64_t inlen, const uint8_t *k) {
+int siphash(uint8_t* out, const uint8_t* in, uint64_t inlen, const uint8_t* k) {
   /* "somepseudorandomlygeneratedbytes" */
   uint64_t v0 = 0x736f6d6570736575ULL;
   uint64_t v1 = 0x646f72616e646f6dULL;
   uint64_t v2 = 0x6c7967656e657261ULL;
   uint64_t v3 = 0x7465646279746573ULL;
   uint64_t b;
-  uint64_t k0 = U8TO64_LE( k );  //NOLINT
-  uint64_t k1 = U8TO64_LE( k + 8 );  //NOLINT
+  uint64_t k0 = U8TO64_LE(k);      // NOLINT
+  uint64_t k1 = U8TO64_LE(k + 8);  // NOLINT
   uint64_t m;
   int i;
-  const uint8_t *end = in + inlen - ( inlen % sizeof( uint64_t ) ); //NOLINT
+  const uint8_t* end = in + inlen - (inlen % sizeof(uint64_t));  // NOLINT
   const int left = inlen & 7;
-  b = ( ( uint64_t )inlen ) << 56;  //NOLINT
+  b = ((uint64_t)inlen) << 56;  // NOLINT
   v3 ^= k1;
   v2 ^= k0;
   v1 ^= k1;
@@ -136,27 +145,38 @@ int siphash(uint8_t *out, const uint8_t *in, uint64_t inlen, const uint8_t *k) {
     v3 ^= m;
 
     TRACE;
-    for (i = 0; i < cROUNDS; ++i) SIPROUND;
+    for (i = 0; i < cROUNDS; ++i)
+      SIPROUND;
 
     v0 ^= m;
   }
 
   switch (left) {
-  case 7: b |= ( ( uint64_t )in[ 6] )  << 48;  //NOLINT
-  case 6: b |= ( ( uint64_t )in[ 5] )  << 40;  //NOLINT
-  case 5: b |= ( ( uint64_t )in[ 4] )  << 32;  //NOLINT
-  case 4: b |= ( ( uint64_t )in[ 3] )  << 24;  //NOLINT
-  case 3: b |= ( ( uint64_t )in[ 2] )  << 16;  //NOLINT
-  case 2: b |= ( ( uint64_t )in[ 1] )  <<  8;  //NOLINT
-  case 1: b |= ( ( uint64_t )in[ 0] ); break;  //NOLINT
-  case 0: break;
+    case 7:
+      b |= ((uint64_t)in[6]) << 48;  // NOLINT
+    case 6:
+      b |= ((uint64_t)in[5]) << 40;  // NOLINT
+    case 5:
+      b |= ((uint64_t)in[4]) << 32;  // NOLINT
+    case 4:
+      b |= ((uint64_t)in[3]) << 24;  // NOLINT
+    case 3:
+      b |= ((uint64_t)in[2]) << 16;  // NOLINT
+    case 2:
+      b |= ((uint64_t)in[1]) << 8;  // NOLINT
+    case 1:
+      b |= ((uint64_t)in[0]);
+      break;  // NOLINT
+    case 0:
+      break;
   }
 
 
   v3 ^= b;
 
   TRACE;
-  for (i = 0; i < cROUNDS; ++i) SIPROUND;
+  for (i = 0; i < cROUNDS; ++i)
+    SIPROUND;
 
   v0 ^= b;
 
@@ -167,18 +187,20 @@ int siphash(uint8_t *out, const uint8_t *in, uint64_t inlen, const uint8_t *k) {
 #endif
 
   TRACE;
-  for (i = 0; i < dROUNDS; ++i) SIPROUND;
+  for (i = 0; i < dROUNDS; ++i)
+    SIPROUND;
 
-  b = v0 ^ v1 ^ v2  ^ v3;
+  b = v0 ^ v1 ^ v2 ^ v3;
   U64TO8_LE(out, b);
 
 #ifdef DOUBLE
   v1 ^= 0xdd;
 
   TRACE;
-  for (i = 0; i < dROUNDS; ++i) SIPROUND;
+  for (i = 0; i < dROUNDS; ++i)
+    SIPROUND;
 
-  b = v0 ^ v1 ^ v2  ^ v3;
+  b = v0 ^ v1 ^ v2 ^ v3;
   U64TO8_LE(out + 8, b);
 #endif
 
@@ -196,16 +218,10 @@ std::array<byte, 16> GetRandomSeed() {
   return seed;
 }
 
-std::uint64_t SiphashReference(
-    const std::array<byte, 16>& seed,
-    const char* in,
-    const std::uint64_t inlen) {
+std::uint64_t SiphashReference(const std::array<byte, 16>& seed, const char* in,
+                               const std::uint64_t inlen) {
   std::uint64_t out{};
-  siphash(
-      reinterpret_cast<byte*>(&out),
-      reinterpret_cast<const byte*>(in),
-      inlen,
-      seed.data());
+  siphash(reinterpret_cast<byte*>(&out), reinterpret_cast<const byte*>(in), inlen, seed.data());
   return out;
 }
 
@@ -221,8 +237,7 @@ TEST(SipHash, BEH_FixedString) {
   for (unsigned count = 0; count <= string_size; ++count) {
     maidsafe::SipHash hash(random_seed);
     hash.Update(reinterpret_cast<const byte*>(test_string), count);
-    hash.Update(
-        reinterpret_cast<const byte*>(test_string) + count, string_size - count);
+    hash.Update(reinterpret_cast<const byte*>(test_string) + count, string_size - count);
     EXPECT_EQ(reference_hash, hash.Finalize()) << "Failed on count " << count;
   }
 
@@ -239,16 +254,14 @@ TEST(SipHash, BEH_FixedString) {
 TEST(SipHash, BEH_RandomString) {
   const std::string test_string(RandomString(1000));
   const auto random_seed(GetRandomSeed());
-  const auto reference_hash(
-      SiphashReference(random_seed, test_string.data(), test_string.size()));
+  const auto reference_hash(SiphashReference(random_seed, test_string.data(), test_string.size()));
 
   // Split the string at every possible point
   for (unsigned count = 0; count <= test_string.size(); ++count) {
     maidsafe::SipHash hash(random_seed);
     hash.Update(reinterpret_cast<const byte*>(test_string.data()), count);
-    hash.Update(
-        reinterpret_cast<const byte*>(test_string.data()) + count,
-        test_string.size() - count);
+    hash.Update(reinterpret_cast<const byte*>(test_string.data()) + count,
+                test_string.size() - count);
     EXPECT_EQ(reference_hash, hash.Finalize()) << "Failed on count " << count;
   }
 
@@ -263,4 +276,5 @@ TEST(SipHash, BEH_RandomString) {
 }
 
 }  // namespace test
+
 }  // namespace maidsafe
