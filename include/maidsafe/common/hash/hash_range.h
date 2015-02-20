@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_RANGE_H_
 #define MAIDSAFE_COMMON_HASH_HASH_RANGE_H_
 
@@ -44,78 +45,72 @@ namespace maidsafe {
     (3) If not (1) or (2), then a count is kept while iterating. This way
         std::list is still a O(n) operation to hash.
 */
-template<typename Type, typename Enable = void>
+template <typename Type, typename Enable = void>
 struct IsHashableRange : std::is_array<Type> {};
 
 namespace detail {
 
-template<typename HashableRange>
+template <typename HashableRange>
 using IteratorType = decltype(std::begin(std::declval<HashableRange>()));
 
 // Remove qualifiers when looking up the user defined trait "IsHashableRange"
-template<typename HashableRange>
+template <typename HashableRange>
 using NormalizeRange =
-  typename std::remove_cv<typename std::remove_reference<HashableRange>::type>::type;
+    typename std::remove_cv<typename std::remove_reference<HashableRange>::type>::type;
 
 
-template<typename, typename Enable = void>
+template <typename, typename Enable = void>
 struct IsRandomHashableRange : std::false_type {};
 
 // If type declared as iterable and has a random access iterator
-template<typename HashableRange>
+template <typename HashableRange>
 struct IsRandomHashableRange<
     HashableRange,
-    typename std::enable_if<IsHashableRange<NormalizeRange<HashableRange>>::value>::type> :
-  std::is_same<
-    std::random_access_iterator_tag,
-    typename std::iterator_traits<
-      IteratorType<HashableRange>>::iterator_category> {};
+    typename std::enable_if<IsHashableRange<NormalizeRange<HashableRange>>::value>::type>
+    : std::is_same<std::random_access_iterator_tag,
+                   typename std::iterator_traits<IteratorType<HashableRange>>::iterator_category> {
+};
 
 
-template<typename, typename Enable = void>
+template <typename, typename Enable = void>
 struct IsContiguousHashableRange : std::false_type {};
 
 // If type declared as iterable has a pointer iterator and
 // contiguous hashable elements
-template<typename HashableRange>
+template <typename HashableRange>
 struct IsContiguousHashableRange<
-    HashableRange,
-    typename std::enable_if<IsRandomHashableRange<HashableRange>::value>::type> :
-  std::integral_constant<
-      bool,
-      std::is_pointer<IteratorType<HashableRange>>::value &&
-      IsContiguousHashable<
-          typename std::remove_pointer<IteratorType<HashableRange>>::type>::value> {};
+    HashableRange, typename std::enable_if<IsRandomHashableRange<HashableRange>::value>::type>
+    : std::integral_constant<bool, std::is_pointer<IteratorType<HashableRange>>::value &&
+                                       IsContiguousHashable<typename std::remove_pointer<
+                                           IteratorType<HashableRange>>::type>::value> {};
 
 
 // Enable Scenario 3
-template<typename HashableRange>
+template <typename HashableRange>
 using EnableBasicRange =
-  typename std::enable_if<
-    IsHashableRange<NormalizeRange<HashableRange>>::value &&
-    !IsRandomHashableRange<HashableRange>::value>::type;
+    typename std::enable_if<IsHashableRange<NormalizeRange<HashableRange>>::value &&
+                            !IsRandomHashableRange<HashableRange>::value>::type;
 
 // Enable Scenario 2
-template<typename HashableRange>
+template <typename HashableRange>
 using EnableRandomRange =
-  typename std::enable_if<
-    IsRandomHashableRange<HashableRange>::value &&
-    !IsContiguousHashableRange<HashableRange>::value>::type;
+    typename std::enable_if<IsRandomHashableRange<HashableRange>::value &&
+                            !IsContiguousHashableRange<HashableRange>::value>::type;
 
 // Enable Scenario 1
-template<typename HashableRange>
+template <typename HashableRange>
 using EnableContinousRange =
-  typename std::enable_if<IsContiguousHashableRange<HashableRange>::value>::type;
+    typename std::enable_if<IsContiguousHashableRange<HashableRange>::value>::type;
+
 }  // namespace detail
 
 
 // HashableRange with non-random access iterators
-template<typename HashAlgorithm, typename HashableRange>
-inline detail::EnableBasicRange<HashableRange> HashAppend(
-    HashAlgorithm& hash, HashableRange&& value) {
-
+template <typename HashAlgorithm, typename HashableRange>
+inline detail::EnableBasicRange<HashableRange> HashAppend(HashAlgorithm& hash,
+                                                          HashableRange&& value) {
   std::size_t count = 0;
-  for (auto& one_value : value) {
+  for (const auto& one_value : value) {
     hash(one_value);
     ++count;
   }
@@ -125,10 +120,10 @@ inline detail::EnableBasicRange<HashableRange> HashAppend(
 }
 
 // HashableRange with random access iterators, but not continously hashable data
-template<typename HashAlgorithm, typename HashableRange>
-inline detail::EnableRandomRange<HashableRange> HashAppend(
-    HashAlgorithm& hash, HashableRange&& value) {
-  for (auto& one_value : value) {
+template <typename HashAlgorithm, typename HashableRange>
+inline detail::EnableRandomRange<HashableRange> HashAppend(HashAlgorithm& hash,
+                                                           HashableRange&& value) {
+  for (const auto& one_value : value) {
     hash(one_value);
   }
 
@@ -137,17 +132,15 @@ inline detail::EnableRandomRange<HashableRange> HashAppend(
 }
 
 // HashableRange with data that can be continuously hashed over
-template<typename HashAlgorithm, typename HashableRange>
-inline detail::EnableContinousRange<HashableRange> HashAppend(
-    HashAlgorithm& hash, HashableRange&& value) {
+template <typename HashAlgorithm, typename HashableRange>
+inline detail::EnableContinousRange<HashableRange> HashAppend(HashAlgorithm& hash,
+                                                              HashableRange&& value) {
   using IteratorType = detail::IteratorType<HashableRange>;
   static_assert(std::is_pointer<IteratorType>::value, "bug in traits");
   using ContainedType = typename std::remove_pointer<IteratorType>::type;
 
   const auto size = std::distance(std::begin(value), std::end(value));
-  hash.Update(
-      reinterpret_cast<const byte*>(std::begin(value)),
-      size * sizeof(ContainedType));
+  hash.Update(reinterpret_cast<const byte*>(std::begin(value)), size * sizeof(ContainedType));
 
   // in case iterable is empty, make some noise
   hash(size);

@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_DATA_RANGE_H_
 #define MAIDSAFE_COMMON_HASH_HASH_DATA_RANGE_H_
 
@@ -37,51 +38,46 @@ namespace maidsafe {
   then it casts the data() pointer to uint8_t and hashes over the elements
   directly. Otherwise, it falls back to the default HashableRange behavior.
 */
-template<typename Type, typename Enable = void>
+template <typename Type, typename Enable = void>
 struct IsHashableDataRange : std::false_type {};
 
 namespace detail {
 
-template<typename HashableRange>
+template <typename HashableRange>
 using DataType = decltype(std::declval<HashableRange>().data());
 
-template<typename, typename Enable = void>
+template <typename, typename Enable = void>
 struct IsContiguousHashableDataRange : std::false_type {};
 
 // If type.data() returns a pointer to a contiguously hashable array
-template<typename HashableDataRange>
+template <typename HashableDataRange>
 struct IsContiguousHashableDataRange<
-    HashableDataRange,
-    typename std::enable_if<IsHashableDataRange<HashableDataRange>::value>::type> :
-  std::integral_constant<
-      bool,
-      std::is_pointer<DataType<HashableDataRange>>::value &&
-      IsContiguousHashable<
-          typename std::remove_pointer<DataType<HashableDataRange>>::type>::value> {};
+    HashableDataRange, typename std::enable_if<IsHashableDataRange<HashableDataRange>::value>::type>
+    : std::integral_constant<bool, std::is_pointer<DataType<HashableDataRange>>::value &&
+                                       IsContiguousHashable<typename std::remove_pointer<
+                                           DataType<HashableDataRange>>::type>::value> {};
 
 }  // namespace detail
 
 // If .data() function returns elements that cannot be hashed over,
 // fallback to a hashable range
-template<typename HashableDataRange>
-struct IsHashableRange<
-    HashableDataRange,
-    typename std::enable_if<IsHashableDataRange<HashableDataRange>::value>::type> :
-  std::integral_constant<bool, !detail::IsContiguousHashableDataRange<HashableDataRange>::value> {};
+template <typename HashableDataRange>
+struct IsHashableRange<HashableDataRange,
+                       typename std::enable_if<IsHashableDataRange<HashableDataRange>::value>::type>
+    : std::integral_constant<bool,
+                             !detail::IsContiguousHashableDataRange<HashableDataRange>::value> {};
 
 
 // Hashes over .data()
-template<typename HashAlgorithm, typename HashableDataRange>
+template <typename HashAlgorithm, typename HashableDataRange>
 inline
-typename std::enable_if<detail::IsContiguousHashableDataRange<HashableDataRange>::value>::type
-HashAppend(HashAlgorithm& hash, const HashableDataRange& value) {
+    typename std::enable_if<detail::IsContiguousHashableDataRange<HashableDataRange>::value>::type
+    HashAppend(HashAlgorithm& hash, const HashableDataRange& value) {
   using IteratorType = detail::DataType<HashableDataRange>;
   static_assert(std::is_pointer<IteratorType>::value, "expected pointer");
   using DataType = typename std::remove_pointer<IteratorType>::type;
 
-  hash.Update(
-      reinterpret_cast<const byte*>(value.data()),
-      value.size() * sizeof(DataType));
+  hash.Update(reinterpret_cast<const byte*>(value.data()), value.size() * sizeof(DataType));
   hash(value.size());
 }
 

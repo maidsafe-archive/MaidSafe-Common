@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_STRING_REF_H_
 #define MAIDSAFE_COMMON_HASH_HASH_STRING_REF_H_
 
@@ -26,7 +27,7 @@
 
 namespace maidsafe {
 
-template<typename CharT, typename Traits>
+template <typename CharT, typename Traits>
 struct IsHashableDataRange<boost::basic_string_ref<CharT, Traits>> : std::true_type {};
 
 }  // namespace maidsafe

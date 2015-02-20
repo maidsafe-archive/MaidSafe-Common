@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_ITERATOR_RANGE_H_
 #define MAIDSAFE_COMMON_HASH_HASH_ITERATOR_RANGE_H_
 
@@ -27,15 +28,17 @@
 namespace maidsafe {
 
 namespace detail {
-  struct IsIteratorRange {
-    template<typename Iterator>
-    void operator()(const boost::iterator_range<Iterator>&);
-  };
-}
 
-template<typename Range>
+struct IsIteratorRange {
+  template <typename Iterator>
+  void operator()(const boost::iterator_range<Iterator>&);
+};
+
+}  // namespace detail
+
+template <typename Range>
 struct IsHashableRange<Range, typename std::result_of<detail::IsIteratorRange(Range)>::type>
-  : std::true_type {};
+    : std::true_type {};
 
 }  // namespace maidsafe
 

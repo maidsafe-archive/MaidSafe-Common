@@ -26,7 +26,7 @@
 
 namespace maidsafe {
 
-template<typename HashAlgorithm>
+template <typename HashAlgorithm>
 class SeededHash {
  public:
   SeededHash() : seed_128bit_() {
@@ -34,13 +34,14 @@ class SeededHash {
     random.GenerateBlock(seed_128bit_.data(), seed_128bit_.size());
   }
 
-  template<typename Type, typename... Types>
-  decltype(std::declval<HashAlgorithm>().Finalize()) operator()(
-      Type&& value, Types&&... values) const {
+  template <typename Type, typename... Types>
+  decltype(std::declval<HashAlgorithm>().Finalize()) operator()(Type&& value,
+                                                                Types&&... values) const {
     HashAlgorithm hash{seed_128bit_};
     hash(std::forward<Type>(value), std::forward<Types>(values)...);
     return hash.Finalize();
   }
+
  private:
   std::array<byte, 16> seed_128bit_;
 };

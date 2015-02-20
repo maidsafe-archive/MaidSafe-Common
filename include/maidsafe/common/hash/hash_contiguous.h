@@ -15,6 +15,7 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
 #ifndef MAIDSAFE_COMMON_HASH_HASH_CONTIGUOUS_H_
 #define MAIDSAFE_COMMON_HASH_HASH_CONTIGUOUS_H_
 
@@ -25,12 +26,11 @@
 namespace maidsafe {
 
 // Integral types are hashed directly.
-template<typename Integral, typename Enable = void>
+template <typename Integral, typename Enable = void>
 struct IsContiguousHashable : std::is_integral<Integral> {};
 
-template<typename HashAlgorithm, typename Contiguous>
-inline
-typename std::enable_if<IsContiguousHashable<Contiguous>::value>::type HashAppend(
+template <typename HashAlgorithm, typename Contiguous>
+inline typename std::enable_if<IsContiguousHashable<Contiguous>::value>::type HashAppend(
     HashAlgorithm& hash, const Contiguous& value) {
   hash.Update(reinterpret_cast<const byte*>(&value), sizeof(value));
 }
