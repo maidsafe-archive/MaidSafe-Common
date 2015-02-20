@@ -41,106 +41,449 @@ namespace {
 
 int serialize_call_count = 0;
 
-struct IgnoreInternalSerialize {
-  int one, two, three;
-
-  template<typename Archive>
-  void serialize(Archive& archive) {
-    ++serialize_call_count;
-    archive(three, two, one);
-  }
-
-  template<typename HashAlgorithm>
-  void HashAppend(HashAlgorithm& hash) const {
-    hash(one, two, three);
-  }
+enum FunctionDetails {
+  kSerialize = 1,
+  kSave = 2,
+  kVoidReturn = 4,
+  kArchiveRefReturn = 8,
+  kWithoutVersion = 16,
+  kWithVersion = 32
 };
 
-struct UseInternalSerializeWithVersion {
-  const static bool use_serialize_for_hashing = true;  //NOLINT
+template <int details_in, bool use_function>
+struct HasInternalFunction {
+  static const bool use_serialize_for_hashing = use_function;
   int one, two, three;
+  enum { expected_serialize_call_count = use_function };
 
-  template<typename Archive>
-  void serialize(Archive& archive, const std::uint32_t version) {
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSerialize) == kSerialize) &&
+                          ((details & kVoidReturn) == kVoidReturn) &&
+                          ((details & kWithoutVersion) == kWithoutVersion)>::type
+      serialize(Archive& archive) {
+    ++serialize_call_count;
+    archive(one, two, three);
+  }
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSerialize) == kSerialize) &&
+                          ((details & kVoidReturn) == kVoidReturn) &&
+                          ((details & kWithVersion) == kWithVersion)>::type
+      serialize(Archive& archive, const std::uint32_t version) {
     ++serialize_call_count;
     EXPECT_EQ(0u, version);
     archive(one, two, three);
   }
-};
 
-struct UseInternalSerializeWithoutVersion {
-  const static bool use_serialize_for_hashing = true;  //NOLINT
-  int one, two, three;
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSerialize) == kSerialize) &&
+                              ((details & kArchiveRefReturn) == kArchiveRefReturn) &&
+                              ((details & kWithoutVersion) == kWithoutVersion),
+                          Archive>::type
+      serialize(Archive& archive) {
+    ++serialize_call_count;
+    archive(one, two, three);
+    return archive;
+  }
 
-  template<typename Archive>
-  void serialize(Archive& archive) {
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSerialize) == kSerialize) &&
+                              ((details & kArchiveRefReturn) == kArchiveRefReturn) &&
+                              ((details & kWithVersion) == kWithVersion),
+                          Archive>::type
+      serialize(Archive& archive, const std::uint32_t version) {
+    ++serialize_call_count;
+    EXPECT_EQ(0u, version);
+    archive(one, two, three);
+    return archive;
+  }
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSave) == kSave) &&
+                          ((details & kVoidReturn) == kVoidReturn) &&
+                          ((details & kWithoutVersion) == kWithoutVersion)>::type
+      save(Archive& archive) const {
     ++serialize_call_count;
     archive(one, two, three);
   }
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSave) == kSave) &&
+                          ((details & kVoidReturn) == kVoidReturn) &&
+                          ((details & kWithVersion) == kWithVersion)>::type
+      save(Archive& archive, const std::uint32_t version) const {
+    ++serialize_call_count;
+    EXPECT_EQ(0u, version);
+    archive(one, two, three);
+  }
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSave) == kSave) &&
+                              ((details & kArchiveRefReturn) == kArchiveRefReturn) &&
+                              ((details & kWithoutVersion) == kWithoutVersion),
+                          Archive>::type
+      save(Archive& archive) const {
+    ++serialize_call_count;
+    archive(one, two, three);
+    return archive;
+  }
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSave) == kSave) &&
+                              ((details & kArchiveRefReturn) == kArchiveRefReturn) &&
+                              ((details & kWithVersion) == kWithVersion),
+                          Archive>::type
+      save(Archive& archive, const std::uint32_t version) const {
+    ++serialize_call_count;
+    EXPECT_EQ(0u, version);
+    archive(one, two, three);
+    return archive;
+  }
+
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSave) == kSave) &&
+                          ((details & kWithoutVersion) == kWithoutVersion)>::type
+      load(Archive& archive) {
+    archive(one, two, three);
+  }
+
+  template <typename Archive, int details = details_in>
+  typename std::enable_if<((details & kSave) == kSave) &&
+                          ((details & kWithVersion) == kWithVersion)>::type
+      load(Archive& archive, const std::uint32_t version) {
+    EXPECT_EQ(0u, version);
+    archive(one, two, three);
+  }
+
+  template <typename HashAlgorithm, bool enable = !use_serialize_for_hashing>
+  typename std::enable_if<enable>::type HashAppend(HashAlgorithm& hash) const {
+    hash(one, two, three);
+  }
 };
 
-struct IgnoreExternalSerialize {
+using IgnoreInternalSerializeWithoutVersionVoidReturn =
+    HasInternalFunction<kSerialize | kVoidReturn | kWithoutVersion, false>;
+using IgnoreInternalSerializeWithVersionVoidReturn =
+    HasInternalFunction<kSerialize | kVoidReturn | kWithVersion, false>;
+using IgnoreInternalSerializeWithoutVersionArchiveRefReturn =
+    HasInternalFunction<kSerialize | kArchiveRefReturn | kWithoutVersion, false>;
+using IgnoreInternalSerializeWithVersionArchiveRefReturn =
+    HasInternalFunction<kSerialize | kArchiveRefReturn | kWithVersion, false>;
+using IgnoreInternalSaveWithoutVersionVoidReturn =
+    HasInternalFunction<kSave | kVoidReturn | kWithoutVersion, false>;
+using IgnoreInternalSaveWithVersionVoidReturn =
+    HasInternalFunction<kSave | kVoidReturn | kWithVersion, false>;
+using IgnoreInternalSaveWithoutVersionArchiveRefReturn =
+    HasInternalFunction<kSave | kArchiveRefReturn | kWithoutVersion, false>;
+using IgnoreInternalSaveWithVersionArchiveRefReturn =
+    HasInternalFunction<kSave | kArchiveRefReturn | kWithVersion, false>;
+using UseInternalSerializeWithoutVersionVoidReturn =
+    HasInternalFunction<kSerialize | kVoidReturn | kWithoutVersion, true>;
+using UseInternalSerializeWithVersionVoidReturn =
+    HasInternalFunction<kSerialize | kVoidReturn | kWithVersion, true>;
+using UseInternalSerializeWithoutVersionArchiveRefReturn =
+    HasInternalFunction<kSerialize | kArchiveRefReturn | kWithoutVersion, true>;
+using UseInternalSerializeWithVersionArchiveRefReturn =
+    HasInternalFunction<kSerialize | kArchiveRefReturn | kWithVersion, true>;
+using UseInternalSaveWithoutVersionVoidReturn =
+    HasInternalFunction<kSave | kVoidReturn | kWithoutVersion, true>;
+using UseInternalSaveWithVersionVoidReturn =
+    HasInternalFunction<kSave | kVoidReturn | kWithVersion, true>;
+using UseInternalSaveWithoutVersionArchiveRefReturn =
+    HasInternalFunction<kSave | kArchiveRefReturn | kWithoutVersion, true>;
+using UseInternalSaveWithVersionArchiveRefReturn =
+    HasInternalFunction<kSave | kArchiveRefReturn | kWithVersion, true>;
+
+
+
+template <int details, bool use_function>
+struct HasExternalFunction {
+  static const bool use_serialize_for_hashing = use_function;
   int one, two, three;
+  enum { expected_serialize_call_count = use_function };
+
+  template <typename Archive>
+  Archive& CommonSerialise(Archive& archive,
+                           std::uint32_t version = std::numeric_limits<std::uint32_t>::max()) {
+    ++serialize_call_count;
+    if (version != std::numeric_limits<std::uint32_t>::max())
+      EXPECT_EQ(0u, version);
+    archive(one, two, three);
+    return archive;
+  }
+
+  template <typename Archive>
+  Archive& CommonSave(Archive& archive,
+                      std::uint32_t version = std::numeric_limits<std::uint32_t>::max()) const {
+    ++serialize_call_count;
+    if (version != std::numeric_limits<std::uint32_t>::max())
+      EXPECT_EQ(0u, version);
+    archive(one, two, three);
+    return archive;
+  }
+
+  template <typename Archive>
+  Archive& CommonLoad(Archive& archive,
+                      std::uint32_t version = std::numeric_limits<std::uint32_t>::max()) {
+    static_cast<void>(version);
+    archive(one, two, three);
+    return archive;
+  }
 };
 
-struct UseExternalSerializeWithVersion {
-  const static bool use_serialize_for_hashing = true;  //NOLINT
-  int one, two, three;
-};
+using IgnoreExternalSerializeWithoutVersionVoidReturn =
+    HasExternalFunction<kSerialize | kVoidReturn | kWithoutVersion, false>;
+using IgnoreExternalSerializeWithVersionVoidReturn =
+    HasExternalFunction<kSerialize | kVoidReturn | kWithVersion, false>;
+using IgnoreExternalSerializeWithoutVersionArchiveRefReturn =
+    HasExternalFunction<kSerialize | kArchiveRefReturn | kWithoutVersion, false>;
+using IgnoreExternalSerializeWithVersionArchiveRefReturn =
+    HasExternalFunction<kSerialize | kArchiveRefReturn | kWithVersion, false>;
+using IgnoreExternalSaveWithoutVersionVoidReturn =
+    HasExternalFunction<kSave | kVoidReturn | kWithoutVersion, false>;
+using IgnoreExternalSaveWithVersionVoidReturn =
+    HasExternalFunction<kSave | kVoidReturn | kWithVersion, false>;
+using IgnoreExternalSaveWithoutVersionArchiveRefReturn =
+    HasExternalFunction<kSave | kArchiveRefReturn | kWithoutVersion, false>;
+using IgnoreExternalSaveWithVersionArchiveRefReturn =
+    HasExternalFunction<kSave | kArchiveRefReturn | kWithVersion, false>;
+using UseExternalSerializeWithoutVersionVoidReturn =
+    HasExternalFunction<kSerialize | kVoidReturn | kWithoutVersion, true>;
+using UseExternalSerializeWithVersionVoidReturn =
+    HasExternalFunction<kSerialize | kVoidReturn | kWithVersion, true>;
+using UseExternalSerializeWithoutVersionArchiveRefReturn =
+    HasExternalFunction<kSerialize | kArchiveRefReturn | kWithoutVersion, true>;
+using UseExternalSerializeWithVersionArchiveRefReturn =
+    HasExternalFunction<kSerialize | kArchiveRefReturn | kWithVersion, true>;
+using UseExternalSaveWithoutVersionVoidReturn =
+    HasExternalFunction<kSave | kVoidReturn | kWithoutVersion, true>;
+using UseExternalSaveWithVersionVoidReturn =
+    HasExternalFunction<kSave | kVoidReturn | kWithVersion, true>;
+using UseExternalSaveWithoutVersionArchiveRefReturn =
+    HasExternalFunction<kSave | kArchiveRefReturn | kWithoutVersion, true>;
+using UseExternalSaveWithVersionArchiveRefReturn =
+    HasExternalFunction<kSave | kArchiveRefReturn | kWithVersion, true>;
 
-struct UseExternalSerializeWithoutVersion {
-  int one, two, three;
-};
-
-template<typename Archive>
-void serialize(Archive& archive, IgnoreExternalSerialize& value) {
-  ++serialize_call_count;
-  archive(value.three, value.two, value.one);
+template <typename Archive>
+void serialize(Archive& archive, IgnoreExternalSerializeWithoutVersionVoidReturn& value) {
+  value.CommonSerialise(archive);
 }
 
-template<typename HashAlgorithm>
-void HashAppend(HashAlgorithm& hash, const IgnoreExternalSerialize& value) {
+template <typename Archive>
+void serialize(Archive& archive, IgnoreExternalSerializeWithVersionVoidReturn& value,
+               const std::uint32_t version) {
+  value.CommonSerialise(archive, version);
+}
+
+template <typename Archive>
+Archive& serialize(Archive& archive, IgnoreExternalSerializeWithoutVersionArchiveRefReturn& value) {
+  return value.CommonSerialise(archive);
+}
+
+template <typename Archive>
+Archive& serialize(Archive& archive, IgnoreExternalSerializeWithVersionArchiveRefReturn& value,
+                   const std::uint32_t version) {
+  return value.CommonSerialise(archive, version);
+}
+
+template <typename Archive>
+void save(Archive& archive, const IgnoreExternalSaveWithoutVersionVoidReturn& value) {
+  value.CommonSave(archive);
+}
+
+template <typename Archive>
+void load(Archive& archive, IgnoreExternalSaveWithoutVersionVoidReturn& value) {
+  value.CommonLoad(archive);
+}
+
+template <typename Archive>
+void save(Archive& archive, const IgnoreExternalSaveWithVersionVoidReturn& value,
+          const std::uint32_t version) {
+  value.CommonSave(archive, version);
+}
+
+template <typename Archive>
+void load(Archive& archive, IgnoreExternalSaveWithVersionVoidReturn& value,
+          const std::uint32_t version) {
+  value.CommonLoad(archive, version);
+}
+
+template <typename Archive>
+Archive& save(Archive& archive, const IgnoreExternalSaveWithoutVersionArchiveRefReturn& value) {
+  return value.CommonSave(archive);
+}
+
+template <typename Archive>
+Archive& load(Archive& archive, IgnoreExternalSaveWithoutVersionArchiveRefReturn& value) {
+  return value.CommonLoad(archive);
+}
+
+template <typename Archive>
+Archive& save(Archive& archive, const IgnoreExternalSaveWithVersionArchiveRefReturn& value,
+              const std::uint32_t version) {
+  return value.CommonSave(archive, version);
+}
+
+template <typename Archive>
+Archive& load(Archive& archive, IgnoreExternalSaveWithVersionArchiveRefReturn& value,
+              const std::uint32_t version) {
+  return value.CommonLoad(archive, version);
+}
+
+template <typename Archive>
+void serialize(Archive& archive, UseExternalSerializeWithoutVersionVoidReturn& value) {
+  value.CommonSerialise(archive);
+}
+
+template <typename Archive>
+void serialize(Archive& archive, UseExternalSerializeWithVersionVoidReturn& value,
+               const std::uint32_t version) {
+  value.CommonSerialise(archive, version);
+}
+
+template <typename Archive>
+Archive& serialize(Archive& archive, UseExternalSerializeWithoutVersionArchiveRefReturn& value) {
+  return value.CommonSerialise(archive);
+}
+
+template <typename Archive>
+Archive& serialize(Archive& archive, UseExternalSerializeWithVersionArchiveRefReturn& value,
+                   const std::uint32_t version) {
+  return value.CommonSerialise(archive, version);
+}
+
+template <typename Archive>
+void save(Archive& archive, const UseExternalSaveWithoutVersionVoidReturn& value) {
+  value.CommonSave(archive);
+}
+
+template <typename Archive>
+void load(Archive& archive, UseExternalSaveWithoutVersionVoidReturn& value) {
+  value.CommonLoad(archive);
+}
+
+template <typename Archive>
+void save(Archive& archive, const UseExternalSaveWithVersionVoidReturn& value,
+          const std::uint32_t version) {
+  value.CommonSave(archive, version);
+}
+
+template <typename Archive>
+void load(Archive& archive, UseExternalSaveWithVersionVoidReturn& value,
+          const std::uint32_t version) {
+  value.CommonLoad(archive, version);
+}
+
+template <typename Archive>
+Archive& save(Archive& archive, const UseExternalSaveWithoutVersionArchiveRefReturn& value) {
+  return value.CommonSave(archive);
+}
+
+template <typename Archive>
+Archive& load(Archive& archive, UseExternalSaveWithoutVersionArchiveRefReturn& value) {
+  return value.CommonLoad(archive);
+}
+
+template <typename Archive>
+Archive& save(Archive& archive, const UseExternalSaveWithVersionArchiveRefReturn& value,
+              const std::uint32_t version) {
+  return value.CommonSave(archive, version);
+}
+
+template <typename Archive>
+Archive& load(Archive& archive, UseExternalSaveWithVersionArchiveRefReturn& value,
+              const std::uint32_t version) {
+  return value.CommonLoad(archive, version);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash, const IgnoreExternalSerializeWithoutVersionVoidReturn& value) {
   hash(value.one, value.two, value.three);
 }
 
-template<typename Archive>
-void serialize(
-    Archive& archive, UseExternalSerializeWithVersion& value, const std::uint32_t version) {
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash, const IgnoreExternalSerializeWithVersionVoidReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash,
+                const IgnoreExternalSerializeWithoutVersionArchiveRefReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash,
+                const IgnoreExternalSerializeWithVersionArchiveRefReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash, const IgnoreExternalSaveWithoutVersionVoidReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash, const IgnoreExternalSaveWithVersionVoidReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash,
+                const IgnoreExternalSaveWithoutVersionArchiveRefReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+template <typename HashAlgorithm>
+void HashAppend(HashAlgorithm& hash, const IgnoreExternalSaveWithVersionArchiveRefReturn& value) {
+  hash(value.one, value.two, value.three);
+}
+
+
+
+struct MacroTestClass {
+  int one, two, three;
+  enum { expected_serialize_call_count = 1 };
+};
+
+template <typename Archive>
+void serialize(Archive& archive, MacroTestClass& value, const std::uint32_t version) {
   ++serialize_call_count;
   EXPECT_EQ(10u, version);
   archive(value.one, value.two, value.three);
 }
 
-template<typename Archive>
-void serialize(Archive& archive, UseExternalSerializeWithoutVersion& value) {
-  ++serialize_call_count;
-  archive(value.one, value.two, value.three);
-}
 
-template<typename CustomType>
-struct ExpectedSerializeCallCount {
-  enum { value = 1 };
-};
 
-template<>
-struct ExpectedSerializeCallCount<IgnoreInternalSerialize> {
-  enum { value = 0 };
-};
-
-template<>
-struct ExpectedSerializeCallCount<IgnoreExternalSerialize> {
-  enum { value = 0 };
-};
+using CustomTypes = testing::Types<
+    IgnoreInternalSerializeWithoutVersionVoidReturn, IgnoreInternalSerializeWithVersionVoidReturn,
+    IgnoreInternalSerializeWithoutVersionArchiveRefReturn,
+    IgnoreInternalSerializeWithVersionArchiveRefReturn, IgnoreInternalSaveWithoutVersionVoidReturn,
+    IgnoreInternalSaveWithVersionVoidReturn, IgnoreInternalSaveWithoutVersionArchiveRefReturn,
+    IgnoreInternalSaveWithVersionArchiveRefReturn, UseInternalSerializeWithoutVersionVoidReturn,
+    UseInternalSerializeWithVersionVoidReturn, UseInternalSerializeWithoutVersionArchiveRefReturn,
+    UseInternalSerializeWithVersionArchiveRefReturn, UseInternalSaveWithoutVersionVoidReturn,
+    UseInternalSaveWithVersionVoidReturn, UseInternalSaveWithoutVersionArchiveRefReturn,
+    UseInternalSaveWithVersionArchiveRefReturn, IgnoreExternalSerializeWithoutVersionVoidReturn,
+    IgnoreExternalSerializeWithVersionVoidReturn,
+    IgnoreExternalSerializeWithoutVersionArchiveRefReturn,
+    IgnoreExternalSerializeWithVersionArchiveRefReturn, IgnoreExternalSaveWithoutVersionVoidReturn,
+    IgnoreExternalSaveWithVersionVoidReturn, IgnoreExternalSaveWithoutVersionArchiveRefReturn,
+    IgnoreExternalSaveWithVersionArchiveRefReturn, UseExternalSerializeWithoutVersionVoidReturn,
+    UseExternalSerializeWithVersionVoidReturn, UseExternalSerializeWithoutVersionArchiveRefReturn,
+    UseExternalSerializeWithVersionArchiveRefReturn, UseExternalSaveWithoutVersionVoidReturn,
+    UseExternalSaveWithVersionVoidReturn, UseExternalSaveWithoutVersionArchiveRefReturn,
+    UseExternalSaveWithVersionArchiveRefReturn, MacroTestClass>;
 
 }  // namespace
 
-MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(UseExternalSerializeWithVersion, 10)
+MAIDSAFE_HASH_AND_CEREAL_CLASS_VERSION(MacroTestClass, 10)
 
 namespace maidsafe {
 
-template<>
-struct UseSerializeForHashing<UseExternalSerializeWithoutVersion>
-  : std::true_type {};
+template <>
+struct UseSerializeForHashing<MacroTestClass> : std::true_type {};
 
 namespace test {
 
@@ -151,9 +494,8 @@ TEST(HashTest, BEH_NumericRange) {
 
   EXPECT_EQ(reference, hash(10, 20, 30, std::size_t(3)));
   EXPECT_EQ(reference, hash(std::array<int, 3>({{10, 20, 30}})));
-  EXPECT_EQ(
-      reference,
-      hash(std::map<int, int>({{1, 10}, {2, 20}, {3, 30}}) | boost::adaptors::map_values));
+  EXPECT_EQ(reference,
+            hash(std::map<int, int>({{1, 10}, {2, 20}, {3, 30}}) | boost::adaptors::map_values));
   EXPECT_EQ(reference, hash(std::forward_list<int>({10, 20, 30})));
   EXPECT_EQ(reference, hash(std::list<int>({10, 20, 30})));
   EXPECT_EQ(reference, hash(std::initializer_list<int>({10, 20, 30})));
@@ -193,10 +535,9 @@ TEST(HashTest, BEH_PairRange) {
   EXPECT_EQ(reference, hash(std::set<std::pair<int, int>>(data)));
   EXPECT_EQ(reference, hash(std::vector<std::pair<int, int>>(data)));
 
-  EXPECT_EQ(
-      reference,
-      hash(std::forward_list<std::tuple<int, int>>({
-          std::make_tuple(3, 10), std::make_tuple(50, 20), std::make_tuple(1000, 30) })));
+  EXPECT_EQ(reference,
+            hash(std::forward_list<std::tuple<int, int>>(
+                {std::make_tuple(3, 10), std::make_tuple(50, 20), std::make_tuple(1000, 30)})));
 }
 
 TEST(HashTest, BEH_TupleVerification) {
@@ -228,11 +569,8 @@ TEST(HashTest, BEH_TupleVerification) {
 
 TEST(HashTest, BEH_TupleRange) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  const std::initializer_list<std::tuple<int, int, int>> data {
-     std::make_tuple(3, 10, 1000),
-     std::make_tuple(50, 20, 122),
-     std::make_tuple(1000, 30, 33)
-  };
+  const std::initializer_list<std::tuple<int, int, int>> data{
+      std::make_tuple(3, 10, 1000), std::make_tuple(50, 20, 122), std::make_tuple(1000, 30, 33)};
   const std::uint64_t reference = hash(data);
 
   EXPECT_EQ(reference, hash(std::forward_list<std::tuple<int, int, int>>(data)));
@@ -242,8 +580,7 @@ TEST(HashTest, BEH_TupleRange) {
 
 TEST(HashTest, BEH_FloatRange) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  const std::initializer_list<std::pair<int, float>> data =
-      { {3, 10.4f}, {50, -0.f}, {1000, 30.2f} };
+  const std::initializer_list<std::pair<int, float>> data = {{3, 10.4f}, {50, -0.f}, {1000, 30.2f}};
   const std::uint64_t reference = hash(data);
 
   EXPECT_EQ(reference, hash(std::forward_list<std::pair<int, float>>(data)));
@@ -253,15 +590,13 @@ TEST(HashTest, BEH_FloatRange) {
   EXPECT_EQ(reference, hash(std::vector<std::pair<int, float>>(data)));
 
   // Retry with positive 0
-  EXPECT_EQ(
-      reference,
-      hash(std::vector<std::pair<int, float>>({{3, 10.4f}, {50, 0.f}, {1000, 30.2f}})));
+  EXPECT_EQ(reference,
+            hash(std::vector<std::pair<int, float>>({{3, 10.4f}, {50, 0.f}, {1000, 30.2f}})));
 }
 
 TEST(HashTest, BEH_DoubleRange) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  const std::initializer_list<std::pair<int, double>> data =
-      { {3, 10.4}, {50, -0.f}, {1000, 30.2} };
+  const std::initializer_list<std::pair<int, double>> data = {{3, 10.4}, {50, -0.f}, {1000, 30.2}};
   const std::uint64_t reference = hash(data);
 
   EXPECT_EQ(reference, hash(std::forward_list<std::pair<int, double>>(data)));
@@ -271,27 +606,24 @@ TEST(HashTest, BEH_DoubleRange) {
   EXPECT_EQ(reference, hash(std::vector<std::pair<int, double>>(data)));
 
   // Retry with positive 0
-  EXPECT_EQ(
-      reference,
-      hash(std::vector<std::pair<int, double>>({ {3, 10.4}, {50, 0.f}, {1000, 30.2} })));
+  EXPECT_EQ(reference,
+            hash(std::vector<std::pair<int, double>>({{3, 10.4}, {50, 0.f}, {1000, 30.2}})));
 }
 
 TEST(HashTest, BEH_StringRange) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
-  const std::initializer_list<std::string> data = { "string1", "string2", "string3" };
+  const std::initializer_list<std::string> data = {"string1", "string2", "string3"};
   const std::uint64_t reference = hash(data);
 
-  EXPECT_EQ(
-      reference,
-      hash(
-          std::map<std::string, int>({{"string1", 10}, {"string2", 20}, {"string3", 30}}) |
-          boost::adaptors::map_keys));
+  EXPECT_EQ(reference,
+            hash(std::map<std::string, int>({{"string1", 10}, {"string2", 20}, {"string3", 30}}) |
+                 boost::adaptors::map_keys));
   EXPECT_EQ(reference, hash(std::forward_list<std::string>(data)));
   EXPECT_EQ(reference, hash(std::list<std::string>(data)));
   EXPECT_EQ(reference, hash(std::set<std::string>(data)));
   EXPECT_EQ(reference, hash(std::vector<std::string>(data)));
 
-  std::vector<boost::string_ref> ref_data = { "string1-", "string2", "string3" };
+  std::vector<boost::string_ref> ref_data = {"string1-", "string2", "string3"};
   EXPECT_NE(reference, hash(ref_data));
   ref_data[0].remove_suffix(1);
   EXPECT_EQ(reference, hash(ref_data));
@@ -300,20 +632,18 @@ TEST(HashTest, BEH_StringRange) {
 template <typename T>
 class TypedHashTest : public testing::Test {};
 
-using CustomTypes = testing::Types<
-    IgnoreInternalSerialize, UseInternalSerializeWithVersion, UseInternalSerializeWithoutVersion,
-    IgnoreExternalSerialize, UseExternalSerializeWithVersion, UseExternalSerializeWithoutVersion>;
-
 TYPED_TEST_CASE(TypedHashTest, CustomTypes);
 
 TYPED_TEST(TypedHashTest, BEH_PreferHashAppend) {
   const maidsafe::SeededHash<maidsafe::SipHash> hash{};
   serialize_call_count = 0;
   const std::uint64_t expected_result{hash(10, 20, 30)};
-  const std::uint64_t actual_result{hash(TypeParam{10, 20, 30})};
-
-  EXPECT_EQ(ExpectedSerializeCallCount<TypeParam>::value, serialize_call_count);
-  EXPECT_EQ(expected_result, actual_result);
+  TypeParam custom{10, 20, 30};
+  EXPECT_EQ(expected_result, hash(custom));
+  EXPECT_EQ(custom.expected_serialize_call_count, serialize_call_count);
+  serialize_call_count = 0;
+  EXPECT_EQ(expected_result, hash(std::move(custom)));
+  EXPECT_EQ(custom.expected_serialize_call_count, serialize_call_count);
 }
 
 TYPED_TEST(TypedHashTest, BEH_CerealAndHashing) {
@@ -329,10 +659,8 @@ TYPED_TEST(TypedHashTest, BEH_CerealAndHashing) {
 }
 
 TEST(HashTest, BEH_InHashMap) {
-  std::unordered_map<
-    std::pair<std::string, std::string>,
-    int,
-    maidsafe::SeededHash<maidsafe::SipHash>> hash_table;
+  std::unordered_map<std::pair<std::string, std::string>, int,
+                     maidsafe::SeededHash<maidsafe::SipHash>> hash_table;
 
   hash_table[{"entry", "one"}] = -1;
   hash_table[{"entry", "two"}] = 2;
