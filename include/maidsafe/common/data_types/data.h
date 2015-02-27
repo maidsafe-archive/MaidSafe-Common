@@ -16,38 +16,46 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/data_types/mutable_data.h"
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_DATA_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_DATA_H_
 
-#include <utility>
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+#include "boost/optional/optional.hpp"
 
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/error.h"
 #include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
-MutableData::MutableData(Name name, NonEmptyString data)
-    : name_(std::move(name)), data_(std::move(data)) {}
+class Data {
+ public:
+  Data() = default;
+  Data(const Data&) = default;
+  Data(Data&&) {}
+  Data& operator=(const Data&) = default;
+  Data& operator=(Data&&) {}
+  virtual ~Data() = default;
 
-MutableData::MutableData(MutableData&& other)
-    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
+  virtual const Identity& Id() const = 0;
+  virtual std::uint32_t TagValue() const = 0;
+  virtual bool Authenticate() const = 0;
+  virtual boost::optional<std::unique_ptr<Data>> Merge(
+      const std::vector<std::unique_ptr<Data>>& data_collection) const = 0;
 
-MutableData& MutableData::operator=(MutableData&& other) {
-  name_ = std::move(other.name_);
-  data_ = std::move(other.data_);
-  return *this;
-}
+  template <typename Archive>
+  Archive& save(Archive& archive) const {
+    return archive;
+  }
 
-std::uint32_t MutableData::TagValue() const { return static_cast<std::uint32_t>(Tag::kValue); }
-
-const Identity& MutableData::Id() const { return name_.value; }
-
-bool MutableData::Authenticate() const { return (name_->IsInitialised() && data_.IsInitialised()); }
-
-boost::optional<std::unique_ptr<Data>> MutableData::Merge(
-    const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const {
-  return boost::none;
-}
+  template <typename Archive>
+  Archive& load(Archive& archive) {
+    return archive;
+  }
+};
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_DATA_H_

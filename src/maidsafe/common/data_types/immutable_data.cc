@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -20,40 +20,34 @@
 
 #include <utility>
 
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
-ImmutableData::ImmutableData(const ImmutableData& other) : name_(other.name_), data_(other.data_) {}
+ImmutableData::ImmutableData(NonEmptyString data)
+    : name_(crypto::Hash<crypto::SHA512>(data)), data_(std::move(data)) {}
 
 ImmutableData::ImmutableData(ImmutableData&& other)
     : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
 
-ImmutableData& ImmutableData::operator=(ImmutableData other) {
-  swap(*this, other);
+ImmutableData& ImmutableData::operator=(ImmutableData&& other) {
+  name_ = std::move(other.name_);
+  data_ = std::move(other.data_);
   return *this;
 }
 
-ImmutableData::ImmutableData(const NonEmptyString& content)
-    : name_(crypto::Hash<crypto::SHA512>(content)), data_(content) {}
+const Identity& ImmutableData::Id() const { return name_.value; }
 
-ImmutableData::ImmutableData(Name name, serialised_type serialised_immutable_data)
-    : name_(std::move(name)), data_(std::move(serialised_immutable_data.data)) {
-  Validate();
+std::uint32_t ImmutableData::TagValue() const { return static_cast<std::uint32_t>(Tag::kValue); }
+
+bool ImmutableData::Authenticate() const {
+  return (name_->IsInitialised() && data_.IsInitialised() &&
+          name_.value == crypto::Hash<crypto::SHA512>(data_));
 }
 
-void ImmutableData::Validate() const {
-  if (name_.value != crypto::Hash<crypto::SHA512>(data_))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
-}
-
-ImmutableData::serialised_type ImmutableData::Serialise() const { return serialised_type(data_); }
-
-void swap(ImmutableData& lhs, ImmutableData& rhs) {
-  using std::swap;
-  swap(lhs.name_, rhs.name_);
-  swap(lhs.data_, rhs.data_);
+boost::optional<std::unique_ptr<Data>> ImmutableData::Merge(
+    const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const {
+  return boost::none;
 }
 
 }  // namespace maidsafe
