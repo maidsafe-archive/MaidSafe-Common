@@ -36,18 +36,37 @@ ImmutableData& ImmutableData::operator=(ImmutableData&& other) {
   return *this;
 }
 
-const Identity& ImmutableData::Id() const { return name_.value; }
+const Identity& ImmutableData::Id() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return name_.value;
+}
 
-std::uint32_t ImmutableData::TagValue() const { return static_cast<std::uint32_t>(Tag::kValue); }
-
-bool ImmutableData::Authenticate() const {
-  return (name_->IsInitialised() && data_.IsInitialised() &&
-          name_.value == crypto::Hash<crypto::SHA512>(data_));
+std::uint32_t ImmutableData::TagValue() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return static_cast<std::uint32_t>(Tag::kValue);
 }
 
 boost::optional<std::unique_ptr<Data>> ImmutableData::Merge(
     const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   return boost::none;
+}
+
+bool ImmutableData::IsInitialised() const { return name_->IsInitialised(); }
+
+const ImmutableData::Name& ImmutableData::name() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return name_;
+}
+
+const NonEmptyString& ImmutableData::data() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return data_;
 }
 
 }  // namespace maidsafe

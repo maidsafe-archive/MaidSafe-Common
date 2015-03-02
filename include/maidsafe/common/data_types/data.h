@@ -41,9 +41,9 @@ class Data {
 
   virtual const Identity& Id() const = 0;
   virtual std::uint32_t TagValue() const = 0;
-  virtual bool Authenticate() const = 0;
   virtual boost::optional<std::unique_ptr<Data>> Merge(
       const std::vector<std::unique_ptr<Data>>& data_collection) const = 0;
+  virtual bool IsInitialised() const = 0;
 
   template <typename Archive>
   Archive& save(Archive& archive) const {

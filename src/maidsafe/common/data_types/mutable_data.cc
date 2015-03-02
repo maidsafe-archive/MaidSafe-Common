@@ -28,7 +28,16 @@
 namespace maidsafe {
 
 MutableData::MutableData(Name name, NonEmptyString data)
-    : name_(std::move(name)), data_(std::move(data)) {}
+    : name_(std::move(name)), data_(std::move(data)) {
+  if (!name_->IsInitialised()) {
+    LOG(kWarning) << "Name is uninitialised.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
+  if (!data_.IsInitialised()) {
+    LOG(kWarning) << "Data is uninitialised.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
+}
 
 MutableData::MutableData(MutableData&& other)
     : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
@@ -39,15 +48,37 @@ MutableData& MutableData::operator=(MutableData&& other) {
   return *this;
 }
 
-std::uint32_t MutableData::TagValue() const { return static_cast<std::uint32_t>(Tag::kValue); }
-
-const Identity& MutableData::Id() const { return name_.value; }
-
-bool MutableData::Authenticate() const { return (name_->IsInitialised() && data_.IsInitialised()); }
+std::uint32_t MutableData::TagValue() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return static_cast<std::uint32_t>(Tag::kValue);
+}
 
 boost::optional<std::unique_ptr<Data>> MutableData::Merge(
     const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   return boost::none;
+}
+
+bool MutableData::IsInitialised() const { return name_->IsInitialised(); }
+
+const MutableData::Name& MutableData::name() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return name_;
+}
+
+const NonEmptyString& MutableData::data() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return data_;
+}
+
+const Identity& MutableData::Id() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return name_.value;
 }
 
 }  // namespace maidsafe

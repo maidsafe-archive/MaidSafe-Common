@@ -27,9 +27,10 @@
 #include "cereal/types/base_class.hpp"
 #include "cereal/types/polymorphic.hpp"
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/crypto.h"
-#include "maidsafe/common/types.h"
 #include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data.h"
 #include "maidsafe/common/data_types/data_type_values.h"
 // We must include all archives which this polymorphic type will be used with *before* the
@@ -53,26 +54,31 @@ class ImmutableData : public Data {
   virtual ~ImmutableData() final = default;
 
   virtual std::uint32_t TagValue() const final;
-  virtual bool Authenticate() const final;
   virtual boost::optional<std::unique_ptr<Data>> Merge(
       const std::vector<std::unique_ptr<Data>>& data_collection) const final;
+  virtual bool IsInitialised() const final;
 
   template <typename Archive>
   Archive& save(Archive& archive) const {
-    if (!Authenticate())
+    if (!IsInitialised())
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     return archive(cereal::base_class<Data>(this), data_);
   }
 
   template <typename Archive>
   Archive& load(Archive& archive) {
-    archive(cereal::base_class<Data>(this), data_);
-    name_ = Name(crypto::Hash<crypto::SHA512>(data_));
+    try {
+      archive(cereal::base_class<Data>(this), data_);
+      name_ = Name(crypto::Hash<crypto::SHA512>(data_));
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Error parsing ImmutableData: " << boost::diagnostic_information(e);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
     return archive;
   }
 
-  const Name& name() const { return name_; }
-  const NonEmptyString& data() const { return data_; }
+  const Name& name() const;
+  const NonEmptyString& data() const;
 
  private:
   virtual const Identity& Id() const final;
