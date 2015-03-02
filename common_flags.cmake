@@ -157,6 +157,7 @@ target_compile_options(maidsafe_common
         -Wredundant-decls
         -Wold-style-cast
         -Woverloaded-virtual
+        -Wno-error=unused-parameter     # Having this error creates grief for those using unused parameters during debugging sessions
         -fPIC
         -fstrict-overflow
         -pedantic
@@ -179,6 +180,10 @@ target_compile_options(maidsafe_common
                 -Wno-unused-command-line-argument
             >
         >
-        $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++ -Wstrict-null-sentinel>
+        $<$<CXX_COMPILER_ID:GNU>:
+            -static-libstdc++
+            -Wstrict-null-sentinel
+            -Wno-error=maybe-uninitialized  # GCC's heuristics for this warning are known to generate a lot of false positives
+        >
     >
 )
