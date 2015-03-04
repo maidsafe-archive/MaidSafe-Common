@@ -217,7 +217,7 @@ template <typename Key>
 void DataBuffer<Key>::Init() {
   if (memory_store_.max > disk_store_.max) {
     LOG(kError) << "Max memory usage must be < max disk usage.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   boost::system::error_code error_code;
   if (!boost::filesystem::exists(kDiskBuffer_, error_code)) {
@@ -588,7 +588,7 @@ void DataBuffer<Key>::SetMaxMemoryUsage(MemoryUsage max_memory_usage) {
     std::lock_guard<std::mutex> memory_store_lock(memory_store_.mutex);
     if (max_memory_usage > disk_store_.max) {
       LOG(kError) << "Max memory usage must be <= max disk usage.";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     }
     memory_store_.max = max_memory_usage;
   }
@@ -602,7 +602,7 @@ void DataBuffer<Key>::SetMaxDiskUsage(DiskUsage max_disk_usage) {
     std::lock_guard<std::mutex> disk_store_lock(disk_store_.mutex);
     if (memory_store_.max > max_disk_usage) {
       LOG(kError) << "Max memory usage must be <= max disk usage.";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     }
     increased = (max_disk_usage > disk_store_.max);
     disk_store_.max = max_disk_usage;

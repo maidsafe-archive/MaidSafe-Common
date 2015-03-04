@@ -188,9 +188,12 @@ void set_random_number_generator_seed(uint32_t seed) {
 
 #endif
 
-fs::path GetFileName(const DataNameVariant& data_name_variant) {
-  auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), data_name_variant));
-  return (HexEncode(result.second) + '_' + std::to_string(static_cast<uint32_t>(result.first)));
+fs::path GetFileName(const Identity& data_name, DataTypeId data_type_id) {
+  return (Encode(data_name) + '_' + std::to_string(data_type_id));
+}
+
+std::pair<Identity, DataTypeId> GetDataNameAndTypeId(const boost::filesystem::path& file_name) {
+
 }
 
 DataNameVariant GetDataNameVariant(const fs::path& file_name) {
@@ -272,148 +275,6 @@ std::string RandomAlphaNumericString(size_t size) {
   return GetRandomAlphaNumericString<std::string>(size);
 }
 
-std::string HexEncode(const std::string& non_hex_input) {
-  auto size(non_hex_input.size());
-  std::string hex_output(size * 2, 0);
-  for (size_t i(0), j(0); i != size; ++i) {
-    hex_output[j++] = kHexAlphabet[static_cast<unsigned char>(non_hex_input[i]) / 16];
-    hex_output[j++] = kHexAlphabet[static_cast<unsigned char>(non_hex_input[i]) % 16];
-  }
-  return hex_output;
-}
-
-std::string HexDecode(const std::string& hex_input) {
-  auto size(hex_input.size());
-  if (size % 2)  // Sanity check
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
-
-  std::string non_hex_output(size / 2, 0);
-  for (size_t i(0), j(0); i != size / 2; ++i) {
-    non_hex_output[i] = (kHexLookup[static_cast<int>(hex_input[j++])] << 4);
-    non_hex_output[i] |= kHexLookup[static_cast<int>(hex_input[j++])];
-  }
-  return non_hex_output;
-}
-
-std::string Base64Encode(const std::string& non_base64_input) {
-  std::basic_string<byte> encoded_string(
-      ((non_base64_input.size() / 3) + (non_base64_input.size() % 3 > 0)) * 4, 0);
-  int32_t temp;
-  auto cursor = std::begin(reinterpret_cast<const std::basic_string<byte>&>(non_base64_input));
-  size_t i = 0;
-  size_t common_output_size((non_base64_input.size() / 3) * 4);
-  while (i < common_output_size) {
-    temp = (*cursor++) << 16;  // Convert to big endian
-    temp += (*cursor++) << 8;
-    temp += (*cursor++);
-    encoded_string[i++] = kBase64Alphabet[(temp & 0x00FC0000) >> 18];
-    encoded_string[i++] = kBase64Alphabet[(temp & 0x0003F000) >> 12];
-    encoded_string[i++] = kBase64Alphabet[(temp & 0x00000FC0) >> 6];
-    encoded_string[i++] = kBase64Alphabet[(temp & 0x0000003F)];
-  }
-  switch (non_base64_input.size() % 3) {
-    case 1:
-      temp = (*cursor++) << 16;  // Convert to big endian
-      encoded_string[i++] = kBase64Alphabet[(temp & 0x00FC0000) >> 18];
-      encoded_string[i++] = kBase64Alphabet[(temp & 0x0003F000) >> 12];
-      encoded_string[i++] = kPadCharacter;
-      encoded_string[i++] = kPadCharacter;
-      break;
-    case 2:
-      temp = (*cursor++) << 16;  // Convert to big endian
-      temp += (*cursor++) << 8;
-      encoded_string[i++] = kBase64Alphabet[(temp & 0x00FC0000) >> 18];
-      encoded_string[i++] = kBase64Alphabet[(temp & 0x0003F000) >> 12];
-      encoded_string[i++] = kBase64Alphabet[(temp & 0x00000FC0) >> 6];
-      encoded_string[i++] = kPadCharacter;
-      break;
-  }
-  return std::string(std::begin(encoded_string), std::end(encoded_string));
-}
-
-std::string Base64Decode(const std::string& base64_input) {
-  if (base64_input.size() % 4)  // Sanity check
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
-
-  size_t padding = 0;
-  if (base64_input.size()) {
-    if (base64_input[base64_input.size() - 1] == static_cast<size_t>(kPadCharacter))
-      ++padding;
-    if (base64_input[base64_input.size() - 2] == static_cast<size_t>(kPadCharacter))
-      ++padding;
-  }
-
-  // Setup a vector to hold the result
-  std::string decoded_bytes;
-  decoded_bytes.reserve(((base64_input.size() / 4) * 3) - padding);
-  uint32_t temp = 0;  // Holds decoded quanta
-  auto cursor = std::begin(base64_input);
-  while (cursor < std::end(base64_input)) {
-    for (size_t quantum_position = 0; quantum_position < 4; ++quantum_position) {
-      temp <<= 6;
-      if (*cursor >= 0x41 && *cursor <= 0x5A)
-        temp |= *cursor - 0x41;
-      else if (*cursor >= 0x61 && *cursor <= 0x7A)
-        temp |= *cursor - 0x47;
-      else if (*cursor >= 0x30 && *cursor <= 0x39)
-        temp |= *cursor + 0x04;
-      else if (*cursor == 0x2B)
-        temp |= 0x3E;  // change to 0x2D for URL alphabet
-      else if (*cursor == 0x2F)
-        temp |= 0x3F;                       // change to 0x5F for URL alphabet
-      else if (*cursor == kPadCharacter) {  // pad
-        switch (std::end(base64_input) - cursor) {
-          case 1:  // One pad character
-            decoded_bytes.push_back((temp >> 16) & 0x000000FF);
-            decoded_bytes.push_back((temp >> 8) & 0x000000FF);
-            return decoded_bytes;
-          case 2:  // Two pad characters
-            decoded_bytes.push_back((temp >> 10) & 0x000000FF);
-            return decoded_bytes;
-          default:
-            BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
-        }
-      } else {
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_conversion));
-      }
-      ++cursor;
-    }
-    decoded_bytes.push_back((temp >> 16) & 0x000000FF);
-    decoded_bytes.push_back((temp >> 8) & 0x000000FF);
-    decoded_bytes.push_back(temp & 0x000000FF);
-  }
-  return decoded_bytes;
-}
-
-std::string HexSubstr(const std::string& non_hex) {
-  size_t non_hex_size(non_hex.size());
-  if (non_hex_size < 7)
-    return HexEncode(non_hex);
-
-  std::string hex(14, 0);
-  size_t non_hex_index(0), hex_index(0);
-  for (; non_hex_index != 3; ++non_hex_index) {
-    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) / 16];
-    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) % 16];
-  }
-  hex[hex_index++] = '.';
-  hex[hex_index++] = '.';
-  non_hex_index = non_hex_size - 3;
-  for (; non_hex_index != non_hex_size; ++non_hex_index) {
-    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) / 16];
-    hex[hex_index++] = kHexAlphabet[static_cast<unsigned char>(non_hex[non_hex_index]) % 16];
-  }
-  return hex;
-}
-
-std::string Base64Substr(const std::string& non_base64) {
-  std::string base64(Base64Encode(non_base64));
-  if (base64.size() > 16)
-    return (base64.substr(0, 7) + ".." + base64.substr(base64.size() - 7));
-  else
-    return base64;
-}
-
 std::string WstringToString(const std::wstring& input) {
   return StringToString<wchar_t, char>(input);
 }
@@ -423,8 +284,6 @@ std::wstring StringToWstring(const std::string& input) {
   return StringToString<char, wchar_t>(input);
 }
 #endif
-
-std::string DebugId(const Identity& id) { return HexSubstr(id.string()); }
 
 uint64_t GetTimeStamp() {
   return (bptime::microsec_clock::universal_time() - kMaidSafeEpoch).total_milliseconds();

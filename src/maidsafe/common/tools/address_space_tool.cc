@@ -62,7 +62,7 @@ int Test::CommonLeadingBits(int highest, int lowest, int sum, int count) const {
     case CommonLeadingBitsAlgorithm::kMean:
       return sum / count;
     default:
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 }
 

@@ -44,23 +44,29 @@ NonEmptyString Obfuscate(const UserCredentials& user_credentials, const NonEmpty
     LOG(kError) << "UserCredentials is not initialised.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
-  crypto::Salt salt{crypto::Hash<crypto::SHA512>(user_credentials.password->string() +
-                                                 user_credentials.pin->Hash<crypto::SHA512>())};
-  std::string obfuscation_str{
-      crypto::CreateSecurePassword(*user_credentials.keyword, salt,
-                                   static_cast<uint32_t>(user_credentials.pin->Value() * 2))
-          ->string()};
+  crypto::Salt salt(crypto::Hash<crypto::SHA512>(user_credentials.password->string() +
+                                                 user_credentials.pin->Hash<crypto::SHA512>()));
+  auto obfuscation_str(crypto::CreateSecurePassword(
+                           *user_credentials.keyword, salt,
+                           static_cast<uint32_t>(user_credentials.pin->Value() * 2))->string());
 
   // make the obfuscation_str of same size for XOR
-  if (data.string().size() < obfuscation_str.size()) {
-    obfuscation_str.resize(data.string().size());
-  } else if (data.string().size() > obfuscation_str.size()) {
-    obfuscation_str.reserve(data.string().size());
-    while (data.string().size() > obfuscation_str.size())
-      obfuscation_str += obfuscation_str;
-    obfuscation_str.resize(data.string().size());
+  const std::size_t data_size(data.string().size());
+  if (data_size < obfuscation_str.size()) {
+    obfuscation_str.resize(data_size);
+  } else if (data_size > obfuscation_str.size()) {
+    obfuscation_str.reserve(data_size);
+    while (data_size > obfuscation_str.size())
+      obfuscation_str.insert(obfuscation_str.end(), obfuscation_str.begin(), obfuscation_str.end());
+    obfuscation_str.resize(data_size);
   }
-  return NonEmptyString{crypto::XOR(data.string(), obfuscation_str)};
+
+  // XOR the data and the obfuscation string
+  std::vector<byte> result(data_size, 0);
+  for (std::size_t i(0); i < data_size; ++i)
+    result[i] = data.string()[i] ^ obfuscation_str[i];
+
+  return NonEmptyString(result);
 }
 
 crypto::AES256Key DeriveSymmEncryptKey(const crypto::SecurePassword& secure_password) {

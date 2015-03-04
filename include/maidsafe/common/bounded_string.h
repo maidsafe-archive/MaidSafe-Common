@@ -21,8 +21,10 @@
 
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
@@ -30,64 +32,112 @@ namespace maidsafe {
 
 namespace detail {
 
+// The BoundedString class holds a string-like object with lower and upper bounds checking of the
+// string's size.  A default-constructed instance is generally unusable (most public functions
+// throw) but can be assigned to safely.
+
+
+// Helpers
+#ifdef NDEBUG
+#define INIT_DEBUG_STRING
+#else
+#define INIT_DEBUG_STRING , debug_string_(hex::Encode(string_))
+#endif
+
+template <typename T, class Enable = void>
+struct Char;
+
+template <typename T>
+struct Char<T, typename std::enable_if<std::is_same<typename T::value_type, char>::value>::type> {
+  using value_type = char;
+};
+
+template <typename T>
+struct Char<T,
+            typename std::enable_if<std::is_same<typename T::value_type, wchar_t>::value>::type> {
+  using value_type = wchar_t;
+};
+
+template <typename T>
+struct Char<T,
+            typename std::enable_if<std::is_same<typename T::value_type, char16_t>::value>::type> {
+  using value_type = char16_t;
+};
+
+template <typename T>
+struct Char<T,
+            typename std::enable_if<std::is_same<typename T::value_type, char32_t>::value>::type> {
+  using value_type = char32_t;
+};
+
+template <typename T>
+struct Char<
+    T, typename std::enable_if<std::is_same<typename T::value_type, unsigned char>::value>::type> {
+  using value_type = unsigned char;
+};
+
+// BoundedString
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++11-narrowing"
 #endif
-template <size_t min, size_t max = -1, typename StringType = std::string>
+template <std::size_t min, std::size_t max = -1, typename String = std::vector<unsigned char>>
 class BoundedString {
  public:
+  using value_type = typename Char<String>::value_type;
+
+#ifdef NDEBUG
+  BoundedString()
+      : string_(), valid_(!OutwithBounds()) {}  // Use OutwithBounds() to invoke static_asserts
+#else
   BoundedString()
       : string_(),
-        // Use OutwithBounds() to invoke static_asserts
-        valid_(!OutwithBounds()) {}
+        valid_(!OutwithBounds()),  // Use OutwithBounds() to invoke static_asserts
+        debug_string_("Invalid string.") {}
+#endif
 
-  explicit BoundedString(StringType string) : string_(std::move(string)), valid_(true) {
+  explicit BoundedString(String string)
+      : string_(std::move(string)), valid_(true) INIT_DEBUG_STRING {
     if (OutwithBounds()) {
-      LOG(kError) << "BoundedString::BoundedString() invalid_string_size";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+      LOG(kError) << "BoundedString::BoundedString(String) - invalid string size";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
     }
   }
 
-  friend void swap(BoundedString& first, BoundedString& second) MAIDSAFE_NOEXCEPT {
-    using std::swap;
-    swap(first.string_, second.string_);
-    swap(first.valid_, second.valid_);
-  }
-
-  BoundedString(const BoundedString& other) : string_(other.string_), valid_(other.valid_) {}
-
-  BoundedString(BoundedString&& other) MAIDSAFE_NOEXCEPT : string_(std::move(other.string_)),
-                                                           valid_(std::move(other.valid_)) {}
-
-  BoundedString& operator=(BoundedString other) MAIDSAFE_NOEXCEPT {
-    // No need for check for self-assignment since we're using the copy-and-swap idiom
-    swap(*this, other);
-    return *this;
-  }
-
-  BoundedString& operator+=(const BoundedString& other) {
-    if (!valid_ || !other.valid_) {
-      LOG(kError) << "BoundedString one of class uninitialised in operator+=";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  explicit BoundedString(const std::string& string)
+      : string_(string.begin(), string.end()), valid_(true) INIT_DEBUG_STRING {
+    if (OutwithBounds()) {
+      LOG(kError) << "BoundedString::BoundedString(const std::string&) - invalid string size";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
     }
-    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
-      LOG(kError) << "BoundedString invalid_string_size in operator+=";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
-    }
-    StringType temp(string_ + other.string_);
-    string_.swap(temp);
-    return *this;
   }
 
-  template <size_t other_min, size_t other_max, typename OtherStringType>
+  template <std::size_t other_min, std::size_t other_max, typename OtherStringType>
   explicit BoundedString(BoundedString<other_min, other_max, OtherStringType> other)
       : string_(other.string_.begin(), other.string_.end()), valid_(std::move(other.valid_)) {
     static_assert((min <= other_min) && (max >= other_max),
                   "Bounds of copied BoundedString must be within bounds of this BoundedString");
   }
 
-  template <size_t other_min, size_t other_max, typename OtherStringType>
+  BoundedString(const BoundedString& other)
+      : string_(other.string_), valid_(other.valid_) INIT_DEBUG_STRING {}
+
+  BoundedString(BoundedString&& other) MAIDSAFE_NOEXCEPT
+      : string_(std::move(other.string_)),
+        valid_(std::move(other.valid_)) INIT_DEBUG_STRING {}
+
+  BoundedString& operator=(const BoundedString&) = default;
+
+  BoundedString& operator=(BoundedString&& other) MAIDSAFE_NOEXCEPT {
+    string_ = std::move(other.string_);
+    valid_ = std::move(other.valid_);
+#ifndef NDEBUG
+    debug_string_ = std::move(other.debug_string_);
+#endif
+    return *this;
+  }
+
+  template <std::size_t other_min, std::size_t other_max, typename OtherStringType>
   BoundedString& operator=(BoundedString<other_min, other_max, OtherStringType> other) {
     static_assert((min <= other_min) && (max >= other_max),
                   "Bounds of copied BoundedString must be within bounds of this BoundedString");
@@ -97,65 +147,97 @@ class BoundedString {
     return *this;
   }
 
-  template <size_t other_min, size_t other_max, typename OtherStringType>
-  BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
+  BoundedString& operator+=(const BoundedString& other) {
     if (!valid_ || !other.valid_) {
-      LOG(kError) << "BoundedString one of class uninitialised in operator+=";
+      LOG(kError) << "BoundedString is uninitialised.";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     }
     if (SizeOutOfBounds(string_.size() + other.string_.size())) {
-      LOG(kError) << "BoundedString invalid_string_size in operator+=";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+      LOG(kError) << "Resulting BoundedString would be outside of bounds.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
     }
-    StringType temp(string_ + other.string_);
+    String temp(string_ + other.string_);
+    string_.swap(temp);
+    return *this;
+  }
+
+  template <std::size_t other_min, std::size_t other_max, typename OtherStringType>
+  BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
+    if (!valid_ || !other.valid_) {
+      LOG(kError) << "BoundedString is uninitialised.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
+    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
+      LOG(kError) << "Resulting BoundedString would be outside of bounds.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
+    }
+    String temp(string_ + other.string_);
     string_.swap(temp);
     return *this;
   }
 
   template <typename Archive>
-  Archive& load(Archive& ref_archive) {
-    StringType temp_str_type;
-    ref_archive(temp_str_type);
-    *this = BoundedString{std::move(temp_str_type)};
-    return ref_archive;
+  Archive& save(Archive& archive) const {
+    return archive(string());
   }
 
   template <typename Archive>
-  Archive& save(Archive& ref_archive) const {
-    return ref_archive(string());
+  Archive& load(Archive& archive) {
+    try {
+      String temp_str_type;
+      archive(temp_str_type);
+      *this = BoundedString{std::move(temp_str_type)};
+    } catch (const std::exception& e) {
+      LOG(kWarning) << boost::diagnostic_information(e);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+    return archive;
   }
 
-  const StringType& string() const {
+  const String& string() const {
     if (!valid_) {
-      LOG(kError) << "class uninitialised";
+      LOG(kError) << "BoundedString is uninitialised.";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     }
     return string_;
   }
 
+  const value_type* data() const { return string().data(); }
+
+  std::size_t size() const { return string().size(); }
+
   bool IsInitialised() const { return valid_; }
 
-  template <size_t other_min, size_t other_max, typename OtherStringType>
+  template <std::size_t other_min, std::size_t other_max, typename OtherStringType>
   friend class BoundedString;
 
- private:
-  bool SizeOutOfBounds(std::string::size_type size) const {
+  template <std::size_t size, typename String>
+  friend BoundedString<size, size, String> operator^(const BoundedString<size, size, String>&,
+                                                     const BoundedString<size, size, String>&);
+   
+   bool SizeOutOfBounds(std::size_t size) const {
     static_assert(min <= max,
                   "Lower bound of BoundedString must be less than or equal to upper bound");
     return (size < min) || (size > max);
   }
 
   bool OutwithBounds() const { return SizeOutOfBounds(string_.size()); }
-  StringType string_;
+
+  String string_;
   bool valid_;
+#ifndef NDEBUG
+  std::string debug_string_;
+#endif
 };
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 
-template <size_t min, size_t max, typename StringType>
-inline bool operator==(const BoundedString<min, max, StringType>& lhs,
-                       const BoundedString<min, max, StringType>& rhs) {
+
+
+template <std::size_t min, std::size_t max, typename String>
+inline bool operator==(const BoundedString<min, max, String>& lhs,
+                       const BoundedString<min, max, String>& rhs) {
   if (lhs.IsInitialised()) {
     if (rhs.IsInitialised()) {
       return lhs.string() == rhs.string();
@@ -167,15 +249,15 @@ inline bool operator==(const BoundedString<min, max, StringType>& lhs,
   }
 }
 
-template <size_t min, size_t max, typename StringType>
-inline bool operator!=(const BoundedString<min, max, StringType>& lhs,
-                       const BoundedString<min, max, StringType>& rhs) {
+template <std::size_t min, std::size_t max, typename String>
+inline bool operator!=(const BoundedString<min, max, String>& lhs,
+                       const BoundedString<min, max, String>& rhs) {
   return !operator==(lhs, rhs);
 }
 
-template <size_t min, size_t max, typename StringType>
-inline bool operator<(const BoundedString<min, max, StringType>& lhs,
-                      const BoundedString<min, max, StringType>& rhs) {
+template <std::size_t min, std::size_t max, typename String>
+inline bool operator<(const BoundedString<min, max, String>& lhs,
+                      const BoundedString<min, max, String>& rhs) {
   if (lhs.IsInitialised()) {
     if (rhs.IsInitialised()) {
       return lhs.string() < rhs.string();
@@ -187,33 +269,68 @@ inline bool operator<(const BoundedString<min, max, StringType>& lhs,
   }
 }
 
-template <size_t min, size_t max, typename StringType>
-inline bool operator>(const BoundedString<min, max, StringType>& lhs,
-                      const BoundedString<min, max, StringType>& rhs) {
+template <std::size_t min, std::size_t max, typename String>
+inline bool operator>(const BoundedString<min, max, String>& lhs,
+                      const BoundedString<min, max, String>& rhs) {
   return operator<(rhs, lhs);
 }
 
-template <size_t min, size_t max, typename StringType>
-inline bool operator<=(const BoundedString<min, max, StringType>& lhs,
-                       const BoundedString<min, max, StringType>& rhs) {
+template <std::size_t min, std::size_t max, typename String>
+inline bool operator<=(const BoundedString<min, max, String>& lhs,
+                       const BoundedString<min, max, String>& rhs) {
   return !operator>(lhs, rhs);
 }
 
-template <size_t min, size_t max, typename StringType>
-inline bool operator>=(const BoundedString<min, max, StringType>& lhs,
-                       const BoundedString<min, max, StringType>& rhs) {
+template <std::size_t min, std::size_t max, typename String>
+inline bool operator>=(const BoundedString<min, max, String>& lhs,
+                       const BoundedString<min, max, String>& rhs) {
   return !operator<(lhs, rhs);
 }
 
-template <size_t lhs_min, size_t lhs_max, size_t rhs_min, size_t rhs_max, typename StringType>
-inline BoundedString<lhs_min, lhs_max> operator+(
-    BoundedString<lhs_min, lhs_max, StringType> lhs,
-    const BoundedString<rhs_min, rhs_max, StringType>& rhs) {
+template <std::size_t lhs_min, std::size_t lhs_max, std::size_t rhs_min, std::size_t rhs_max,
+          typename String>
+inline BoundedString<lhs_min, lhs_max, String> operator+(
+    BoundedString<lhs_min, lhs_max, String> lhs,
+    const BoundedString<rhs_min, rhs_max, String>& rhs) {
   lhs += rhs;
   return lhs;
 }
 
+// This returns the bitwise XOR of the two fixed-size inputs.  Throws if either is uninitialised.
+template <std::size_t size, typename String>
+inline BoundedString<size, size, String> operator^(const BoundedString<size, size, String>& lhs,
+                                                   const BoundedString<size, size, String>& rhs) {
+  if (!lhs.valid_ || !rhs.valid_) {
+    LOG(kError) << "BoundedString is uninitialised.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
+  String result(size, 0);
+  for (std::size_t i(0); i < size; ++i)
+    result[i] = lhs.string_[i] ^ rhs.string_[i];
+  return BoundedString<size, size, String>(std::move(result));
+}
+
 }  // namespace detail
+
+
+// Overloads for hex- and base64-encoding a BoundedString.
+namespace hex {
+
+template <std::size_t min, std::size_t max = -1, typename String>
+std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_hex_input) {
+  return Encode(non_hex_input.string());
+}
+
+}  // namespace hex
+
+namespace base64 {
+
+template <std::size_t min, std::size_t max = -1, typename String>
+std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_base64_input) {
+  return Encode(non_base64_input.string());
+}
+
+}  // namespace base64
 
 }  // namespace maidsafe
 

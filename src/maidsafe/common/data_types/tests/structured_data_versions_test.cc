@@ -338,7 +338,7 @@ TEST(StructuredDataVersionsTest, BEH_GetBranch) {
   try {
     versions.GetBranch(v0_aaa);
   } catch (const common_error& e) {
-    EXPECT_EQ(make_error_code(CommonErrors::invalid_parameter), e.code());
+    EXPECT_EQ(make_error_code(CommonErrors::invalid_argument), e.code());
   }
 
   // Check for version which doesn't exist
@@ -516,7 +516,7 @@ TEST(StructuredDataVersionsTest, BEH_DeleteBranchUntilFork) {
   try {
     versions.DeleteBranchUntilFork(v0_aaa);
   } catch (const common_error& e) {
-    EXPECT_EQ(make_error_code(CommonErrors::invalid_parameter), e.code());
+    EXPECT_EQ(make_error_code(CommonErrors::invalid_argument), e.code());
   }
   EXPECT_TRUE(Equivalent(versions, clone));
 

@@ -22,12 +22,12 @@
 namespace maidsafe {
 
 template <>
-boost::filesystem::path DataBuffer<DataNameVariant>::GetFilename(const DataNameVariant& key) const {
+boost::filesystem::path DataBuffer::GetFilename(const Identity& key, DataTypeId data_type_id) const {
   return kDiskBuffer_ / detail::GetFileName(key);
 }
 
 template <>
-std::string DataBuffer<DataNameVariant>::DebugKeyName(const DataNameVariant& key) {
+std::string DataBuffer::DebugKeyName(const DataNameVariant& key) {
   static GetIdentityVisitor get_identity_visitor;
   return HexEncode(boost::apply_visitor(get_identity_visitor, key).string());
 }

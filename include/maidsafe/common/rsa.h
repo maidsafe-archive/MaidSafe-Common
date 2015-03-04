@@ -33,7 +33,6 @@
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
-#include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 
 namespace maidsafe {

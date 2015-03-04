@@ -16,8 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/test.h"
 #include "maidsafe/common/convert.h"
+
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
@@ -81,6 +83,18 @@ TEST(ConversionsTest, BEH_Endpoint) {
   auto ip_v6 = GetRandomIPv6AddressAsString();
   ToBoostThenBack(asio_endpoint(asio::ip::address::from_string(ip_v6), port));
   ToAsioThenBack(boost_endpoint(boost::asio::ip::address::from_string(ip_v6), port));
+}
+
+TEST(ConversionsTest, BEH_ByteVectorAndString) {
+  const std::string input(RandomString(RandomUint32() % 1000));
+
+  const std::vector<unsigned char> bytes(convert::ToByteVector(input));
+  ASSERT_EQ(input.size(), bytes.size());
+  for (std::size_t i(0); i < input.size(); ++i)
+    EXPECT_EQ(input[i], static_cast<unsigned char>(bytes[i]));
+
+  const std::string string(convert::ToString(bytes));
+  EXPECT_EQ(input, string);
 }
 
 }  // namespace test

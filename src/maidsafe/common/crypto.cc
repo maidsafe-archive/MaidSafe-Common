@@ -41,49 +41,24 @@ void ValidateDispersalArgs(int32_t threshold, int32_t number_of_shares) {
     LOG(kError) << "The threshold (" << threshold
                 << ") must be less than or equal to the number of shares (" << number_of_shares
                 << ").";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   if (number_of_shares < 3) {
     LOG(kError) << "The number of shares (" << number_of_shares << ") must be at least 3.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   if (threshold < 2) {
     LOG(kError) << "The threshold (" << threshold << ") must be at least 2.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 }
 
 }  // unnamed namespace
 
-const uint16_t kMaxCompressionLevel = 9;
-const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
-const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
-
 CryptoPP::RandomNumberGenerator& random_number_generator() {
   if (!g_random_number_generator.get())
     g_random_number_generator.reset(new CryptoPP::AutoSeededX917RNG<CryptoPP::AES>);
   return *g_random_number_generator;
-}
-
-std::string XOR(const std::string& first, const std::string& second) {
-  size_t common_size(first.size());
-  if ((common_size != second.size()) || (common_size == 0)) {
-    LOG(kWarning) << "Size mismatch or zero.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
-  }
-
-  std::string result(common_size, 0);
-  auto first_itr(std::begin(first));
-  auto second_itr(std::begin(second));
-  auto result_itr(std::begin(result));
-  while (result_itr != std::end(result)) {
-    *result_itr = *first_itr ^ *second_itr;
-    ++first_itr;
-    ++second_itr;
-    ++result_itr;
-  }
-
-  return result;
 }
 
 CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
@@ -95,11 +70,11 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
   std::string result;
   try {
     CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Encryption encryptor;
-    encryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-                           reinterpret_cast<const byte*>(initialisation_vector.string().data()),
-                           initialisation_vector.string().size());
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::AuthenticatedEncryptionFilter(
-                                                     encryptor, new CryptoPP::StringSink(result)));
+    encryptor.SetKeyWithIV(key.data(), key.string().size(), initialisation_vector.data(),
+                           initialisation_vector.size());
+    CryptoPP::ArraySource(
+        input.data(), input.size(), true,
+        new CryptoPP::AuthenticatedEncryptionFilter(encryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
@@ -116,11 +91,11 @@ PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
   std::string result;
   try {
     CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Decryption decryptor;
-    decryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-                           reinterpret_cast<const byte*>(initialisation_vector.string().data()),
-                           initialisation_vector.string().size());
-    CryptoPP::StringSource(input->string(), true, new CryptoPP::AuthenticatedDecryptionFilter(
-                                                      decryptor, new CryptoPP::StringSink(result)));
+    decryptor.SetKeyWithIV(key.data(), key.string().size(), initialisation_vector.data(),
+                           initialisation_vector.size());
+    CryptoPP::ArraySource(
+        input->data(), input->size(), true,
+        new CryptoPP::AuthenticatedDecryptionFilter(decryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception&) {
     LOG(kError) << "Failed symmetric decryption: "
                 << boost::current_exception_diagnostic_information(true);
@@ -133,7 +108,7 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   if (compression_level > kMaxCompressionLevel) {
     LOG(kError) << "Requested compression level of " << compression_level << " is above the max of "
                 << kMaxCompressionLevel;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   if (!input.IsInitialised()) {
     LOG(kError) << "Compress input uninitialised";
@@ -142,7 +117,7 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
 
   std::string result;
   try {
-    CryptoPP::StringSource(input.string(), true,
+    CryptoPP::ArraySource(input.data(), input.size(), true,
                            new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
   } catch (const CryptoPP::Exception&) {
     LOG(kError) << "Failed compressing: " << boost::current_exception_diagnostic_information(true);
@@ -158,7 +133,7 @@ UncompressedText Uncompress(const CompressedText& input) {
   }
   std::string result;
   try {
-    CryptoPP::StringSource(input->string(), true,
+    CryptoPP::ArraySource(input->data(), input->size(), true,
                            new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();

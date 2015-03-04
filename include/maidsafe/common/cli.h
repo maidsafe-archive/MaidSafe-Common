@@ -62,7 +62,7 @@ T CLI::Get(std::string display_message, bool echo_input) const {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
 
   if (!(std::stringstream(input) >> command))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 
   return command;
 }

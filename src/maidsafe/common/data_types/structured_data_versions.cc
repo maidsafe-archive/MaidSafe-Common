@@ -169,7 +169,7 @@ StructuredDataVersions::serialised_type StructuredDataVersions::Serialise() cons
 
 void StructuredDataVersions::ValidateLimits() const {
   if (max_versions_ < 1U || max_branches_ < 1U)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 }
 
 void StructuredDataVersions::BranchFromCereal(
@@ -309,7 +309,7 @@ void StructuredDataVersions::ApplyBranch(VersionName parent, VersionsItr itr,
 boost::optional<StructuredDataVersions::VersionName> StructuredDataVersions::Put(
     const VersionName& old_version, const VersionName& new_version) {
   if (!new_version.id->IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 
   if (NewVersionPreExists(old_version, new_version))
     return boost::none;
@@ -317,7 +317,7 @@ boost::optional<StructuredDataVersions::VersionName> StructuredDataVersions::Put
   // Check we've not been asked to store two roots.
   bool is_root(!old_version.id->IsInitialised() || versions_.empty() || new_version.index == 0);
   if (is_root && root_.second != std::end(versions_) && !RootParentName().id->IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 
   // Construct temp objects before modifying members in case exception is thrown.
   Version version(std::make_pair(
@@ -332,7 +332,7 @@ boost::optional<StructuredDataVersions::VersionName> StructuredDataVersions::Put
   // check this call isn't implying two different roots
   if (is_orphan && root_.second->first.index == 0 && old_version.index == 0 &&
       root_.second->first.id != old_version.id) {
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 
   // Handle case where we're about to exceed 'max_versions_'.
@@ -375,7 +375,7 @@ bool StructuredDataVersions::NewVersionPreExists(const VersionName& old_version,
       if (new_version == root_.second->first) {
         if (root_.first == old_version)
           return true;
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
       }
 
       auto orphan_itr(FindOrphan(new_version));
@@ -383,12 +383,12 @@ bool StructuredDataVersions::NewVersionPreExists(const VersionName& old_version,
              orphan_itr.second != std::end(orphan_itr.first->second));
       if (orphan_itr.first != std::end(orphans_) && orphan_itr.first->first == old_version)
         return true;
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     } else {
       if (ParentName(existing_itr) == old_version)
         return true;
       else
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     }
   }
   return false;
@@ -431,7 +431,7 @@ std::future<void> StructuredDataVersions::CheckVersionNotInBranch(
       if (child_itr == std::end(versions_itr->second->children))
         return;
       if ((*child_itr)->first == version)
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
       std::vector<std::future<void>> check_futures;
       while (++child_itr != std::end(versions_itr->second->children))
         check_futures.emplace_back(CheckVersionNotInBranch(*child_itr, version));
@@ -665,7 +665,7 @@ void StructuredDataVersions::CheckBranchTipIterator(
     if (versions_.find(name) == std::end(versions_))
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
     else
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 }
 

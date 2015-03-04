@@ -33,11 +33,11 @@
 namespace maidsafe {
 
 using NonEmptyString = detail::BoundedString<1>;
-using Identity = detail::BoundedString<64, 64>;
 using byte = unsigned char;
 
-using MemoryUsage = TaggedValue<std::uint64_t, struct memory_usage_tag>;
-using DiskUsage = TaggedValue<std::uint64_t, struct disk_usage_tag>;
+using MemoryUsage = TaggedValue<std::uint64_t, struct MemoryUsageTag>;
+using DiskUsage = TaggedValue<std::uint64_t, struct DiskUsageTag>;
+using DataTypeId = TaggedValue<std::uint32_t, struct DataTypeIdTag>;
 
 template <typename T>
 struct is_long_term_cacheable : public std::false_type {};

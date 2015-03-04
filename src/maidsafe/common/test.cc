@@ -70,7 +70,7 @@ po::variables_map ParseOptions(int argc, char* argv[],
     po::notify(variables_map);
   } catch (const std::exception& e) {
     std::cout << "Parser error:\n " << e.what() << "\nRun with -h to see all options.\n";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   return variables_map;
 }

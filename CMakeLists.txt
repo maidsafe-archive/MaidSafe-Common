@@ -108,7 +108,6 @@ else()
   set(CerealLib cereal)
 endif()
 target_link_libraries(maidsafe_common
-    maidsafe_passport
     ${AsioLib}
     ${CerealLib}
     cryptopp
@@ -139,17 +138,17 @@ target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
 # Signing tool
 ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing_tool.cc")
-target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
+target_link_libraries(signing_tool maidsafe_common)
 
 # Qa tool
 ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc"
                                          "${CommonSourcesDir}/tools/tests/benchmark/sqlite3_wrapper_benchmark.cc")
-target_link_libraries(qa_tool maidsafe_common maidsafe_passport maidsafe_test)
+target_link_libraries(qa_tool maidsafe_common maidsafe_test)
 
 # SQLite wrapper benchmark test tool
 ms_add_executable(sqlite_wrapper_benchmark "Tools/Common" "${CommonSourcesDir}/tools/sqlite_wrapper_benchmark.cc"
                                                           "${CommonSourcesDir}/tools/tests/benchmark/sqlite3_wrapper_benchmark.cc")
-target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_passport maidsafe_test)
+target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_test)
 
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"

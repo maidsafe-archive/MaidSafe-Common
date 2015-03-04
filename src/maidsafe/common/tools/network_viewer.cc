@@ -228,7 +228,7 @@ MatrixRecord::MatrixRecord(const std::string& serialised_matrix_record)
     ConvertFromString(serialised_matrix_record, *this);
   } catch (...) {
     LOG(kError) << "Failed to construct matrix_record.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 }
 

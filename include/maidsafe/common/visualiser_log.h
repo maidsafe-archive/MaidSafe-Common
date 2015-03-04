@@ -136,7 +136,7 @@ class VisualiserLogMessage {
             return stream.str();
           }()) {
       if (!IsValid(e))
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     }
     Enum() = default;
     Enum(const Enum&) = default;

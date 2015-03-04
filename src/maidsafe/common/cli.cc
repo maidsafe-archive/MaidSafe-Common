@@ -27,6 +27,8 @@
 #include <cstdlib>
 
 #include "boost/tokenizer.hpp"
+
+#include "maidsafe/common/convert.h"
 #include "maidsafe/common/crypto.h"
 
 namespace maidsafe {
@@ -80,7 +82,7 @@ std::string CLI::GetPassword(bool repeat) const {
     if (repeat)
       password2 = Get<std::string>("Please re-enter same password\n", false);
   } while ((password1 != password2) && repeat);
-  return crypto::Hash<crypto::SHA512>(password1).string();
+  return convert::ToString(crypto::Hash<crypto::SHA512>(password1).string());
 }
 
 std::vector<std::string> CLI::TokeniseLine(std::string line) const {

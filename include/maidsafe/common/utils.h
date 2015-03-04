@@ -40,7 +40,6 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/program_options.hpp"
 
-#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
 
@@ -70,24 +69,14 @@ std::mutex& random_number_generator_mutex();
 uint32_t random_number_generator_seed();
 void set_random_number_generator_seed(uint32_t seed);
 #endif
-boost::filesystem::path GetFileName(const DataNameVariant& data_name_variant);
-DataNameVariant GetDataNameVariant(const boost::filesystem::path& file_name);
+boost::filesystem::path GetFileName(const Identity& data_name, DataTypeId data_type_id);
+std::pair<Identity, DataTypeId> GetDataTypeId(const boost::filesystem::path& file_name);
 
 }  // namespace detail
 
 extern const int kInvalidVersion;
 extern const uint16_t kLivePort;
 extern const boost::posix_time::ptime kMaidSafeEpoch;
-
-// SI units.  (note MS windows will report on the 'old' system, for drive space)
-// this is (cheekily) using chrono::duration
-typedef std::chrono::duration<uint64_t> Bytes;
-typedef std::chrono::duration<uint64_t, std::kilo> KiloBytes;
-typedef std::chrono::duration<uint64_t, std::mega> MegaBytes;
-typedef std::chrono::duration<uint64_t, std::giga> GigaBytes;
-typedef std::chrono::duration<uint64_t, std::tera> TeraBytes;
-typedef std::chrono::duration<uint64_t, std::peta> PetaBytes;
-typedef std::chrono::duration<uint64_t, std::exa> ExaBytes;
 
 // Makes a UDP socket connection to peer_endpoint.  Note, no data is sent, so no information about
 // the validity or availability of the peer is deduced.  If the retrieved local endpoint is
@@ -176,41 +165,6 @@ String GetRandomAlphaNumericString(size_t size) {
   return random_string;
 }
 
-std::string HexEncode(const std::string& non_hex_input);
-
-template <size_t min, size_t max>
-std::string HexEncode(const detail::BoundedString<min, max>& non_hex_input) {
-  return HexEncode(non_hex_input.string());
-}
-
-std::string HexDecode(const std::string& hex_input);
-
-// hacked from https://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
-std::string Base64Encode(const std::string& non_base64_input);
-
-template <size_t min, size_t max>
-std::string Base64Encode(const detail::BoundedString<min, max>& non_base64_input) {
-  return Base64Encode(non_base64_input.string());
-}
-
-std::string Base64Decode(const std::string& base64_input);
-
-// Returns an appreviated hex representation of a hash or other small data.
-std::string HexSubstr(const std::string& non_hex);
-
-template <size_t min, size_t max>
-std::string HexSubstr(const detail::BoundedString<min, max>& non_hex) {
-  return HexSubstr(non_hex.string());
-}
-
-// Returns an appreviated Base64 representation of a hash or other small data.
-std::string Base64Substr(const std::string& non_base64);
-
-template <size_t min, size_t max>
-std::string Base64Substr(detail::BoundedString<min, max> non_base64) {
-  return Base64Substr(non_base64.string());
-}
-
 #ifdef MAIDSAFE_WIN32
 // Throws if any char of 'input' can't be converted.
 std::string WstringToString(const std::wstring& input);
@@ -218,9 +172,6 @@ std::string WstringToString(const std::wstring& input);
 // Throws if any char of 'input' can't be converted.
 std::wstring StringToWstring(const std::string& input);
 #endif
-
-// Returns an abbreviated hex representation of id.  Throws if 'id' is uninitialised.
-std::string DebugId(const Identity& id);
 
 // Returns the number of milliseconds since kMaidsafeEpoch (1st January 2000).
 uint64_t GetTimeStamp();
@@ -248,9 +199,20 @@ boost::filesystem::path GetPathFromProgramOptions(
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
 
-template <typename T>
-bool IsReady(std::future<T>& future) {
-  return future.wait_for(std::chrono::seconds::zero()) == std::future_status::ready;
+// Performs a bitwise XOR on each char of 'lhs' with the corresponding char of 'rhs'.  Throws if
+// 'lhs' and 'rhs' are not of equal size.
+template <typename String>
+String operator^(const String& lhs, const String& rhs) {
+  const std::size_t size(lhs.size());
+  if (size != rhs.size()) {
+    LOG(kError) << "Cannot XOR two strings of different sizes (lhs.size() is " << size
+                << " and rhs.size() is " << rhs.size() << ")";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
+  }
+  String result(size, 0);
+  for (std::size_t i(0); i < size; ++i)
+    result[i] = lhs[i] ^ rhs[i];
+  return result;
 }
 
 }  // namespace maidsafe
