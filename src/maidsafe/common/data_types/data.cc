@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/data_types/data.h"
 
+#include <limits>
 #include <utility>
 
 namespace maidsafe {
@@ -25,7 +26,8 @@ namespace maidsafe {
 Data::NameAndTypeId::NameAndTypeId(Identity name_in, DataTypeId type_id_in)
     : name(std::move(name_in)), type_id(type_id_in) {}
 
-Data::NameAndTypeId::NameAndTypeId() = default;
+Data::NameAndTypeId::NameAndTypeId()
+    : name(), type_id(std::numeric_limits<DataTypeId::value_type>::max()) {}
 
 Data::NameAndTypeId::NameAndTypeId(const NameAndTypeId&) = default;
 
