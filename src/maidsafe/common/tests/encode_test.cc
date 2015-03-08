@@ -46,7 +46,7 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
   maidsafe::test::RunInParallel(100, [&] {
     for (int i = 0; i < 10; ++i) {
       std::string original = RandomString(100);
-      std::string encoded = HexEncode(original);
+      std::string encoded = hex::Encode(original);
       if (encoded.size() != 200U)
         expected_sizes_ok = false;
       std::string decoded = HexDecode(encoded);
@@ -60,9 +60,9 @@ TEST(UtilsTest, BEH_HexEncodeDecode) {
 
   const std::string kKnownEncoded("0123456789abcdef");
   const std::string kKnownDecoded("\x1\x23\x45\x67\x89\xab\xcd\xef");
-  EXPECT_EQ(kKnownEncoded, HexEncode(kKnownDecoded));
+  EXPECT_EQ(kKnownEncoded, hex::Encode(kKnownDecoded));
   EXPECT_EQ(kKnownDecoded, HexDecode(kKnownEncoded));
-  EXPECT_TRUE(HexEncode("").empty());
+  EXPECT_TRUE(hex::Encode("").empty());
   EXPECT_TRUE(HexDecode("").empty());
   EXPECT_THROW(HexDecode("{"), common_error);
 }

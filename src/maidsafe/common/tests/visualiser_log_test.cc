@@ -24,6 +24,7 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/types/vector.hpp"
 
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/test.h"
@@ -60,10 +61,10 @@ class VisualiserLogTest : public ::testing::Test {
     LOG(kVerbose) << "\tpersona_id:           \"" << vlog.kPersonaId_.value << '\"';
     LOG(kVerbose) << "\taction_id:            \"" << vlog.kActionId_.value << '\"';
     if (vlog.kValue1_.size() == crypto::SHA512::DIGESTSIZE)
-      LOG(kVerbose) << "\tvalue1 (hex encoded): \"" << HexEncode(vlog.kValue1_) << '\"';
+      LOG(kVerbose) << "\tvalue1 (hex encoded): \"" << hex::Encode(vlog.kValue1_) << '\"';
     else
       LOG(kVerbose) << "\tvalue1 (unencoded):   \"" << vlog.kValue1_ << '\"';
-    LOG(kVerbose) << "\tvalue2 (hex encoded): \"" << HexEncode(vlog.kValue2_) << "\"\n";
+    LOG(kVerbose) << "\tvalue2 (hex encoded): \"" << hex::Encode(vlog.kValue2_) << "\"\n";
   }
 
   static Identity InitId() {

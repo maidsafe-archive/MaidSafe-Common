@@ -38,10 +38,12 @@
 #include "boost/asio/ip/address_v6.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem/path.hpp"
+#include "boost/expected/expected.hpp"
 #include "boost/program_options.hpp"
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/data.h"
 
 namespace maidsafe {
 
@@ -69,8 +71,8 @@ std::mutex& random_number_generator_mutex();
 uint32_t random_number_generator_seed();
 void set_random_number_generator_seed(uint32_t seed);
 #endif
-boost::filesystem::path GetFileName(const Identity& data_name, DataTypeId data_type_id);
-std::pair<Identity, DataTypeId> GetDataTypeId(const boost::filesystem::path& file_name);
+boost::filesystem::path GetFileName(const Data::NameAndTypeId& name_and_type_id);
+Data::NameAndTypeId GetDataNameAndTypeId(const boost::filesystem::path& file_name);
 
 }  // namespace detail
 
@@ -131,10 +133,21 @@ int32_t RandomInt32();
 // Generates a non-cryptographically-secure 32bit unsigned integer.
 uint32_t RandomUint32();
 
-// Generates a non-cryptographically-secure random string.
+// Generates a non-cryptographically-secure random string of exact size.
 std::string RandomString(size_t size);
 
-// Generates a non-cryptographically-secure random string.
+// Generates a non-cryptographically-secure random string of random size between 'min' and 'max'
+// inclusive.
+std::string RandomString(uint32_t min, uint32_t max);
+
+// Generates a non-cryptographically-secure random byte vector of exact size.
+std::vector<byte> RandomBytes(size_t size);
+
+// Generates a non-cryptographically-secure random byte vector of random size between 'min' and
+// 'max' inclusive.
+std::vector<byte> RandomBytes(uint32_t min, uint32_t max);
+
+// Generates a non-cryptographically-secure random string of exact size.
 template <typename String>
 String GetRandomString(size_t size) {
   std::uniform_int_distribution<> distribution(0, 255);
@@ -179,12 +192,11 @@ uint64_t GetTimeStamp();
 // Converts 'timestamp' to ptime where 'timestamp' is the result of a call to 'GetTimeStamp()'.
 boost::posix_time::ptime TimeStampToPtime(uint64_t timestamp);
 
-// Reads the given file and returns the contents as a string.
-bool ReadFile(const boost::filesystem::path& file_path, std::string* content);
-NonEmptyString ReadFile(const boost::filesystem::path& file_path);
+// Reads the given file and returns the contents as a byte vector.  Doesn't throw.
+boost::expected<std::vector<byte>, common_error> ReadFile(const boost::filesystem::path& file_path);
 
-// Writes the given content string to a file, overwriting if applicable.
-bool WriteFile(const boost::filesystem::path& file_path, const std::string& content);
+// Writes the given content string to a file, overwriting if applicable.  Doesn't throw.
+bool WriteFile(const boost::filesystem::path& file_path, const std::vector<byte>& content);
 
 // For use with std::chrono durations - provides a non-interruptible sleep.
 template <typename Rep, typename Period>

@@ -24,49 +24,30 @@
 
 namespace maidsafe {
 
-ImmutableData::ImmutableData(NonEmptyString data)
-    : name_(crypto::Hash<crypto::SHA512>(data)), data_(std::move(data)) {}
+ImmutableData::ImmutableData(NonEmptyString value)
+    : Data(crypto::Hash<crypto::SHA512>(value)), value_(std::move(value)) {}
+
+ImmutableData::ImmutableData() = default;
+
+ImmutableData::ImmutableData(const ImmutableData&) = default;
 
 ImmutableData::ImmutableData(ImmutableData&& other)
-    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
+    : Data(std::move(other)), value_(std::move(other.value_)) MAIDSAFE_NOEXCEPT {}
 
-ImmutableData& ImmutableData::operator=(ImmutableData&& other) {
-  name_ = std::move(other.name_);
-  data_ = std::move(other.data_);
+ImmutableData& ImmutableData::operator=(const ImmutableData&) = default;
+
+ImmutableData& ImmutableData::operator=(ImmutableData&& other) MAIDSAFE_NOEXCEPT{
+  Data::operator=(std::move(other));
+  value_ = std::move(other.value_);
   return *this;
 }
 
-const Identity& ImmutableData::Id() const {
+ImmutableData::~ImmutableData() = default;
+
+const NonEmptyString& ImmutableData::Value() const {
   if (!IsInitialised())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return name_.value;
-}
-
-std::uint32_t ImmutableData::TagValue() const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return static_cast<std::uint32_t>(Tag::kValue);
-}
-
-boost::optional<std::unique_ptr<Data>> ImmutableData::Merge(
-    const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return boost::none;
-}
-
-bool ImmutableData::IsInitialised() const { return name_->IsInitialised(); }
-
-const ImmutableData::Name& ImmutableData::name() const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return name_;
-}
-
-const NonEmptyString& ImmutableData::data() const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return data_;
+  return value_;
 }
 
 }  // namespace maidsafe

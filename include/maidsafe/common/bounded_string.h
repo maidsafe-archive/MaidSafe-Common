@@ -21,7 +21,11 @@
 
 #include <algorithm>
 #include <string>
+#include <type_traits>
 #include <vector>
+
+#include "cereal/types/string.hpp"
+#include "cereal/types/vector.hpp"
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/encode.h"
@@ -104,6 +108,8 @@ class BoundedString {
     }
   }
 
+  template<typename T = String,
+           typename std::enable_if<!std::is_same<T, std::string>::value>::type* = nullptr >
   explicit BoundedString(const std::string& string)
       : string_(string.begin(), string.end()), valid_(true) INIT_DEBUG_STRING {
     if (OutwithBounds()) {

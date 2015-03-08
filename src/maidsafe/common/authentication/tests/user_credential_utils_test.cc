@@ -135,13 +135,13 @@ TEST_F(UserCredentialsTest, FUNC_ObfuscateData) {
 TEST_F(UserCredentialsTest, BEH_DeriveSymmetricEncryptionKeyAndIv) {
   const crypto::SecurePassword kSecurePassword{CreateSecurePassword(user_credentials)};
   const crypto::AES256Key kKey{DeriveSymmEncryptKey(kSecurePassword)};
-  const crypto::AES256InitialisationVector kIv{DeriveSymmEncryptIv(kSecurePassword)};
+  const crypto::AES256IV kIv{DeriveSymmEncryptIv(kSecurePassword)};
 
   // Modify secure password and check key and IV are different
   user_credentials.pin = maidsafe::make_unique<UserCredentials::Pin>(std::to_string(kPinValue + 1));
   crypto::SecurePassword modified_password{CreateSecurePassword(user_credentials)};
   crypto::AES256Key modified_key{DeriveSymmEncryptKey(modified_password)};
-  crypto::AES256InitialisationVector modified_iv{DeriveSymmEncryptIv(modified_password)};
+  crypto::AES256IV modified_iv{DeriveSymmEncryptIv(modified_password)};
   EXPECT_NE(modified_key, kKey);
   EXPECT_NE(modified_iv, kIv);
 }

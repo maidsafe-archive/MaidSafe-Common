@@ -31,9 +31,11 @@
 #include <string>
 #include <vector>
 #include "boost/filesystem.hpp"
-#include "maidsafe/common/utils.h"
+
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/common/utils.h"
 
 namespace fs = boost::filesystem;
 
@@ -152,7 +154,7 @@ void LoadPublicKey() {
     std::cout << "error reading file\n";
     return;
   }
-  std::cout << maidsafe::HexEncode(pub_key) << "\n";
+  std::cout << maidsafe::hex::Encode(pub_key) << "\n";
   Keys.public_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPublicKey(pub_key));
 
   if (maidsafe::asymm::ValidateKey(Keys.public_key))
@@ -205,7 +207,7 @@ void EncryptFile() {
   fs::path file(filename);
   std::string passwd = GetPasswd();
   maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-  maidsafe::crypto::AES256InitialisationVector iv(
+  maidsafe::crypto::AES256IV iv(
       passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
 
   std::string data;
@@ -226,7 +228,7 @@ void DecryptFile() {
   fs::path file(filename);
   std::string passwd = GetPasswd();
   maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-  maidsafe::crypto::AES256InitialisationVector iv(
+  maidsafe::crypto::AES256IV iv(
       passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
 
   std::string data;
@@ -279,7 +281,7 @@ void CreateKeyGroup() {
       --i;
     } else {
       maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-      maidsafe::crypto::AES256InitialisationVector iv(
+      maidsafe::crypto::AES256IV iv(
           passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
       fs::path file(location + name + ".keyfile");
       if (!maidsafe::WriteFile(
@@ -314,7 +316,7 @@ void GroupSignIn() {
     std::cout << "Password captured next person please\n ==================================\n";
 
     maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-    maidsafe::crypto::AES256InitialisationVector iv(
+    maidsafe::crypto::AES256IV iv(
         passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
     fs::path file(location + name + ".keyfile");
     if (!maidsafe::ReadFile(file, &enc_data)) {

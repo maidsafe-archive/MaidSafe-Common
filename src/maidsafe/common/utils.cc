@@ -188,20 +188,16 @@ void set_random_number_generator_seed(uint32_t seed) {
 
 #endif
 
-fs::path GetFileName(const Identity& data_name, DataTypeId data_type_id) {
-  return (Encode(data_name) + '_' + std::to_string(data_type_id));
+fs::path GetFileName(const Data::NameAndTypeId& name_and_type_id) {
+  return (hex::Encode(name_and_type_id.name) + '_' + std::to_string(name_and_type_id.type_id.data));
 }
 
-std::pair<Identity, DataTypeId> GetDataNameAndTypeId(const boost::filesystem::path& file_name) {
-
-}
-
-DataNameVariant GetDataNameVariant(const fs::path& file_name) {
+Data::NameAndTypeId GetDataNameAndTypeId(const boost::filesystem::path& file_name) {
   std::string file_name_str(file_name.string());
   size_t index(file_name_str.rfind('_'));
-  auto id(static_cast<DataTagValue>(std::stoul(file_name_str.substr(index + 1))));
-  Identity key_id(HexDecode(file_name_str.substr(0, index)));
-  return GetDataNameVariant(id, key_id);
+  auto type_id(static_cast<DataTypeId>(std::stoul(file_name_str.substr(index + 1))));
+  Identity name(hex::DecodeToBytes(file_name_str.substr(0, index)));
+  return Data::NameAndTypeId(std::move(name), type_id);
 }
 
 }  // namespace detail
@@ -271,6 +267,16 @@ uint32_t RandomUint32() { return RandomInt<uint32_t>(); }
 
 std::string RandomString(size_t size) { return GetRandomString<std::string>(size); }
 
+std::string RandomString(uint32_t min, uint32_t max) {
+  return GetRandomString<std::string>((RandomUint32() % max - min + 1) + min);
+}
+
+std::vector<byte> RandomBytes(size_t size) { return GetRandomString<std::vector<byte>>(size); }
+
+std::vector<byte> RandomBytes(uint32_t min, uint32_t max) {
+  return GetRandomString<std::vector<byte>>((RandomUint32() % max - min + 1) + min);
+}
+
 std::string RandomAlphaNumericString(size_t size) {
   return GetRandomAlphaNumericString<std::string>(size);
 }
@@ -293,60 +299,36 @@ boost::posix_time::ptime TimeStampToPtime(uint64_t timestamp) {
   return kMaidSafeEpoch + bptime::milliseconds(timestamp);
 }
 
-bool ReadFile(const fs::path& file_path, std::string* content) {
-  if (!content) {
-    LOG(kError) << "Failed to read file " << file_path << ": NULL pointer passed";
-    return false;
-  }
-
+boost::expected<std::vector<byte>, common_error> ReadFile(const fs::path& file_path) {
   try {
     uintmax_t file_size(fs::file_size(file_path));
     if (file_size > std::numeric_limits<size_t>::max()) {
       LOG(kError) << "Failed to read file " << file_path << ": File size " << file_size
-                  << " too large (over " << std::numeric_limits<size_t>::max() << ")";
-      return false;
+        << " too large (over " << std::numeric_limits<size_t>::max() << ")";
+      return boost::make_unexpected(MakeError(CommonErrors::file_too_large));
     }
 
-    std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
-    if (!file_in.good()) {
-      LOG(kError) << "Failed to read file " << file_path << ": Bad filestream";
-      return false;
-    }
-    if (file_size == 0U) {
-      content->clear();
-      return true;
-    }
+    std::basic_ifstream<byte> file_in(file_path.c_str(), std::ios::in | std::ios::binary);
 
-    content->resize(static_cast<size_t>(file_size));
-    file_in.read(&((*content)[0]), file_size);
+    std::vector<byte> file_content(static_cast<size_t>(file_size));
+    file_in.read(&file_content[0], file_size);
     file_in.close();
-  } catch (const std::exception& e) {
-    LOG(kError) << "Failed to read file " << file_path << ": " << boost::diagnostic_information(e);
-    return false;
+    return file_content;
   }
-  return true;
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to read file " << file_path << ": " << e.what();
+  }
+  return boost::make_unexpected(MakeError(CommonErrors::filesystem_io_error));
 }
 
-NonEmptyString ReadFile(const fs::path& file_path) {
-  uintmax_t file_size(fs::file_size(file_path));
-  if (file_size > std::numeric_limits<size_t>::max())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::file_too_large));
-
-  std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
-
-  std::vector<char> file_content(static_cast<size_t>(file_size));
-  file_in.read(&file_content[0], file_size);
-  file_in.close();
-  return NonEmptyString(std::string(&file_content[0], static_cast<size_t>(file_size)));
-}
-
-bool WriteFile(const fs::path& file_path, const std::string& content) {
+bool WriteFile(const boost::filesystem::path& file_path, const std::vector<byte>& content) {
   try {
     if (!file_path.has_filename()) {
       LOG(kError) << "Failed to write: file_path " << file_path << " has no filename";
       return false;
     }
-    std::ofstream file_out(file_path.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
+    std::basic_ofstream<byte> file_out(file_path.c_str(),
+                                       std::ios::out | std::ios::trunc | std::ios::binary);
     if (!file_out.good()) {
       LOG(kError) << "Can't get ofstream created for " << file_path;
       return false;

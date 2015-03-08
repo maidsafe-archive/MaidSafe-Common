@@ -36,14 +36,6 @@ crypto::SecurePassword CreateSecurePassword(const UserCredentials& user_credenti
 // null.
 NonEmptyString Obfuscate(const UserCredentials& user_credentials, const NonEmptyString& data);
 
-// Returns the first part of the secure password to be used as a symmetric encryption key.
-crypto::AES256Key DeriveSymmEncryptKey(const crypto::SecurePassword& secure_password);
-
-// Returns the last part of the secure password to be used as a symmetric encryption initialisation
-// vector.
-crypto::AES256InitialisationVector DeriveSymmEncryptIv(
-    const crypto::SecurePassword& secure_password);
-
 }  // namespace authentication
 
 }  // namespace maidsafe

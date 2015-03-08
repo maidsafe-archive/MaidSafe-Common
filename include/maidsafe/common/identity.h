@@ -26,28 +26,64 @@
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/tagged_value.h"
 
 namespace maidsafe {
 
 const std::size_t identity_size = 64;
 
-using Identity = detail::BoundedString<identity_size, identity_size, std::vector<unsigned char>>;
-
-enum class IdentityEncoding { binary, hex, base64 };
-
-// Creates an Identity from an encoded string.  Will throw if 'id.size()' is not 'identity_size'.
-Identity MakeIdentity(const std::string& id, IdentityEncoding encoding_type);
+using Identity = detail::BoundedString<identity_size, identity_size>;
 
 // Checks if 'id1' is closer in XOR distance to 'target_id' than 'id2'.  Will throw if
 // IsInitialised() is false for any of the args.
 bool CloserToTarget(const Identity& id1, const Identity& id2, const Identity& target_id);
 
-// Encoded representation of the ID.  Will throw if id.IsInitialised() is false.
-std::string Encode(const Identity& id, IdentityEncoding encoding_type = IdentityEncoding::hex);
-
 // Number of most significant bits which are common to 'id1' and 'id2'.  Will throw if
 // IsInitialised() is false for either of the args.
 int CommonLeadingBits(const Identity& id1, const Identity& id2);
+
+
+
+namespace binary {
+
+using String = TaggedValue<std::string, struct BinaryTag>;
+
+// Encoded representation of the ID.  Will throw if id.IsInitialised() is false.
+std::string Encode(const Identity& id);
+
+}  // namespace binary
+
+
+
+namespace hex {
+
+using String = TaggedValue<std::string, struct BinaryTag>;
+
+// Encoded representation of the ID.  Will throw if id.IsInitialised() is false.
+std::string Encode(const Identity& id);
+
+}  // namespace hex
+
+
+
+namespace base64 {
+
+using String = TaggedValue<std::string, struct BinaryTag>;
+
+// Encoded representation of the ID.  Will throw if id.IsInitialised() is false.
+std::string Encode(const Identity& id);
+
+}  // namespace base64
+
+
+
+// Creates an Identity from an encoded string.  Will throw if 'id.size()' is not 'identity_size'.
+Identity MakeIdentity(const binary::String& id);
+Identity MakeIdentity(const hex::String& id);
+Identity MakeIdentity(const base64::String& id);
+
+// Creates a random Identity (mainly useful for testing).
+Identity MakeIdentity();
 
 // Returns an abbreviated hex representation of id.  Throws if IsInitialised() is false for 'id'.
 std::string DebugId(const Identity& id);

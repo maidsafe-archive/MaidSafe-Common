@@ -19,20 +19,14 @@
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
 
-#include <cstdint>
-#include <memory>
-#include <vector>
-
-#include "boost/optional/optional.hpp"
 #include "cereal/types/base_class.hpp"
 #include "cereal/types/polymorphic.hpp"
 
-#include "maidsafe/common/log.h"
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
-#include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data.h"
-#include "maidsafe/common/data_types/data_type_values.h"
 // We must include all archives which this polymorphic type will be used with *before* the
 // CEREAL_REGISTER_TYPE call below.
 #include "maidsafe/common/serialisation/binary_archive.h"
@@ -41,35 +35,28 @@ namespace maidsafe {
 
 class ImmutableData : public Data {
  public:
-  using Name = detail::Name<ImmutableData>;
-  using Tag = detail::Tag<DataTagValue::kImmutableDataValue>;
+  explicit ImmutableData(NonEmptyString value);
 
-  explicit ImmutableData(NonEmptyString data);
+  ImmutableData();
+  ImmutableData(const ImmutableData&);
+  ImmutableData(ImmutableData&& other) MAIDSAFE_NOEXCEPT;
+  ImmutableData& operator=(const ImmutableData&);
+  ImmutableData& operator=(ImmutableData&& other) MAIDSAFE_NOEXCEPT;
+  virtual ~ImmutableData() final;
 
-  ImmutableData() = default;
-  ImmutableData(const ImmutableData&) = default;
-  ImmutableData(ImmutableData&& other);
-  ImmutableData& operator=(const ImmutableData&) = default;
-  ImmutableData& operator=(ImmutableData&& other);
-  virtual ~ImmutableData() final = default;
-
-  virtual std::uint32_t TagValue() const final;
-  virtual boost::optional<std::unique_ptr<Data>> Merge(
-      const std::vector<std::unique_ptr<Data>>& data_collection) const final;
-  virtual bool IsInitialised() const final;
+  const NonEmptyString& Value() const;
 
   template <typename Archive>
   Archive& save(Archive& archive) const {
-    if (!IsInitialised())
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-    return archive(cereal::base_class<Data>(this), data_);
+    return archive(cereal::base_class<Data>(this), value_);
   }
 
   template <typename Archive>
   Archive& load(Archive& archive) {
     try {
-      archive(cereal::base_class<Data>(this), data_);
-      name_ = Name(crypto::Hash<crypto::SHA512>(data_));
+      archive(cereal::base_class<Data>(this), value_);
+      if (name_ != crypto::Hash<crypto::SHA512>(value_))
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     } catch (const std::exception& e) {
       LOG(kWarning) << "Error parsing ImmutableData: " << boost::diagnostic_information(e);
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -77,14 +64,10 @@ class ImmutableData : public Data {
     return archive;
   }
 
-  const Name& name() const;
-  const NonEmptyString& data() const;
-
  private:
-  virtual const Identity& Id() const final;
+  virtual std::uint32_t ThisTypeId() const final { return 0; }
 
-  Name name_;
-  NonEmptyString data_;
+  NonEmptyString value_;
 };
 
 template <>

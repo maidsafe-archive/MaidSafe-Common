@@ -29,47 +29,6 @@
 
 namespace maidsafe {
 
-namespace {
-
-std::string EncodeToBinary(const Identity& id) {
-  std::string binary;
-  binary.reserve(identity_size);
-  for (size_t i = 0; i < identity_size; ++i) {
-    std::bitset<8> temp(static_cast<int>(id.string()[i]));
-    binary += temp.to_string();
-  }
-  return binary;
-}
-
-Identity DecodeFromBinary(const std::string& binary_id) {
-  std::vector<unsigned char> raw_id(identity_size, 0);
-  for (size_t i = 0; i < identity_size; ++i) {
-    std::bitset<8> temp(binary_id.substr(i * 8, 8));
-    raw_id[i] = static_cast<unsigned char>(temp.to_ulong());
-  }
-  return Identity(raw_id);
-}
-
-}  // unnamed namespace
-
-Identity MakeIdentity(const std::string& id, IdentityEncoding encoding_type) {
-  try {
-    switch (encoding_type) {
-      case IdentityEncoding::binary:
-        return DecodeFromBinary(id);
-      case IdentityEncoding::hex:
-        return Identity(convert::ToVectorOfBytes(HexDecode(id)));
-      case IdentityEncoding::base64:
-        return Identity(convert::ToVectorOfBytes(Base64Decode(id)));
-      default:
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
-    }
-  } catch (const std::exception& e) {
-    LOG(kError) << "Identity factory: " << boost::diagnostic_information(e);
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
-  }
-}
-
 bool CloserToTarget(const Identity& id1, const Identity& id2, const Identity& target_id) {
   if (!id1.IsInitialised() || !id2.IsInitialised() || !target_id.IsInitialised())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
@@ -80,21 +39,6 @@ bool CloserToTarget(const Identity& id1, const Identity& id2, const Identity& ta
       return result1 < result2;
   }
   return false;
-}
-
-std::string Encode(const Identity& id, IdentityEncoding encoding_type) {
-  if (!id.IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
-  switch (encoding_type) {
-    case IdentityEncoding::binary:
-      return EncodeToBinary(id);
-    case IdentityEncoding::hex:
-      return HexEncode(ToStdString(id.string()));
-    case IdentityEncoding::base64:
-      return Base64Encode(ToStdString(id.string()));
-    default:
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
-  }
 }
 
 int CommonLeadingBits(const Identity& id1, const Identity& id2) {
@@ -114,8 +58,82 @@ int CommonLeadingBits(const Identity& id1, const Identity& id2) {
   return static_cast<int>(8 * std::distance(raw_id1.begin(), mismatch.first)) + common_bits;
 }
 
+
+
+namespace binary {
+
+std::string Encode(const Identity& id) {
+  if (!id.IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
+  std::string binary;
+  binary.reserve(identity_size);
+  for (size_t i = 0; i < identity_size; ++i) {
+    std::bitset<8> temp(static_cast<int>(id.string()[i]));
+    binary += temp.to_string();
+  }
+  return binary;
+}
+
+}  // namespace binary
+
+
+
+namespace hex {
+
+std::string Encode(const Identity& id) { return Encode(id.string()); }
+
+}  // namespace hex
+
+
+
+namespace base64 {
+
+std::string Encode(const Identity& id) { return Encode(id.string()); }
+
+}  // namespace base64
+
+
+
+Identity MakeIdentity(const binary::String& id) {
+  try {
+    std::vector<byte> raw_id(identity_size, 0);
+    for (size_t i = 0; i < identity_size; ++i) {
+      std::bitset<8> temp(id->substr(i * 8, 8));
+      raw_id[i] = static_cast<unsigned char>(temp.to_ulong());
+    }
+    return Identity(raw_id);
+  } catch (const std::exception& e) {
+    LOG(kError) << "Identity factory: " << boost::diagnostic_information(e);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
+  }
+}
+
+Identity MakeIdentity(const hex::String& id) {
+  try {
+    return Identity(hex::DecodeToBytes(id.data));
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Identity factory: " << boost::diagnostic_information(e);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
+  }
+}
+
+Identity MakeIdentity(const base64::String& id) {
+  try {
+    return Identity(base64::DecodeToBytes(id.data));
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Identity factory: " << boost::diagnostic_information(e);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
+  }
+}
+
+Identity MakeIdentity() {
+  return Identity(RandomBytes(identity_size));
+}
+
 std::string DebugId(const Identity& id) {
-  return id.IsInitialised() ? HexSubstr(id) : "Invalid ID";
+  return id.IsInitialised() ? hex::Substr(id) : "Invalid ID";
 }
 
 }  // namespace maidsafe

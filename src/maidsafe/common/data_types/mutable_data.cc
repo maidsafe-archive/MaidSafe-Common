@@ -27,58 +27,39 @@
 
 namespace maidsafe {
 
-MutableData::MutableData(Name name, NonEmptyString data)
-    : name_(std::move(name)), data_(std::move(data)) {
-  if (!name_->IsInitialised()) {
+MutableData::MutableData(Identity name, NonEmptyString value)
+    : Data(std::move(name)), value_(std::move(value)) {
+  if (!name_.IsInitialised()) {
     LOG(kWarning) << "Name is uninitialised.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
-  if (!data_.IsInitialised()) {
+  if (!value_.IsInitialised()) {
     LOG(kWarning) << "Data is uninitialised.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
 }
 
+MutableData::MutableData() = default;
+
+MutableData::MutableData(const MutableData&) = default;
+
 MutableData::MutableData(MutableData&& other)
-    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
+    : Data(std::move(other)), value_(std::move(other.value_)) {}
+
+MutableData& MutableData::operator=(const MutableData&) = default;
 
 MutableData& MutableData::operator=(MutableData&& other) {
-  name_ = std::move(other.name_);
-  data_ = std::move(other.data_);
+  Data::operator=(std::move(other));
+  value_ = std::move(other.value_);
   return *this;
 }
 
-std::uint32_t MutableData::TagValue() const {
+MutableData::~MutableData() = default;
+
+const NonEmptyString& MutableData::Value() const {
   if (!IsInitialised())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return static_cast<std::uint32_t>(Tag::kValue);
-}
-
-boost::optional<std::unique_ptr<Data>> MutableData::Merge(
-    const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return boost::none;
-}
-
-bool MutableData::IsInitialised() const { return name_->IsInitialised(); }
-
-const MutableData::Name& MutableData::name() const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return name_;
-}
-
-const NonEmptyString& MutableData::data() const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return data_;
-}
-
-const Identity& MutableData::Id() const {
-  if (!IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  return name_.value;
+  return value_;
 }
 
 }  // namespace maidsafe

@@ -53,7 +53,7 @@ TEST(BoundedStringTest, BEH_Getters) {
   EXPECT_THROW(a.string(), std::exception);
 
   for (int i(0); i < 1000; ++i) {
-    std::string random(RandomString((RandomUint32() % 1024) + 1));
+    std::string random(RandomString(1, 1024));
     OneMax b(random);
     EXPECT_TRUE(b.IsInitialised());
     EXPECT_EQ(random, b.string());
@@ -73,7 +73,7 @@ TEST(BoundedStringTest, BEH_StringConstructor) {
   // Empty (invalid)
   EXPECT_THROW(OneMax d(""), std::exception);
   // Valid
-  random = RandomString((RandomUint32() % 1024) + 1);
+  random = RandomString(1, 1024);
   OneMax e(random);
   EXPECT_EQ(random, e.string());
 }
@@ -97,7 +97,7 @@ TEST(BoundedStringTest, BEH_Swap) {
 
 TEST(BoundedStringTest, BEH_Copy) {
   // Copy from initialised
-  std::string random(RandomString((RandomUint32() % 1024) + 1));
+  std::string random(RandomString(1, 1024));
   OneMax a(random);
   OneMax b(a);
   EXPECT_EQ(random, a.string());
@@ -111,7 +111,7 @@ TEST(BoundedStringTest, BEH_Copy) {
 
 TEST(BoundedStringTest, BEH_Move) {
   // Move from initialised
-  std::string random(RandomString((RandomUint32() % 1024) + 1));
+  std::string random(RandomString(1, 1024));
   OneMax a(std::move(OneMax(random)));
   EXPECT_EQ(random, a.string());
 
@@ -122,7 +122,7 @@ TEST(BoundedStringTest, BEH_Move) {
 
 TEST(BoundedStringTest, BEH_Assignment) {
   // Assign from initialised
-  std::string random(RandomString((RandomUint32() % 1024) + 1));
+  std::string random(RandomString(1, 1024));
   OneMax a(random);
   OneMax b("1");
   b = a;

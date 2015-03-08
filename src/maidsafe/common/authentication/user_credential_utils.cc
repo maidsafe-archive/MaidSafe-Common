@@ -69,16 +69,6 @@ NonEmptyString Obfuscate(const UserCredentials& user_credentials, const NonEmpty
   return NonEmptyString(result);
 }
 
-crypto::AES256Key DeriveSymmEncryptKey(const crypto::SecurePassword& secure_password) {
-  return crypto::AES256Key{secure_password->string().substr(0, crypto::AES256_KeySize)};
-}
-
-crypto::AES256InitialisationVector DeriveSymmEncryptIv(
-    const crypto::SecurePassword& secure_password) {
-  return crypto::AES256InitialisationVector{
-      secure_password->string().substr(crypto::AES256_KeySize, crypto::AES256_IVSize)};
-}
-
 }  // namespace authentication
 
 }  // namespace maidsafe

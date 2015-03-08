@@ -20,41 +20,84 @@
 #define MAIDSAFE_COMMON_DATA_TYPES_DATA_H_
 
 #include <cstdint>
-#include <memory>
-#include <vector>
 
-#include "boost/optional/optional.hpp"
-
+#include "maidsafe/common/config.h"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
 class Data {
  public:
-  Data() = default;
-  Data(const Data&) = default;
-  Data(Data&&) {}
-  Data& operator=(const Data&) = default;
-  Data& operator=(Data&&) {}
-  virtual ~Data() = default;
+  struct NameAndTypeId {
+    NameAndTypeId(Identity name_in, DataTypeId type_id_in);
+    NameAndTypeId();
+    NameAndTypeId(const NameAndTypeId&);
+    NameAndTypeId(NameAndTypeId&& other) MAIDSAFE_NOEXCEPT;
+    NameAndTypeId& operator=(const NameAndTypeId&);
+    NameAndTypeId& operator=(NameAndTypeId&& other) MAIDSAFE_NOEXCEPT;
 
-  virtual const Identity& Id() const = 0;
-  virtual DataTypeId TypeId() const = 0;
-  virtual boost::optional<std::unique_ptr<Data>> Merge(
-      const std::vector<std::unique_ptr<Data>>& data_collection) const = 0;
-  virtual bool IsInitialised() const = 0;
+    template <typename Archive>
+    Archive& serialize(Archive& archive) {
+      return archive(name, type_id);
+    }
 
+    Identity name;
+    DataTypeId type_id;
+  };
+
+  Data();
+  Data(const Data&);
+  Data(Data&& other);
+  Data& operator=(const Data&);
+  Data& operator=(Data&& other);
+  virtual ~Data();
+
+  // Returns false for a default-constructed instance of this class, otherwise true.
+  bool IsInitialised() const;
+
+  // Throws if IsInitialised() is false.
+  const Identity& Name() const;
+
+  // Throws if IsInitialised() is false.
+  DataTypeId TypeId() const;
+
+  // Throws if IsInitialised() is false.
+  NameAndTypeId NameAndType() const;
+
+  // Throws if IsInitialised() is false.
   template <typename Archive>
   Archive& save(Archive& archive) const {
-    return archive;
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return archive(name_);
   }
 
   template <typename Archive>
   Archive& load(Archive& archive) {
+    archive(name_);
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     return archive;
   }
+
+ protected:
+  // Throws if IsInitialised() is false.
+  explicit Data(Identity name);
+
+  // Doesn't need to throw.
+  virtual std::uint32_t ThisTypeId() const = 0;
+
+  Identity name_;
 };
+
+bool operator==(const Data::NameAndTypeId& lhs, const Data::NameAndTypeId& rhs);
+bool operator!=(const Data::NameAndTypeId& lhs, const Data::NameAndTypeId& rhs);
+bool operator<(const Data::NameAndTypeId& lhs, const Data::NameAndTypeId& rhs);
+bool operator>(const Data::NameAndTypeId& lhs, const Data::NameAndTypeId& rhs);
+bool operator<=(const Data::NameAndTypeId& lhs, const Data::NameAndTypeId& rhs);
+bool operator>=(const Data::NameAndTypeId& lhs, const Data::NameAndTypeId& rhs);
 
 }  // namespace maidsafe
 

@@ -19,20 +19,13 @@
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
 
-#include <cstdint>
-#include <memory>
-#include <vector>
-
-#include "boost/optional/optional.hpp"
 #include "cereal/types/base_class.hpp"
 #include "cereal/types/polymorphic.hpp"
 
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data.h"
-#include "maidsafe/common/data_types/data_type_values.h"
 // We must include all archives which this polymorphic type will be used with *before* the
 // CEREAL_REGISTER_TYPE call below.
 #include "maidsafe/common/serialisation/binary_archive.h"
@@ -41,35 +34,27 @@ namespace maidsafe {
 
 class MutableData : public Data {
  public:
-  using Name = detail::Name<MutableData>;
-  using Tag = detail::Tag<DataTagValue::kMutableDataValue>;
+  MutableData(Identity name, NonEmptyString value);
 
-  MutableData(Name name, NonEmptyString data);
-
-  MutableData() = default;
-  MutableData(const MutableData&) = default;
+  MutableData();
+  MutableData(const MutableData&);
   MutableData(MutableData&& other);
-  MutableData& operator=(const MutableData&) = default;
+  MutableData& operator=(const MutableData&);
   MutableData& operator=(MutableData&& other);
-  virtual ~MutableData() final = default;
+  virtual ~MutableData() final;
 
-  virtual std::uint32_t TagValue() const final;
-  virtual boost::optional<std::unique_ptr<Data>> Merge(
-      const std::vector<std::unique_ptr<Data>>& data_collection) const final;
-  virtual bool IsInitialised() const final;
+  const NonEmptyString& Value() const;
 
   template <typename Archive>
   Archive& save(Archive& archive) const {
-    if (!IsInitialised())
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-    return archive(cereal::base_class<Data>(this), name_, data_);
+    return archive(cereal::base_class<Data>(this), value_);
   }
 
   template <typename Archive>
   Archive& load(Archive& archive) {
     try {
-      archive(cereal::base_class<Data>(this), name_, data_);
-      if (!name_->IsInitialised() || !data_.IsInitialised())
+      archive(cereal::base_class<Data>(this), value_);
+      if (!value_.IsInitialised())
         BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     } catch (const std::exception& e) {
       LOG(kWarning) << "Error parsing MutableData: " << boost::diagnostic_information(e);
@@ -78,14 +63,10 @@ class MutableData : public Data {
     return archive;
   }
 
-  const Name& name() const;
-  const NonEmptyString& data() const;
-
  private:
-  virtual const Identity& Id() const final;
+  virtual std::uint32_t ThisTypeId() const final { return 1; }
 
-  Name name_;
-  NonEmptyString data_;
+  NonEmptyString value_;
 };
 
 template <>

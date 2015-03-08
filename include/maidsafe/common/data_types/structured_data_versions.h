@@ -83,6 +83,7 @@ For the purposes of deleting versions (see 'DeleteBranchUntilFork' below), the b
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/immutable_data.h"
@@ -104,10 +105,10 @@ class StructuredDataVersions {
  public:
   struct VersionName {
     using Index = uint64_t;
-    using Id = ImmutableData::Name;
+    using Id = Identity;
 
     VersionName();
-    VersionName(Index index_in, ImmutableData::Name id_in);
+    VersionName(Index index_in, Id id_in);
     VersionName(const VersionName&) = default;
     VersionName(VersionName&& other) MAIDSAFE_NOEXCEPT;
     VersionName& operator=(VersionName other);

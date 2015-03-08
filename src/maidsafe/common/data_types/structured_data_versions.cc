@@ -33,7 +33,7 @@ namespace maidsafe {
 StructuredDataVersions::VersionName::VersionName()
     : index(std::numeric_limits<Index>::max()), id(), forking_child_count() {}
 
-StructuredDataVersions::VersionName::VersionName(Index index_in, ImmutableData::Name id_in)
+StructuredDataVersions::VersionName::VersionName(Index index_in, Id id_in)
     : index(index_in), id(std::move(id_in)), forking_child_count() {}
 
 StructuredDataVersions::VersionName::VersionName(VersionName&& other) MAIDSAFE_NOEXCEPT
@@ -136,7 +136,7 @@ StructuredDataVersions::StructuredDataVersions(const serialised_type& serialised
       orphans_() {
   detail::StructuredDataVersionsCereal serialised_versions;
   try {
-    ConvertFromString(serialised_data_versions->string(), serialised_versions);
+    Parse(serialised_data_versions->string(), serialised_versions);
   } catch (...) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
@@ -164,7 +164,7 @@ StructuredDataVersions::serialised_type StructuredDataVersions::Serialise() cons
       BranchToCereal(orphan, serialised_versions, orphan_set.first);
   }
 
-  return serialised_type(NonEmptyString(ConvertToString(serialised_versions)));
+  return serialised_type(NonEmptyString(maidsafe::Serialise(std::move(serialised_versions))));
 }
 
 void StructuredDataVersions::ValidateLimits() const {
@@ -214,7 +214,7 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionIn
     VersionName absent_parent;
     if (serialised_branch.absent_parent) {
       absent_parent.index = serialised_branch.absent_parent->index;
-      absent_parent.id = ImmutableData::Name(Identity(serialised_branch.absent_parent->id));
+      absent_parent.id = serialised_branch.absent_parent->id;
     }
     if (root_.second == std::end(versions_)) {
       // Mark as root
@@ -222,7 +222,7 @@ StructuredDataVersions::VersionsItr StructuredDataVersions::HandleFirstVersionIn
       root_.second = itr;
     } else {
       // Mark as orphan
-      if (!absent_parent.id->IsInitialised())
+      if (!absent_parent.id.IsInitialised())
         BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
       InsertOrphan(absent_parent, itr);
     }
@@ -248,7 +248,7 @@ void StructuredDataVersions::BranchToCereal(
     return;
   serialised_versions.branches.emplace_back();
   auto serialised_branch(&serialised_versions.branches.back());
-  if (absent_parent.id->IsInitialised())
+  if (absent_parent.id.IsInitialised())
     serialised_branch->absent_parent = absent_parent;
 
   BranchToCereal(itr, serialised_versions, serialised_branch);
@@ -308,15 +308,15 @@ void StructuredDataVersions::ApplyBranch(VersionName parent, VersionsItr itr,
 
 boost::optional<StructuredDataVersions::VersionName> StructuredDataVersions::Put(
     const VersionName& old_version, const VersionName& new_version) {
-  if (!new_version.id->IsInitialised())
+  if (!new_version.id.IsInitialised())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 
   if (NewVersionPreExists(old_version, new_version))
     return boost::none;
 
   // Check we've not been asked to store two roots.
-  bool is_root(!old_version.id->IsInitialised() || versions_.empty() || new_version.index == 0);
-  if (is_root && root_.second != std::end(versions_) && !RootParentName().id->IsInitialised())
+  bool is_root(!old_version.id.IsInitialised() || versions_.empty() || new_version.index == 0);
+  if (is_root && root_.second != std::end(versions_) && !RootParentName().id.IsInitialised())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 
   // Construct temp objects before modifying members in case exception is thrown.
@@ -400,7 +400,7 @@ void StructuredDataVersions::CheckForUnorphaning(Version& version, bool& unorpha
   unorphan_count = (orphans_itr == std::end(orphans_) ? 0 : orphans_itr->second.size());
   std::vector<std::future<void>> check_futures;
   const VersionName* const version_parent(version.second->parent != std::end(versions_) &&
-                                                  version.second->parent->first.id->IsInitialised()
+                                                  version.second->parent->first.id.IsInitialised()
                                               ? &version.second->parent->first
                                               : nullptr);
   if (unorphan_count) {
@@ -412,7 +412,7 @@ void StructuredDataVersions::CheckForUnorphaning(Version& version, bool& unorpha
       CheckedInsert(version.second->children, *orphan_itr);
     }
   }
-  unorphans_existing_root = (root_.first.id->IsInitialised() && RootParentName() == version.first);
+  unorphans_existing_root = (root_.first.id.IsInitialised() && RootParentName() == version.first);
   if (unorphans_existing_root) {
     if (version_parent)
       check_futures.push_back(CheckVersionNotInBranch(root_.second, *version_parent));
@@ -473,7 +473,7 @@ boost::optional<StructuredDataVersions::VersionName> StructuredDataVersions::Ins
   if (is_orphan && !unorphans_existing_root)
     InsertOrphan(old_version, inserted_itr);
 
-  if (is_root && root_.first.id->IsInitialised() && !unorphans_existing_root) {
+  if (is_root && root_.first.id.IsInitialised() && !unorphans_existing_root) {
     // The new root is replacing a temporary old root which would have been an orphan had the real
     // root existed at that time.  Move the old root to 'orphans_'.
     InsertOrphan(root_.first, root_.second);

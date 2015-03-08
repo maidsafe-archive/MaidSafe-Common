@@ -27,6 +27,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/filesystem/fstream.hpp"
 
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
@@ -83,10 +84,10 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
   EXPECT_THROW(SecurePassword(SecurePassword::value_type("")), std::exception);
   EXPECT_THROW(NonEmptyString(""), std::exception);
   EXPECT_THROW(Salt(""), std::exception);
-  const NonEmptyString kKnownPassword1(HexDecode("70617373776f7264"));
-  const Salt kKnownSalt1(HexDecode("1234567878563412"));
+  const NonEmptyString kKnownPassword1(hex::DecodeToBytes("70617373776f7264"));
+  const Salt kKnownSalt1(hex::DecodeToBytes("1234567878563412"));
   const uint32_t kKnownIterations1(5);
-  const SecurePassword kKnownDerived1(SecurePassword::value_type(HexDecode(
+  const SecurePassword kKnownDerived1(SecurePassword::value_type(hex::DecodeToBytes(
       "4391697b647773d2ac29693853dc66c21f036d36256a8b1e6"
       "17b2364af10aee1e53d7d4ef0c237f40c539769e4f162e0")));
   EXPECT_THROW(CreateSecurePassword(NonEmptyString(), kKnownSalt1, kKnownIterations1),
@@ -95,13 +96,13 @@ TEST(CryptoTest, BEH_SecurePasswordGeneration) {
 
   SecurePassword password(CreateSecurePassword(kKnownPassword1, kKnownSalt1, kKnownIterations1));
   EXPECT_EQ(kKnownDerived1, password);
-  const NonEmptyString kKnownPassword2(HexDecode(
+  const NonEmptyString kKnownPassword2(hex::DecodeToBytes(
       "416c6c206e2d656e746974696573206d75737420636f6"
       "d6d756e69636174652077697468206f74686572206e2d656e74697469657320766961206e2d3120656e746974656"
       "568656568656573"));
-  const Salt kKnownSalt2(HexDecode("1234567878563412"));
+  const Salt kKnownSalt2(hex::DecodeToBytes("1234567878563412"));
   const uint32_t kKnownIterations2(500);
-  const SecurePassword kKnownDerived2(SecurePassword::value_type(HexDecode(
+  const SecurePassword kKnownDerived2(SecurePassword::value_type(hex::DecodeToBytes(
       "c1999230ef5e0196b71598bb945247391fa3d53ca46e5bcf9"
       "c697256c7b131d3bcf310b523e05c3ffc14d7fd8511c840")));
   password = CreateSecurePassword(kKnownPassword2, kKnownSalt2, kKnownIterations2);
@@ -117,10 +118,10 @@ struct HashTestData {
         SHA256_hex_result(SHA256_hex_res),
         SHA384_hex_result(SHA384_hex_res),
         SHA512_hex_result(SHA512_hex_res),
-        SHA1_raw_result(HexDecode(SHA1_hex_res)),
-        SHA256_raw_result(HexDecode(SHA256_hex_res)),
-        SHA384_raw_result(HexDecode(SHA384_hex_res)),
-        SHA512_raw_result(HexDecode(SHA512_hex_res)) {}
+        SHA1_raw_result(hex::DecodeToBytes(SHA1_hex_res)),
+        SHA256_raw_result(hex::DecodeToBytes(SHA256_hex_res)),
+        SHA384_raw_result(hex::DecodeToBytes(SHA384_hex_res)),
+        SHA512_raw_result(hex::DecodeToBytes(SHA512_hex_res)) {}
   std::string input;
   std::string SHA1_hex_result;
   std::string SHA256_hex_result;
@@ -171,28 +172,28 @@ TEST(CryptoTest, BEH_Hash) {
   for (size_t j = 0; j < test_data.size(); ++j) {
     std::string input(test_data.at(j).input);
     if (!test_data.at(j).SHA1_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA1_hex_result, HexEncode(Hash<SHA1>(input)));
+      EXPECT_EQ(test_data.at(j).SHA1_hex_result, hex::Encode(Hash<SHA1>(input)));
       EXPECT_EQ(test_data.at(j).SHA1_raw_result, Hash<SHA1>(input).string());
       EXPECT_EQ(test_data.at(j).SHA1_raw_result,
                 Hash<SHA1>(std::vector<byte>(input.begin(), input.end())).string());
     }
 
     if (!test_data.at(j).SHA256_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA256_hex_result, HexEncode(Hash<SHA256>(input)));
+      EXPECT_EQ(test_data.at(j).SHA256_hex_result, hex::Encode(Hash<SHA256>(input)));
       EXPECT_EQ(test_data.at(j).SHA256_raw_result, Hash<SHA256>(input).string());
       EXPECT_EQ(test_data.at(j).SHA256_raw_result,
                 Hash<SHA256>(std::vector<byte>(input.begin(), input.end())).string());
     }
 
     if (!test_data.at(j).SHA384_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA384_hex_result, HexEncode(Hash<SHA384>(input)));
+      EXPECT_EQ(test_data.at(j).SHA384_hex_result, hex::Encode(Hash<SHA384>(input)));
       EXPECT_EQ(test_data.at(j).SHA384_raw_result, Hash<SHA384>(input).string());
       EXPECT_EQ(test_data.at(j).SHA384_raw_result,
                 Hash<SHA384>(std::vector<byte>(input.begin(), input.end())).string());
     }
 
     if (!test_data.at(j).SHA512_hex_result.empty()) {
-      EXPECT_EQ(test_data.at(j).SHA512_hex_result, HexEncode(Hash<SHA512>(input)));
+      EXPECT_EQ(test_data.at(j).SHA512_hex_result, hex::Encode(Hash<SHA512>(input)));
       EXPECT_EQ(test_data.at(j).SHA512_raw_result, Hash<SHA512>(input).string());
       EXPECT_EQ(test_data.at(j).SHA512_raw_result,
                 Hash<SHA512>(std::vector<byte>(input.begin(), input.end())).string());
@@ -204,44 +205,43 @@ TEST(CryptoTest, BEH_Hash) {
   EXPECT_THROW(Hash<SHA256>(Identity()), std::exception);
 }
 
-std::string CorruptData(const std::string& input) {
+std::vector<byte> CorruptData(std::vector<byte> input) {
   // Replace a single char of input to a different random char.
-  std::vector<byte> input_copy(input.begin(), input.end());
-  ++input_copy[RandomUint32() % input_copy.size()];
-  return std::string(input_copy.begin(), input_copy.end());
+  ++input[RandomUint32() % input.size()];
+  return input;
 }
 
 TEST(CryptoTest, BEH_SymmEncrypt) {
   // Set up data
   const AES256Key kKey(
-      HexDecode("0a89927670e292af98080a3c3e2bdee4289b768de74570f9f470282756390fe3"));
-  const AES256InitialisationVector kIV(HexDecode("92af98080a3c3e2bdee4289b768de7af"));
-  const PlainText kUnencrypted(HexDecode(
+      hex::DecodeToBytes("0a89927670e292af98080a3c3e2bdee4289b768de74570f9f470282756390fe3"));
+  const AES256IV kIV(hex::DecodeToBytes("92af98080a3c3e2bdee4289b768de7af"));
+  const PlainText kUnencrypted(hex::DecodeToBytes(
       "8b4a84c8f409d8c8b4a8e70f49867c63661f2b31d6e4c984a6a01b2015e48a47bc46af231d2b146e54a87db43f51"
       "c2a5"));
-  const CipherText kEncrypted(NonEmptyString(HexDecode(
+  const CipherText kEncrypted(NonEmptyString(hex::DecodeToBytes(
       "f7b043e78bc86c801a9f37850238d07702ffc59945473f5c88ff1854fcbeedb2c1fe6fdfc7ccb040ee608e8f60b3"
       "00e4b969aef8ac9a7b1d00c52d9133c6b1d9")));
   const AES256Key kBadKey(CorruptData(kKey.string()));
-  const AES256InitialisationVector kBadIV(CorruptData(kIV.string()));
+  const AES256IV kBadIV(CorruptData(kIV.string()));
   const PlainText kBadUnencrypted(CorruptData(kUnencrypted.string()));
   const CipherText kBadEncrypted(NonEmptyString(CorruptData(kEncrypted->string())));
 
   EXPECT_THROW(CipherText(NonEmptyString("")), std::exception);
   EXPECT_THROW(PlainText(""), std::exception);
   EXPECT_THROW(AES256Key(std::string(AES256_KeySize - 1, 0)), std::exception);
-  EXPECT_THROW(AES256InitialisationVector(std::string(AES256_IVSize - 1, 0)), std::exception);
+  EXPECT_THROW(AES256IV(std::string(AES256_IVSize - 1, 0)), std::exception);
   EXPECT_NO_THROW(AES256Key(std::string(AES256_KeySize, 0)));
-  EXPECT_NO_THROW(AES256InitialisationVector(std::string(AES256_IVSize, 0)));
+  EXPECT_NO_THROW(AES256IV(std::string(AES256_IVSize, 0)));
   EXPECT_THROW(AES256Key(std::string(AES256_KeySize + 1, 0)), std::exception);
-  EXPECT_THROW(AES256InitialisationVector(std::string(AES256_IVSize + 1, 0)), std::exception);
+  EXPECT_THROW(AES256IV(std::string(AES256_IVSize + 1, 0)), std::exception);
   // Encryption string to string
   EXPECT_EQ(kEncrypted, SymmEncrypt(kUnencrypted, kKey, kIV));
   EXPECT_NE(kEncrypted, SymmEncrypt(kBadUnencrypted, kKey, kIV));
   EXPECT_NE(kEncrypted, SymmEncrypt(kUnencrypted, kBadKey, kBadIV));
   EXPECT_THROW(SymmEncrypt(PlainText(), kKey, kIV), std::exception);
   EXPECT_THROW(SymmEncrypt(kUnencrypted, AES256Key(), kIV), std::exception);
-  EXPECT_THROW(SymmEncrypt(kUnencrypted, kKey, AES256InitialisationVector()), std::exception);
+  EXPECT_THROW(SymmEncrypt(kUnencrypted, kKey, AES256IV()), std::exception);
 
   // Decryption string to string
   EXPECT_EQ(kUnencrypted, SymmDecrypt(kEncrypted, kKey, kIV));
@@ -249,7 +249,7 @@ TEST(CryptoTest, BEH_SymmEncrypt) {
   EXPECT_THROW(SymmDecrypt(kEncrypted, kBadKey, kBadIV), std::exception);
   EXPECT_THROW(SymmDecrypt(CipherText(NonEmptyString()), kKey, kIV), std::exception);
   EXPECT_THROW(SymmDecrypt(kEncrypted, AES256Key(), kIV), std::exception);
-  EXPECT_THROW(SymmDecrypt(kEncrypted, kKey, AES256InitialisationVector()), std::exception);
+  EXPECT_THROW(SymmDecrypt(kEncrypted, kKey, AES256IV()), std::exception);
 }
 
 TEST(CryptoTest, BEH_Compress) {
@@ -325,7 +325,7 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
       "8c7555330f3d347e1ac3735e1a73c79c258e9fa7094f9ab07e33");
 
   for (size_t i = 0; i < 10; ++i)
-    EXPECT_EQ(HexEncode(Hash<SHA512>(
+    EXPECT_EQ(hex::Encode(Hash<SHA512>(
                   Compress(UncompressedText(test_data), static_cast<uint16_t>(i))->string())),
               answer.at(i));
 
@@ -336,7 +336,7 @@ TEST(CryptoTest, BEH_GzipSHA512Deterministic) {
       ("fb5e2660c5a6f5c59ef8379df0862c4fa8504e55ba1eed54c92ffe335cb126b12c8"
        "171815f0d17bf31e21c9fd3979b543ad91df08370a44a66e7a010d2b6e02f");
   // For large data sets only compression levels 0 and 1 are deterministic!
-  EXPECT_EQ(HexEncode(Hash<SHA512>(Compress(UncompressedText(test_data), 1)->string())), answer2);
+  EXPECT_EQ(hex::Encode(Hash<SHA512>(Compress(UncompressedText(test_data), 1)->string())), answer2);
 }
 
 template <typename T>

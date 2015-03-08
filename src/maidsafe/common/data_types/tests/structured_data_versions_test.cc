@@ -24,6 +24,7 @@
 
 #include "boost/optional/optional_io.hpp"
 
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -60,7 +61,7 @@ VersionName::Id RandomId() { return VersionName::Id{Identity{RandomAlphaNumericS
 std::string DisplayVersion(const VersionName& version, bool to_hex) {
   return std::to_string(version.index) + "-" +
          (version.id->IsInitialised()
-              ? (to_hex ? HexEncode(version.id.value) : version.id->string()).substr(0, 3)
+              ? (to_hex ? hex::Encode(version.id.value) : version.id->string()).substr(0, 3)
               : ("Uninitialised"));
 }
 
