@@ -178,3 +178,7 @@ target_compile_options(maidsafe_common
         $<$<CXX_COMPILER_ID:GNU>:-static-libstdc++ -Wstrict-null-sentinel>
     >
 )
+
+if(INCLUDE_TESTS)
+  target_compile_options(test_common PUBLIC $<$<BOOL:${MSVC}>: /bigobj>)
+endif()
