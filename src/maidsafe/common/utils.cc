@@ -281,6 +281,18 @@ std::string RandomAlphaNumericString(size_t size) {
   return GetRandomAlphaNumericString<std::string>(size);
 }
 
+std::string RandomAlphaNumericString(uint32_t min, uint32_t max) {
+  return GetRandomAlphaNumericString<std::string>((RandomUint32() % max - min + 1) + min);
+}
+
+std::vector<byte> RandomAlphaNumericBytes(size_t size) {
+  return GetRandomAlphaNumericString<std::vector<byte>>(size);
+}
+
+std::vector<byte> RandomAlphaNumericBytes(uint32_t min, uint32_t max) {
+  return GetRandomAlphaNumericString<std::vector<byte>>((RandomUint32() % max - min + 1) + min);
+}
+
 std::string WstringToString(const std::wstring& input) {
   return StringToString<wchar_t, char>(input);
 }

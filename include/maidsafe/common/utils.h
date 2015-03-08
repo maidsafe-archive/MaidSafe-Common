@@ -160,9 +160,21 @@ String GetRandomString(size_t size) {
   return random_string;
 }
 
-// Generates a non-cryptographically-secure random string containing only
-// alphanumeric characters.
+// Generates a non-cryptographically-secure random string of exact size containing only alphanumeric
+// characters.
 std::string RandomAlphaNumericString(size_t size);
+
+// Generates a non-cryptographically-secure random string of random size between 'min' and 'max'
+// inclusive containing only alphanumeric characters.
+std::string RandomAlphaNumericString(uint32_t min, uint32_t max);
+
+// Generates a non-cryptographically-secure random byte vector of exact size containing only
+// alphanumeric characters.
+std::vector<byte> RandomAlphaNumericBytes(size_t size);
+
+// Generates a non-cryptographically-secure random byte vector of random size between 'min' and
+// 'max' inclusive containing only alphanumeric characters.
+std::vector<byte> RandomAlphaNumericBytes(uint32_t min, uint32_t max);
 
 template <typename String>
 String GetRandomAlphaNumericString(size_t size) {

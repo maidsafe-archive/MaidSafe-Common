@@ -45,7 +45,7 @@ namespace detail {
 #ifdef NDEBUG
 #define INIT_DEBUG_STRING
 #else
-#define INIT_DEBUG_STRING , debug_string_(hex::Encode(string_))
+#define INIT_DEBUG_STRING , debug_string_(hex::Substr(string_))
 #endif
 
 template <typename T, class Enable = void>
