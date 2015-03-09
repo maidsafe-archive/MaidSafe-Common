@@ -88,14 +88,14 @@ Identity MakeIdentity();
 // Returns an abbreviated hex representation of id.  Throws if IsInitialised() is false for 'id'.
 std::string DebugId(const Identity& id);
 
+}  // namespace maidsafe
+
 // Prints DebugId of 'id'.
 template <typename Elem, typename Traits>
 std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
-                                             const Identity& id) {
-  ostream << DebugId(id);
+                                             const maidsafe::Identity& id) {
+  ostream << maidsafe::DebugId(id);
   return ostream;
 }
-
-}  // namespace maidsafe
 
 #endif  // MAIDSAFE_COMMON_NODE_ID_H_

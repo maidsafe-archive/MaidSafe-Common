@@ -26,6 +26,7 @@
 #include "maidsafe/common/identity.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/data_types/tests/test_utils.h"
 #include "maidsafe/common/serialisation/binary_archive.h"
 #include "maidsafe/common/serialisation/serialisation.h"
 
@@ -124,7 +125,7 @@ TEST(DataTest, BEH_NameAndTypeIdComparisonOperators) {
   EXPECT_FALSE(name_and_type_id != name_and_type_id);
 }
 
-TEST(DataTest, BEH_SerialiseNameAndTypeId) {
+TEST(DataTest, BEH_SerialiseAndParseNameAndTypeId) {
   const Identity name(MakeIdentity());
   const DataTypeId type_id(RandomUint32());
   const Data::NameAndTypeId name_and_type_id(name, type_id);
@@ -171,17 +172,19 @@ class TestData : public Data {
   virtual std::uint32_t ThisTypeId() const final { return 123456; }
 };
 
-inline bool operator==(const TestData& lhs, const TestData& rhs) {
-  if (!lhs.IsInitialised() && !rhs.IsInitialised())
-    return true;
+inline testing::AssertionResult Equal(const TestData* const lhs, const TestData* const rhs) {
+  testing::AssertionResult result(
+      Equal(dynamic_cast<const Data*>(lhs), dynamic_cast<const Data*>(rhs)));
+  if (!result)
+    return result;
 
-  if (!lhs.IsInitialised() || !rhs.IsInitialised())
-    return false;
-
-  return lhs.NameAndType() == rhs.NameAndType() && lhs.value_ == rhs.value_;
+  if (lhs->value_ != rhs->value_) {
+    return testing::AssertionFailure() << "lhs->value_ [" << hex::Substr(lhs->value_)
+                                       << "] != rhs->value_ [" << hex::Substr(lhs->value_) << "].";
+  } else {
+    return testing::AssertionSuccess();
+  }
 }
-
-inline bool operator!=(const TestData& lhs, const TestData& rhs) { return !operator==(lhs, rhs); }
 
 }  // namespace test
 
@@ -216,26 +219,26 @@ TEST(DataTest, BEH_ConstructAndAssignData) {
 
   // Copy c'tor
   TestData copied(test_data);
-  EXPECT_EQ(test_data, copied);
+  EXPECT_TRUE(Equal(&test_data, &copied));
 
   // Move c'tor
   TestData moved(std::move(copied));
-  EXPECT_EQ(test_data, moved);
+  EXPECT_TRUE(Equal(&test_data, &moved));
 
   // Copy assignment
   TestData copy_assigned;
-  EXPECT_NE(test_data, copy_assigned);
+  EXPECT_FALSE(Equal(&test_data, &copy_assigned));
   copy_assigned = test_data;
-  EXPECT_EQ(test_data, copy_assigned);
+  EXPECT_TRUE(Equal(&test_data, &copy_assigned));
 
   // Move assignment
   TestData move_assigned;
-  EXPECT_NE(test_data, move_assigned);
+  EXPECT_FALSE(Equal(&test_data, &move_assigned));
   move_assigned = std::move(copy_assigned);
-  EXPECT_EQ(test_data, move_assigned);
+  EXPECT_TRUE(Equal(&test_data, &move_assigned));
 }
 
-TEST(DataTest, BEH_SerialiseData) {
+TEST(DataTest, BEH_SerialiseAndParseData) {
   const Identity id(MakeIdentity());
   const std::string value(RandomString(0, 1000));
 
@@ -243,7 +246,7 @@ TEST(DataTest, BEH_SerialiseData) {
   const TestData test_data(id, value);
   SerialisedData serialised(Serialise(test_data));
   TestData parsed(Parse<TestData>(serialised));
-  EXPECT_EQ(test_data, parsed);
+  EXPECT_TRUE(Equal(&test_data, &parsed));
 
   // Serialise/parse as base type
   const std::unique_ptr<Data> data_ptr(new TestData(id, value));
@@ -251,7 +254,7 @@ TEST(DataTest, BEH_SerialiseData) {
   std::unique_ptr<Data> parsed_ptr(Parse<std::unique_ptr<Data>>(serialised));
   ASSERT_NE(nullptr, parsed_ptr.get());
   ASSERT_NE(nullptr, dynamic_cast<TestData*>(parsed_ptr.get()));
-  EXPECT_EQ(test_data, *dynamic_cast<TestData*>(parsed_ptr.get()));
+  EXPECT_TRUE(Equal(&test_data, dynamic_cast<TestData*>(parsed_ptr.get())));
 }
 
 }  // namespace test
