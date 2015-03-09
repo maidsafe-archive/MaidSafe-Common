@@ -21,13 +21,12 @@
 
 #include <chrono>
 #include <cstdint>
-#include <future>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <random>
-#include <ratio>
 #include <string>
+#include <vector>
 
 #include "asio/ip/address.hpp"
 #include "asio/ip/address_v4.hpp"

@@ -46,7 +46,7 @@ TEST(ConversionsTest, BEH_Address_v4) {
 }
 
 TEST(ConversionsTest, BEH_Address_v6) {
-  const unsigned long scope_ids[] = {0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf};
+  const unsigned long scope_ids[] = {0x0, 0x1, 0x2, 0x4, 0x5, 0x8, 0xe, 0xf};  // NOLINT
 
   for (auto scope_id : scope_ids) {
     auto ip = GetRandomIPv6AddressAsString();
