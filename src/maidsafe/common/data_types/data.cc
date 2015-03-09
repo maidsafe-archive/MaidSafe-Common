@@ -31,8 +31,8 @@ Data::NameAndTypeId::NameAndTypeId()
 
 Data::NameAndTypeId::NameAndTypeId(const NameAndTypeId&) = default;
 
-Data::NameAndTypeId::NameAndTypeId(NameAndTypeId&& other)
-    : name(std::move(other.name)), type_id(std::move(other.type_id)) MAIDSAFE_NOEXCEPT {}
+Data::NameAndTypeId::NameAndTypeId(NameAndTypeId&& other) MAIDSAFE_NOEXCEPT
+    : name(std::move(other.name)), type_id(std::move(other.type_id)) {}
 
 Data::NameAndTypeId& Data::NameAndTypeId::operator=(const Data::NameAndTypeId&) = default;
 

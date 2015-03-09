@@ -49,6 +49,9 @@ namespace detail {
 
 std::string GetSubstr(const std::string& input);
 
+template <std::size_t min, std::size_t max, typename String>
+class BoundedString;
+
 }  // namespace detail
 
 namespace hex {
@@ -75,6 +78,10 @@ std::string Encode(const T& non_hex_input) {
   }
   return hex_output;
 }
+
+// Implemented in bounded_string.h
+template <std::size_t min, std::size_t max, typename String>
+std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_hex_input);
 
 std::string DecodeToString(const std::string& hex_input);
 
@@ -137,6 +144,10 @@ std::string Encode(const T& non_base64_input) {
   }
   return std::string(encoded_string.begin(), encoded_string.end());
 }
+
+// Implemented in bounded_string.h
+template <std::size_t min, std::size_t max, typename String>
+std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_base64_input);
 
 std::string DecodeToString(const std::string& base64_input);
 

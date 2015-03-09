@@ -140,7 +140,7 @@ class TestData : public Data {
  public:
   TestData(Identity id, std::string value) : Data(std::move(id)), value_(std::move(value)) {}
 
-  TestData() = default;
+  TestData() : Data(), value_() {}
   TestData(const TestData&) = default;
   TestData(TestData&& other) : Data(std::move(other)), value_(std::move(other.value_)) {}
   TestData& operator=(const TestData&) = default;

@@ -118,7 +118,7 @@ void DataBuffer::Store(const KeyType& key, const NonEmptyString& value) {
     Delete(key);
   }
   catch (const std::exception&) {
-    LOG(kVerbose) << "Storing " << DebugKeyName(key) << " with value " << hex::Substr(value);
+    LOG(kVerbose) << "Storing " << DebugKeyName(key) << " with value " << value;
   }
 
   CheckWorkerIsStillRunning();

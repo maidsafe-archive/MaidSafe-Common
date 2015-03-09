@@ -181,6 +181,10 @@ class BoundedString {
 
   const value_type* data() const { return string().data(); }
 
+  value_type& operator[](std::size_t pos) { return string()[pos]; }
+
+  const value_type& operator[](std::size_t pos) const { return string()[pos]; }
+
   std::size_t size() const { return string().size(); }
 
   bool IsInitialised() const { return valid_; }
@@ -188,9 +192,35 @@ class BoundedString {
   template <std::size_t other_min, std::size_t other_max, typename OtherStringType>
   friend class BoundedString;
 
-  template <std::size_t size, typename String>
-  friend BoundedString<size, size, String> operator^(const BoundedString<size, size, String>&,
-                                                     const BoundedString<size, size, String>&);
+  // This returns the bitwise XOR of the two fixed-size inputs.  Throws if either is uninitialised.
+  template <std::size_t size, typename OtherStringType>
+  friend BoundedString<size, size, OtherStringType> operator^(
+      const BoundedString<size, size, OtherStringType>& lhs,
+      const BoundedString<size, size, OtherStringType>& rhs) {
+    if (!lhs.valid_ || !rhs.valid_) {
+      LOG(kError) << "BoundedString is uninitialised.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
+    OtherStringType result(size, 0);
+    for (std::size_t i(0); i < size; ++i)
+      result[i] = lhs.string_[i] ^ rhs.string_[i];
+    return BoundedString<size, size, OtherStringType>(std::move(result));
+  }
+
+  // Prints hex::Substr of raw string.
+  template <typename Elem, typename Traits, std::size_t other_min, std::size_t other_max,
+            typename OtherStringType>
+  friend std::basic_ostream<Elem, Traits>& operator<<(
+      std::basic_ostream<Elem, Traits>& ostream,
+      const BoundedString<other_min, other_max, OtherStringType>& bounded_string) {
+#ifdef NDEBUG
+    ostream << (bounded_string.IsInitialised() ? hex::Substr(bounded_string.string_)
+                                               : std::string("Invalid string."));
+#else
+    ostream << bounded_string.debug_string_;
+#endif
+    return ostream;
+  }
 
   bool OutwithBounds() const {
     static_assert(min <= max,
@@ -262,27 +292,12 @@ inline bool operator>=(const BoundedString<min, max, String>& lhs,
   return !operator<(lhs, rhs);
 }
 
-// This returns the bitwise XOR of the two fixed-size inputs.  Throws if either is uninitialised.
-template <std::size_t size, typename String>
-inline BoundedString<size, size, String> operator^(const BoundedString<size, size, String>& lhs,
-                                                   const BoundedString<size, size, String>& rhs) {
-  if (!lhs.valid_ || !rhs.valid_) {
-    LOG(kError) << "BoundedString is uninitialised.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-  }
-  String result(size, 0);
-  for (std::size_t i(0); i < size; ++i)
-    result[i] = lhs.string_[i] ^ rhs.string_[i];
-  return BoundedString<size, size, String>(std::move(result));
-}
-
 }  // namespace detail
 
-
-// Overloads for hex- and base64-encoding a BoundedString.
+// Overloads for hex- and base64-encoding a BoundedString.  Declared in encode.h.
 namespace hex {
 
-template <std::size_t min, std::size_t max = -1, typename String>
+template <std::size_t min, std::size_t max, typename String>
 std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_hex_input) {
   return Encode(non_hex_input.string());
 }
@@ -291,7 +306,7 @@ std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_
 
 namespace base64 {
 
-template <std::size_t min, std::size_t max = -1, typename String>
+template <std::size_t min, std::size_t max, typename String>
 std::string Encode(const maidsafe::detail::BoundedString<min, max, String>& non_base64_input) {
   return Encode(non_base64_input.string());
 }

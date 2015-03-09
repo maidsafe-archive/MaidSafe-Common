@@ -31,8 +31,8 @@ ImmutableData::ImmutableData() = default;
 
 ImmutableData::ImmutableData(const ImmutableData&) = default;
 
-ImmutableData::ImmutableData(ImmutableData&& other)
-    : Data(std::move(other)), value_(std::move(other.value_)) MAIDSAFE_NOEXCEPT {}
+ImmutableData::ImmutableData(ImmutableData&& other) MAIDSAFE_NOEXCEPT
+    : Data(std::move(other)), value_(std::move(other.value_)) {}
 
 ImmutableData& ImmutableData::operator=(const ImmutableData&) = default;
 

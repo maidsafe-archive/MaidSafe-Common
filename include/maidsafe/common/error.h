@@ -94,6 +94,7 @@ enum class CommonErrors {
 
 class common_error : public maidsafe_error {
  public:
+  common_error() : maidsafe_error() {}
   common_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   common_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit common_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -126,6 +127,7 @@ enum class AsymmErrors {
 
 class asymm_error : public maidsafe_error {
  public:
+  asymm_error() : maidsafe_error() {}
   asymm_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   asymm_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit asymm_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -145,6 +147,7 @@ enum class PassportErrors { id_already_exists = 1 };
 
 class passport_error : public maidsafe_error {
  public:
+  passport_error() : maidsafe_error() {}
   passport_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   passport_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit passport_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -175,6 +178,7 @@ enum class EncryptErrors {
 
 class encrypt_error : public maidsafe_error {
  public:
+  encrypt_error() : maidsafe_error() {}
   encrypt_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   encrypt_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit encrypt_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -194,6 +198,7 @@ enum class RoutingErrors { timed_out = 1, timer_cancelled, not_in_range, not_con
 
 class routing_error : public maidsafe_error {
  public:
+  routing_error() : maidsafe_error() {}
   routing_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   routing_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit routing_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -213,6 +218,7 @@ enum class NfsErrors { failed_to_get_data = 1, timed_out };
 
 class nfs_error : public maidsafe_error {
  public:
+  nfs_error() : maidsafe_error() {}
   nfs_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   nfs_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit nfs_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -239,6 +245,7 @@ enum class DriveErrors {
 
 class drive_error : public maidsafe_error {
  public:
+  drive_error() : maidsafe_error() {}
   drive_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   drive_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit drive_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -271,6 +278,7 @@ enum class VaultErrors {
 
 class vault_error : public maidsafe_error {
  public:
+  vault_error() : maidsafe_error() {}
   vault_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   vault_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit vault_error(std::error_code ec) : maidsafe_error(ec) {}
@@ -300,6 +308,7 @@ enum class VaultManagerErrors {
 
 class vault_manager_error : public maidsafe_error {
  public:
+  vault_manager_error() : maidsafe_error() {}
   vault_manager_error(std::error_code ec, const std::string& what_arg)
       : maidsafe_error(ec, what_arg) {}
   vault_manager_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
@@ -320,6 +329,7 @@ enum class ApiErrors { kPasswordFailure = 1 };
 
 class api_error : public maidsafe_error {
  public:
+  api_error() : maidsafe_error() {}
   api_error(std::error_code ec, const std::string& what_arg) : maidsafe_error(ec, what_arg) {}
   api_error(std::error_code ec, const char* what_arg) : maidsafe_error(ec, what_arg) {}
   explicit api_error(std::error_code ec) : maidsafe_error(ec) {}

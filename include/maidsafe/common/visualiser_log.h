@@ -23,6 +23,7 @@
 #include <string>
 #include <type_traits>
 
+#include "maidsafe/common/convert.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
@@ -57,8 +58,8 @@ class VisualiserLogMessage {
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
         kSessionId_(Logging::Instance().VlogSessionId()),
-        kValue1_(value1.string()),
-        kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
+        kValue1_(convert::ToString(value1.string())),
+        kValue2_(value2.IsInitialised() ? convert::ToString(value2.string()) : std::string()),
         kPersonaId_(persona),
         kActionId_(action) {}
 
@@ -78,8 +79,8 @@ class VisualiserLogMessage {
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
         kSessionId_(Logging::Instance().VlogSessionId()),
-        kValue1_(value1.string()),
-        kValue2_(value2.IsInitialised() ? value2.string() : std::string()),
+        kValue1_(convert::ToString(value1.string())),
+        kValue2_(value2.IsInitialised() ? convert::ToString(value2.string()) : std::string()),
         kPersonaId_(),
         kActionId_(action) {}
 
@@ -89,7 +90,7 @@ class VisualiserLogMessage {
       : kTimestamp_(detail::GetUTCTime()),
         kVaultId_(Logging::Instance().VlogPrefix()),
         kSessionId_(Logging::Instance().VlogSessionId()),
-        kValue1_(value1.string()),
+        kValue1_(convert::ToString(value1.string())),
         kValue2_(value2),
         kPersonaId_(),
         kActionId_(action) {}

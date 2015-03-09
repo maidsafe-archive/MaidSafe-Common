@@ -44,9 +44,8 @@ class DerivedDataTest : public testing::Test {
       return result;
 
     if (lhs->Value() != rhs->Value()) {
-      return testing::AssertionFailure() << "lhs->Value() [" << hex::Substr(lhs->Value())
-                                         << "] != rhs->Value() [" << hex::Substr(lhs->Value())
-                                         << "].";
+      return testing::AssertionFailure() << "lhs->Value() [" << lhs->Value()
+                                         << "] != rhs->Value() [" << lhs->Value() << "].";
     } else {
       return testing::AssertionSuccess();
     }

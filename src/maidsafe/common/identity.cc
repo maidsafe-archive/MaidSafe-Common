@@ -132,8 +132,4 @@ Identity MakeIdentity() {
   return Identity(RandomBytes(identity_size));
 }
 
-std::string DebugId(const Identity& id) {
-  return id.IsInitialised() ? hex::Substr(id) : "Invalid ID";
-}
-
 }  // namespace maidsafe

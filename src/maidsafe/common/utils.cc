@@ -109,17 +109,6 @@ std::string BytesToSiUnits(uint64_t num) {
   return to_string(double(num) / divisor) + qualifier[6];
 }
 
-const char kHexAlphabet[] = "0123456789abcdef";
-const char kHexLookup[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7,  8,  9,  0,  0,  0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0,  0,  0,  0,  0, 0, 0,
-                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15};
-
-const char kBase64Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-const char kPadCharacter('=');
-
 template <typename CharIn, typename CharOut>
 std::basic_string<CharOut> StringToString(const std::basic_string<CharIn>& input) {
   // TODO(Fraser#5#): 2013-11-01 - Use C++11's std::wstring_convert once available.
@@ -324,8 +313,8 @@ boost::expected<std::vector<byte>, common_error> ReadFile(const fs::path& file_p
     if (file_size == 0)
       return file_content;
 
-    std::basic_ifstream<byte> file_in(file_path.c_str(), std::ios::in | std::ios::binary);
-    file_in.read(&file_content[0], file_size);
+    std::ifstream file_in(file_path.c_str(), std::ios::in | std::ios::binary);
+    file_in.read(reinterpret_cast<char*>(&file_content[0]), file_size);
     file_in.close();
     return file_content;
   }
@@ -341,13 +330,13 @@ bool WriteFile(const boost::filesystem::path& file_path, const std::vector<byte>
       LOG(kError) << "Failed to write: file_path " << file_path << " has no filename";
       return false;
     }
-    std::basic_ofstream<byte> file_out(file_path.c_str(),
+    std::ofstream file_out(file_path.c_str(),
                                        std::ios::out | std::ios::trunc | std::ios::binary);
     if (!file_out.good()) {
       LOG(kError) << "Can't get ofstream created for " << file_path;
       return false;
     }
-    file_out.write(content.data(), content.size());
+    file_out.write(reinterpret_cast<const char*>(content.data()), content.size());
     file_out.close();
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to write file " << file_path << ": " << boost::diagnostic_information(e);

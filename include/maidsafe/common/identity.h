@@ -85,17 +85,6 @@ Identity MakeIdentity(const base64::String& id);
 // Creates a random Identity (mainly useful for testing).
 Identity MakeIdentity();
 
-// Returns an abbreviated hex representation of id.  Throws if IsInitialised() is false for 'id'.
-std::string DebugId(const Identity& id);
-
 }  // namespace maidsafe
 
-// Prints DebugId of 'id'.
-template <typename Elem, typename Traits>
-std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
-                                             const maidsafe::Identity& id) {
-  ostream << maidsafe::DebugId(id);
-  return ostream;
-}
-
-#endif  // MAIDSAFE_COMMON_NODE_ID_H_
+#endif  // MAIDSAFE_COMMON_IDENTITY_H_
