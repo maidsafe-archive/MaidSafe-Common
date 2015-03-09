@@ -156,7 +156,9 @@ Statement::~Statement() {
 void Statement::BindText(int row_index, const std::string& text) {
   assert(text.size() < std::numeric_limits<int>::max());
   auto return_value = sqlite3_bind_text(statement, row_index, text.c_str(),
-                                        static_cast<int>(text.size()), SQLITE_TRANSIENT);
+                                        static_cast<int>(text.size()),
+                                        reinterpret_cast<sqlite3_destructor_type>(-1));
+                                        // SQLITE_TRANSIENT macro replaced with C++ cast
   if (return_value != SQLITE_OK) {
     LOG(kError) << "sqlite3_bind_text returned: " << return_value << " - "
                 << sqlite3_errmsg(database.database);
@@ -167,7 +169,9 @@ void Statement::BindText(int row_index, const std::string& text) {
 void Statement::BindBlob(int row_index, const SerialisedData& blob) {
   assert(blob.size() < std::numeric_limits<int>::max());
   auto return_value = sqlite3_bind_blob(statement, row_index, &blob[0],
-                                        static_cast<int>(blob.size()), SQLITE_TRANSIENT);
+                                        static_cast<int>(blob.size()),
+                                        reinterpret_cast<sqlite3_destructor_type>(-1));
+                                        // SQLITE_TRANSIENT macro replaced with C++ cast
   if (return_value != SQLITE_OK) {
     LOG(kError) << "sqlite3_bind_blob returned: " << return_value << " - "
                 << sqlite3_errmsg(database.database);
