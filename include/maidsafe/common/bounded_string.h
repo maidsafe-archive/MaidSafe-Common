@@ -108,8 +108,8 @@ class BoundedString {
     }
   }
 
-  template<typename T = String,
-           typename std::enable_if<!std::is_same<T, std::string>::value>::type* = nullptr >
+  template <typename T = String,
+            typename std::enable_if<!std::is_same<T, std::string>::value>::type* = nullptr>
   explicit BoundedString(const std::string& string)
       : string_(string.begin(), string.end()), valid_(true) INIT_DEBUG_STRING {
     if (OutwithBounds()) {
@@ -153,35 +153,6 @@ class BoundedString {
     return *this;
   }
 
-  BoundedString& operator+=(const BoundedString& other) {
-    if (!valid_ || !other.valid_) {
-      LOG(kError) << "BoundedString is uninitialised.";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-    }
-    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
-      LOG(kError) << "Resulting BoundedString would be outside of bounds.";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
-    }
-    String temp(string_ + other.string_);
-    string_.swap(temp);
-    return *this;
-  }
-
-  template <std::size_t other_min, std::size_t other_max, typename OtherStringType>
-  BoundedString& operator+=(const BoundedString<other_min, other_max, OtherStringType>& other) {
-    if (!valid_ || !other.valid_) {
-      LOG(kError) << "BoundedString is uninitialised.";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
-    }
-    if (SizeOutOfBounds(string_.size() + other.string_.size())) {
-      LOG(kError) << "Resulting BoundedString would be outside of bounds.";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
-    }
-    String temp(string_ + other.string_);
-    string_.swap(temp);
-    return *this;
-  }
-
   template <typename Archive>
   Archive& save(Archive& archive) const {
     return archive(string());
@@ -220,14 +191,12 @@ class BoundedString {
   template <std::size_t size, typename String>
   friend BoundedString<size, size, String> operator^(const BoundedString<size, size, String>&,
                                                      const BoundedString<size, size, String>&);
-   
-   bool SizeOutOfBounds(std::size_t size) const {
+
+  bool OutwithBounds() const {
     static_assert(min <= max,
                   "Lower bound of BoundedString must be less than or equal to upper bound");
-    return (size < min) || (size > max);
+    return (string_.size() < min) || (string_.size() > max);
   }
-
-  bool OutwithBounds() const { return SizeOutOfBounds(string_.size()); }
 
   String string_;
   bool valid_;
@@ -291,15 +260,6 @@ template <std::size_t min, std::size_t max, typename String>
 inline bool operator>=(const BoundedString<min, max, String>& lhs,
                        const BoundedString<min, max, String>& rhs) {
   return !operator<(lhs, rhs);
-}
-
-template <std::size_t lhs_min, std::size_t lhs_max, std::size_t rhs_min, std::size_t rhs_max,
-          typename String>
-inline BoundedString<lhs_min, lhs_max, String> operator+(
-    BoundedString<lhs_min, lhs_max, String> lhs,
-    const BoundedString<rhs_min, rhs_max, String>& rhs) {
-  lhs += rhs;
-  return lhs;
 }
 
 // This returns the bitwise XOR of the two fixed-size inputs.  Throws if either is uninitialised.

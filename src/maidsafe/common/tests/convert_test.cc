@@ -91,7 +91,7 @@ TEST(ConversionsTest, BEH_ByteVectorAndString) {
   const std::vector<unsigned char> bytes(convert::ToByteVector(input));
   ASSERT_EQ(input.size(), bytes.size());
   for (std::size_t i(0); i < input.size(); ++i)
-    EXPECT_EQ(input[i], static_cast<unsigned char>(bytes[i]));
+    EXPECT_EQ(input[i], static_cast<char>(bytes[i]));
 
   const std::string string(convert::ToString(bytes));
   EXPECT_EQ(input, string);
