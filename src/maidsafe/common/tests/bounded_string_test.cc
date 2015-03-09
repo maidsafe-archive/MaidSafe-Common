@@ -97,15 +97,25 @@ TYPED_TEST(BoundedStringTest, BEH_DefaultConstructor) {
 }
 
 TYPED_TEST(BoundedStringTest, BEH_Getters) {
-  typename TestFixture::TwoTwo a;
+  const typename TestFixture::TwoTwo a;
   EXPECT_FALSE(a.IsInitialised());
   EXPECT_THROW(a.string(), common_error);
+  EXPECT_THROW(a.data(), common_error);
+  EXPECT_THROW(typename TestFixture::TwoTwo()[0], common_error);
+  EXPECT_THROW(a[0], common_error);
+  EXPECT_THROW(a.size(), common_error);
 
-  for (int i(0); i < 1000; ++i) {
-    auto random(this->RandomData(1, 1024));
-    typename TestFixture::OneMax b(random);
-    EXPECT_TRUE(b.IsInitialised());
-    EXPECT_EQ(random, b.string());
+  auto random(this->RandomData(1, 1024));
+  typename TestFixture::OneMax b(random);
+  EXPECT_TRUE(b.IsInitialised());
+  EXPECT_EQ(random, b.string());
+  std::string copied(reinterpret_cast<const char*>(b.data()), b.size());
+  std::string original(random.begin(), random.end());
+  ASSERT_EQ(original, copied);
+  const typename TestFixture::OneMax c(random);
+  for (std::size_t i(0); i < random.size(); ++i) {
+    EXPECT_EQ(random[i], b[i]);
+    EXPECT_EQ(random[i], c[i]);
   }
 }
 

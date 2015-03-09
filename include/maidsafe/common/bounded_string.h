@@ -181,7 +181,13 @@ class BoundedString {
 
   const value_type* data() const { return string().data(); }
 
-  value_type& operator[](std::size_t pos) { return string()[pos]; }
+  value_type& operator[](std::size_t pos) {
+    if (!valid_) {
+      LOG(kError) << "BoundedString is uninitialised.";
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    }
+    return string_[pos];
+  }
 
   const value_type& operator[](std::size_t pos) const { return string()[pos]; }
 
@@ -203,17 +209,18 @@ class BoundedString {
       std::basic_ostream<Elem, Traits>& ostream,
       const BoundedString<other_min, other_max, OtherStringType>& bounded_string);
 
-  bool OutwithBounds() const {
-    static_assert(min <= max,
-                  "Lower bound of BoundedString must be less than or equal to upper bound");
-    return (string_.size() < min) || (string_.size() > max);
-  }
-
   String string_;
   bool valid_;
 #ifndef NDEBUG
   std::string debug_string_;
 #endif
+
+ private:
+  bool OutwithBounds() const {
+    static_assert(min <= max,
+                  "Lower bound of BoundedString must be less than or equal to upper bound");
+    return (string_.size() < min) || (string_.size() > max);
+  }
 };
 #ifdef __clang__
 #pragma clang diagnostic pop
