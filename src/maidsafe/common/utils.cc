@@ -268,13 +268,13 @@ uint32_t RandomUint32() { return RandomInt<uint32_t>(); }
 std::string RandomString(size_t size) { return GetRandomString<std::string>(size); }
 
 std::string RandomString(uint32_t min, uint32_t max) {
-  return GetRandomString<std::string>((RandomUint32() % max - min + 1) + min);
+  return GetRandomString<std::string>((RandomUint32() % (max - min + 1)) + min);
 }
 
 std::vector<byte> RandomBytes(size_t size) { return GetRandomString<std::vector<byte>>(size); }
 
 std::vector<byte> RandomBytes(uint32_t min, uint32_t max) {
-  return GetRandomString<std::vector<byte>>((RandomUint32() % max - min + 1) + min);
+  return GetRandomString<std::vector<byte>>((RandomUint32() % (max - min + 1)) + min);
 }
 
 std::string RandomAlphaNumericString(size_t size) {
@@ -282,7 +282,7 @@ std::string RandomAlphaNumericString(size_t size) {
 }
 
 std::string RandomAlphaNumericString(uint32_t min, uint32_t max) {
-  return GetRandomAlphaNumericString<std::string>((RandomUint32() % max - min + 1) + min);
+  return GetRandomAlphaNumericString<std::string>((RandomUint32() % (max - min + 1)) + min);
 }
 
 std::vector<byte> RandomAlphaNumericBytes(size_t size) {
@@ -290,7 +290,7 @@ std::vector<byte> RandomAlphaNumericBytes(size_t size) {
 }
 
 std::vector<byte> RandomAlphaNumericBytes(uint32_t min, uint32_t max) {
-  return GetRandomAlphaNumericString<std::vector<byte>>((RandomUint32() % max - min + 1) + min);
+  return GetRandomAlphaNumericString<std::vector<byte>>((RandomUint32() % (max - min + 1)) + min);
 }
 
 std::string WstringToString(const std::wstring& input) {
@@ -320,9 +320,11 @@ boost::expected<std::vector<byte>, common_error> ReadFile(const fs::path& file_p
       return boost::make_unexpected(MakeError(CommonErrors::file_too_large));
     }
 
-    std::basic_ifstream<byte> file_in(file_path.c_str(), std::ios::in | std::ios::binary);
-
     std::vector<byte> file_content(static_cast<size_t>(file_size));
+    if (file_size == 0)
+      return file_content;
+
+    std::basic_ifstream<byte> file_in(file_path.c_str(), std::ios::in | std::ios::binary);
     file_in.read(&file_content[0], file_size);
     file_in.close();
     return file_content;

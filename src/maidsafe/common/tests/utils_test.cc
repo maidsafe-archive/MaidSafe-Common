@@ -352,30 +352,37 @@ TEST(UtilsTest, FUNC_RandomNumberGen) {
 TEST(UtilsTest, BEH_ReadFileandWriteFile) {
   TestPath test_path(CreateTestPath("MaidSafe_TestUtils"));
   fs::path file_path(*test_path / "file.dat");
-  std::string file_content;
+  std::vector<byte> file_content;
   ASSERT_FALSE(fs::exists(file_path));
-  EXPECT_FALSE(ReadFile(file_path, nullptr));
-  EXPECT_FALSE(ReadFile(file_path, &file_content));
   EXPECT_TRUE(file_content.empty());
-  EXPECT_THROW(ReadFile(file_path), std::exception);
+  boost::expected<std::vector<byte>, common_error> read_result0(ReadFile(file_path));
+  ASSERT_FALSE(read_result0);
+  EXPECT_EQ(MakeError(CommonErrors::filesystem_io_error).code(), read_result0.error().code());
   EXPECT_FALSE(WriteFile("", file_content));
   EXPECT_TRUE(WriteFile(file_path, file_content));
   EXPECT_TRUE(fs::exists(file_path));
   EXPECT_EQ(0, fs::file_size(file_path));
-  EXPECT_FALSE(ReadFile(file_path, nullptr));
-  EXPECT_TRUE(ReadFile(file_path, &file_content));
-  EXPECT_TRUE(file_content.empty());
 
-  file_content = RandomString(3000 + RandomUint32() % 1000);
+  boost::expected<std::vector<byte>, common_error> read_result1(ReadFile(file_path));
+  ASSERT_TRUE(!!read_result1);
+  EXPECT_TRUE(read_result1->empty());
+
+  file_content = RandomBytes(3000, 4000);
   EXPECT_TRUE(WriteFile(file_path, file_content));
-  EXPECT_NO_THROW(ReadFile(file_path));
-  std::string file_content_in;
-  EXPECT_TRUE(ReadFile(file_path, &file_content_in));
-  EXPECT_EQ(file_content, file_content_in);
+  EXPECT_LE(3000, fs::file_size(file_path));
+  EXPECT_GE(4000, fs::file_size(file_path));
 
-  EXPECT_TRUE(WriteFile(file_path, "moo"));
-  EXPECT_TRUE(ReadFile(file_path, &file_content_in));
-  EXPECT_EQ("moo", file_content_in);
+  boost::expected<std::vector<byte>, common_error> read_result2(ReadFile(file_path));
+  ASSERT_TRUE(!!read_result2);
+  EXPECT_EQ(file_content, *read_result2);
+
+  file_content = RandomBytes(100);
+  EXPECT_TRUE(WriteFile(file_path, file_content));
+  EXPECT_EQ(100, fs::file_size(file_path));
+
+  boost::expected<std::vector<byte>, common_error> read_result3(ReadFile(file_path));
+  ASSERT_TRUE(!!read_result3);
+  EXPECT_EQ(file_content, *read_result3);
 }
 
 TEST(UtilsTest, BEH_Sleep) {
