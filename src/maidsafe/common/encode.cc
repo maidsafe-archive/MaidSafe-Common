@@ -18,42 +18,6 @@
 
 #include "maidsafe/common/encode.h"
 
-//#include <ctype.h>
-//#include <algorithm>
-//#include <array>
-//#include <ctime>
-//#include <cwchar>
-//#include <fstream>
-//#include <limits>
-//#include <locale>  // NOLINT
-//#include <set>
-//#include <thread>
-//#include <vector>
-//
-//#if defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__) ||             \
-//    (defined(linux) || defined(__linux) || defined(__linux__) || defined(__GNU__) || \
-//     defined(__GLIBC__)) &&                                                          \
-//        !defined(_CRAYC)
-//#include "pwd.h"  // NOLINT (dirvine)
-//#include "sys/param.h"
-//#endif
-//
-//#ifdef _MSC_VER
-//#include "windows.h"  // NOLINT - Viv
-//#endif
-//
-//#include "boost/config.hpp"
-//#include "boost/filesystem/operations.hpp"
-//#include "boost/format.hpp"
-//#include "boost/token_functions.hpp"
-//#include "boost/variant/apply_visitor.hpp"
-//
-//#include "cryptopp/base32.h"
-//#include "cryptopp/base64.h"
-//#include "cryptopp/hex.h"
-//
-//#include "maidsafe/common/config.h"
-//#include "maidsafe/common/log.h"
 #include "maidsafe/common/error.h"
 
 namespace maidsafe {
@@ -61,8 +25,8 @@ namespace maidsafe {
 namespace detail {
 
 std::string GetSubstr(const std::string& input) {
-  if (input.size() > 16)
-    return (input.substr(0, 7) + ".." + input.substr(input.size() - 7));
+  if (input.size() > 14)
+    return (input.substr(0, 6) + ".." + input.substr(input.size() - 6));
   else
     return input;
 }

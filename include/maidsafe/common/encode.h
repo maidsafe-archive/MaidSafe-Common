@@ -19,29 +19,9 @@
 #ifndef MAIDSAFE_COMMON_ENCODE_H_
 #define MAIDSAFE_COMMON_ENCODE_H_
 
-//#include <chrono>
 #include <cstdint>
-//#include <future>
-//#include <functional>
-//#include <memory>
-//#include <mutex>
-//#include <random>
-//#include <ratio>
 #include <string>
 #include <vector>
-//
-//#include "asio/ip/address.hpp"
-//#include "asio/ip/address_v4.hpp"
-//#include "asio/ip/address_v6.hpp"
-//#include "asio/ip/udp.hpp"
-//#include "boost/asio/ip/address.hpp"
-//#include "boost/asio/ip/address_v4.hpp"
-//#include "boost/asio/ip/address_v6.hpp"
-//#include "boost/date_time/posix_time/posix_time.hpp"
-//#include "boost/filesystem/path.hpp"
-//#include "boost/program_options.hpp"
-//
-//#include "maidsafe/common/crypto.h"
 
 namespace maidsafe {
 
@@ -73,8 +53,8 @@ std::string Encode(const T& non_hex_input) {
   auto size(non_hex_input.size());
   std::string hex_output(size * 2, 0);
   for (std::size_t i(0), j(0); i != size; ++i) {
-    hex_output[j++] = detail::alphabet[non_hex_input[i] / 16];
-    hex_output[j++] = detail::alphabet[non_hex_input[i] % 16];
+    hex_output[j++] = detail::alphabet[static_cast<unsigned char>(non_hex_input[i]) / 16];
+    hex_output[j++] = detail::alphabet[static_cast<unsigned char>(non_hex_input[i]) % 16];
   }
   return hex_output;
 }
