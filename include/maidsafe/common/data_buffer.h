@@ -39,7 +39,6 @@ namespace maidsafe {
 namespace test {
 
 class DataBufferTest;
-class DataStoreTest;
 
 }  // namespace test
 
@@ -87,7 +86,6 @@ class DataBuffer {
   void SetMaxDiskUsage(DiskUsage max_disk_usage);
 
   friend class test::DataBufferTest;
-  friend class test::DataStoreTest;
 
  private:
   template <typename UsageType, typename IndexType>
