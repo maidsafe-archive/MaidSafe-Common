@@ -116,7 +116,7 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   std::string result;
   try {
     CryptoPP::ArraySource(input.data(), input.size(), true,
-                           new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
+                          new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
   } catch (const CryptoPP::Exception&) {
     LOG(kError) << "Failed compressing: " << boost::current_exception_diagnostic_information(true);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
@@ -132,7 +132,7 @@ UncompressedText Uncompress(const CompressedText& input) {
   std::string result;
   try {
     CryptoPP::ArraySource(input->data(), input->size(), true,
-                           new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
+                          new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uncompression_error));
@@ -162,8 +162,7 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
   return out_strings;
 }
 
-DataParts SecretShareData(int32_t threshold, int32_t number_of_shares,
-                          const std::vector<byte>& data) {
+DataParts SecretShareData(int32_t threshold, int32_t number_of_shares, const PlainText& data) {
   ValidateDispersalArgs(threshold, number_of_shares);
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::ArraySource source(data.data(), data.size(), false,
@@ -205,8 +204,7 @@ PlainText SecretRecoverData(const DataParts& parts) {
   CryptoPP::SecByteBlock channel(4);
 
   for (size_t i = 0; i < num_to_check; ++i) {
-    array_sources[i].reset(
-        new CryptoPP::ArraySource(parts[i].data(), parts[i].size(), false));
+    array_sources[i].reset(new CryptoPP::ArraySource(parts[i].data(), parts[i].size(), false));
     array_sources[i]->Pump(4);
     array_sources[i]->Get(channel, 4);
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
@@ -232,7 +230,7 @@ DataParts InfoDisperse(int32_t threshold, int32_t number_of_shares, const PlainT
   std::string channel;
 
   for (int i = 0; i < number_of_shares; ++i) {
-    out_vec[i].resize(data.size());
+    out_vec[i].resize(data.size() + 8);  // for padding
     array_sink[i].reset(new CryptoPP::ArraySink(out_vec[i].data(), out_vec[i].size()));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
     array_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
@@ -261,8 +259,7 @@ PlainText InfoRetrieve(const DataParts& parts) {
   CryptoPP::SecByteBlock channel(4);
 
   for (size_t i = 0; i < num_to_check; ++i) {
-    array_sources[i].reset(
-        new CryptoPP::ArraySource(parts[i].data(), parts[i].size(), false));
+    array_sources[i].reset(new CryptoPP::ArraySource(parts[i].data(), parts[i].size(), false));
     array_sources[i]->Pump(4);
     array_sources[i]->Get(channel, 4);
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
@@ -274,20 +271,6 @@ PlainText InfoRetrieve(const DataParts& parts) {
 
   data.resize(array_sink->TotalPutLength());
   return PlainText(std::move(data));
-}
-
-CipherText ObfuscateData(const Identity& name, const PlainText& plain_text) {
-  const auto& name_str(name.string());
-  AES256KeyAndIV key_and_iv(
-      std::vector<byte>(name_str.begin(), name_str.begin() + AES256_KeySize + AES256_IVSize));
-  return SymmEncrypt(plain_text, key_and_iv);
-}
-
-PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text) {
-  const auto& name_str(name.string());
-  AES256KeyAndIV key_and_iv(
-      std::vector<byte>(name_str.begin(), name_str.begin() + AES256_KeySize + AES256_IVSize));
-  return SymmDecrypt(cipher_text, key_and_iv);
 }
 
 }  // namespace crypto

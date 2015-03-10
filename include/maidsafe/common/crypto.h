@@ -96,7 +96,7 @@ using BigInt = CryptoPP::Integer;
 const int AES256_KeySize = 32;  // size in bytes.
 // Since the block size for AES is 128 bits, only the first 128 bits of the IV are used.  We force
 // the IV to be exactly 128 bits.
-const int AES256_IVSize = 16;   // size in bytes.
+const int AES256_IVSize = 16;  // size in bytes.
 const std::uint16_t kMaxCompressionLevel = 9;
 const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
 const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
@@ -150,9 +150,8 @@ detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, String> Hash(
   std::string result;
   HashType hash;
   try {
-    CryptoPP::ArraySource(
-        reinterpret_cast<const byte*>(input.data()), input.size(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+    CryptoPP::ArraySource(reinterpret_cast<const byte*>(input.data()), input.size(), true,
+                          new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
@@ -187,10 +186,6 @@ PlainText SecretRecoverData(const DataParts& parts);
 DataParts InfoDisperse(int32_t threshold, int32_t number_of_shares, const PlainText& data);
 
 PlainText InfoRetrieve(const DataParts& parts);
-
-CipherText ObfuscateData(const Identity& name, const PlainText& plain_text);
-
-PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text);
 
 }  // namespace crypto
 
