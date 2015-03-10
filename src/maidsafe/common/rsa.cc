@@ -106,8 +106,7 @@ PlainText Decrypt(const CipherText& data, const PrivateKey& private_key) {
     std::string encryption_key_encrypted;
     try {
       Parse(data.string(), symm_encrypted_data, encryption_key_encrypted);
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
       LOG(kError) << "Failed to parse encrypted symmetric key and data: " << e.what();
       BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::decryption_error));
     }
@@ -139,8 +138,8 @@ Signature Sign(const PlainText& data, const PrivateKey& private_key) {
   CryptoPP::RSASS<CryptoPP::PSS, CryptoPP::SHA512>::Signer signer(private_key);
   try {
     CryptoPP::ArraySource(data.data(), data.size(), true,
-                           new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
-                                                      new CryptoPP::StringSink(signature)));
+                          new CryptoPP::SignerFilter(crypto::random_number_generator(), signer,
+                                                     new CryptoPP::StringSink(signature)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed asymmetric signing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::signing_error));
