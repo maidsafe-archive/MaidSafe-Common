@@ -230,7 +230,7 @@ EncodedPrivateKey EncodeKey(const PrivateKey& private_key) {
 
 EncodedPublicKey EncodeKey(const PublicKey& public_key) {
   if (!public_key.Validate(crypto::random_number_generator(), 0))
-    BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_private_key));
+    BOOST_THROW_EXCEPTION(MakeError(AsymmErrors::invalid_public_key));
 
   std::string encoded_key;
   try {
