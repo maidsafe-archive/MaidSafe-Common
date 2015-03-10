@@ -287,11 +287,11 @@ class HandlePolicyLoadBootstrapFile {
       }
     }
     try {
-      maidsafe::NonEmptyString contents(maidsafe::ReadFile(bootstrap_file));
+      maidsafe::NonEmptyString contents(maidsafe::ReadFile(bootstrap_file).value());
       maidsafe::detail::BootstrapCereal parsed_endpoints;
 
       try {
-        maidsafe::ConvertFromString(contents.string(), parsed_endpoints);
+        maidsafe::Parse(contents.string(), parsed_endpoints);
       } catch (...) {
         TLOG(kRed) << '\n' << bootstrap_file << " doesn't parse.\n\n";
         return;
@@ -328,7 +328,7 @@ class HandlePolicySaveBootstrapFile {
       serialised_endpoint->ip_ = endpoint.address().to_string();
       serialised_endpoint->port_ = endpoint.port();
     }
-    std::string contents{maidsafe::ConvertToString(serialised_endpoints)};
+    maidsafe::SerialisedData contents{maidsafe::Serialise(serialised_endpoints)};
     if (maidsafe::WriteFile(bootstrap_file, contents)) {
       g_out_of_date = false;
       TLOG(kGreen) << "\nSaved " << bootstrap_file << "\n\n";
