@@ -250,7 +250,7 @@ std::vector<BadGroup> Test::InjectBadGroups(const std::vector<Identity>& steps) 
 
 void Test::ReportBadGroups(const std::vector<BadGroup>& bad_groups) const {
   for (size_t i(0); i < bad_groups.size(); ++i) {
-    LOG(kInfo) << "Bad group " << i << " close to target " << DebugId(bad_groups[i].first);
+    LOG(kInfo) << "Bad group " << i << " close to target " << bad_groups[i].first;
     for (const auto& node : bad_groups[i].second) {
       if (node.good)
         LOG(kSuccess) << node;

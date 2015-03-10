@@ -34,6 +34,7 @@
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/encode.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/utils.h"
 
@@ -44,6 +45,8 @@ static maidsafe::asymm::Keys Keys;
 static bool have_private_key(false);
 static bool have_public_key(false);
 static bool group_signed_in;
+
+using Bytes = std::vector<unsigned char>;
 
 template <class T>
 T Get(std::string display_message, bool echo_input = true);
@@ -72,14 +75,15 @@ void Echo(bool enable = true) {
 #endif
 }
 
-std::string GetPasswd(bool repeat = true) {
+Bytes GetPasswd(bool repeat = true) {
   std::string passwd("r"), passwd2("s");
   do {
     passwd = Get<std::string>("please Enter passwd \n", false);
     if (repeat)
       passwd2 = Get<std::string>("please Re-Enter same passwd \n", false);
   } while ((passwd != passwd2) && (repeat));
-  return maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(passwd).string();
+  return maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(Bytes(passwd.begin(), passwd.end()))
+      .string();
 }
 
 std::vector<std::string> TokeniseLine(std::string line) {
@@ -108,8 +112,7 @@ void SavePrivateKey() {
     std::cout << "You have not loaded or created a Private Key\nAborting!\n";
   } else {
     fs::path file(filename);
-    std::string priv_key(maidsafe::asymm::EncodeKey(Keys.private_key).string());
-    if (!maidsafe::WriteFile(file, priv_key))
+    if (!maidsafe::WriteFile(file, maidsafe::asymm::EncodeKey(Keys.private_key).string()))
       std::cout << "error writing file\n";
     else
       std::cout << "Stored private key in " << filename << "\n";
@@ -122,8 +125,7 @@ void SavePublicKey() {
     std::cout << "You have not loaded or created a Public Key\nAborting!\n";
   } else {
     fs::path file(filename);
-    std::string pub_key(maidsafe::asymm::EncodeKey(Keys.public_key).string());
-    if (!maidsafe::WriteFile(file, pub_key))
+    if (!maidsafe::WriteFile(file, maidsafe::asymm::EncodeKey(Keys.public_key).string()))
       std::cout << "error writing file\n";
     else
       std::cout << "Stored public key in " << filename << "\n";
@@ -133,12 +135,12 @@ void SavePublicKey() {
 void LoadPrivateKey() {
   std::string filename = Get<std::string>("please enter filename to load private key from\n");
   fs::path file(filename);
-  std::string priv_key;
-  if (!maidsafe::ReadFile(file, &priv_key)) {
+  auto priv_key(maidsafe::ReadFile(file));
+  if (!priv_key) {
     std::cout << "error reading file\n";
     return;
   }
-  Keys.private_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPrivateKey(priv_key));
+  Keys.private_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPrivateKey(*priv_key));
 
   if (maidsafe::asymm::ValidateKey(Keys.private_key))
     std::cout << "private key loaded and valid \n";
@@ -149,13 +151,13 @@ void LoadPrivateKey() {
 void LoadPublicKey() {
   std::string filename = Get<std::string>("please enter filename to load public key from\n");
   fs::path file(filename);
-  std::string pub_key;
-  if (!maidsafe::ReadFile(file, &pub_key)) {
+  auto pub_key(maidsafe::ReadFile(file));
+  if (!pub_key) {
     std::cout << "error reading file\n";
     return;
   }
-  std::cout << maidsafe::hex::Encode(pub_key) << "\n";
-  Keys.public_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPublicKey(pub_key));
+  std::cout << maidsafe::hex::Encode(*pub_key) << "\n";
+  Keys.public_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPublicKey(*pub_key));
 
   if (maidsafe::asymm::ValidateKey(Keys.public_key))
     std::cout << "public key loaded and valid \n";
@@ -185,8 +187,8 @@ void ValidateSignature() {
   fs::path file(filename);
   fs::path sigfile(filename + ".sig");
 
-  std::string signature;
-  if (!maidsafe::ReadFile(sigfile, &signature)) {
+  auto signature(maidsafe::ReadFile(sigfile));
+  if (!signature) {
     std::cout << "error reading file\n";
     return;
   }
@@ -194,7 +196,7 @@ void ValidateSignature() {
     std::cout << "public key invalid, aborting!!\n";
   }
 
-  if (maidsafe::asymm::CheckFileSignature(file, maidsafe::asymm::Signature(signature),
+  if (maidsafe::asymm::CheckFileSignature(file, maidsafe::asymm::Signature(*signature),
                                           Keys.public_key)) {
     std::cout << "Signature valid\n";
   } else {
@@ -205,19 +207,19 @@ void ValidateSignature() {
 void EncryptFile() {
   std::string filename = Get<std::string>("please enter filename to encrypt");
   fs::path file(filename);
-  std::string passwd = GetPasswd();
-  maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-  maidsafe::crypto::AES256IV iv(
-      passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
+  Bytes passwd = GetPasswd();
+  maidsafe::crypto::AES256KeyAndIV key_and_iv(
+      Bytes(passwd.begin(),
+            passwd.begin() + maidsafe::crypto::AES256_KeySize + maidsafe::crypto::AES256_IVSize));
 
-  std::string data;
-  if (!maidsafe::ReadFile(file, &data)) {
+  auto data(maidsafe::ReadFile(file));
+  if (!data) {
     std::cout << "error reading file\n";
     return;
   }
 
-  if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(data),
-                                                               key, iv)->string()))
+  if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(*data),
+                                                               key_and_iv)->string()))
     std::cout << "error writing file\n";
   else
     std::cout << "File is now encrypted " << filename << "\n";
@@ -226,19 +228,19 @@ void EncryptFile() {
 void DecryptFile() {
   std::string filename = Get<std::string>("please enter filename to decrypt");
   fs::path file(filename);
-  std::string passwd = GetPasswd();
-  maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-  maidsafe::crypto::AES256IV iv(
-      passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
+  Bytes passwd = GetPasswd();
+  maidsafe::crypto::AES256KeyAndIV key_and_iv(
+    Bytes(passwd.begin(),
+    passwd.begin() + maidsafe::crypto::AES256_KeySize + maidsafe::crypto::AES256_IVSize));
 
-  std::string data;
-  if (!maidsafe::ReadFile(file, &data)) {
+  auto data(maidsafe::ReadFile(file));
+  if (!data) {
     std::cout << "error reading file\n";
     return;
   }
   if (!maidsafe::WriteFile(file, maidsafe::crypto::SymmDecrypt(
-                                     maidsafe::crypto::CipherText(maidsafe::NonEmptyString(data)),
-                                     key, iv).string()))
+                                     maidsafe::crypto::CipherText(maidsafe::NonEmptyString(*data)),
+                                     key_and_iv).string()))
     std::cout << "error writing file\n";
   else
     std::cout << "File is now decrypted " << filename << "\n";
@@ -263,30 +265,31 @@ void CreateKeyGroup() {
   }
 
   // create the chunks of the private key.
-  std::string priv_key(maidsafe::asymm::EncodeKey(Keys.private_key).string());
-  std::vector<std::string> chunks(maidsafe::crypto::SecretShareData(min, max, priv_key));
+  auto priv_key(maidsafe::asymm::EncodeKey(Keys.private_key).string());
+  maidsafe::crypto::DataParts chunks(
+      maidsafe::crypto::SecretShareData(min, max, maidsafe::crypto::PlainText(priv_key)));
 
-  std::map<std::string, std::string> users;
-  std::pair<std::map<std::string, std::string>::iterator, bool> ret;
+  std::map<std::string, Bytes> users;
+  std::pair<std::map<std::string, Bytes>::iterator, bool> ret;
   for (int i = 0; i < max; ++i) {
     std::string name;
     std::cout << "please Enter unique name \n";
     std::getline(std::cin, name);
-    std::string passwd = GetPasswd();
+    Bytes passwd = GetPasswd();
     if (i < (max - 1))
       std::cout << "Password Successfull next person please\n ==================================\n";
-    ret = users.insert(std::pair<std::string, std::string>(name, passwd));
+    ret = users.insert(std::pair<std::string, Bytes>(name, passwd));
     if (!ret.second) {
       std::cout << "Error, are you sure you used a unique name, retry !\n";
       --i;
     } else {
-      maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-      maidsafe::crypto::AES256IV iv(
-          passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
+      maidsafe::crypto::AES256KeyAndIV key_and_iv(
+          Bytes(passwd.begin(), passwd.begin() + maidsafe::crypto::AES256_KeySize +
+                                    maidsafe::crypto::AES256_IVSize));
       fs::path file(location + name + ".keyfile");
       if (!maidsafe::WriteFile(
-              file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(chunks.at(i)), key,
-                                                  iv)->string())) {
+              file, maidsafe::crypto::SymmEncrypt(maidsafe::crypto::PlainText(chunks.at(i)),
+                                                  key_and_iv)->string())) {
         std::cout << "error writing file\n";
         --i;
         std::cout << "Error, are you sure you used a unique name, retry !\n";
@@ -304,34 +307,33 @@ void GroupSignIn() {
   std::cout << "please Enter number of people required to sign\n";
   std::getline(std::cin, quorum);
   int min = atoi(quorum.c_str());
-  std::vector<std::string> chunks;
-  std::string enc_data;
-  std::string priv_key;
+  maidsafe::crypto::DataParts chunks;
+  maidsafe::crypto::PlainText priv_key;
   std::string location = Get<std::string>("please enter location of files");
 
   for (int i = 0; i < min; ++i) {
-    enc_data.clear();
     std::string name = Get<std::string>("please Enter name \n");
-    std::string passwd = GetPasswd(false);
+    Bytes passwd = GetPasswd();
     std::cout << "Password captured next person please\n ==================================\n";
 
-    maidsafe::crypto::AES256Key key(passwd.substr(0, maidsafe::crypto::AES256_KeySize));
-    maidsafe::crypto::AES256IV iv(
-        passwd.substr(maidsafe::crypto::AES256_KeySize, maidsafe::crypto::AES256_IVSize));
+    maidsafe::crypto::AES256KeyAndIV key_and_iv(
+        Bytes(passwd.begin(),
+              passwd.begin() + maidsafe::crypto::AES256_KeySize + maidsafe::crypto::AES256_IVSize));
     fs::path file(location + name + ".keyfile");
-    if (!maidsafe::ReadFile(file, &enc_data)) {
+    auto content(maidsafe::ReadFile(file));
+    if (!content) {
       std::cout << "error reading file\n";
       --i;
       std::cout << "Error, are you sure you used a correct name/password, retry !\n";
     } else {
-      chunks.push_back(
-          maidsafe::crypto::SymmDecrypt(
-              maidsafe::crypto::CipherText(maidsafe::NonEmptyString(enc_data)), key, iv).string());
-      enc_data.clear();
+      chunks.push_back(maidsafe::crypto::SymmDecrypt(
+                           maidsafe::crypto::CipherText(maidsafe::NonEmptyString(*content)),
+                           key_and_iv));
     }
   }
   priv_key = maidsafe::crypto::SecretRecoverData(chunks);
-  Keys.private_key = maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPrivateKey(priv_key));
+  Keys.private_key =
+      maidsafe::asymm::DecodeKey(maidsafe::asymm::EncodedPrivateKey(priv_key.string()));
 
   if (maidsafe::asymm::ValidateKey(Keys.private_key)) {
     std::cout << "private key loaded and valid \n";

@@ -183,8 +183,7 @@ inline bool operator<(const Node& lhs, const Node& rhs) { return lhs.id < rhs.id
 template <typename Elem, typename Traits>
 std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& ostream,
                                              const Node& node) {
-  ostream << DebugId(node.id) << (node.good ? " (good node)" : " (bad node) ") << " with rank "
-          << node.rank;
+  ostream << node.id << (node.good ? " (good node)" : " (bad node) ") << " with rank " << node.rank;
   return ostream;
 }
 
