@@ -1,4 +1,4 @@
-/*  Copyright 2008 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -22,19 +22,48 @@
 #include <bitset>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/encode.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/types.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
 namespace test {
 
-const std::string ToBinary(const std::vector<byte>& raw_id) {
-  std::string hex_encoded(hex::Encode(raw_id));
+template <typename T>
+class IdentityFactoryTest : public testing::Test {
+ protected:
+  IdentityFactoryTest()
+      : random_bytes_(RandomBytes(identity_size)),
+        known_bytes_(identity_size, 0),
+        random_encoded_(Encode(random_bytes_)),
+        known_encoded_(),
+        bad_encoded_("Bad Encoded") {
+    for (char c = 0; c < static_cast<char>(identity_size); ++c)
+      known_bytes_[static_cast<std::size_t>(c)] = c;
+    known_encoded_ = Encode(known_bytes_);
+  }
+
+  template <typename Input>
+  T Encode(const Input& input) const;
+
+  T KnownEncoded() const;
+
+  std::vector<byte> random_bytes_, known_bytes_;
+  T random_encoded_, known_encoded_, bad_encoded_;
+};
+
+template <>
+template <>
+binary::String IdentityFactoryTest<binary::String>::Encode<std::vector<byte>>(
+    const std::vector<byte>& input) const {
+  std::string hex_encoded(hex::Encode(input));
   std::string result;
   for (auto& elem : hex_encoded) {
     std::string temp;
@@ -92,314 +121,144 @@ const std::string ToBinary(const std::vector<byte>& raw_id) {
     }
     result += temp;
   }
-  return result;
+  return binary::String(std::move(result));
 }
 
-TEST(IdentityBasicTest, BEH_EncodingFactory) {
-  auto known_raw = std::vector<byte>(identity_size, 0);
-  for (char c = 0; c < static_cast<char>(identity_size); ++c)
-    known_raw.at(static_cast<uint8_t>(c)) = c;
-  for (int i = 0; i < 3; ++i) {
-    auto rand_str = RandomBytes(identity_size);
-    std::string bad_encoded("Bad Encoded"), encoded, known_encoded;
-    IdentityEncoding type = static_cast<IdentityEncoding>(i);
-    switch (type) {
-      case IdentityEncoding::binary:
-        encoded = ToBinary(rand_str);
-        known_encoded = ToBinary(known_raw);
-        break;
-      case IdentityEncoding::hex:
-        encoded = hex::Encode(rand_str);
-        known_encoded = hex::Encode(known_raw);
-        break;
-      case IdentityEncoding::base64:
-        encoded = base64::Encode(rand_str);
-        known_encoded = base64::Encode(known_raw);
-        break;
-      default:
-        break;
-    }
-
-    EXPECT_THROW(MakeIdentity(bad_encoded, type), common_error);
-    auto rand_id = MakeIdentity(encoded, type);
-    EXPECT_EQ(rand_str, rand_id.string());
-    EXPECT_EQ(encoded, rand_id.ToStringEncoded(type));
-    auto known_id = NodeId{known_encoded, type};
-    EXPECT_EQ(known_raw, known_id.string());
-    EXPECT_EQ(known_encoded, known_id.ToStringEncoded(type));
-    switch (i) {
-      case static_cast<int>(NodeId::EncodingType::kBinary):
-        EXPECT_EQ(known_encoded,
-                  "00000000000000010000001000000011000001000000010100000110000001110000100000001001"
-                  "00001010000010110000110000001101000011100000111100010000000100010001001000010011"
-                  "00010100000101010001011000010111000110000001100100011010000110110001110000011101"
-                  "00011110000111110010000000100001001000100010001100100100001001010010011000100111"
-                  "00101000001010010010101000101011001011000010110100101110001011110011000000110001"
-                  "00110010001100110011010000110101001101100011011100111000001110010011101000111011"
-                  "00111100001111010011111000111111");
-        break;
-      case static_cast<int>(NodeId::EncodingType::kHex):
-        EXPECT_EQ(known_encoded,
-                  "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f2021222324252627"
-                  "28292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f");
-        break;
-      case static_cast<int>(NodeId::EncodingType::kBase64):
-        EXPECT_EQ(known_encoded,
-                  "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7"
-                  "PD0+Pw==");
-        break;
-      default:
-        break;
-    }
-  }
+template <>
+template <>
+binary::String IdentityFactoryTest<binary::String>::Encode<Identity>(const Identity& input) const {
+  return binary::String(binary::Encode(input));
 }
 
-TEST(IdentityBasicTest, BEH_String) {
-  const auto rand_str = RandomString(identity_size);
-  auto id = NodeId{rand_str};
-  EXPECT_EQ(id.string(), rand_str);
-  EXPECT_THROW(NodeId{}.string(), common_error);
+template <>
+template <typename Input>
+hex::String IdentityFactoryTest<hex::String>::Encode(const Input& input) const {
+  return hex::String(hex::Encode(input));
 }
 
-TEST(IdentityBasicTest, BEH_IsValid) {
-  EXPECT_TRUE(NodeId{RandomString(identity_size)}.IsValid());
-  EXPECT_FALSE(NodeId{}.IsValid());
+template <>
+template <typename Input>
+base64::String IdentityFactoryTest<base64::String>::Encode(const Input& input) const {
+  return base64::String(base64::Encode(input));
 }
 
-class NodeIdTest : public testing::Test {
+template <>
+binary::String IdentityFactoryTest<binary::String>::KnownEncoded() const {
+  return binary::String(
+      "00000000000000010000001000000011000001000000010100000110000001110000100000001001000010100000"
+      "10110000110000001101000011100000111100010000000100010001001000010011000101000001010100010110"
+      "00010111000110000001100100011010000110110001110000011101000111100001111100100000001000010010"
+      "00100010001100100100001001010010011000100111001010000010100100101010001010110010110000101101"
+      "00101110001011110011000000110001001100100011001100110100001101010011011000110111001110000011"
+      "1001001110100011101100111100001111010011111000111111");
+}
+
+template <>
+hex::String IdentityFactoryTest<hex::String>::KnownEncoded() const {
+  return hex::String(
+      "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d"
+      "2e2f303132333435363738393a3b3c3d3e3f");
+}
+
+template <>
+base64::String IdentityFactoryTest<base64::String>::KnownEncoded() const {
+  return base64::String(
+      "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+Pw==");
+}
+
+using IdentityFactoryTestTypes = testing::Types<binary::String, hex::String, base64::String>;
+TYPED_TEST_CASE(IdentityFactoryTest, IdentityFactoryTestTypes);
+
+TYPED_TEST(IdentityFactoryTest, BEH_FromEncodedString) {
+  EXPECT_THROW(MakeIdentity(this->bad_encoded_), common_error);
+
+  Identity random_id(MakeIdentity(this->random_encoded_));
+  EXPECT_EQ(this->random_bytes_, random_id.string());
+  EXPECT_EQ(this->random_encoded_, Encode(random_id));
+
+  Identity known_id(MakeIdentity(this->known_encoded_));
+  EXPECT_EQ(this->known_bytes_, known_id.string());
+  EXPECT_EQ(this->known_encoded_, Encode(known_id));
+  EXPECT_EQ(this->KnownEncoded(), Encode(known_id));
+}
+
+class IdentityTest : public testing::Test {
  protected:
-  NodeIdTest()
+  IdentityTest()
       : max_id_(std::string(identity_size, -1)),
-        id1_([this]() -> NodeId {
-          auto id = NodeId{RandomString(identity_size)};
+        id1_([this]() -> Identity {
+          auto id(MakeIdentity());
           while (id == max_id_)
-            id = NodeId{RandomString(identity_size)};
+            id = MakeIdentity();
           return id;
         }()),
-        id2_([this]() -> NodeId {
-          auto id = NodeId{RandomString(identity_size)};
+        id2_([this]() -> Identity {
+          auto id(MakeIdentity());
           while (id == max_id_ || id == id1_)
-            id = NodeId{RandomString(identity_size)};
+            id = MakeIdentity();
           return id;
         }()),
         invalid_id_() {}
-  const NodeId max_id_, id1_, id2_, invalid_id_;
+  const Identity max_id_, id1_, id2_, invalid_id_;
 };
 
-TEST_F(NodeIdTest, BEH_Operators) {
-  const auto copy_of_id1 = NodeId{id1_};
-
-  // operator==
-  EXPECT_TRUE(id1_ == copy_of_id1);
-  EXPECT_TRUE(invalid_id_ == NodeId{});
-
-  EXPECT_FALSE(id1_ == max_id_);
-  EXPECT_FALSE(max_id_ == id1_);
-
-  EXPECT_FALSE(id1_ == invalid_id_);
-  EXPECT_FALSE(invalid_id_ == id1_);
-
-  // operator!=
-  EXPECT_FALSE(id1_ != copy_of_id1);
-  EXPECT_FALSE(invalid_id_ != NodeId{});
-
-  EXPECT_TRUE(id1_ != max_id_);
-  EXPECT_TRUE(max_id_ != id1_);
-
-  EXPECT_TRUE(id1_ != invalid_id_);
-  EXPECT_TRUE(invalid_id_ != id1_);
-
-  // operator<
-  EXPECT_FALSE(id1_ < copy_of_id1);
-  EXPECT_FALSE(invalid_id_ < NodeId{});
-
-  EXPECT_TRUE(id1_ < max_id_);
-  EXPECT_FALSE(max_id_ < id1_);
-
-  EXPECT_FALSE(id1_ < invalid_id_);
-  EXPECT_TRUE(invalid_id_ < id1_);
-
-  // operator>
-  EXPECT_FALSE(id1_ > copy_of_id1);
-  EXPECT_FALSE(invalid_id_ > NodeId{});
-
-  EXPECT_FALSE(id1_ > max_id_);
-  EXPECT_TRUE(max_id_ > id1_);
-
-  EXPECT_TRUE(id1_ > invalid_id_);
-  EXPECT_FALSE(invalid_id_ > id1_);
-
-  // operator<=
-  EXPECT_TRUE(id1_ <= copy_of_id1);
-  EXPECT_TRUE(invalid_id_ <= NodeId{});
-
-  EXPECT_TRUE(id1_ <= max_id_);
-  EXPECT_FALSE(max_id_ <= id1_);
-
-  EXPECT_FALSE(id1_ <= invalid_id_);
-  EXPECT_TRUE(invalid_id_ <= id1_);
-
-  // operator>=
-  EXPECT_TRUE(id1_ >= copy_of_id1);
-  EXPECT_TRUE(invalid_id_ >= NodeId{});
-
-  EXPECT_FALSE(id1_ >= max_id_);
-  EXPECT_TRUE(max_id_ >= id1_);
-
-  EXPECT_TRUE(id1_ >= invalid_id_);
-  EXPECT_FALSE(invalid_id_ >= id1_);
-
-  // operator^
-  const auto xor_of_id1_and_id2 = id1_ ^ id2_;
-
-  auto binary_id1 = id1_.ToStringEncoded(NodeId::EncodingType::kBinary);
-  auto binary_id2 = id2_.ToStringEncoded(NodeId::EncodingType::kBinary);
-  auto binary_xor = xor_of_id1_and_id2.ToStringEncoded(NodeId::EncodingType::kBinary);
-  auto itr1 = std::begin(binary_id1);
-  auto itr2 = std::begin(binary_id2);
-  auto itr_xor = std::begin(binary_xor);
-  while (itr1 != std::end(binary_id1)) {
-    if (*itr1++ == *itr2++)
-      EXPECT_EQ('0', *itr_xor++);
-    else
-      EXPECT_EQ('1', *itr_xor++);
-  }
-
-  EXPECT_EQ(xor_of_id1_and_id2, id2_ ^ id1_);
-  EXPECT_EQ(NodeId(std::string(identity_size, 0)), id1_ ^ id1_);
-
-  EXPECT_THROW(id1_ ^ invalid_id_, common_error);
-  EXPECT_THROW(invalid_id_ ^ id1_, common_error);
-  EXPECT_THROW(invalid_id_ ^ invalid_id_, common_error);
-
-  // operator<<
-  std::stringstream sstream;
-  sstream << id1_ << invalid_id_;
-  EXPECT_EQ(DebugId(id1_) + "Invalid ID", sstream.str());
-}
-
-TEST_F(NodeIdTest, BEH_CloserToTarget) {
-  auto target = NodeId{RandomString(identity_size)};
+TEST_F(IdentityTest, BEH_CloserToTarget) {
+  Identity target(MakeIdentity());
   while (target == id1_ || target == id2_)
-    target = NodeId{RandomString(identity_size)};
+    target = MakeIdentity();
 
-  auto xor_distance1 = id1_ ^ target;
-  auto xor_distance2 = id2_ ^ target;
+  Identity xor_distance1 = id1_ ^ target;
+  Identity xor_distance2 = id2_ ^ target;
 
   if (xor_distance1 < xor_distance2) {
-    EXPECT_TRUE(NodeId::CloserToTarget(id1_, id2_, target));
-    EXPECT_FALSE(NodeId::CloserToTarget(id2_, id1_, target));
+    EXPECT_TRUE(CloserToTarget(id1_, id2_, target));
+    EXPECT_FALSE(CloserToTarget(id2_, id1_, target));
   } else {
-    EXPECT_FALSE(NodeId::CloserToTarget(id1_, id2_, target));
-    EXPECT_TRUE(NodeId::CloserToTarget(id2_, id1_, target));
+    EXPECT_FALSE(CloserToTarget(id1_, id2_, target));
+    EXPECT_TRUE(CloserToTarget(id2_, id1_, target));
   }
 
-  EXPECT_TRUE(NodeId::CloserToTarget(target, id1_, target));
-  EXPECT_FALSE(NodeId::CloserToTarget(id1_, target, target));
-  EXPECT_FALSE(NodeId::CloserToTarget(id1_, id1_, target));
+  EXPECT_TRUE(CloserToTarget(target, id1_, target));
+  EXPECT_FALSE(CloserToTarget(id1_, target, target));
+  EXPECT_FALSE(CloserToTarget(id1_, id1_, target));
 
-  EXPECT_THROW(NodeId::CloserToTarget(invalid_id_, id1_, target), common_error);
-  EXPECT_THROW(NodeId::CloserToTarget(id1_, invalid_id_, target), common_error);
-  EXPECT_THROW(NodeId::CloserToTarget(id1_, id2_, invalid_id_), common_error);
+  EXPECT_THROW(CloserToTarget(invalid_id_, id1_, target), common_error);
+  EXPECT_THROW(CloserToTarget(id1_, invalid_id_, target), common_error);
+  EXPECT_THROW(CloserToTarget(id1_, id2_, invalid_id_), common_error);
 }
 
-TEST_F(NodeIdTest, FUNC_CloserToTarget) {
-  auto target = NodeId{RandomString(identity_size)};
-  std::vector<NodeId> nodes(100000, NodeId(RandomString(identity_size)));
-  std::sort(std::begin(nodes), std::end(nodes), [target](const NodeId& lhs, const NodeId& rhs) {
-    return NodeId::CloserToTarget(lhs, rhs, target);
-  });
-
-  auto closest = nodes.front();
-
-  for (const auto& node : nodes) {
-    // not to worry comparing same nodes will not make one closer
-    EXPECT_FALSE(NodeId::CloserToTarget(node, closest, target));
-  }
-}
-
-TEST_F(NodeIdTest, BEH_CommonLeadingBits) {
+TEST_F(IdentityTest, BEH_CommonLeadingBits) {
   // Check for two equal IDs
-  auto copy_of_id1 = NodeId{id1_};
-  EXPECT_EQ(identity_size * 8, id1_.CommonLeadingBits(copy_of_id1));
+  Identity copy_of_id1(id1_);
+  EXPECT_EQ(identity_size * 8, CommonLeadingBits(id1_, copy_of_id1));
 
-  // Iterate through a copy of ID starting at the least significant bit,
-  // flipping a bit each time,
+  // Iterate through a copy of ID starting at the least significant bit, flipping a bit each time,
   // checking the function, then flipping the bit back.
-  std::bitset<identity_size * 8> id1_as_binary{id1_.ToStringEncoded(NodeId::EncodingType::kBinary)};
+  std::bitset<identity_size * 8> id1_as_binary(binary::Encode(id1_));
   for (size_t i(0); i != id1_as_binary.size(); ++i) {
     id1_as_binary.flip(i);
-    auto modified_id = NodeId{id1_as_binary.to_string(), NodeId::EncodingType::kBinary};
-    EXPECT_EQ((identity_size * 8) - i - 1, id1_.CommonLeadingBits(modified_id));
+    Identity modified_id(MakeIdentity(binary::String(id1_as_binary.to_string())));
+    EXPECT_EQ((identity_size * 8) - i - 1, CommonLeadingBits(id1_, modified_id));
     id1_as_binary.flip(i);
   }
+
+  EXPECT_THROW(CommonLeadingBits(invalid_id_, id1_), common_error);
+  EXPECT_THROW(CommonLeadingBits(id1_, invalid_id_), common_error);
 }
 
-TEST_F(NodeIdTest, BEH_Serialisation) {
-  // Invalid Serialisation
-#ifdef USE_DEPRECATED_NODE_ID_BEHAVIOUR
-  EXPECT_NO_THROW(maidsafe::ConvertToString(NodeId()));
-#else
-  EXPECT_THROW(maidsafe::ConvertToString(NodeId()), common_error);
-#endif
-
-  // Invalid Deserialisation
-  std::string raw_id{id1_.string()};
-
-  EXPECT_EQ(identity_size, raw_id.size());
-
-  raw_id.erase(raw_id.size() - 1);
-  NodeId parsed;
-  EXPECT_THROW(maidsafe::ConvertFromString(maidsafe::ConvertToString(raw_id), parsed),
-               common_error);
-
+TEST_F(IdentityTest, BEH_Serialisation) {
   // Valid Serialisation
-  std::string serialised_str;
-  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(id1_));
+  SerialisedData serialised(Serialise(id1_));
 
   // Valid Deserialisation
-  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, parsed));
+  Identity parsed(Parse<Identity>(serialised));
   EXPECT_EQ(id1_, parsed);
-}
 
-TEST_F(NodeIdTest, BEH_DebugId) {
-  EXPECT_EQ("Invalid ID", DebugId(invalid_id_));
-  EXPECT_EQ(HexSubstr(id1_.string()), DebugId(id1_));
+  // Invalid Serialisation/deserialisation
+  EXPECT_THROW(Serialise(invalid_id_), common_error);
 
-  // Test after calling each non-const function that DebugId is still valid.
-  auto id1 = id1_;
-  EXPECT_EQ(HexSubstr(id1.string()), DebugId(id1));
-
-  auto id2 = std::move(id1);
-  EXPECT_EQ(HexSubstr(id2.string()), DebugId(id2));
-
-  id2 = id2_;
-  EXPECT_EQ(HexSubstr(id2_.string()), DebugId(id2));
-
-  id1 = std::move(id2);
-  EXPECT_EQ(HexSubstr(id2_.string()), DebugId(id1));
-
-  id1 = id1_;
-  id2 = id2_;
-  swap(id1, id2);
-  EXPECT_EQ(HexSubstr(id1.string()), DebugId(id1));
-  EXPECT_EQ(HexSubstr(id2.string()), DebugId(id2));
-
-  id1 ^= id2;
-  EXPECT_EQ(HexSubstr(id1.string()), DebugId(id1));
-}
-
-TEST_F(NodeIdTest, BEH_Swap) {
-  auto id1 = id1_;
-  auto id2 = id2_;
-  swap(id1, id2);
-  EXPECT_EQ(id1_, id2);
-  EXPECT_EQ(id2_, id1);
-
-  auto invalid_id = NodeId{};
-  swap(invalid_id, id1);
-  EXPECT_EQ(invalid_id_, id1);
-  EXPECT_EQ(id2_, invalid_id);
+  serialised.pop_back();
+  EXPECT_THROW(Parse<Identity>(serialised), common_error);
 }
 
 }  // namespace test

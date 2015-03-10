@@ -38,7 +38,7 @@ namespace detail {
 
 // The BoundedString class holds a string-like object with lower and upper bounds checking of the
 // string's size.  A default-constructed instance is generally unusable (most public functions
-// throw) but can be assigned to safely.
+// throw) but can be assigned-to safely.
 
 
 // Helpers
@@ -97,7 +97,7 @@ class BoundedString {
   BoundedString()
       : string_(),
         valid_(!OutwithBounds()),  // Use OutwithBounds() to invoke static_asserts
-        debug_string_("Invalid string.") {}
+        debug_string_("Invalid string") {}
 #endif
 
   explicit BoundedString(String string)
@@ -301,7 +301,7 @@ std::basic_ostream<Elem, Traits>& operator<<(
     const BoundedString<min, max, String>& bounded_string) {
 #ifdef NDEBUG
   ostream << (bounded_string.IsInitialised() ? hex::Substr(bounded_string.string_)
-                                             : std::string("Invalid string."));
+                                             : std::string("Invalid string"));
 #else
   ostream << bounded_string.debug_string_;
 #endif

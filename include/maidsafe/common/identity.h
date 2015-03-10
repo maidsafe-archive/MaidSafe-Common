@@ -57,7 +57,7 @@ std::string Encode(const Identity& id);
 
 namespace hex {
 
-using String = TaggedValue<std::string, struct BinaryTag>;
+using String = TaggedValue<std::string, struct HexTag>;
 
 // Encoded representation of the ID.  Will throw if id.IsInitialised() is false.
 std::string Encode(const Identity& id);
@@ -68,7 +68,7 @@ std::string Encode(const Identity& id);
 
 namespace base64 {
 
-using String = TaggedValue<std::string, struct BinaryTag>;
+using String = TaggedValue<std::string, struct Base64Tag>;
 
 // Encoded representation of the ID.  Will throw if id.IsInitialised() is false.
 std::string Encode(const Identity& id);

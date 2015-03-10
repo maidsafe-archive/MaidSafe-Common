@@ -277,6 +277,17 @@ TYPED_TEST(BoundedStringTest, BEH_Serialization) {
   EXPECT_EQ(b.string(), d.string());
 }
 
+TYPED_TEST(BoundedStringTest, BEH_StreamOperator) {
+  std::stringstream ss;
+  typename TestFixture::OneMax a(this->RandomData(1, 1000));
+  ss << a;
+  EXPECT_EQ(ss.str(), hex::Substr(a));
+
+  ss.str("");
+  ss << typename TestFixture::OneMax();
+  EXPECT_EQ(ss.str(), "Invalid string");
+}
+
 }  // namespace test
 
 }  // namespace detail

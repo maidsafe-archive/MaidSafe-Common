@@ -111,8 +111,7 @@ Identity MakeIdentity(const binary::String& id) {
 Identity MakeIdentity(const hex::String& id) {
   try {
     return Identity(hex::DecodeToBytes(id.data));
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Identity factory: " << boost::diagnostic_information(e);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
   }
@@ -121,15 +120,12 @@ Identity MakeIdentity(const hex::String& id) {
 Identity MakeIdentity(const base64::String& id) {
   try {
     return Identity(base64::DecodeToBytes(id.data));
-  }
-  catch (const std::exception& e) {
+  } catch (const std::exception& e) {
     LOG(kError) << "Identity factory: " << boost::diagnostic_information(e);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_identity));
   }
 }
 
-Identity MakeIdentity() {
-  return Identity(RandomBytes(identity_size));
-}
+Identity MakeIdentity() { return Identity(RandomBytes(identity_size)); }
 
 }  // namespace maidsafe
