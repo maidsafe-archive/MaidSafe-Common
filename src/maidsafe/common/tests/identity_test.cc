@@ -174,12 +174,12 @@ TYPED_TEST(IdentityFactoryTest, BEH_FromEncodedString) {
 
   Identity random_id(MakeIdentity(this->random_encoded_));
   EXPECT_EQ(this->random_bytes_, random_id.string());
-  EXPECT_EQ(this->random_encoded_, Encode(random_id));
+  EXPECT_EQ(this->random_encoded_, this->Encode(random_id));
 
   Identity known_id(MakeIdentity(this->known_encoded_));
   EXPECT_EQ(this->known_bytes_, known_id.string());
-  EXPECT_EQ(this->known_encoded_, Encode(known_id));
-  EXPECT_EQ(this->KnownEncoded(), Encode(known_id));
+  EXPECT_EQ(this->known_encoded_, this->Encode(known_id));
+  EXPECT_EQ(this->KnownEncoded(), this->Encode(known_id));
 }
 
 class IdentityTest : public testing::Test {
