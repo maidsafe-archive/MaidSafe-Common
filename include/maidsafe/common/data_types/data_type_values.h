@@ -36,7 +36,7 @@ namespace maidsafe {
       ImmutableData, ImmutableData)(MutableData, MutableData)
 
 // Defines:
-//     enum class DataTagValue : uint32_t { kAnmaid, kMaid, ... };
+//     enum class DataTagValue : uint32_t { kAnmaidValue, kMaidValue, ... };
 // Also defines a std::ostream operator<< for the DataTagValue.
 // Also defines MAIDSAFE_DATA_TYPES_SIZE which is the number of different data types defined.
 DEFINE_MAIDSAFE_DATA_TYPES_ENUM_VALUES(DataTagValue, uint32_t)
