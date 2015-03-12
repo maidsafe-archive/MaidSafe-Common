@@ -74,6 +74,6 @@ struct is_short_term_cacheable<MutableData> : public std::true_type {};
 
 }  // namespace maidsafe
 
-CEREAL_REGISTER_TYPE(maidsafe::MutableData);
+CEREAL_REGISTER_TYPE(maidsafe::MutableData)
 
 #endif  // MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_

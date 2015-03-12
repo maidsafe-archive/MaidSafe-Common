@@ -190,7 +190,7 @@ inline testing::AssertionResult Equal(const TestData* const lhs, const TestData*
 
 }  // namespace maidsafe
 
-CEREAL_REGISTER_TYPE(maidsafe::test::TestData);
+CEREAL_REGISTER_TYPE(maidsafe::test::TestData)
 
 namespace maidsafe {
 

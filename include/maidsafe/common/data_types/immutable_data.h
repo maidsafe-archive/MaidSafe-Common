@@ -78,6 +78,6 @@ struct is_unique_on_network<ImmutableData> : public std::false_type {};
 
 }  // namespace maidsafe
 
-CEREAL_REGISTER_TYPE(maidsafe::ImmutableData);
+CEREAL_REGISTER_TYPE(maidsafe::ImmutableData)
 
 #endif  // MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
