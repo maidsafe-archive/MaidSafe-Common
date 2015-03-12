@@ -90,16 +90,16 @@ const unsigned char pad_character('=');
 // hacked from https://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
 template <typename T>
 std::string Encode(const T& non_base64_input) {
-  using Bytes = std::basic_string<unsigned char>;
-  Bytes encoded_string(((non_base64_input.size() / 3) + (non_base64_input.size() % 3 > 0)) * 4, 0);
+  std::string encoded_string(
+      ((non_base64_input.size() / 3) + (non_base64_input.size() % 3 > 0)) * 4, 0);
   std::int32_t temp;
-  auto cursor = (reinterpret_cast<const Bytes&>(non_base64_input)).begin();
+  auto cursor = non_base64_input.begin();
   std::size_t i = 0;
   std::size_t common_output_size((non_base64_input.size() / 3) * 4);
   while (i < common_output_size) {
-    temp = (*cursor++) << 16;  // Convert to big endian
-    temp += (*cursor++) << 8;
-    temp += (*cursor++);
+    temp = static_cast<std::uint8_t>(*cursor++) << 16;  // Convert to big endian
+    temp += static_cast<std::uint8_t>(*cursor++) << 8;
+    temp += static_cast<std::uint8_t>(*cursor++);
     encoded_string[i++] = detail::alphabet[(temp & 0x00FC0000) >> 18];
     encoded_string[i++] = detail::alphabet[(temp & 0x0003F000) >> 12];
     encoded_string[i++] = detail::alphabet[(temp & 0x00000FC0) >> 6];
@@ -107,22 +107,22 @@ std::string Encode(const T& non_base64_input) {
   }
   switch (non_base64_input.size() % 3) {
     case 1:
-      temp = (*cursor++) << 16;  // Convert to big endian
+      temp = static_cast<std::uint8_t>(*cursor++) << 16;  // Convert to big endian
       encoded_string[i++] = detail::alphabet[(temp & 0x00FC0000) >> 18];
       encoded_string[i++] = detail::alphabet[(temp & 0x0003F000) >> 12];
       encoded_string[i++] = detail::pad_character;
       encoded_string[i++] = detail::pad_character;
       break;
     case 2:
-      temp = (*cursor++) << 16;  // Convert to big endian
-      temp += (*cursor++) << 8;
+      temp = static_cast<std::uint8_t>(*cursor++) << 16;  // Convert to big endian
+      temp += static_cast<std::uint8_t>(*cursor++) << 8;
       encoded_string[i++] = detail::alphabet[(temp & 0x00FC0000) >> 18];
       encoded_string[i++] = detail::alphabet[(temp & 0x0003F000) >> 12];
       encoded_string[i++] = detail::alphabet[(temp & 0x00000FC0) >> 6];
       encoded_string[i++] = detail::pad_character;
       break;
   }
-  return std::string(encoded_string.begin(), encoded_string.end());
+  return encoded_string;
 }
 
 // Implemented in bounded_string.h

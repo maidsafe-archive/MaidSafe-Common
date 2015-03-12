@@ -146,42 +146,42 @@ TYPED_TEST(EncodeTest, BEH_Base64) {
       "c3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJz"
       "ZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yg"
       "a25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4=");
-  EXPECT_EQ(base64::Encode(this->ToTestType(input_str)), encoded);
+  EXPECT_EQ(encoded, base64::Encode(this->ToTestType(input_str)));
   EXPECT_EQ(input_str, base64::DecodeToString(base64::Encode(this->ToTestType(input_str))));
   EXPECT_EQ(input_vec, base64::DecodeToBytes(base64::Encode(this->ToTestType(input_str))));
 
-  EXPECT_EQ(base64::Encode(this->ToTestType("pleasure.")), "cGxlYXN1cmUu");
+  EXPECT_EQ("cGxlYXN1cmUu", base64::Encode(this->ToTestType("pleasure.")));
   EXPECT_EQ("pleasure", base64::DecodeToString(base64::Encode(this->ToTestType("pleasure"))));
   EXPECT_EQ("pleasure",
             convert::ToString(base64::DecodeToBytes(base64::Encode(this->ToTestType("pleasure")))));
 
-  EXPECT_EQ(base64::Encode(this->ToTestType("leasure.")), "bGVhc3VyZS4=");
+  EXPECT_EQ("bGVhc3VyZS4=", base64::Encode(this->ToTestType("leasure.")));
   EXPECT_EQ("leasure.", base64::DecodeToString(base64::Encode(this->ToTestType("leasure."))));
   EXPECT_EQ("leasure.",
             convert::ToString(base64::DecodeToBytes(base64::Encode(this->ToTestType("leasure.")))));
 
-  EXPECT_EQ(base64::Encode(this->ToTestType("easure.")), "ZWFzdXJlLg==");
+  EXPECT_EQ("ZWFzdXJlLg==", base64::Encode(this->ToTestType("easure.")));
   EXPECT_EQ("easure.", base64::DecodeToString(base64::Encode(this->ToTestType("easure."))));
   EXPECT_EQ("easure.",
             convert::ToString(base64::DecodeToBytes(base64::Encode(this->ToTestType("easure.")))));
 
-  EXPECT_EQ(base64::Encode(this->ToTestType("asure.")), "YXN1cmUu");
+  EXPECT_EQ("YXN1cmUu", base64::Encode(this->ToTestType("asure.")));
   EXPECT_EQ("asure.", base64::DecodeToString(base64::Encode(this->ToTestType("asure."))));
   EXPECT_EQ("asure.",
             convert::ToString(base64::DecodeToBytes(base64::Encode(this->ToTestType("asure.")))));
 
-  EXPECT_EQ(base64::Encode(this->ToTestType("sure.")), "c3VyZS4=");
+  EXPECT_EQ("c3VyZS4=", base64::Encode(this->ToTestType("sure.")));
   EXPECT_EQ("sure.", base64::DecodeToString(base64::Encode(this->ToTestType("sure."))));
   EXPECT_EQ("sure.",
             convert::ToString(base64::DecodeToBytes(base64::Encode(this->ToTestType("sure.")))));
 
   // test vectors from RFC4648
-  EXPECT_EQ(base64::Encode(this->ToTestType("f")), "Zg==");
-  EXPECT_EQ(base64::Encode(this->ToTestType("fo")), "Zm8=");
-  EXPECT_EQ(base64::Encode(this->ToTestType("foo")), "Zm9v");
-  EXPECT_EQ(base64::Encode(this->ToTestType("foob")), "Zm9vYg==");
-  EXPECT_EQ(base64::Encode(this->ToTestType("fooba")), "Zm9vYmE=");
-  EXPECT_EQ(base64::Encode(this->ToTestType("foobar")), "Zm9vYmFy");
+  EXPECT_EQ("Zg==", base64::Encode(this->ToTestType("f")));
+  EXPECT_EQ("Zm8=", base64::Encode(this->ToTestType("fo")));
+  EXPECT_EQ("Zm9v", base64::Encode(this->ToTestType("foo")));
+  EXPECT_EQ("Zm9vYg==", base64::Encode(this->ToTestType("foob")));
+  EXPECT_EQ("Zm9vYmE=", base64::Encode(this->ToTestType("fooba")));
+  EXPECT_EQ("Zm9vYmFy", base64::Encode(this->ToTestType("foobar")));
   EXPECT_EQ("f", base64::DecodeToString("Zg=="));
   EXPECT_EQ("f", convert::ToString(base64::DecodeToBytes("Zg==")));
   EXPECT_EQ("fo", base64::DecodeToString("Zm8="));
