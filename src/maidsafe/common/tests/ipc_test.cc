@@ -35,6 +35,7 @@ extern "C" char** environ;
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/process.h"
 #include "maidsafe/common/test.h"
@@ -155,12 +156,12 @@ TEST(IpcTest, FUNC_IpcFunctionsUsingBoostProcess) {
     test1_vec.push_back(test_string);
     total += test_string;
   }
-  std::string kAnswer(maidsafe::HexEncode(crypto::Hash<crypto::SHA512>(total).string()));
+  std::string kAnswer(maidsafe::hex::Encode(crypto::Hash<crypto::SHA512>(total).string()));
   // Set up boost::process args for passing to 'ipc_child_process' executable
   const auto kExePath(process::GetOtherExecutablePath("ipc_child_process").string());
   std::vector<std::string> process_args;
   process_args.push_back(kExePath);
-  process_args.push_back(HexEncode(kTestName));
+  process_args.push_back(hex::Encode(kTestName));
   process_args.push_back(std::to_string(test1_vec.size()));
   process_args.push_back(kAnswer);
   const auto kCommandLine(process::ConstructCommandLine(process_args));

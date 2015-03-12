@@ -41,7 +41,7 @@
 #include "cereal/cereal.hpp"
 
 #include "maidsafe/common/config.h"
-#include "maidsafe/common/node_id.h"
+#include "maidsafe/common/identity.h"
 
 namespace maidsafe {
 
@@ -72,30 +72,23 @@ enum class CommonLeadingBitsAlgorithm {
 };
 
 struct Config {
-  // Cereal v1.0 has a bug (https://github.com/USCiLab/cereal/issues/81) which means we can't add
-  // size_t values to JSON archives.  The bug appears to be fixed and is scheduled for v1.1
-  // TODO(Fraser): Remove this conditional typedef once the bug is fixed.
-#ifdef MAIDSAFE_APPLE
-  typedef uint64_t Size;
-#else
-  typedef size_t Size;
-#endif
-  Size iterations{4};                   // Test iterations
-  Size initial_good_count{1000};        // No. of good nodes used to pre-populate network on first
-                                        // test iteration
-  double initial_factor{2.0};           // Factor to multiply 'initial_good_count' by for each test
-                                        // iteration
-  Size group_size{11};                  // Close group size
-  Size majority_size{7};                // Majority of close group required to make a mutating
-                                        // action on data
-  Size bad_group_count{1};              // Target no. of "bad groups" (i.e. a group where
-                                        // 'majority_size' are bad)
-  Size total_random_attempts{1000000};  // Target no. of random addresses to check after required
-                                        // bad group count has been hit
-  Size leeway{2};                       // How many more common leading bits will be allowed when
-                                        // considering a new node, i.e. how much closer it's
-                                        // allowed to be compared to the other nodes
-  Size good_added_per_bad{0};           // No. of good nodes added every time a bad node is added
+  std::size_t iterations{4};                   // Test iterations
+  std::size_t initial_good_count{1000};        // No. of good nodes used to pre-populate network on
+                                               // first test iteration
+  double initial_factor{2.0};                  // Factor to multiply 'initial_good_count' by for
+                                               // each test iteration
+  std::size_t group_size{11};                  // Close group size
+  std::size_t majority_size{7};                // Majority of close group required to make a
+                                               // mutating action on data
+  std::size_t bad_group_count{1};              // Target no. of "bad groups" (i.e. a group where
+                                               // 'majority_size' are bad)
+  std::size_t total_random_attempts{1000000};  // Target no. of random addresses to check after
+                                               // required bad group count has been hit
+  std::size_t leeway{2};                       // How many more common leading bits will be allowed
+                                               // when considering a new node, i.e. how much closer
+                                               // it's allowed to be compared to the other nodes
+  std::size_t good_added_per_bad{0};           // No. of good nodes added every time a bad node is
+                                               // added
   CommonLeadingBitsAlgorithm algorithm{CommonLeadingBitsAlgorithm::kLowest};  // Described above
 
   template <typename Archive>
@@ -168,7 +161,7 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& o
 
 
 struct Node {
-  Node(NodeId id_in, bool good_in) : id(std::move(id_in)), good(good_in), rank(0) {}
+  Node(Identity id_in, bool good_in) : id(std::move(id_in)), good(good_in), rank(0) {}
   Node() : id(), good(true), rank(0) {}
   Node(Node&& o) MAIDSAFE_NOEXCEPT : id(std::move(o.id)), good(o.good), rank(std::move(o.rank)) {}
   Node(const Node& other) = default;
@@ -180,7 +173,7 @@ struct Node {
     return *this;
   }
 
-  NodeId id;
+  Identity id;
   bool good;
   int rank;
 };
@@ -194,7 +187,7 @@ std::basic_ostream<Elem, Traits>& operator<<(std::basic_ostream<Elem, Traits>& o
   return ostream;
 }
 
-typedef std::pair<NodeId, std::vector<Node>> BadGroup;
+typedef std::pair<Identity, std::vector<Node>> BadGroup;
 
 
 
@@ -205,7 +198,7 @@ class Test {
 
  private:
   int Accumulate(std::vector<Node>::const_iterator first, std::vector<Node>::const_iterator last,
-                 const NodeId& target, int& highest, int& lowest) const;
+                 const Identity& target, int& highest, int& lowest) const;
 
   int CommonLeadingBits(int highest, int lowest, int sum, int count) const;
 
@@ -214,7 +207,7 @@ class Test {
 
   // Requires first 'group_size' entries of 'g_all_nodes' to be sorted by closeness to
   // 'candidate_node'.
-  int CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) const;
+  int CandidateCommonLeadingBits(const Identity& candidate_node, size_t group_size) const;
 
   void UpdateRank(size_t group_size);
 
@@ -224,19 +217,19 @@ class Test {
 
   void AddNode(bool good);
 
-  void DoAddNode(const NodeId& node_id, bool good, int attempts);
+  void DoAddNode(const Identity& node_id, bool good, int attempts);
 
   void InitialiseNetwork();
 
   // Constructs a series of NodeIds spread evenly across address space
-  std::vector<NodeId> GetUniformlyDistributedTargetPoints() const;
+  std::vector<Identity> GetUniformlyDistributedTargetPoints() const;
 
   // Returns group if >= g_config.majority_size are bad, else returns empty vector.  Returned group
   // is default-sorted (i.e. not sorted close to target_id).
-  BadGroup GetBadGroup(const NodeId& target_id) const;
+  BadGroup GetBadGroup(const Identity& target_id) const;
 
   // Add bad nodes until we have 'g_config.bad_group_count' entirely separate bad close groups
-  std::vector<BadGroup> InjectBadGroups(const std::vector<NodeId>& steps);
+  std::vector<BadGroup> InjectBadGroups(const std::vector<Identity>& steps);
 
   void ReportBadGroups(const std::vector<BadGroup>& bad_groups) const;
 

@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -23,45 +23,43 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
-
 #include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
-MutableData::MutableData(const MutableData& other) : name_(other.name_), data_(other.data_) {}
-
-MutableData::MutableData(MutableData&& other)
-    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
-
-MutableData& MutableData::operator=(MutableData other) {
-  swap(*this, other);
-  return *this;
-}
-
-MutableData::MutableData(Name name, NonEmptyString data)
-    : name_(std::move(name)), data_(std::move(data)) {}
-
-MutableData::MutableData(Name name, const serialised_type& serialised_mutable_data)
-    : name_(std::move(name)), data_() {
-  try {
-    ConvertFromString(serialised_mutable_data->string(), *this);
-  } catch (...) {
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+MutableData::MutableData(Identity name, NonEmptyString value)
+    : Data(std::move(name)), value_(std::move(value)) {
+  if (!name_.IsInitialised()) {
+    LOG(kWarning) << "Name is uninitialised.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  }
+  if (!value_.IsInitialised()) {
+    LOG(kWarning) << "Data is uninitialised.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
 }
 
-MutableData::serialised_type MutableData::Serialise() const {
-  return serialised_type(NonEmptyString(ConvertToString(*this)));
+MutableData::MutableData() = default;
+
+MutableData::MutableData(const MutableData&) = default;
+
+MutableData::MutableData(MutableData&& other)
+    : Data(std::move(other)), value_(std::move(other.value_)) {}
+
+MutableData& MutableData::operator=(const MutableData&) = default;
+
+MutableData& MutableData::operator=(MutableData&& other) {
+  Data::operator=(std::move(other));
+  value_ = std::move(other.value_);
+  return *this;
 }
 
-MutableData::Name MutableData::name() const { return name_; }
+MutableData::~MutableData() = default;
 
-NonEmptyString MutableData::data() const { return data_; }
-
-void swap(MutableData& lhs, MutableData& rhs) {
-  using std::swap;
-  swap(lhs.name_, rhs.name_);
-  swap(lhs.data_, rhs.data_);
+const NonEmptyString& MutableData::Value() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return value_;
 }
 
 }  // namespace maidsafe

@@ -41,10 +41,10 @@ namespace tools {
 const std::string kDefaultConfigFilename{"address_space_tool.conf"};
 
 int Test::Accumulate(std::vector<Node>::const_iterator first,
-                     std::vector<Node>::const_iterator last, const NodeId& target, int& highest,
+                     std::vector<Node>::const_iterator last, const Identity& target, int& highest,
                      int& lowest) const {
   return std::accumulate(first, last, 0, [&](int running_total, const Node& node) -> int {
-    int common_leading_bits{node.id.CommonLeadingBits(target)};
+    int common_leading_bits{maidsafe::CommonLeadingBits(node.id, target)};
     if (common_leading_bits > highest)
       highest = common_leading_bits;
     if (common_leading_bits < lowest)
@@ -62,13 +62,13 @@ int Test::CommonLeadingBits(int highest, int lowest, int sum, int count) const {
     case CommonLeadingBitsAlgorithm::kMean:
       return sum / count;
     default:
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 }
 
 int Test::GroupCommonLeadingBits(size_t group_size) const {
   if (config_.algorithm == CommonLeadingBitsAlgorithm::kClosest)
-    return all_nodes_[0].id.CommonLeadingBits(all_nodes_[1].id);
+    return maidsafe::CommonLeadingBits(all_nodes_[0].id, all_nodes_[1].id);
   if (all_nodes_.size() == 1)
     return 0;
 
@@ -83,9 +83,9 @@ int Test::GroupCommonLeadingBits(size_t group_size) const {
   return CommonLeadingBits(highest, lowest, sum, count);
 }
 
-int Test::CandidateCommonLeadingBits(const NodeId& candidate_node, size_t group_size) const {
+int Test::CandidateCommonLeadingBits(const Identity& candidate_node, size_t group_size) const {
   if (config_.algorithm == CommonLeadingBitsAlgorithm::kClosest)
-    return all_nodes_[0].id.CommonLeadingBits(candidate_node);
+    return maidsafe::CommonLeadingBits(all_nodes_[0].id, candidate_node);
 
   int highest{0}, lowest{512};
   const auto end_itr(std::begin(all_nodes_) + group_size);
@@ -116,7 +116,7 @@ bool Test::RankAllowed(size_t group_size) const {
   return rank.first > rank.second;
 }
 
-void Test::DoAddNode(const NodeId& node_id, bool good, int attempts) {
+void Test::DoAddNode(const Identity& node_id, bool good, int attempts) {
   all_nodes_.emplace_back(node_id, good);
   LOG(kInfo) << "Added a " << (good ? "good" : "bad") << " node after " << attempts
              << " attempt(s) in a network of size " << all_nodes_.size() << '.';
@@ -129,10 +129,10 @@ void Test::AddNode(bool good) {
   int attempts{0};
   for (;;) {
     ++attempts;
-    NodeId node_id(RandomString(NodeId::kSize));
+    Identity node_id(MakeIdentity());
     std::partial_sort(std::begin(all_nodes_), std::begin(all_nodes_) + group_size,
                       std::end(all_nodes_), [&node_id](const Node& lhs, const Node& rhs) {
-      return NodeId::CloserToTarget(lhs.id, rhs.id, node_id);
+      return CloserToTarget(lhs.id, rhs.id, node_id);
     });
     UpdateRank(group_size);
     if (all_nodes_.size() > (config_.group_size * 4) && !RankAllowed(group_size))
@@ -153,7 +153,7 @@ void Test::InitialiseNetwork() {
   all_nodes_.clear();
   all_nodes_.reserve(config_.initial_good_count);
   // Add first node
-  DoAddNode(NodeId(RandomString(NodeId::kSize)), true, 1);
+  DoAddNode(MakeIdentity(), true, 1);
   // Add others
   for (size_t i(1); i < config_.initial_good_count; ++i)
     AddNode(true);
@@ -170,13 +170,11 @@ void Test::InitialiseNetwork() {
   total_attempts_ = 0;
 }
 
-std::vector<NodeId> Test::GetUniformlyDistributedTargetPoints() const {
+std::vector<Identity> Test::GetUniformlyDistributedTargetPoints() const {
   const size_t kStepCount(1024);
-  std::vector<NodeId> steps;
+  std::vector<Identity> steps;
   steps.reserve(kStepCount);
-  crypto::BigInt step_size(
-      (NodeId(std::string(NodeId::kSize, -1)).ToStringEncoded(NodeId::EncodingType::kHex) + "h")
-          .c_str());
+  crypto::BigInt step_size((hex::Encode(std::string(identity_size, -1)) + "h").c_str());
   step_size /= kStepCount;
   crypto::BigInt step(0l);
   for (size_t i(0); i < kStepCount; ++i) {
@@ -189,12 +187,12 @@ std::vector<NodeId> Test::GetUniformlyDistributedTargetPoints() const {
   return steps;
 }
 
-BadGroup Test::GetBadGroup(const NodeId& target_id) const {
+BadGroup Test::GetBadGroup(const Identity& target_id) const {
   std::vector<Node> bad_group{config_.group_size};
   // Get close group
   std::partial_sort_copy(std::begin(all_nodes_), std::end(all_nodes_), std::begin(bad_group),
                          std::end(bad_group), [&target_id](const Node& lhs, const Node& rhs) {
-    return NodeId::CloserToTarget(lhs.id, rhs.id, target_id);
+    return CloserToTarget(lhs.id, rhs.id, target_id);
   });
   auto is_bad([](const Node& node) { return !node.good; });
   // Count bad nodes in close group and return the group if majority are bad
@@ -207,7 +205,7 @@ BadGroup Test::GetBadGroup(const NodeId& target_id) const {
   return std::make_pair(target_id, std::move(bad_group));
 }
 
-std::vector<BadGroup> Test::InjectBadGroups(const std::vector<NodeId>& steps) {
+std::vector<BadGroup> Test::InjectBadGroups(const std::vector<Identity>& steps) {
   LOG(kSuccess) << "Adding bad nodes and checking for compromised groups...";
   std::vector<BadGroup> bad_groups;
   while (bad_groups.size() < config_.bad_group_count) {
@@ -272,10 +270,10 @@ void Test::CheckLinkedAddresses() const {
   while (attempts < config_.total_random_attempts) {
     bad_groups.clear();
     ++attempts;
-    NodeId target_id(RandomString(NodeId::kSize));
+    Identity target_id(MakeIdentity());
     for (size_t i(0); i < config_.bad_group_count; ++i) {
       if (i > 0)  // Hash previous target to get new linked one
-        target_id = NodeId(crypto::Hash<crypto::SHA512>(target_id.string()).string());
+        target_id = Identity(crypto::Hash<crypto::SHA512>(target_id.string()).string());
       auto bad_group(GetBadGroup(target_id));
       if (bad_group.second.empty())  // Not a bad group - start a new attempt
         break;

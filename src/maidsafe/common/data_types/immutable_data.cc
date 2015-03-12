@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -20,40 +20,34 @@
 
 #include <utility>
 
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 
 namespace maidsafe {
 
-ImmutableData::ImmutableData(const ImmutableData& other) : name_(other.name_), data_(other.data_) {}
+ImmutableData::ImmutableData(NonEmptyString value)
+    : Data(crypto::Hash<crypto::SHA512>(value)), value_(std::move(value)) {}
 
-ImmutableData::ImmutableData(ImmutableData&& other)
-    : name_(std::move(other.name_)), data_(std::move(other.data_)) {}
+ImmutableData::ImmutableData() = default;
 
-ImmutableData& ImmutableData::operator=(ImmutableData other) {
-  swap(*this, other);
+ImmutableData::ImmutableData(const ImmutableData&) = default;
+
+ImmutableData::ImmutableData(ImmutableData&& other) MAIDSAFE_NOEXCEPT
+    : Data(std::move(other)), value_(std::move(other.value_)) {}
+
+ImmutableData& ImmutableData::operator=(const ImmutableData&) = default;
+
+ImmutableData& ImmutableData::operator=(ImmutableData&& other) MAIDSAFE_NOEXCEPT{
+  Data::operator=(std::move(other));
+  value_ = std::move(other.value_);
   return *this;
 }
 
-ImmutableData::ImmutableData(const NonEmptyString& content)
-    : name_(crypto::Hash<crypto::SHA512>(content)), data_(content) {}
+ImmutableData::~ImmutableData() = default;
 
-ImmutableData::ImmutableData(Name name, serialised_type serialised_immutable_data)
-    : name_(std::move(name)), data_(std::move(serialised_immutable_data.data)) {
-  Validate();
-}
-
-void ImmutableData::Validate() const {
-  if (name_.value != crypto::Hash<crypto::SHA512>(data_))
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
-}
-
-ImmutableData::serialised_type ImmutableData::Serialise() const { return serialised_type(data_); }
-
-void swap(ImmutableData& lhs, ImmutableData& rhs) {
-  using std::swap;
-  swap(lhs.name_, rhs.name_);
-  swap(lhs.data_, rhs.data_);
+const NonEmptyString& ImmutableData::Value() const {
+  if (!IsInitialised())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+  return value_;
 }
 
 }  // namespace maidsafe

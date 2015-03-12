@@ -16,26 +16,26 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/common/sqlite3_wrapper.h"
+
 #include <mutex>
 #include <vector>
 
 #include "boost/filesystem/operations.hpp"
 
-#include "maidsafe/common/sqlite3_wrapper.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
 
 namespace fs = boost::filesystem;
 
 namespace maidsafe {
-namespace test {
 
+namespace test {
 
 TEST(Sqlite3WrapperTest, FUNC_ReadInvalidDatabase) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   fs::path test_db(*test_path / "test_db-file");
-  std::string file_content(RandomString(3000 + RandomUint32() % 1000));
+  std::vector<byte> file_content(RandomBytes(3000, 4000));
   ASSERT_FALSE(fs::exists(test_db));
   EXPECT_TRUE(WriteFile(test_db, file_content));
   EXPECT_TRUE(fs::exists(test_db));
@@ -51,7 +51,7 @@ TEST(Sqlite3WrapperTest, FUNC_WriteEmptyDatabase) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_TestUtils"));
   fs::path test_db(*test_path / "test_db-file");
   ASSERT_FALSE(fs::exists(test_db));
-  EXPECT_TRUE(WriteFile(test_db, ""));
+  EXPECT_TRUE(WriteFile(test_db, std::vector<byte>()));
   EXPECT_TRUE(fs::exists(test_db));
 
   sqlite::Database database(test_db, sqlite::Mode::kReadWriteCreate);

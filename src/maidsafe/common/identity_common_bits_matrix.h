@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_NODE_ID_COMMON_BITS_MATRIX_H_
-#define MAIDSAFE_COMMON_NODE_ID_COMMON_BITS_MATRIX_H_
+#ifndef MAIDSAFE_COMMON_IDENTITY_COMMON_BITS_MATRIX_H_
+#define MAIDSAFE_COMMON_IDENTITY_COMMON_BITS_MATRIX_H_
 
 namespace maidsafe {
 
@@ -286,4 +286,4 @@ const int kCommonBits[256][256] = {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_NODE_ID_COMMON_BITS_MATRIX_H_
+#endif  // MAIDSAFE_COMMON_IDENTITY_COMMON_BITS_MATRIX_H_

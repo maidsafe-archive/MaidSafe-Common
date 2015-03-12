@@ -16,32 +16,25 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_SAFE_ENCRYPT_CEREAL_H_
-#define MAIDSAFE_COMMON_SAFE_ENCRYPT_CEREAL_H_
+#ifndef MAIDSAFE_COMMON_HASH_HASH_TUPLE_H_
+#define MAIDSAFE_COMMON_HASH_HASH_TUPLE_H_
 
-#include <string>
+#include <functional>
+#include <tuple>
+#include <type_traits>
+
+#include "boost/fusion/adapted/std_tuple.hpp"
+#include "boost/fusion/include/for_each.hpp"
 
 namespace maidsafe {
 
-namespace detail {
-
-struct SafeEncryptCereal {
-  SafeEncryptCereal()
-    : key_ {},
-      data_ {}
-  { }
-
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(key_, data_);
-  }
-
-  std::string key_;
-  std::string data_;
-};
-
-}  // namespace detail
+// Cereal uses NVP, which we don't have support for. This is called
+// if the tuple cannot be hashed over in one shot.
+template <typename HashAlgorithm, typename... Elements>
+void HashAppend(HashAlgorithm& hash, const std::tuple<Elements...>& value) {
+  boost::fusion::for_each(value, std::ref(hash));
+}
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_SAFE_ENCRYPT_CEREAL_H_
+#endif  // MAIDSAFE_COMMON_HASH_HASH_TUPLE_H_

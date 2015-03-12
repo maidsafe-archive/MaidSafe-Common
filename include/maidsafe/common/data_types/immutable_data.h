@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -19,37 +19,55 @@
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_
 
-#include <algorithm>
+#include "cereal/types/base_class.hpp"
+#include "cereal/types/polymorphic.hpp"
 
+#include "maidsafe/common/config.h"
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/tagged_value.h"
-#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data.h"
+// We must include all archives which this polymorphic type will be used with *before* the
+// CEREAL_REGISTER_TYPE call below.
+#include "maidsafe/common/serialisation/binary_archive.h"
 
 namespace maidsafe {
 
-class ImmutableData {
+class ImmutableData : public Data {
  public:
-  typedef detail::Name<ImmutableData> Name;
-  typedef detail::Tag<DataTagValue::kImmutableDataValue> Tag;
-  typedef TaggedValue<NonEmptyString, ImmutableData> serialised_type;
+  explicit ImmutableData(NonEmptyString value);
 
-  ImmutableData(const ImmutableData& other);
-  ImmutableData(ImmutableData&& other);
-  ImmutableData& operator=(ImmutableData other);
+  ImmutableData();
+  ImmutableData(const ImmutableData&);
+  ImmutableData(ImmutableData&& other) MAIDSAFE_NOEXCEPT;
+  ImmutableData& operator=(const ImmutableData&);
+  ImmutableData& operator=(ImmutableData&& other) MAIDSAFE_NOEXCEPT;
+  virtual ~ImmutableData() final;
 
-  explicit ImmutableData(const NonEmptyString& content);
-  ImmutableData(Name name, serialised_type serialised_immutable_data);
-  serialised_type Serialise() const;
+  const NonEmptyString& Value() const;
 
-  Name name() const { return name_; }
-  NonEmptyString data() const { return data_; }
+  template <typename Archive>
+  Archive& save(Archive& archive) const {
+    return archive(cereal::base_class<Data>(this), value_);
+  }
 
-  friend void swap(ImmutableData& lhs, ImmutableData& rhs);
+  template <typename Archive>
+  Archive& load(Archive& archive) {
+    try {
+      archive(cereal::base_class<Data>(this), value_);
+      if (name_ != crypto::Hash<crypto::SHA512>(value_))
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Error parsing ImmutableData: " << boost::diagnostic_information(e);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+    return archive;
+  }
 
  private:
-  void Validate() const;
-  Name name_;
-  NonEmptyString data_;
+  virtual std::uint32_t ThisTypeId() const final { return 0; }
+
+  NonEmptyString value_;
 };
 
 template <>
@@ -59,5 +77,7 @@ template <>
 struct is_unique_on_network<ImmutableData> : public std::false_type {};
 
 }  // namespace maidsafe
+
+CEREAL_REGISTER_TYPE(maidsafe::ImmutableData)
 
 #endif  // MAIDSAFE_COMMON_DATA_TYPES_IMMUTABLE_DATA_H_

@@ -31,14 +31,14 @@ namespace maidsafe {
 MenuItem::MenuItem(std::string name, Functor operation)
     : kParent_(nullptr), kName_(std::move(name)), kOperation_(std::move(operation)), children_() {
   if (kName_.empty())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 }
 
 MenuItem::MenuItem(MenuItem* parent, std::string name, Functor operation)
     : kParent_(parent), kName_(std::move(name)), kOperation_(std::move(operation)), children_() {
   assert(kParent_);
   if (kName_.empty())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
 }
 
 MenuItem* MenuItem::AddChildItem(std::string name, Functor operation) {
@@ -46,7 +46,7 @@ MenuItem* MenuItem::AddChildItem(std::string name, Functor operation) {
           std::begin(children_), std::end(children_),
           [&name](const std::unique_ptr<MenuItem>& child) { return name == child->kName_; })) {
     LOG(kError) << "This menu item already has a child with the given name.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   children_.emplace_back(
       std::unique_ptr<MenuItem>{new MenuItem{this, std::move(name), std::move(operation)}});

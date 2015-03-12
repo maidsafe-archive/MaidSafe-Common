@@ -19,8 +19,9 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/common/ipc.h"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/encode.h"
+#include "maidsafe/common/ipc.h"
 #include "maidsafe/common/utils.h"
 
 int main(int argc, char* argv[]) {
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]) {
   if (argc != args_required)
     return -1;
 
-  const std::string TestName(maidsafe::HexDecode(argv[1]));
+  const std::string TestName(maidsafe::hex::DecodeToString(argv[1]));
   const std::string TestAnswer(argv[3]);
   const int TestNumber(std::stoi(std::string(argv[2])));
 
@@ -39,7 +40,7 @@ int main(int argc, char* argv[]) {
       answer += vec_string;
 
     if (TestAnswer !=
-        maidsafe::HexEncode(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(answer).string())) {
+        maidsafe::hex::Encode(maidsafe::crypto::Hash<maidsafe::crypto::SHA512>(answer).string())) {
       return -2;
     }
   } catch (...) {

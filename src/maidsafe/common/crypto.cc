@@ -41,23 +41,19 @@ void ValidateDispersalArgs(int32_t threshold, int32_t number_of_shares) {
     LOG(kError) << "The threshold (" << threshold
                 << ") must be less than or equal to the number of shares (" << number_of_shares
                 << ").";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   if (number_of_shares < 3) {
     LOG(kError) << "The number of shares (" << number_of_shares << ") must be at least 3.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   if (threshold < 2) {
     LOG(kError) << "The threshold (" << threshold << ") must be at least 2.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
 }
 
 }  // unnamed namespace
-
-const uint16_t kMaxCompressionLevel = 9;
-const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
-const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
 
 CryptoPP::RandomNumberGenerator& random_number_generator() {
   if (!g_random_number_generator.get())
@@ -65,41 +61,19 @@ CryptoPP::RandomNumberGenerator& random_number_generator() {
   return *g_random_number_generator;
 }
 
-std::string XOR(const std::string& first, const std::string& second) {
-  size_t common_size(first.size());
-  if ((common_size != second.size()) || (common_size == 0)) {
-    LOG(kWarning) << "Size mismatch or zero.";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unable_to_handle_request));
-  }
-
-  std::string result(common_size, 0);
-  auto first_itr(std::begin(first));
-  auto second_itr(std::begin(second));
-  auto result_itr(std::begin(result));
-  while (result_itr != std::end(result)) {
-    *result_itr = *first_itr ^ *second_itr;
-    ++first_itr;
-    ++second_itr;
-    ++result_itr;
-  }
-
-  return result;
-}
-
-CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
-                       const AES256InitialisationVector& initialisation_vector) {
-  if (!input.IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+CipherText SymmEncrypt(const PlainText& input, const AES256KeyAndIV& key_and_iv) {
+  if (!input.IsInitialised() || !key_and_iv.IsInitialised()) {
     LOG(kError) << "SymmEncrypt one member of class uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   std::string result;
   try {
     CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Encryption encryptor;
-    encryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-                           reinterpret_cast<const byte*>(initialisation_vector.string().data()),
-                           initialisation_vector.string().size());
-    CryptoPP::StringSource(input.string(), true, new CryptoPP::AuthenticatedEncryptionFilter(
-                                                     encryptor, new CryptoPP::StringSink(result)));
+    encryptor.SetKeyWithIV(key_and_iv.data(), AES256_KeySize, key_and_iv.data() + AES256_KeySize,
+                           AES256_IVSize);
+    CryptoPP::ArraySource(
+        input.data(), input.size(), true,
+        new CryptoPP::AuthenticatedEncryptionFilter(encryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed symmetric encryption: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
@@ -107,20 +81,19 @@ CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
   return CipherText(NonEmptyString(result));
 }
 
-PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
-                      const AES256InitialisationVector& initialisation_vector) {
-  if (!input->IsInitialised() || !key.IsInitialised() || !initialisation_vector.IsInitialised()) {
+PlainText SymmDecrypt(const CipherText& input, const AES256KeyAndIV& key_and_iv) {
+  if (!input->IsInitialised() || !key_and_iv.IsInitialised()) {
     LOG(kError) << "SymmEncrypt one of class uninitialised";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   std::string result;
   try {
     CryptoPP::GCM<CryptoPP::AES, CryptoPP::GCM_64K_Tables>::Decryption decryptor;
-    decryptor.SetKeyWithIV(reinterpret_cast<const byte*>(key.string().data()), key.string().size(),
-                           reinterpret_cast<const byte*>(initialisation_vector.string().data()),
-                           initialisation_vector.string().size());
-    CryptoPP::StringSource(input->string(), true, new CryptoPP::AuthenticatedDecryptionFilter(
-                                                      decryptor, new CryptoPP::StringSink(result)));
+    decryptor.SetKeyWithIV(key_and_iv.data(), AES256_KeySize, key_and_iv.data() + AES256_KeySize,
+                           AES256_IVSize);
+    CryptoPP::ArraySource(
+        input->data(), input->size(), true,
+        new CryptoPP::AuthenticatedDecryptionFilter(decryptor, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception&) {
     LOG(kError) << "Failed symmetric decryption: "
                 << boost::current_exception_diagnostic_information(true);
@@ -133,7 +106,7 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
   if (compression_level > kMaxCompressionLevel) {
     LOG(kError) << "Requested compression level of " << compression_level << " is above the max of "
                 << kMaxCompressionLevel;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   if (!input.IsInitialised()) {
     LOG(kError) << "Compress input uninitialised";
@@ -142,8 +115,8 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
 
   std::string result;
   try {
-    CryptoPP::StringSource(input.string(), true,
-                           new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
+    CryptoPP::ArraySource(input.data(), input.size(), true,
+                          new CryptoPP::Gzip(new CryptoPP::StringSink(result), compression_level));
   } catch (const CryptoPP::Exception&) {
     LOG(kError) << "Failed compressing: " << boost::current_exception_diagnostic_information(true);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::compression_error));
@@ -158,8 +131,8 @@ UncompressedText Uncompress(const CompressedText& input) {
   }
   std::string result;
   try {
-    CryptoPP::StringSource(input->string(), true,
-                           new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
+    CryptoPP::ArraySource(input->data(), input->size(), true,
+                          new CryptoPP::Gunzip(new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Failed uncompressing: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uncompression_error));
@@ -189,8 +162,7 @@ std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_sh
   return out_strings;
 }
 
-std::vector<std::vector<byte>> SecretShareData(int32_t threshold, int32_t number_of_shares,
-                                               const std::vector<byte>& data) {
+DataParts SecretShareData(int32_t threshold, int32_t number_of_shares, const PlainText& data) {
   ValidateDispersalArgs(threshold, number_of_shares);
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::ArraySource source(data.data(), data.size(), false,
@@ -210,37 +182,19 @@ std::vector<std::vector<byte>> SecretShareData(int32_t threshold, int32_t number
     channel_switch->AddRoute(channel, *array_sink[i], CryptoPP::DEFAULT_CHANNEL);
   }
   source.PumpAll();
-  for (int i = 0; i < number_of_shares; ++i)
+
+  DataParts result;
+  for (int i = 0; i < number_of_shares; ++i) {
     out_vec[i].resize(array_sink[i]->TotalPutLength());
-  return out_vec;
-}
-
-std::string SecretRecoverData(const std::vector<std::string>& in_strings) {
-  size_t num_to_check = in_strings.size();
-  std::string data;
-
-  CryptoPP::SecretRecovery recovery(static_cast<int>(num_to_check), new CryptoPP::StringSink(data));
-  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
-  CryptoPP::SecByteBlock channel(4);
-
-  for (size_t i = 0; i < num_to_check; ++i) {
-    string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
-    string_sources[i]->Pump(4);
-    string_sources[i]->Get(channel, 4);
-    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
-        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
+    result.emplace_back(std::move(out_vec[i]));
   }
-
-  for (size_t i = 0; i < num_to_check; ++i)
-    string_sources[i]->PumpAll();
-
-  return data;
+  return result;
 }
 
-std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arrays) {
-  size_t num_to_check = in_arrays.size();
+PlainText SecretRecoverData(const DataParts& parts) {
+  size_t num_to_check = parts.size();
   // Safe to subtract 4 since each piece is prefixed with a byte piece number
-  auto data_size(num_to_check * in_arrays.front().size());
+  auto data_size(num_to_check * parts.front().size());
   std::vector<byte> data(data_size);
 
   auto array_sink = new CryptoPP::ArraySink(data.data(), data_size);
@@ -250,8 +204,7 @@ std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arr
   CryptoPP::SecByteBlock channel(4);
 
   for (size_t i = 0; i < num_to_check; ++i) {
-    array_sources[i].reset(
-        new CryptoPP::ArraySource(in_arrays[i].data(), in_arrays[i].size(), false));
+    array_sources[i].reset(new CryptoPP::ArraySource(parts[i].data(), parts[i].size(), false));
     array_sources[i]->Pump(4);
     array_sources[i]->Get(channel, 4);
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
@@ -262,36 +215,10 @@ std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arr
     array_sources[i]->PumpAll();
 
   data.resize(array_sink->TotalPutLength());
-  std::string ffff(data.begin(), data.end());
-  (void)ffff;
-
-  return data;
+  return PlainText(std::move(data));
 }
 
-std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
-                                      const std::string& data) {
-  ValidateDispersalArgs(threshold, number_of_shares);
-  auto channel_switch = new CryptoPP::ChannelSwitch;
-  CryptoPP::StringSource source(
-      data, false, new CryptoPP::InformationDispersal(threshold, number_of_shares, channel_switch));
-
-  CryptoPP::vector_member_ptrs<CryptoPP::StringSink> string_sink(number_of_shares);
-  std::vector<std::string> out_strings(number_of_shares);
-  std::string channel;
-
-  for (int i = 0; i < number_of_shares; ++i) {
-    string_sink[i].reset(new CryptoPP::StringSink(out_strings[i]));
-    channel = CryptoPP::WordToString<CryptoPP::word32>(i);
-    string_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
-    // see http://www.cryptopp.com/wiki/ChannelSwitch
-    channel_switch->AddRoute(channel, *string_sink[i], CryptoPP::DEFAULT_CHANNEL);
-  }
-  source.PumpAll();
-  return out_strings;
-}
-
-std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of_shares,
-                                            const std::vector<byte>& data) {
+DataParts InfoDisperse(int32_t threshold, int32_t number_of_shares, const PlainText& data) {
   ValidateDispersalArgs(threshold, number_of_shares);
   auto channel_switch = new CryptoPP::ChannelSwitch;
   CryptoPP::ArraySource source(
@@ -303,7 +230,7 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
   std::string channel;
 
   for (int i = 0; i < number_of_shares; ++i) {
-    out_vec[i].resize(data.size());
+    out_vec[i].resize(data.size() + 8);  // for padding
     array_sink[i].reset(new CryptoPP::ArraySink(out_vec[i].data(), out_vec[i].size()));
     channel = CryptoPP::WordToString<CryptoPP::word32>(i);
     array_sink[i]->Put(reinterpret_cast<const byte*>(channel.data()), 4);
@@ -311,37 +238,19 @@ std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of
     channel_switch->AddRoute(channel, *array_sink[i], CryptoPP::DEFAULT_CHANNEL);
   }
   source.PumpAll();
-  for (int i = 0; i < number_of_shares; ++i)
+
+  DataParts result;
+  for (int i = 0; i < number_of_shares; ++i) {
     out_vec[i].resize(array_sink[i]->TotalPutLength());
-  return out_vec;
-}
-
-std::string InfoRetrieve(const std::vector<std::string>& in_strings) {
-  std::string data;
-  size_t num_to_check = in_strings.size();
-  CryptoPP::InformationRecovery recovery(static_cast<int>(num_to_check),
-                                         new CryptoPP::StringSink(data));
-  CryptoPP::vector_member_ptrs<CryptoPP::StringSource> string_sources(num_to_check);
-  CryptoPP::SecByteBlock channel(4);
-
-  for (size_t i = 0; i < num_to_check; ++i) {
-    string_sources[i].reset(new CryptoPP::StringSource(in_strings[i], false));
-    string_sources[i]->Pump(4);
-    string_sources[i]->Get(channel, 4);
-    string_sources[i]->Attach(new CryptoPP::ChannelSwitch(
-        recovery, std::string(reinterpret_cast<char*>(channel.begin()), 4)));
+    result.emplace_back(std::move(out_vec[i]));
   }
-
-  for (size_t i = 0; i < num_to_check; ++i)
-    string_sources[i]->PumpAll();
-
-  return data;
+  return result;
 }
 
-std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays) {
-  size_t num_to_check = in_arrays.size();
+PlainText InfoRetrieve(const DataParts& parts) {
+  size_t num_to_check = parts.size();
   // Safe to subtract 4 since each piece is prefixed with a byte piece number
-  auto data_size(num_to_check * (in_arrays.front().size() - 4));
+  auto data_size(num_to_check * (parts.front().size() - 4));
   std::vector<byte> data(data_size);
 
   auto array_sink = new CryptoPP::ArraySink(data.data(), data_size);
@@ -350,8 +259,7 @@ std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays) 
   CryptoPP::SecByteBlock channel(4);
 
   for (size_t i = 0; i < num_to_check; ++i) {
-    array_sources[i].reset(
-        new CryptoPP::ArraySource(in_arrays[i].data(), in_arrays[i].size(), false));
+    array_sources[i].reset(new CryptoPP::ArraySource(parts[i].data(), parts[i].size(), false));
     array_sources[i]->Pump(4);
     array_sources[i]->Get(channel, 4);
     array_sources[i]->Attach(new CryptoPP::ChannelSwitch(
@@ -362,19 +270,7 @@ std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays) 
     array_sources[i]->PumpAll();
 
   data.resize(array_sink->TotalPutLength());
-  return data;
-}
-
-CipherText ObfuscateData(const Identity& name, const PlainText& plain_text) {
-  AES256Key key(name.string().substr(0, AES256_KeySize));
-  AES256InitialisationVector iv(name.string().substr(AES256_KeySize, AES256_IVSize));
-  return SymmEncrypt(plain_text, key, iv);
-}
-
-PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text) {
-  AES256Key key(name.string().substr(0, AES256_KeySize));
-  AES256InitialisationVector iv(name.string().substr(AES256_KeySize, AES256_IVSize));
-  return SymmDecrypt(cipher_text, key, iv);
+  return PlainText(std::move(data));
 }
 
 }  // namespace crypto

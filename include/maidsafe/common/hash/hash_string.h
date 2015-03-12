@@ -16,20 +16,19 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_TYPE_CHECK_H_
-#define MAIDSAFE_COMMON_TYPE_CHECK_H_
+#ifndef MAIDSAFE_COMMON_HASH_HASH_STRING_H_
+#define MAIDSAFE_COMMON_HASH_HASH_STRING_H_
 
+#include <string>
 #include <type_traits>
+
+#include "maidsafe/common/hash/hash_data_range.h"
 
 namespace maidsafe {
 
-template <typename T>
-struct is_regular
-    : std::integral_constant<
-          bool, std::is_default_constructible<T>::value && std::is_copy_constructible<T>::value &&
-                    std::is_move_constructible<T>::value && std::is_copy_assignable<T>::value &&
-                    std::is_move_assignable<T>::value> {};
+template <typename CharT, typename Traits, typename Allocator>
+struct IsHashableDataRange<std::basic_string<CharT, Traits, Allocator>> : std::true_type {};
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_COMMON_TYPE_CHECK_H_
+#endif  // MAIDSAFE_COMMON_HASH_HASH_STRING_H_

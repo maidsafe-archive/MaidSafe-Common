@@ -20,7 +20,9 @@
 #define MAIDSAFE_COMMON_CONVERT_H_
 
 #include <cassert>
+#include <string>
 #include <system_error>
+#include <vector>
 
 #include "asio/ip/address.hpp"
 #include "asio/ip/address_v4.hpp"
@@ -90,6 +92,14 @@ inline boost::asio::ip::udp::endpoint ToBoost(const asio::ip::udp::endpoint& e) 
 
 inline asio::ip::udp::endpoint ToAsio(const boost::asio::ip::udp::endpoint& e) {
   return asio::ip::udp::endpoint(ToAsio(e.address()), e.port());
+}
+
+inline std::vector<unsigned char> ToByteVector(const std::string& id_as_string) {
+  return std::vector<unsigned char>(id_as_string.begin(), id_as_string.end());
+}
+
+inline std::string ToString(const std::vector<unsigned char>& id_as_vector_of_bytes) {
+  return std::string(id_as_vector_of_bytes.begin(), id_as_vector_of_bytes.end());
 }
 
 }  // namespace convert

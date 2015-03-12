@@ -83,6 +83,7 @@ For the purposes of deleting versions (see 'DeleteBranchUntilFork' below), the b
 #include "boost/optional/optional.hpp"
 
 #include "maidsafe/common/config.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/immutable_data.h"
@@ -104,10 +105,10 @@ class StructuredDataVersions {
  public:
   struct VersionName {
     using Index = uint64_t;
-    using Id = ImmutableData::Name;
+    using Id = Identity;
 
     VersionName();
-    VersionName(Index index_in, ImmutableData::Name id_in);
+    VersionName(Index index_in, Id id_in);
     VersionName(const VersionName&) = default;
     VersionName(VersionName&& other) MAIDSAFE_NOEXCEPT;
     VersionName& operator=(VersionName other);
@@ -127,7 +128,7 @@ class StructuredDataVersions {
 
   StructuredDataVersions() = delete;
   // Construct with a limit of 'max_versions' different versions and 'max_branches' different
-  // branches (or "tips of trees").  Both must be >= 1 otherwise CommonErrors::invalid_parameter is
+  // branches (or "tips of trees").  Both must be >= 1 otherwise CommonErrors::invalid_argument is
   // thrown.
   StructuredDataVersions(uint32_t max_versions, uint32_t max_branches);
   StructuredDataVersions(const StructuredDataVersions&) = delete;
@@ -156,15 +157,15 @@ class StructuredDataVersions {
   //   the child with the lowest VersionName will be chosen as the new root.  If the root has no
   //   children, the orphan with the lowest VersionName will be chosen as the new root.
   // * If 'old_version.id' is uninitialised and the existing root's parent is uninitialised (i.e.
-  //   two roots have deliberately been passed), CommonErrors::invalid_parameter is thrown.
+  //   two roots have deliberately been passed), CommonErrors::invalid_argument is thrown.
   // * If adding the version causes 'max_branches_' to be exceeded, the root is considered for
   //   deletion.  If deletion avoids exceeding 'max_branches_', it's done (this would only be the
   //   case where root itself fully comprised a single branch, i.e. it had no children), otherwise
   //   the root is left as is, and CommonErrors::cannot_exceed_limit is thrown.
   // * If 'new_version' already exists but with a different 'old_version' parent,
-  //   CommonErrors::invalid_parameter is thrown.
+  //   CommonErrors::invalid_argument is thrown.
   // * If inserting the new version causes a circular chain parent->child->parent,
-  //   CommonErrors::invalid_parameter is thrown.
+  //   CommonErrors::invalid_argument is thrown.
   boost::optional<VersionName> Put(const VersionName& old_version, const VersionName& new_version);
   // Returns all the "tips of trees" ordered from highest to lowest.
   std::vector<VersionName> Get() const;
@@ -172,7 +173,7 @@ class StructuredDataVersions {
   // root or the orphan at the start of that branch.  e.g., in the diagram above, GetBranch(4-jjj)
   // would return <4-jjj, 3-ggg, 2-ddd, 1-bbb, 0-aaa>.  GetBranch(5-nnn) would return
   // <5-nnn, 4-kkk, 3-ggg, 2-ddd, 1-bbb, 0-aaa>.  GetBranch(8-zzz) would return <8-zzz, 7-yyy>.
-  // * If 'branch_tip' is not a "tip of tree" but does exist, CommonErrors::invalid_parameter is
+  // * If 'branch_tip' is not a "tip of tree" but does exist, CommonErrors::invalid_argument is
   //   thrown.
   // * If 'branch_tip' doesn't exist, CommonErrors::no_such_element is thrown.
   std::vector<VersionName> GetBranch(const VersionName& branch_tip) const;
@@ -180,7 +181,7 @@ class StructuredDataVersions {
   // has > 1 child, or through to (including) the first version which has 0 children.  e.g. in the
   // diagram, DeleteBranchUntilFork(4-jjj) would erase 4-jjj only.  DeleteBranchUntilFork(5-nnn)
   // would erase <5-nnn, 4-kkk>.  DeleteBranchUntilFork(8-zzz) would erase <8-zzz, 7-yyy>.
-  // * If 'branch_tip' is not a "tip of tree" but does exist, CommonErrors::invalid_parameter is
+  // * If 'branch_tip' is not a "tip of tree" but does exist, CommonErrors::invalid_argument is
   //   thrown.
   // * If 'branch_tip' doesn't exist, CommonErrors::no_such_element is thrown.
   void DeleteBranchUntilFork(const VersionName& branch_tip);

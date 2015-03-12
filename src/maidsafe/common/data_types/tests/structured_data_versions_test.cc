@@ -24,6 +24,8 @@
 
 #include "boost/optional/optional_io.hpp"
 
+#include "maidsafe/common/convert.h"
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -55,12 +57,13 @@ namespace {
 using VersionName = StructuredDataVersions::VersionName;
 using Branch = std::vector<VersionName>;
 
-VersionName::Id RandomId() { return VersionName::Id{Identity{RandomAlphaNumericString(64)}}; }
+VersionName::Id RandomId() { return Identity{RandomAlphaNumericBytes(identity_size)}; }
 
 std::string DisplayVersion(const VersionName& version, bool to_hex) {
   return std::to_string(version.index) + "-" +
-         (version.id->IsInitialised()
-              ? (to_hex ? HexEncode(version.id.value) : version.id->string()).substr(0, 3)
+         (version.id.IsInitialised()
+              ? (to_hex ? hex::Encode(version.id) : convert::ToString(version.id.string()))
+                    .substr(0, 3)
               : ("Uninitialised"));
 }
 
@@ -71,23 +74,23 @@ std::string DisplayVersions(const Branch& versions, bool to_hex) {
   return result;
 }
 
-const VersionName v0_aaa{0, ImmutableData::Name{Identity{std::string(64, 'a')}}};
-const VersionName v1_bbb{1, ImmutableData::Name{Identity{std::string(64, 'b')}}};
-const VersionName v2_ccc{2, ImmutableData::Name{Identity{std::string(64, 'c')}}};
-const VersionName v2_ddd{2, ImmutableData::Name{Identity{std::string(64, 'd')}}};
-const VersionName v2_eee{2, ImmutableData::Name{Identity{std::string(64, 'e')}}};
-const VersionName v3_fff{3, ImmutableData::Name{Identity{std::string(64, 'f')}}};
-const VersionName v3_ggg{3, ImmutableData::Name{Identity{std::string(64, 'g')}}};
-const VersionName v3_hhh{3, ImmutableData::Name{Identity{std::string(64, 'h')}}};
-const VersionName v4_iii{4, ImmutableData::Name{Identity{std::string(64, 'i')}}};
-const VersionName v4_jjj{4, ImmutableData::Name{Identity{std::string(64, 'j')}}};
-const VersionName v4_kkk{4, ImmutableData::Name{Identity{std::string(64, 'k')}}};
-const VersionName v4_lll{4, ImmutableData::Name{Identity{std::string(64, 'l')}}};
-const VersionName v4_mmm{4, ImmutableData::Name{Identity{std::string(64, 'm')}}};
-const VersionName v5_nnn{5, ImmutableData::Name{Identity{std::string(64, 'n')}}};
-const VersionName absent{6, ImmutableData::Name{Identity{std::string(64, 'x')}}};
-const VersionName v7_yyy{7, ImmutableData::Name{Identity{std::string(64, 'y')}}};
-const VersionName v8_zzz{8, ImmutableData::Name{Identity{std::string(64, 'z')}}};
+const VersionName v0_aaa{0, Identity{std::string(64, 'a')}};
+const VersionName v1_bbb{1, Identity{std::string(64, 'b')}};
+const VersionName v2_ccc{2, Identity{std::string(64, 'c')}};
+const VersionName v2_ddd{2, Identity{std::string(64, 'd')}};
+const VersionName v2_eee{2, Identity{std::string(64, 'e')}};
+const VersionName v3_fff{3, Identity{std::string(64, 'f')}};
+const VersionName v3_ggg{3, Identity{std::string(64, 'g')}};
+const VersionName v3_hhh{3, Identity{std::string(64, 'h')}};
+const VersionName v4_iii{4, Identity{std::string(64, 'i')}};
+const VersionName v4_jjj{4, Identity{std::string(64, 'j')}};
+const VersionName v4_kkk{4, Identity{std::string(64, 'k')}};
+const VersionName v4_lll{4, Identity{std::string(64, 'l')}};
+const VersionName v4_mmm{4, Identity{std::string(64, 'm')}};
+const VersionName v5_nnn{5, Identity{std::string(64, 'n')}};
+const VersionName absent{6, Identity{std::string(64, 'x')}};
+const VersionName v7_yyy{7, Identity{std::string(64, 'y')}};
+const VersionName v8_zzz{8, Identity{std::string(64, 'z')}};
 
 void ConstructAsDiagram(StructuredDataVersions& versions, bool shuffle_order_of_puts = true) {
   /*
@@ -207,7 +210,7 @@ TEST(StructuredDataVersionsTest, BEH_VersionName) {
   // Default c'tor
   const VersionName defaulted;
   EXPECT_EQ(std::numeric_limits<VersionName::Index>::max(), defaulted.index);
-  EXPECT_FALSE(defaulted.id->IsInitialised());
+  EXPECT_FALSE(defaulted.id.IsInitialised());
   EXPECT_FALSE(defaulted.forking_child_count);
 
   // Index and ID c'tor
@@ -225,7 +228,7 @@ TEST(StructuredDataVersionsTest, BEH_VersionName) {
   VersionName swapped;
   swap(version, swapped);
   EXPECT_EQ(std::numeric_limits<VersionName::Index>::max(), version.index);
-  EXPECT_FALSE(version.id->IsInitialised());
+  EXPECT_FALSE(version.id.IsInitialised());
   EXPECT_FALSE(version.forking_child_count);
   EXPECT_EQ(index, swapped.index);
   EXPECT_EQ(id, swapped.id);
@@ -273,12 +276,12 @@ TEST(StructuredDataVersionsTest, BEH_VersionName) {
 
   copied = defaulted;
   EXPECT_EQ(std::numeric_limits<VersionName::Index>::max(), copied.index);
-  EXPECT_FALSE(copied.id->IsInitialised());
+  EXPECT_FALSE(copied.id.IsInitialised());
   EXPECT_FALSE(copied.forking_child_count);
 
   moved = std::move(copied);
   EXPECT_EQ(std::numeric_limits<VersionName::Index>::max(), moved.index);
-  EXPECT_FALSE(moved.id->IsInitialised());
+  EXPECT_FALSE(moved.id.IsInitialised());
   EXPECT_FALSE(moved.forking_child_count);
 
   // Serialise and parse, with and without forking_child_count
@@ -338,7 +341,7 @@ TEST(StructuredDataVersionsTest, BEH_GetBranch) {
   try {
     versions.GetBranch(v0_aaa);
   } catch (const common_error& e) {
-    EXPECT_EQ(make_error_code(CommonErrors::invalid_parameter), e.code());
+    EXPECT_EQ(make_error_code(CommonErrors::invalid_argument), e.code());
   }
 
   // Check for version which doesn't exist
@@ -393,7 +396,7 @@ TEST(StructuredDataVersionsTest, BEH_Put) {
   EXPECT_TRUE(Equivalent(versions, clone));
 
   // Put a valid new version, which should cause the root to be popped
-  const VersionName v5_ooo{5, ImmutableData::Name{Identity{std::string(64, '0')}}};
+  const VersionName v5_ooo{5, Identity{std::string(64, '0')}};
   EXPECT_NO_THROW(popped_version = versions.Put(v4_jjj, v5_ooo));
   ASSERT_TRUE(!!popped_version);
   EXPECT_EQ(v0_aaa, *popped_version);
@@ -403,7 +406,7 @@ TEST(StructuredDataVersionsTest, BEH_Put) {
 
   // Another two valid puts should cause 1-bbb then 2-ccc to get popped.  2-ccc should be chosen
   // over 2-ddd or 2-eee since it is the lowest version name.
-  const VersionName v5_ppp{5, ImmutableData::Name{Identity{std::string(64, 'p')}}};
+  const VersionName v5_ppp{5, Identity{std::string(64, 'p')}};
   EXPECT_NO_THROW(popped_version = versions.Put(v4_lll, v5_ppp));
   ASSERT_TRUE(!!popped_version);
   EXPECT_EQ(v1_bbb, *popped_version);
@@ -411,7 +414,7 @@ TEST(StructuredDataVersionsTest, BEH_Put) {
   clone.Put(v4_lll, v5_ppp);
   EXPECT_TRUE(Equivalent(versions, clone));
 
-  const VersionName v5_qqq{5, ImmutableData::Name{Identity{std::string(64, 'q')}}};
+  const VersionName v5_qqq{5, Identity{std::string(64, 'q')}};
   EXPECT_NO_THROW(popped_version = versions.Put(v4_mmm, v5_qqq));
   ASSERT_TRUE(!!popped_version);
   EXPECT_EQ(v2_ccc, *popped_version);
@@ -440,7 +443,7 @@ TEST(StructuredDataVersionsTest, BEH_Put) {
   EXPECT_TRUE(CheckBranch(versions, v5_qqq, v4_mmm, v3_hhh, v2_eee));
 
   // Check we can't create a new branch since we're at the limit of branches
-  const VersionName v6_rrr{6, ImmutableData::Name{Identity{std::string(64, 'r')}}};
+  const VersionName v6_rrr{6, Identity{std::string(64, 'r')}};
   EXPECT_THROW(versions.Put(v4_jjj, v6_rrr), common_error);
   EXPECT_TRUE(Equivalent(versions, clone));
 
@@ -454,7 +457,7 @@ TEST(StructuredDataVersionsTest, BEH_Put) {
 
   // Check we can now create a new branch even though we're at the limit of branches, since root
   // will be popped meaning we won't exceed the branch limit.
-  const VersionName v7_sss{7, ImmutableData::Name{Identity{std::string(64, 's')}}};
+  const VersionName v7_sss{7, Identity{std::string(64, 's')}};
   EXPECT_NO_THROW(popped_version = versions.Put(absent, v7_sss));
   ASSERT_TRUE(!!popped_version);
   EXPECT_EQ(v4_iii, *popped_version);
@@ -463,7 +466,7 @@ TEST(StructuredDataVersionsTest, BEH_Put) {
   EXPECT_TRUE(Equivalent(versions, clone));
 
   // Confirm the new root is 2-ddd by adding another version and checking 2-ddd is popped
-  const VersionName v8_ttt{8, ImmutableData::Name{Identity{std::string(64, 't')}}};
+  const VersionName v8_ttt{8, Identity{std::string(64, 't')}};
   EXPECT_NO_THROW(popped_version = versions.Put(v7_sss, v8_ttt));
   ASSERT_TRUE(!!popped_version);
   EXPECT_EQ(v2_ddd, *popped_version);
@@ -516,7 +519,7 @@ TEST(StructuredDataVersionsTest, BEH_DeleteBranchUntilFork) {
   try {
     versions.DeleteBranchUntilFork(v0_aaa);
   } catch (const common_error& e) {
-    EXPECT_EQ(make_error_code(CommonErrors::invalid_parameter), e.code());
+    EXPECT_EQ(make_error_code(CommonErrors::invalid_argument), e.code());
   }
   EXPECT_TRUE(Equivalent(versions, clone));
 
@@ -595,7 +598,7 @@ TEST(StructuredDataVersionsTest, BEH_Serialise) {
   StructuredDataVersions versions1(100, 20), versions2(100, 20), versions3(1, 1);
   ConstructAsDiagram(versions1);
   ConstructAsDiagram(versions2);
-  ImmutableData::Name single_id(Identity(RandomString(64)));
+  Identity single_id(MakeIdentity());
   versions3.Put(StructuredDataVersions::VersionName(),
                 StructuredDataVersions::VersionName(0, single_id));
 
@@ -635,8 +638,8 @@ TEST(StructuredDataVersionsTest, BEH_ApplySerialised) {
   EXPECT_EQ(serialised1, temp_serialised);
 
   // Construct SDV with only "absent" version from diagram included.
-  VersionName v5_nnn(5, ImmutableData::Name(Identity(std::string(64, 'n'))));
-  VersionName absent(6, ImmutableData::Name(Identity(std::string(64, 'x'))));
+  VersionName v5_nnn(5, Identity(std::string(64, 'n')));
+  VersionName absent(6, Identity(std::string(64, 'x')));
   StructuredDataVersions versions2(100, 20);
   EXPECT_NO_THROW(versions2.Put(v5_nnn, absent));
   auto serialised2(versions2.Serialise());

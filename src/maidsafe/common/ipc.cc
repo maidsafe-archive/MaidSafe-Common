@@ -17,6 +17,8 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/common/ipc.h"
+
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -24,26 +26,26 @@ namespace maidsafe {
 namespace ipc {
 
 void RemoveSharedMemory(std::string name_in) {
-  std::string name(HexEncode(name_in));
+  std::string name(hex::Encode(name_in));
   boost::interprocess::shared_memory_object::remove(name.c_str());
 }
 
 void CreateSharedMemory(std::string name_in, std::vector<std::string> items) {
   RemoveSharedMemory(name_in);
-  std::string name(HexEncode(name_in));
+  std::string name(hex::Encode(name_in));
   // Create a managed shared memory segment of large arbitrary size!
   bi::managed_shared_memory segment(bi::create_only, name.c_str(), 65536);
   // Create an object of Type initialised to type
   CharAllocator charallocator(segment.get_segment_manager());
   for (size_t i(0); i < items.size(); ++i) {
     bi_string str(charallocator);
-    str = HexEncode(items.at(i)).c_str();
+    str = hex::Encode(items.at(i)).c_str();
     segment.construct<bi_string>(std::to_string(i).c_str())(str);
   }
 }
 
 std::vector<std::string> ReadSharedMemory(std::string name_in, int number) {
-  std::string name(HexEncode(name_in));
+  std::string name(hex::Encode(name_in));
   // Open managed segment
   boost::interprocess::managed_shared_memory segment(boost::interprocess::open_only, name.c_str());
   CharAllocator charallocator(segment.get_segment_manager());
@@ -51,7 +53,7 @@ std::vector<std::string> ReadSharedMemory(std::string name_in, int number) {
   std::vector<std::string> ret_vec;
   for (int i(0); i < number; ++i) {
     auto res = segment.find<bi_string>(std::to_string(i).c_str());
-    ret_vec.push_back(HexDecode(std::string(res.first->c_str(), res.first->size())));
+    ret_vec.push_back(hex::DecodeToString(std::string(res.first->c_str(), res.first->size())));
   }
   return ret_vec;
 }
