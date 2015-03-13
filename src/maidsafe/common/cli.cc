@@ -27,6 +27,8 @@
 #include <cstdlib>
 
 #include "boost/tokenizer.hpp"
+
+#include "maidsafe/common/convert.h"
 #include "maidsafe/common/crypto.h"
 
 namespace maidsafe {

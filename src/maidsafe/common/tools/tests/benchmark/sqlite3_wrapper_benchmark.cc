@@ -378,18 +378,18 @@ void Sqlite3WrapperBenchmark::CheckKeyValueTestResult(
   for (auto& entry : expected_result) {
     auto itr(result.find(entry.first));
     if (itr == result.end()) {
-      TLOG(kRed) << "cannot find " << HexSubstr(entry.first) << " in database\n";
+      TLOG(kRed) << "cannot find " << hex::Substr(entry.first) << " in database\n";
       break;
     } else if (itr->second != entry.second) {
-      TLOG(kRed) << "value of " << HexSubstr(entry.first) << " expected to be "
-                 << HexSubstr(entry.second) << " in database, but turned out to be "
-                 << HexSubstr(itr->second) << "\n";
+      TLOG(kRed) << "value of " << hex::Substr(entry.first) << " expected to be "
+                 << hex::Substr(entry.second) << " in database, but turned out to be "
+                 << hex::Substr(itr->second) << "\n";
       break;
     }
   }
   for (auto& entry : result) {
     if (expected_result.find(entry.first) == expected_result.end()) {
-      TLOG(kRed) << "database has an entry " << HexSubstr(entry.first) << " not expected\n";
+      TLOG(kRed) << "database has an entry " << hex::Substr(entry.first) << " not expected\n";
       break;
     }
   }

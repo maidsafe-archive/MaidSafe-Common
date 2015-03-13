@@ -1,4 +1,4 @@
-/*  Copyright 2014 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,44 +16,21 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/common/tools/network_viewer.h"
+#ifndef MAIDSAFE_COMMON_DATA_TYPES_TESTS_TEST_UTILS_H_
+#define MAIDSAFE_COMMON_DATA_TYPES_TESTS_TEST_UTILS_H_
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
+class Data;
+
 namespace test {
 
-namespace {  // anonymous
-
-using Mr_t = network_viewer::MatrixRecord;
-
-bool operator==(const Mr_t& ref_lhs, const Mr_t& ref_rhs) {
-  return ref_lhs.owner_id() == ref_rhs.owner_id() && ref_lhs.matrix_ids() == ref_rhs.matrix_ids();
-}
-
-}  // anonymous namespace
-
-TEST(NetworkViewerTest, BEH_MatrixRecordSerialisation) {
-  NodeId node_id_0{RandomString(NodeId::kSize)};
-  NodeId node_id_1{RandomString(NodeId::kSize)};
-  Mr_t a{node_id_0}, b{node_id_1};
-
-  // Serialisation
-  EXPECT_FALSE(a == b);
-  auto serialised_data_0(a.Serialise());
-
-  // Deserialisation
-  Mr_t c{serialised_data_0};
-  EXPECT_FALSE(b == c);
-  EXPECT_TRUE(a == c);
-
-  // Reserialise
-  auto serialised_data_1(c.Serialise());
-  EXPECT_TRUE(serialised_data_0 == serialised_data_1);
-}
+testing::AssertionResult Equal(const Data* const lhs, const Data* const rhs);
 
 }  // namespace test
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_COMMON_DATA_TYPES_TESTS_TEST_UTILS_H_

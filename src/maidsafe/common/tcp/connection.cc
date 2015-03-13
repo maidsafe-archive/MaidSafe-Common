@@ -192,7 +192,7 @@ void Connection::DoSend() {
 
 Connection::SendingMessage Connection::EncodeData(Message data) const {
   if (data.empty())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
   if (data.size() > MaxMessageSize())
     BOOST_THROW_EXCEPTION(MakeError(VaultManagerErrors::ipc_message_too_large));
 

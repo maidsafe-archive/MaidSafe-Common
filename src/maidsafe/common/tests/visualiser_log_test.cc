@@ -24,6 +24,7 @@
 #include "cereal/archives/json.hpp"
 #include "cereal/types/vector.hpp"
 
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/on_scope_exit.h"
 #include "maidsafe/common/test.h"
@@ -43,7 +44,7 @@ DEFINE_OSTREAMABLE_ENUM_VALUES(TestAction, uint64_t,
 class VisualiserLogTest : public ::testing::Test {
  protected:
   VisualiserLogTest()
-      : kThisVaultId_(InitId()),
+      : kThisVaultId_(hex::Substr(MakeIdentity())),
         kTestSessionId_("54ca73ce-0c3c-4155-c9e3-c89d74ad5602"),
         kServerName_("visualiser.maidsafe.net"),
         kServerDir_("/testlog"),
@@ -60,15 +61,10 @@ class VisualiserLogTest : public ::testing::Test {
     LOG(kVerbose) << "\tpersona_id:           \"" << vlog.kPersonaId_.value << '\"';
     LOG(kVerbose) << "\taction_id:            \"" << vlog.kActionId_.value << '\"';
     if (vlog.kValue1_.size() == crypto::SHA512::DIGESTSIZE)
-      LOG(kVerbose) << "\tvalue1 (hex encoded): \"" << HexEncode(vlog.kValue1_) << '\"';
+      LOG(kVerbose) << "\tvalue1 (hex encoded): \"" << hex::Encode(vlog.kValue1_) << '\"';
     else
       LOG(kVerbose) << "\tvalue1 (unencoded):   \"" << vlog.kValue1_ << '\"';
-    LOG(kVerbose) << "\tvalue2 (hex encoded): \"" << HexEncode(vlog.kValue2_) << "\"\n";
-  }
-
-  static Identity InitId() {
-    static Identity id{RandomString(64)};
-    return id;
+    LOG(kVerbose) << "\tvalue2 (hex encoded): \"" << hex::Encode(vlog.kValue2_) << "\"\n";
   }
 
   std::unique_ptr<on_scope_exit> GetScopedSessionIdInvalidator() {
@@ -80,8 +76,7 @@ class VisualiserLogTest : public ::testing::Test {
     return std::move(scoped_invalidator);
   }
 
-  const Identity kThisVaultId_;
-  const std::string kTestSessionId_, kServerName_, kServerDir_;
+  const std::string kThisVaultId_, kTestSessionId_, kServerName_, kServerDir_;
   const uint16_t kServerPort_;
 };
 
@@ -99,10 +94,10 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
                common_error);
 
   // Call after VLOG has been initialised
-  log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_, kServerName_,
+  log::Logging::Instance().InitialiseVlog(kThisVaultId_, kTestSessionId_, kServerName_,
                                           kServerPort_, kServerDir_);
 
-  EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
+  EXPECT_EQ(kThisVaultId_, log::Logging::Instance().VlogPrefix());
   EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
 
   VLOG(TestPersona::kDataGetter, TestAction::kGet, target, target);
@@ -126,7 +121,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLog) {
   EXPECT_THROW(log::Logging::Instance().InitialiseVlog("1", kTestSessionId_, kServerName_,
                                                        kServerPort_, kServerDir_),
                common_error);
-  EXPECT_EQ(DebugId(kThisVaultId_), log::Logging::Instance().VlogPrefix());
+  EXPECT_EQ(kThisVaultId_, log::Logging::Instance().VlogPrefix());
   EXPECT_EQ(kTestSessionId_, log::Logging::Instance().VlogSessionId());
   VLOG(TestPersona::kMaidNode, TestAction::kIncrementReferenceCount, target);
 
@@ -159,7 +154,7 @@ TEST_F(VisualiserLogTest, BEH_VisualiserLogCheckJson) {
 #ifdef USE_VLOGGING
   // Set VLOG prefix in case this test isn't run after the previous one.
   try {
-    log::Logging::Instance().InitialiseVlog(DebugId(kThisVaultId_), kTestSessionId_, kServerName_,
+    log::Logging::Instance().InitialiseVlog(kThisVaultId_, kTestSessionId_, kServerName_,
                                             kServerPort_, kServerDir_);
   } catch (const std::exception&) {
   }

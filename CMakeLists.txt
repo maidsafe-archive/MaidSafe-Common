@@ -116,7 +116,6 @@ else()
   set(CerealLib cereal)
 endif()
 target_link_libraries(maidsafe_common
-    maidsafe_passport
     ${AsioLib}
     ${CerealLib}
     cryptopp
@@ -138,26 +137,19 @@ if(TARGET check_sanitizer_blacklist)
   add_dependencies(maidsafe_common check_sanitizer_blacklist)
 endif()
 
-# Network Viewer library
-ms_add_static_library(maidsafe_network_viewer
-    "${CommonSourcesDir}/tools/network_viewer.cc"
-    "${PROJECT_SOURCE_DIR}/include/maidsafe/common/tools/network_viewer.h")
-target_include_directories(maidsafe_network_viewer PUBLIC ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(maidsafe_network_viewer maidsafe_common)
-
 # Signing tool
 ms_add_executable(signing_tool "Tools/Common" "${CommonSourcesDir}/tools/signing_tool.cc")
-target_link_libraries(signing_tool maidsafe_common maidsafe_passport)
+target_link_libraries(signing_tool maidsafe_common)
 
 # Qa tool
 ms_add_executable(qa_tool "Tools/Common" "${CommonSourcesDir}/tools/qa_tool.cc"
                                          "${CommonSourcesDir}/tools/tests/benchmark/sqlite3_wrapper_benchmark.cc")
-target_link_libraries(qa_tool maidsafe_common maidsafe_passport maidsafe_test)
+target_link_libraries(qa_tool maidsafe_common maidsafe_test)
 
 # SQLite wrapper benchmark test tool
 ms_add_executable(sqlite_wrapper_benchmark "Tools/Common" "${CommonSourcesDir}/tools/sqlite_wrapper_benchmark.cc"
                                                           "${CommonSourcesDir}/tools/tests/benchmark/sqlite3_wrapper_benchmark.cc")
-target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_passport maidsafe_test)
+target_link_libraries(sqlite_wrapper_benchmark maidsafe_common maidsafe_test)
 
 # Bootstrap file tool
 ms_add_executable(bootstrap_file_tool "Tools/Common"
@@ -189,12 +181,6 @@ if(INCLUDE_TESTS)
       ${CommonSerialisationTypesTestsAllFiles})
   target_link_libraries(test_common maidsafe_test)
   target_include_directories(test_common PRIVATE ${PROJECT_SOURCE_DIR}/src)
-
-  ms_add_executable(test_network_viewer
-      "Tests/Common"
-      ${CommonSourcesDir}/tests/tests_main.cc
-      ${CommonSourcesDir}/tools/tests/network_viewer_test.cc)
-  target_link_libraries(test_network_viewer maidsafe_test maidsafe_network_viewer)
 
   ms_add_executable(test_bootstrap_file_tool
       "Tests/Common"
@@ -231,7 +217,6 @@ include(standard_flags)
 if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_common)
-  ms_add_gtests(test_network_viewer)
   ms_add_gtests(test_bootstrap_file_tool)
   ms_add_gtests(test_common_config)
   ms_test_summary_output()
@@ -241,7 +226,7 @@ endif()
 #==================================================================================================#
 # Package                                                                                          #
 #==================================================================================================#
-install(TARGETS maidsafe_common maidsafe_network_viewer COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
+install(TARGETS maidsafe_common COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
 install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
 install(TARGETS signing_tool qa_tool bootstrap_file_tool address_space_tool COMPONENT Tools CONFIGURATIONS Release RUNTIME DESTINATION bin)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)

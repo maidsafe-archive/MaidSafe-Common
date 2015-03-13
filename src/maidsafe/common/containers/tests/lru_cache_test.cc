@@ -22,7 +22,7 @@
 #include <thread>
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/common/node_id.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/utils.h"
 
 
@@ -158,10 +158,10 @@ TEST(LruCacheTest, BEH_TimeAndSizeStructValueTest) {
   std::chrono::milliseconds time(100);
   auto size(100);
   struct temp {
-    temp() : a{0}, b("a string"), id(NodeId(RandomString(NodeId::kSize))) {}
+    temp() : a{0}, b("a string"), id(MakeIdentity()) {}
     int a;
     std::string b;
-    NodeId id;
+    Identity id;
     bool operator<(const temp& other) const {
       return std::tie(a, b, id) < std::tie(other.a, other.b, other.id);
     }

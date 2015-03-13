@@ -350,7 +350,7 @@ void DoCasts(int col_mode, const std::string& log_folder, ColourMode& colour_mod
   if (col_mode != -1) {
     if (col_mode < 0 || col_mode > 2) {
       std::cout << "colour_mode must be 0, 1, or 2\n";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     }
     colour_mode = static_cast<ColourMode>(col_mode);
   }

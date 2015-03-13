@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -19,48 +19,61 @@
 #ifndef MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
 #define MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_
 
-#include <cstdint>
-#include <algorithm>
+#include "cereal/types/base_class.hpp"
+#include "cereal/types/polymorphic.hpp"
 
+#include "maidsafe/common/identity.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
-#include "maidsafe/common/rsa.h"
-#include "maidsafe/common/tagged_value.h"
-#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data.h"
+// We must include all archives which this polymorphic type will be used with *before* the
+// CEREAL_REGISTER_TYPE call below.
+#include "maidsafe/common/serialisation/binary_archive.h"
 
 namespace maidsafe {
 
-class MutableData {
+class MutableData : public Data {
  public:
-  typedef maidsafe::detail::Name<MutableData> Name;
-  typedef maidsafe::detail::Tag<DataTagValue::kMutableDataValue> Tag;
-  typedef TaggedValue<NonEmptyString, Tag> serialised_type;
+  MutableData(Identity name, NonEmptyString value);
 
-  MutableData(const MutableData& other);
+  MutableData();
+  MutableData(const MutableData&);
   MutableData(MutableData&& other);
-  MutableData& operator=(MutableData other);
+  MutableData& operator=(const MutableData&);
+  MutableData& operator=(MutableData&& other);
+  virtual ~MutableData() final;
 
-  MutableData(Name name, NonEmptyString data);
-  MutableData(Name name, const serialised_type& serialised_mutable_data);
-  serialised_type Serialise() const;
+  const NonEmptyString& Value() const;
 
-  template<typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(data_);
+  template <typename Archive>
+  Archive& save(Archive& archive) const {
+    return archive(cereal::base_class<Data>(this), value_);
   }
 
-  Name name() const;
-  NonEmptyString data() const;
-
-  friend void swap(MutableData& lhs, MutableData& rhs);
+  template <typename Archive>
+  Archive& load(Archive& archive) {
+    try {
+      archive(cereal::base_class<Data>(this), value_);
+      if (!value_.IsInitialised())
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Error parsing MutableData: " << boost::diagnostic_information(e);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+    return archive;
+  }
 
  private:
-  Name name_;
-  NonEmptyString data_;
+  virtual std::uint32_t ThisTypeId() const final { return 1; }
+
+  NonEmptyString value_;
 };
 
 template <>
 struct is_short_term_cacheable<MutableData> : public std::true_type {};
 
 }  // namespace maidsafe
+
+CEREAL_REGISTER_TYPE(maidsafe::MutableData)
 
 #endif  // MAIDSAFE_COMMON_DATA_TYPES_MUTABLE_DATA_H_

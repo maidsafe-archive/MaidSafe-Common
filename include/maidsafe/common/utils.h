@@ -21,13 +21,12 @@
 
 #include <chrono>
 #include <cstdint>
-#include <future>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <random>
-#include <ratio>
 #include <string>
+#include <vector>
 
 #include "asio/ip/address.hpp"
 #include "asio/ip/address_v4.hpp"
@@ -38,11 +37,12 @@
 #include "boost/asio/ip/address_v6.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "boost/filesystem/path.hpp"
+#include "boost/expected/expected.hpp"
 #include "boost/program_options.hpp"
 
-#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/data.h"
 
 namespace maidsafe {
 
@@ -70,24 +70,14 @@ std::mutex& random_number_generator_mutex();
 uint32_t random_number_generator_seed();
 void set_random_number_generator_seed(uint32_t seed);
 #endif
-boost::filesystem::path GetFileName(const DataNameVariant& data_name_variant);
-DataNameVariant GetDataNameVariant(const boost::filesystem::path& file_name);
+boost::filesystem::path GetFileName(const Data::NameAndTypeId& name_and_type_id);
+Data::NameAndTypeId GetDataNameAndTypeId(const boost::filesystem::path& file_name);
 
 }  // namespace detail
 
 extern const int kInvalidVersion;
 extern const uint16_t kLivePort;
 extern const boost::posix_time::ptime kMaidSafeEpoch;
-
-// SI units.  (note MS windows will report on the 'old' system, for drive space)
-// this is (cheekily) using chrono::duration
-typedef std::chrono::duration<uint64_t> Bytes;
-typedef std::chrono::duration<uint64_t, std::kilo> KiloBytes;
-typedef std::chrono::duration<uint64_t, std::mega> MegaBytes;
-typedef std::chrono::duration<uint64_t, std::giga> GigaBytes;
-typedef std::chrono::duration<uint64_t, std::tera> TeraBytes;
-typedef std::chrono::duration<uint64_t, std::peta> PetaBytes;
-typedef std::chrono::duration<uint64_t, std::exa> ExaBytes;
 
 // Makes a UDP socket connection to peer_endpoint.  Note, no data is sent, so no information about
 // the validity or availability of the peer is deduced.  If the retrieved local endpoint is
@@ -142,10 +132,21 @@ int32_t RandomInt32();
 // Generates a non-cryptographically-secure 32bit unsigned integer.
 uint32_t RandomUint32();
 
-// Generates a non-cryptographically-secure random string.
+// Generates a non-cryptographically-secure random string of exact size.
 std::string RandomString(size_t size);
 
-// Generates a non-cryptographically-secure random string.
+// Generates a non-cryptographically-secure random string of random size between 'min' and 'max'
+// inclusive.
+std::string RandomString(uint32_t min, uint32_t max);
+
+// Generates a non-cryptographically-secure random byte vector of exact size.
+std::vector<byte> RandomBytes(size_t size);
+
+// Generates a non-cryptographically-secure random byte vector of random size between 'min' and
+// 'max' inclusive.
+std::vector<byte> RandomBytes(uint32_t min, uint32_t max);
+
+// Generates a non-cryptographically-secure random string of exact size.
 template <typename String>
 String GetRandomString(size_t size) {
   std::uniform_int_distribution<> distribution(0, 255);
@@ -158,9 +159,21 @@ String GetRandomString(size_t size) {
   return random_string;
 }
 
-// Generates a non-cryptographically-secure random string containing only
-// alphanumeric characters.
+// Generates a non-cryptographically-secure random string of exact size containing only alphanumeric
+// characters.
 std::string RandomAlphaNumericString(size_t size);
+
+// Generates a non-cryptographically-secure random string of random size between 'min' and 'max'
+// inclusive containing only alphanumeric characters.
+std::string RandomAlphaNumericString(uint32_t min, uint32_t max);
+
+// Generates a non-cryptographically-secure random byte vector of exact size containing only
+// alphanumeric characters.
+std::vector<byte> RandomAlphaNumericBytes(size_t size);
+
+// Generates a non-cryptographically-secure random byte vector of random size between 'min' and
+// 'max' inclusive containing only alphanumeric characters.
+std::vector<byte> RandomAlphaNumericBytes(uint32_t min, uint32_t max);
 
 template <typename String>
 String GetRandomAlphaNumericString(size_t size) {
@@ -176,41 +189,6 @@ String GetRandomAlphaNumericString(size_t size) {
   return random_string;
 }
 
-std::string HexEncode(const std::string& non_hex_input);
-
-template <size_t min, size_t max>
-std::string HexEncode(const detail::BoundedString<min, max>& non_hex_input) {
-  return HexEncode(non_hex_input.string());
-}
-
-std::string HexDecode(const std::string& hex_input);
-
-// hacked from https://en.wikibooks.org/wiki/Algorithm_Implementation/Miscellaneous/Base64
-std::string Base64Encode(const std::string& non_base64_input);
-
-template <size_t min, size_t max>
-std::string Base64Encode(const detail::BoundedString<min, max>& non_base64_input) {
-  return Base64Encode(non_base64_input.string());
-}
-
-std::string Base64Decode(const std::string& base64_input);
-
-// Returns an appreviated hex representation of a hash or other small data.
-std::string HexSubstr(const std::string& non_hex);
-
-template <size_t min, size_t max>
-std::string HexSubstr(const detail::BoundedString<min, max>& non_hex) {
-  return HexSubstr(non_hex.string());
-}
-
-// Returns an appreviated Base64 representation of a hash or other small data.
-std::string Base64Substr(const std::string& non_base64);
-
-template <size_t min, size_t max>
-std::string Base64Substr(detail::BoundedString<min, max> non_base64) {
-  return Base64Substr(non_base64.string());
-}
-
 #ifdef MAIDSAFE_WIN32
 // Throws if any char of 'input' can't be converted.
 std::string WstringToString(const std::wstring& input);
@@ -219,21 +197,17 @@ std::string WstringToString(const std::wstring& input);
 std::wstring StringToWstring(const std::string& input);
 #endif
 
-// Returns an abbreviated hex representation of id.  Throws if 'id' is uninitialised.
-std::string DebugId(const Identity& id);
-
 // Returns the number of milliseconds since kMaidsafeEpoch (1st January 2000).
 uint64_t GetTimeStamp();
 
 // Converts 'timestamp' to ptime where 'timestamp' is the result of a call to 'GetTimeStamp()'.
 boost::posix_time::ptime TimeStampToPtime(uint64_t timestamp);
 
-// Reads the given file and returns the contents as a string.
-bool ReadFile(const boost::filesystem::path& file_path, std::string* content);
-NonEmptyString ReadFile(const boost::filesystem::path& file_path);
+// Reads the given file and returns the contents as a byte vector.  Doesn't throw.
+boost::expected<std::vector<byte>, common_error> ReadFile(const boost::filesystem::path& file_path);
 
-// Writes the given content string to a file, overwriting if applicable.
-bool WriteFile(const boost::filesystem::path& file_path, const std::string& content);
+// Writes the given content string to a file, overwriting if applicable.  Doesn't throw.
+bool WriteFile(const boost::filesystem::path& file_path, const std::vector<byte>& content);
 
 // For use with std::chrono durations - provides a non-interruptible sleep.
 template <typename Rep, typename Period>
@@ -248,9 +222,20 @@ boost::filesystem::path GetPathFromProgramOptions(
 // Returns max of (2, hardware_concurrency)
 unsigned int Concurrency();
 
-template <typename T>
-bool IsReady(std::future<T>& future) {
-  return future.wait_for(std::chrono::seconds::zero()) == std::future_status::ready;
+// Performs a bitwise XOR on each char of 'lhs' with the corresponding char of 'rhs'.  Throws if
+// 'lhs' and 'rhs' are not of equal size.
+template <typename String>
+String operator^(const String& lhs, const String& rhs) {
+  const std::size_t size(lhs.size());
+  if (size != rhs.size()) {
+    LOG(kError) << "Cannot XOR two strings of different sizes (lhs.size() is " << size
+                << " and rhs.size() is " << rhs.size() << ")";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
+  }
+  String result(size, 0);
+  for (std::size_t i(0); i < size; ++i)
+    result[i] = lhs[i] ^ rhs[i];
+  return result;
 }
 
 }  // namespace maidsafe

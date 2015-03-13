@@ -68,74 +68,52 @@
 
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/error.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
 namespace CryptoPP {
+
 class SHA1;
 class SHA256;
 class SHA384;
 class SHA512;
+
 }  // namespace CryptoPP
 
 namespace maidsafe {
 
 namespace crypto {
 
-typedef CryptoPP::SHA1 SHA1;
-typedef CryptoPP::SHA256 SHA256;
-typedef CryptoPP::SHA384 SHA384;
-typedef CryptoPP::SHA512 SHA512;
-typedef CryptoPP::Integer BigInt;
-
-enum { AES256_KeySize = 32 };  // size in bytes.
-enum { AES256_IVSize = 16 };   // size in bytes.
-extern const uint16_t kMaxCompressionLevel;
-extern const std::string kMaidSafeVersionLabel1;
-extern const std::string kMaidSafeVersionLabel;
+using SHA1 = CryptoPP::SHA1;
+using SHA256 = CryptoPP::SHA256;
+using SHA384 = CryptoPP::SHA384;
+using SHA512 = CryptoPP::SHA512;
+using BigInt = CryptoPP::Integer;
 
 // AES requires a key size of 128, 192, or 256 bits.  We only use 256 bits.
-typedef detail::BoundedString<AES256_KeySize, AES256_KeySize> AES256Key;
+const int AES256_KeySize = 32;  // size in bytes.
 // Since the block size for AES is 128 bits, only the first 128 bits of the IV are used.  We force
 // the IV to be exactly 128 bits.
-typedef detail::BoundedString<AES256_IVSize, AES256_IVSize> AES256InitialisationVector;
-typedef detail::BoundedString<SHA1::DIGESTSIZE, SHA1::DIGESTSIZE> SHA1Hash;
-typedef detail::BoundedString<SHA256::DIGESTSIZE, SHA256::DIGESTSIZE> SHA256Hash;
-typedef detail::BoundedString<SHA384::DIGESTSIZE, SHA384::DIGESTSIZE> SHA384Hash;
-typedef detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE> SHA512Hash;
-typedef TaggedValue<
-    detail::BoundedString<AES256_KeySize + AES256_IVSize, AES256_KeySize + AES256_IVSize>,
-    struct SecurePasswordTag> SecurePassword;
-typedef TaggedValue<NonEmptyString, struct CipherTextTag> CipherText;
-typedef TaggedValue<NonEmptyString, struct CompressedTextTag> CompressedText;
-typedef NonEmptyString Salt, PlainText, UncompressedText;
+const int AES256_IVSize = 16;  // size in bytes.
+const std::uint16_t kMaxCompressionLevel = 9;
+const std::string kMaidSafeVersionLabel1 = "MaidSafe Version 1 Key Derivation";
+const std::string kMaidSafeVersionLabel = kMaidSafeVersionLabel1;
+
+using AES256KeyAndIV =
+    detail::BoundedString<AES256_KeySize + AES256_IVSize, AES256_KeySize + AES256_IVSize>;
+using SecurePassword = TaggedValue<AES256KeyAndIV, struct SecurePasswordTag>;
+using CipherText = TaggedValue<NonEmptyString, struct CipherTextTag>;
+using CompressedText = TaggedValue<NonEmptyString, struct CompressedTextTag>;
+using Salt = NonEmptyString;
+using PlainText = NonEmptyString;
+using UncompressedText = NonEmptyString;
+using DataParts = std::vector<NonEmptyString>;
 
 // Returns a reference to a static CryptoPP::RandomNumberGenerator held in a
 // thread-specific pointer (i.e. it's thread-safe).
 CryptoPP::RandomNumberGenerator& random_number_generator();
-
-// Performs a bitwise XOR on each char of first with the corresponding char of second.
-template <size_t size>
-detail::BoundedString<size, size> XOR(const detail::BoundedString<size, size>& first,
-                                      const detail::BoundedString<size, size>& second) {
-  std::string result(size, 0);
-  auto first_itr(std::begin(first.string()));
-  auto second_itr(std::begin(second.string()));
-  auto result_itr(std::begin(result));
-  while (result_itr != std::end(result)) {
-    *result_itr = *first_itr ^ *second_itr;
-    ++first_itr;
-    ++second_itr;
-    ++result_itr;
-  }
-
-  return detail::BoundedString<size, size>(result);
-}
-
-// Performs a bitwise XOR on each char of first with the corresponding char of second.  If the
-// the strings are different lengths or are empty, the function throws a common_error.
-std::string XOR(const std::string& first, const std::string& second);
 
 // Creates a secure password of size AES256_KeySize + AES256_IVSize using the Password-Based Key
 // Derivation Function (PBKDF) version 2 algorithm.  The number of iterations is derived from "pin".
@@ -164,72 +142,35 @@ SecurePassword CreateSecurePassword(const PasswordType& password, const Salt& sa
   return SecurePassword(SecurePassword::value_type(derived_password));
 }
 
-// Hash function operating on a string.
-template <typename HashType>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(const std::string& input) {
+// Hash function designed to operate on an arbitrary string type, e.g. std::string or
+// std::vector<byte>.
+template <typename HashType, typename String>
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, String> Hash(
+    const String& input) {
   std::string result;
   HashType hash;
   try {
-    CryptoPP::StringSource(input, true,
-                           new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
+    CryptoPP::ArraySource(reinterpret_cast<const byte*>(input.data()), input.size(), true,
+                          new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
   } catch (const CryptoPP::Exception& e) {
     LOG(kError) << "Error hashing string: " << e.what();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
   }
-  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
-}
-
-// Hash function operating on a vector<byte>.
-template <typename HashType>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
-    const std::vector<byte>& input) {
-  std::string result;
-  HashType hash;
-  try {
-    CryptoPP::ArraySource(input.data(), input.size(), true,
-                          new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(result)));
-  } catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Error hashing array: " << e.what();
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
-  }
-  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE>(result);
+  return detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, String>(result);
 }
 
 // Hash function operating on a BoundedString.
-template <typename HashType, size_t min, size_t max>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE> Hash(
-    const detail::BoundedString<min, max>& input) {
+template <typename HashType, size_t min, size_t max, typename String>
+detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, String> Hash(
+    const detail::BoundedString<min, max, String>& input) {
   return Hash<HashType>(input.string());
 }
 
-// Hash function operating on an arbitrary string type.
-template <typename HashType, typename StringType>
-detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType> Hash(
-    const StringType& input) {
-  typedef detail::BoundedString<HashType::DIGESTSIZE, HashType::DIGESTSIZE, StringType>
-      BoundedString;
-  StringType result;
-  HashType hash;
-  try {
-    static_cast<void>(CryptoPP::StringSource(
-        reinterpret_cast<const byte*>(input.data()), input.length(), true,
-        new CryptoPP::HashFilter(hash, new CryptoPP::StringSinkTemplate<StringType>(result))));
-  } catch (const CryptoPP::Exception& e) {
-    LOG(kError) << "Error hashing string: " << e.what();
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::hashing_error));
-  }
-  return BoundedString(result);
-}
+// Performs symmetric encryption using AES256.
+CipherText SymmEncrypt(const PlainText& input, const AES256KeyAndIV& key_and_iv);
 
-// Performs symmetric encryption using AES256. It throws a std::exception if the
-// key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-CipherText SymmEncrypt(const PlainText& input, const AES256Key& key,
-                       const AES256InitialisationVector& initialisation_vector);
-
-// Performs symmetric decryption using AES256. It throws a std::exception if the
-// key size < AES256_KeySize or if initialisation_vector size < AES256_IVSize.
-PlainText SymmDecrypt(const CipherText& input, const AES256Key& key,
-                      const AES256InitialisationVector& initialisation_vector);
+// Performs symmetric decryption using AES256.
+PlainText SymmDecrypt(const CipherText& input, const AES256KeyAndIV& key_and_iv);
 
 // Compress a string using gzip.  Compression level must be between 0 and 9
 // inclusive or function throws a std::exception.
@@ -238,29 +179,13 @@ CompressedText Compress(const UncompressedText& input, uint16_t compression_leve
 // Uncompress a string using gzip.  Will throw a std::exception if uncompression fails.
 UncompressedText Uncompress(const CompressedText& input);
 
-std::vector<std::string> SecretShareData(int32_t threshold, int32_t number_of_shares,
-                                         const std::string& data);
+DataParts SecretShareData(int32_t threshold, int32_t number_of_shares, const PlainText& data);
 
-std::vector<std::vector<byte>> SecretShareData(int32_t threshold, int32_t number_of_shares,
-                                               const std::vector<byte>& data);
+PlainText SecretRecoverData(const DataParts& parts);
 
-std::string SecretRecoverData(const std::vector<std::string>& in_strings);
+DataParts InfoDisperse(int32_t threshold, int32_t number_of_shares, const PlainText& data);
 
-std::vector<byte> SecretRecoverData(const std::vector<std::vector<byte>>& in_arrays);
-
-std::vector<std::string> InfoDisperse(int32_t threshold, int32_t number_of_shares,
-                                      const std::string& data);
-
-std::vector<std::vector<byte>> InfoDisperse(int32_t threshold, int32_t number_of_shares,
-                                            const std::vector<byte>& data);
-
-std::string InfoRetrieve(const std::vector<std::string>& in_strings);
-
-std::vector<byte> InfoRetrieve(const std::vector<std::vector<byte>>& in_arrays);
-
-CipherText ObfuscateData(const Identity& name, const PlainText& plain_text);
-
-PlainText DeobfuscateData(const Identity& name, const CipherText& cipher_text);
+PlainText InfoRetrieve(const DataParts& parts);
 
 }  // namespace crypto
 

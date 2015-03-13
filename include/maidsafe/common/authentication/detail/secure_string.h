@@ -149,8 +149,8 @@ SecureInputString<Predicate, Size, Tag>::SecureInputString(const StringType& str
       secure_string_(string),
       finalised_(true) {
   if (!Predicate()(string.size(), Size)) {
-    LOG(kError) << "SecureInputString::SecureInputString() invalid_string_size";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+    LOG(kError) << "SecureInputString::SecureInputString() outside_of_bounds";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
   }
 }
 
@@ -185,11 +185,11 @@ void SecureInputString<Predicate, Size, Tag>::Remove(size_type position, size_ty
     Reset();
   auto it(encrypted_chars_.find(position));
   if (it == encrypted_chars_.end() || length == 0)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   while (length != 0) {
     it = encrypted_chars_.erase(it);
     if ((length -= 1 != 0) && it == encrypted_chars_.end())
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   while (it != encrypted_chars_.end()) {
     auto encrypted_char = it->second;
@@ -211,14 +211,14 @@ void SecureInputString<Predicate, Size, Tag>::Finalise() {
   if (IsFinalised())
     return;
   if (!Predicate()(encrypted_chars_.size(), Size)) {
-    LOG(kError) << "SecureInputString::Finalise() invalid_string_size";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_string_size));
+    LOG(kError) << "SecureInputString::Finalise() outside_of_bounds";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::outside_of_bounds));
   }
   uint32_t index(0);
   for (auto& encrypted_char : encrypted_chars_) {
     if (encrypted_char.first != index) {
       secure_string_.Clear();
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
     }
     SafeString decrypted_char(Decrypt(encrypted_char.second));
     secure_string_.Append(decrypted_char);

@@ -16,14 +16,19 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/bounded_string.h"
 
+#include "maidsafe/common/convert.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/types.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
@@ -31,100 +36,154 @@ namespace detail {
 
 namespace test {
 
-typedef BoundedString<1, 1> OneOne;
-typedef BoundedString<1, 2> OneTwo;
-typedef BoundedString<1, 3> OneThree;
-typedef BoundedString<1> OneMax;
-typedef BoundedString<2, 2> TwoTwo;
-typedef BoundedString<2, 3> TwoThree;
-typedef BoundedString<2, 4> TwoFour;
-typedef BoundedString<2> TwoMax;
+template <typename T>
+class BoundedStringTest : public testing::Test {
+ protected:
+  using OneOne = BoundedString<1, 1, T>;
+  using OneTwo = BoundedString<1, 2, T>;
+  using OneThree = BoundedString<1, 3, T>;
+  using OneMax = BoundedString<1, static_cast<std::size_t>(-1), T>;
+  using TwoTwo = BoundedString<2, 2, T>;
+  using TwoThree = BoundedString<2, 3, T>;
+  using TwoFour = BoundedString<2, 4, T>;
+  using TwoMax = BoundedString<2, static_cast<std::size_t>(-1), T>;
 
-TEST(BoundedStringTest, BEH_DefaultConstructor) {
-  OneOne a;
+  T RandomData(std::size_t size) const;
+  T RandomData(std::uint32_t min, std::uint32_t max) const;
+  std::string ToString(const T& input) const;
+};
+
+template <>
+std::vector<byte> BoundedStringTest<std::vector<byte>>::RandomData(std::uint32_t min,
+  std::uint32_t max) const {
+  return RandomBytes(min, max);
+}
+
+template <>
+std::string BoundedStringTest<std::string>::RandomData(std::uint32_t min, std::uint32_t max) const {
+  return RandomString(min, max);
+}
+
+template <>
+std::vector<byte> BoundedStringTest<std::vector<byte>>::RandomData(std::size_t size) const {
+  return RandomBytes(size);
+}
+
+template <>
+std::string BoundedStringTest<std::string>::RandomData(std::size_t size) const {
+  return RandomString(size);
+}
+
+template <>
+std::string BoundedStringTest<std::vector<byte>>::ToString(const std::vector<byte>& input) const {
+  return convert::ToString(input);
+}
+
+template <>
+std::string BoundedStringTest<std::string>::ToString(const std::string& input) const {
+  return input;
+}
+
+
+
+using TestTypes = testing::Types<std::vector<byte>, std::string>;
+TYPED_TEST_CASE(BoundedStringTest, TestTypes);
+
+TYPED_TEST(BoundedStringTest, BEH_DefaultConstructor) {
+  typename TestFixture::OneOne a;
   EXPECT_FALSE(a.IsInitialised());
-  OneMax b;
+  typename TestFixture::OneMax b;
   EXPECT_FALSE(b.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_Getters) {
-  TwoTwo a;
+TYPED_TEST(BoundedStringTest, BEH_Getters) {
+  const typename TestFixture::TwoTwo a;
   EXPECT_FALSE(a.IsInitialised());
-  EXPECT_THROW(a.string(), std::exception);
+  EXPECT_THROW(a.string(), common_error);
+  EXPECT_THROW(a.data(), common_error);
+  EXPECT_THROW(typename TestFixture::TwoTwo()[0], common_error);
+  EXPECT_THROW(a[0], common_error);
+  EXPECT_THROW(a.size(), common_error);
 
-  for (int i(0); i < 1000; ++i) {
-    std::string random(RandomString((RandomUint32() % 1024) + 1));
-    OneMax b(random);
-    EXPECT_TRUE(b.IsInitialised());
-    EXPECT_EQ(random, b.string());
+  auto random(this->RandomData(1, 1024));
+  typename TestFixture::OneMax b(random);
+  EXPECT_TRUE(b.IsInitialised());
+  EXPECT_EQ(random, b.string());
+  std::string copied(reinterpret_cast<const char*>(b.data()), b.size());
+  std::string original(random.begin(), random.end());
+  ASSERT_EQ(original, copied);
+  const typename TestFixture::OneMax c(random);
+  for (std::size_t i(0); i < random.size(); ++i) {
+    EXPECT_EQ(random[i], b[i]);
+    EXPECT_EQ(random[i], c[i]);
   }
 }
 
-TEST(BoundedStringTest, BEH_StringConstructor) {
+TYPED_TEST(BoundedStringTest, BEH_StringConstructor) {
   // Empty (invalid)
-  EXPECT_THROW(OneOne a(""), std::exception);
+  EXPECT_THROW(typename TestFixture::OneOne a(""), common_error);
   // Valid
   std::string random(RandomString(1));
-  OneOne b(random);
-  EXPECT_EQ(random, b.string());
+  typename TestFixture::OneOne b(random);
+  EXPECT_EQ(random, this->ToString(b.string()));
   // Too big
-  EXPECT_THROW(OneOne c(RandomString(2)), std::exception);
+  EXPECT_THROW(typename TestFixture::OneOne c(RandomString(2)), common_error);
 
   // Empty (invalid)
-  EXPECT_THROW(OneMax d(""), std::exception);
+  EXPECT_THROW(typename TestFixture::OneMax d(""), common_error);
   // Valid
-  random = RandomString((RandomUint32() % 1024) + 1);
-  OneMax e(random);
-  EXPECT_EQ(random, e.string());
+  random = RandomString(1, 1024);
+  typename TestFixture::OneMax e(random);
+  EXPECT_EQ(random, this->ToString(e.string()));
 }
 
-TEST(BoundedStringTest, BEH_Swap) {
+TYPED_TEST(BoundedStringTest, BEH_Swap) {
   // Swap with initialised
-  std::string random1(RandomString(1));
-  std::string random2(RandomString(2));
-  OneTwo a(random1);
-  OneTwo b(random2);
+  auto random1(this->RandomData(1));
+  auto random2(this->RandomData(2));
+  typename TestFixture::OneTwo a(random1);
+  typename TestFixture::OneTwo b(random2);
   swap(a, b);
   EXPECT_EQ(random2, a.string());
   EXPECT_EQ(random1, b.string());
 
   // Swap with uninitialised
-  OneTwo c;
+  typename TestFixture::OneTwo c;
   swap(a, c);
   EXPECT_FALSE(a.IsInitialised());
   EXPECT_EQ(random2, c.string());
 }
 
-TEST(BoundedStringTest, BEH_Copy) {
+TYPED_TEST(BoundedStringTest, BEH_CopyConstruction) {
   // Copy from initialised
-  std::string random(RandomString((RandomUint32() % 1024) + 1));
-  OneMax a(random);
-  OneMax b(a);
+  auto random(this->RandomData(1, 1024));
+  typename TestFixture::OneMax a(random);
+  typename TestFixture::OneMax b(a);
   EXPECT_EQ(random, a.string());
   EXPECT_EQ(random, b.string());
 
   // Copy from uninitialised
-  OneMax c;
-  OneMax d(c);
+  typename TestFixture::OneMax c;
+  typename TestFixture::OneMax d(c);
   EXPECT_FALSE(d.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_Move) {
+TYPED_TEST(BoundedStringTest, BEH_MoveConstruction) {
   // Move from initialised
-  std::string random(RandomString((RandomUint32() % 1024) + 1));
-  OneMax a(std::move(OneMax(random)));
+  auto random(this->RandomData(1, 1024));
+  typename TestFixture::OneMax a(std::move(typename TestFixture::OneMax(random)));
   EXPECT_EQ(random, a.string());
 
   // Move from uninitialised
-  OneMax b(std::move(OneMax()));
+  typename TestFixture::OneMax b(std::move(typename TestFixture::OneMax()));
   EXPECT_FALSE(b.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_Assignment) {
+TYPED_TEST(BoundedStringTest, BEH_CopyAssignment) {
   // Assign from initialised
-  std::string random(RandomString((RandomUint32() % 1024) + 1));
-  OneMax a(random);
-  OneMax b("1");
+  auto random(this->RandomData(1, 1024));
+  typename TestFixture::OneMax a(random);
+  typename TestFixture::OneMax b("1");
   b = a;
   EXPECT_EQ(random, a.string());
   EXPECT_EQ(random, b.string());
@@ -134,152 +193,99 @@ TEST(BoundedStringTest, BEH_Assignment) {
   EXPECT_EQ(random, b.string());
 
   // Assign from uninitialised
-  OneMax c;
+  typename TestFixture::OneMax c;
   b = c;
   EXPECT_FALSE(b.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_CopyConstructor) {
-  // Valid copy
-  std::string random(RandomString(2));
-  TwoThree a(random);
-  OneMax b(a);
+TYPED_TEST(BoundedStringTest, BEH_MoveAssignment) {
+  // Assign from initialised
+  auto random(this->RandomData(1, 1024));
+  typename TestFixture::OneMax a(random);
+  typename TestFixture::OneMax b("1");
+  b = std::move(a);
   EXPECT_EQ(random, b.string());
-  TwoFour c(a);
+
+  // Assign from uninitialised
+  typename TestFixture::OneMax c;
+  b = std::move(c);
+  EXPECT_FALSE(b.IsInitialised());
+}
+
+TYPED_TEST(BoundedStringTest, BEH_ConstructionFromDifferentType) {
+  // Valid copy
+  auto random(this->RandomData(2));
+  typename TestFixture::TwoThree a(random);
+  typename TestFixture::OneMax b(a);
+  EXPECT_EQ(random, b.string());
+  typename TestFixture::TwoFour c(std::move(a));
   EXPECT_EQ(random, c.string());
 
   // Copy from uninitialised
-  TwoThree d;
-  OneThree e(d);
+  typename TestFixture::TwoThree d;
+  typename TestFixture::OneThree e(d);
   EXPECT_FALSE(e.IsInitialised());
-  TwoFour f(d);
+  typename TestFixture::TwoFour f(std::move(d));
   EXPECT_FALSE(f.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_CopyAssignment) {
+TYPED_TEST(BoundedStringTest, BEH_AssignmentFromDifferentType) {
   // Valid assignment
-  std::string random(RandomString(2));
-  TwoThree a(random);
-  OneMax b("1");
+  auto random(this->RandomData(2));
+  typename TestFixture::TwoThree a(random);
+  typename TestFixture::OneMax b("1");
   b = a;
   EXPECT_EQ(random, b.string());
-  TwoFour c("02");
-  c = a;
+  typename TestFixture::TwoFour c("02");
+  c = std::move(a);
   EXPECT_EQ(random, c.string());
 
   // Assign from uninitialised
-  TwoThree d;
-  OneThree e("1");
+  typename TestFixture::TwoThree d;
+  typename TestFixture::OneThree e("1");
   e = d;
   EXPECT_FALSE(e.IsInitialised());
-  TwoFour f("02");
-  f = d;
+  typename TestFixture::TwoFour f("02");
+  f = std::move(d);
   EXPECT_FALSE(f.IsInitialised());
 }
 
-TEST(BoundedStringTest, BEH_Concatenation) {
-  OneOne a(RandomString(1));
-  std::string a_before_throw = a.string();
-  OneTwo b(RandomString(1));
-  std::string b_before_throw = b.string();
-
-  EXPECT_THROW(a + b, std::exception);
-  EXPECT_EQ(a_before_throw, a.string());
-  EXPECT_EQ(b_before_throw, b.string());
-
-  EXPECT_THROW(a += b, std::exception);
-  EXPECT_EQ(a_before_throw, a.string());
-  EXPECT_EQ(b_before_throw, b.string());
-
-  EXPECT_THROW(a + a, std::exception);
-  EXPECT_EQ(a_before_throw, a.string());
-
-  EXPECT_THROW(a += a, std::exception);
-  EXPECT_EQ(a_before_throw, a.string());
-
-  OneTwo c(b + a);
-  EXPECT_EQ(a_before_throw, a.string());
-  EXPECT_EQ(b_before_throw, b.string());
-  auto concat(b_before_throw + a_before_throw);
-  EXPECT_EQ(concat, c.string());
-
-  b += a;
-  EXPECT_EQ(a_before_throw, a.string());
-  EXPECT_EQ(c.string(), b.string());
-
-  b = OneTwo(b_before_throw);
-
-  OneTwo d(b + b);
-  EXPECT_EQ(b_before_throw, b.string());
-  concat = b_before_throw + b_before_throw;
-  EXPECT_EQ(concat, d.string());
-
-  b += b;
-  EXPECT_EQ(d.string(), b.string());
-
-  b = OneTwo(b_before_throw);
-  OneThree e(RandomString(1));
-  std::string e_before_throw = e.string();
-
-  OneThree f(e + b + b);
-  EXPECT_EQ(b_before_throw, b.string());
-  concat = e_before_throw + b_before_throw + b_before_throw;
-  EXPECT_EQ(concat, f.string());
-
-  e += (b + b);
-  EXPECT_EQ(b_before_throw, b.string());
-  EXPECT_EQ(f.string(), e.string());
-
-  e = OneThree(e_before_throw);
-
-  EXPECT_THROW(e + b + b + a, std::exception);
-  EXPECT_EQ(a_before_throw, a.string());
-  EXPECT_EQ(b_before_throw, b.string());
-  EXPECT_EQ(e_before_throw, e.string());
-
-  OneOne g;
-  EXPECT_THROW(e + g, std::exception);
-  EXPECT_EQ(e_before_throw, e.string());
-  EXPECT_FALSE(g.IsInitialised());
-
-  EXPECT_THROW(g + e, std::exception);
-  EXPECT_EQ(e_before_throw, e.string());
-  EXPECT_FALSE(g.IsInitialised());
-
-  EXPECT_THROW(e += g, std::exception);
-  EXPECT_EQ(e_before_throw, e.string());
-  EXPECT_FALSE(g.IsInitialised());
-
-  EXPECT_THROW(g += e, std::exception);
-  EXPECT_EQ(e_before_throw, e.string());
-  EXPECT_FALSE(g.IsInitialised());
-}
-
-TEST(BoundedStringTest, BEH_Serialization) {
+TYPED_TEST(BoundedStringTest, BEH_Serialization) {
   // Invalid Serialisation
-  OneThree a;
+  typename TestFixture::OneThree a;
   EXPECT_FALSE(a.IsInitialised());
-  EXPECT_THROW(maidsafe::ConvertToString(a), std::exception);
+  EXPECT_THROW(Serialise(a), common_error);
 
   // Valid Serialisation
-  OneThree b{RandomString(1)};
+  typename TestFixture::OneThree b(this->RandomData(1));
   EXPECT_TRUE(b.IsInitialised());
 
-  std::string serialised_str;
-  EXPECT_EQ(0, serialised_str.size());
-  EXPECT_NO_THROW(serialised_str = maidsafe::ConvertToString(b));
-  EXPECT_NE(0, serialised_str.size());
+  SerialisedData serialised_str;
+  EXPECT_TRUE(serialised_str.empty());
+  EXPECT_NO_THROW(serialised_str = Serialise(b));
+  EXPECT_FALSE(serialised_str.empty());
 
   // Invalid Deserialisation
-  TwoThree c;
+  typename TestFixture::TwoThree c;
   EXPECT_FALSE(c.IsInitialised());
-  EXPECT_THROW(maidsafe::ConvertFromString(serialised_str, c), std::exception);
+  EXPECT_THROW(Parse(serialised_str, c), common_error);
 
   // Valid Deserialisation
-  OneTwo d;
+  typename TestFixture::OneTwo d;
   EXPECT_FALSE(d.IsInitialised());
-  EXPECT_NO_THROW(maidsafe::ConvertFromString(serialised_str, d));
+  EXPECT_NO_THROW(Parse(serialised_str, d));
   EXPECT_EQ(b.string(), d.string());
+}
+
+TYPED_TEST(BoundedStringTest, BEH_StreamOperator) {
+  std::stringstream ss;
+  typename TestFixture::OneMax a(this->RandomData(1, 1000));
+  ss << a;
+  EXPECT_EQ(ss.str(), hex::Substr(a));
+
+  ss.str("");
+  ss << typename TestFixture::OneMax();
+  EXPECT_EQ(ss.str(), "Invalid string");
 }
 
 }  // namespace test

@@ -35,14 +35,14 @@ std::string CommonCategory::message(int error_value) const MAIDSAFE_NOEXCEPT {
       return "Result still pending";
     case CommonErrors::null_pointer:
       return "nullptr passed";
-    case CommonErrors::invalid_node_id:
+    case CommonErrors::invalid_identity:
       return "Invalid NodeID";
     case CommonErrors::invalid_key_size:
       return "Invalid key size";
-    case CommonErrors::invalid_string_size:
-      return "Invalid string size";
-    case CommonErrors::invalid_parameter:
-      return "One or more invalid parameters were passed";
+    case CommonErrors::outside_of_bounds:
+      return "Outside of bounds";
+    case CommonErrors::invalid_argument:
+      return "One or more invalid arguments were passed";
     case CommonErrors::invalid_conversion:
       return "Invalid conversion between types";
     case CommonErrors::file_too_large:
@@ -95,10 +95,10 @@ std::error_condition CommonCategory::default_error_condition(int error_value) co
     MAIDSAFE_NOEXCEPT {
   switch (static_cast<CommonErrors>(error_value)) {
     case CommonErrors::null_pointer:
-    case CommonErrors::invalid_node_id:
+    case CommonErrors::invalid_identity:
     case CommonErrors::invalid_key_size:
-    case CommonErrors::invalid_string_size:
-    case CommonErrors::invalid_parameter:
+    case CommonErrors::outside_of_bounds:
+    case CommonErrors::invalid_argument:
       return std::errc::invalid_argument;
     case CommonErrors::file_too_large:
       return std::errc::file_too_large;

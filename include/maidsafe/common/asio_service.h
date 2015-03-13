@@ -66,7 +66,7 @@ IoService<IoServiceType>::IoService(size_t thread_count)
       threads_(),
       mutex_() {
   if (thread_count == 0)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   for (size_t i(0); i != thread_count; ++i)
     threads_.emplace_back([&] {
       try {

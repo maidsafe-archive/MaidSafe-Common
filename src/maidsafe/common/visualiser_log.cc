@@ -21,6 +21,7 @@
 #include "cereal/cereal.hpp"
 #include "cereal/archives/json.hpp"
 
+#include "maidsafe/common/encode.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
@@ -62,7 +63,7 @@ std::string UrlEncode(const std::string& value) {
 std::string EncodeIdentityOrInt(const std::string& value, bool debug_format) {
   // If the value is 64 chars, assume it's an Identity.
   if (value.size() == crypto::SHA512::DIGESTSIZE)
-    return debug_format ? HexSubstr(value) : HexEncode(value);
+    return debug_format ? hex::Substr(value) : hex::Encode(value);
   return value;
 }
 

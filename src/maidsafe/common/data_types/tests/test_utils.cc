@@ -1,4 +1,4 @@
-/*  Copyright 2014 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,20 +16,33 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_TYPE_CHECK_H_
-#define MAIDSAFE_COMMON_TYPE_CHECK_H_
+#include "maidsafe/common/data_types/tests/test_utils.h"
 
-#include <type_traits>
+#include "maidsafe/common/data_types/data.h"
 
 namespace maidsafe {
 
-template <typename T>
-struct is_regular
-    : std::integral_constant<
-          bool, std::is_default_constructible<T>::value && std::is_copy_constructible<T>::value &&
-                    std::is_move_constructible<T>::value && std::is_copy_assignable<T>::value &&
-                    std::is_move_assignable<T>::value> {};
+namespace test {
+
+testing::AssertionResult Equal(const Data* const lhs, const Data* const rhs) {
+  if (!lhs->IsInitialised() && !rhs->IsInitialised())
+    return testing::AssertionSuccess();
+
+  if (!lhs->IsInitialised())
+    return testing::AssertionFailure() << "lhs is not initialised.";
+
+  if (!rhs->IsInitialised())
+    return testing::AssertionFailure() << "rhs is not initialised.";
+
+  if (lhs->NameAndType() != rhs->NameAndType())
+    return testing::AssertionFailure() << "lhs->NameAndType() [" << lhs->NameAndType().name << ":"
+                                       << lhs->NameAndType().type_id << "] != rhs->NameAndType() ["
+                                       << rhs->NameAndType().name << ":"
+                                       << rhs->NameAndType().type_id << "].";
+
+  return testing::AssertionSuccess();
+}
+
+}  // namespace test
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_COMMON_TYPE_CHECK_H_
