@@ -76,7 +76,7 @@ DataTypeId Data::TypeId() const {
   if (!IsInitialised())
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   return DataTypeId(ThisTypeId());
-};
+}
 
 Data::NameAndTypeId Data::NameAndType() const {
   if (!IsInitialised())
