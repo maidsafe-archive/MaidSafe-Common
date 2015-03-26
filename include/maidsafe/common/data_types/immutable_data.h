@@ -35,7 +35,7 @@ namespace maidsafe {
 
 class ImmutableData : public Data {
  public:
-  static NameAndTypeId MakeNameTypeId(Identity name);
+  static NameAndTypeId MakeNameAndTypeId(Identity name);
 
   explicit ImmutableData(NonEmptyString value);
 

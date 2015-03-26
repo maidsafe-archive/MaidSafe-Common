@@ -51,6 +51,8 @@ class DerivedDataTest : public testing::Test {
     }
   }
 
+  T GetData();
+
   const NonEmptyString value_;
   Identity name_;
   T data_;
@@ -58,7 +60,6 @@ class DerivedDataTest : public testing::Test {
 
  private:
   Identity GetName();
-  T GetData();
 };
 
 template <>
@@ -137,6 +138,11 @@ TYPED_TEST(DerivedDataTest, BEH_SerialiseParse) {
   EXPECT_TRUE(Equal(&this->data_, dynamic_cast<TypeParam*>(parsed_ptr.get())));
 }
 
+TYPED_TEST(DerivedDataTest, MakeNameAndTypeId) {
+  const auto data = this->GetData();
+  const auto name_and_type = TypeParam::MakeNameAndTypeId(this->name_);
+  EXPECT_EQ(data.TypeId(), name_and_type.type_id);
+  EXPECT_EQ(data.Name(), name_and_type.name);
+}
 }  // namespace test
-
 }  // namespace maidsafe

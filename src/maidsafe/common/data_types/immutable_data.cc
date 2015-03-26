@@ -27,7 +27,7 @@ namespace {
 const std::uint32_t kTypeId = 0;
 }
 
-Data::NameAndTypeId ImmutableData::MakeNameTypeId(Identity name) {
+Data::NameAndTypeId ImmutableData::MakeNameAndTypeId(Identity name) {
   return NameAndTypeId{std::move(name), DataTypeId{kTypeId}};
 }
 
