@@ -53,11 +53,11 @@ Data::Data() = default;
 
 Data::Data(const Data&) = default;
 
-Data::Data(Data&& other) : name_(std::move(other.name_)) {}
+Data::Data(Data&& other) MAIDSAFE_NOEXCEPT : name_(std::move(other.name_)) {}
 
 Data& Data::operator=(const Data&) = default;
 
-Data& Data::operator=(Data&& other) {
+Data& Data::operator=(Data&& other) MAIDSAFE_NOEXCEPT {
   name_ = std::move(other.name_);
   return *this;
 }

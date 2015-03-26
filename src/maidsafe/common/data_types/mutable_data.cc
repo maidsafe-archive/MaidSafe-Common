@@ -26,6 +26,13 @@
 #include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
+namespace {
+const std::uint32_t kTypeId = 1;
+}
+
+Data::NameAndTypeId MutableData::MakeNameAndTypeId(Identity name) {
+  return NameAndTypeId{std::move(name), DataTypeId{kTypeId}};
+}
 
 MutableData::MutableData(Identity name, NonEmptyString value)
     : Data(std::move(name)), value_(std::move(value)) {
@@ -43,12 +50,12 @@ MutableData::MutableData() = default;
 
 MutableData::MutableData(const MutableData&) = default;
 
-MutableData::MutableData(MutableData&& other)
+MutableData::MutableData(MutableData&& other) MAIDSAFE_NOEXCEPT
     : Data(std::move(other)), value_(std::move(other.value_)) {}
 
 MutableData& MutableData::operator=(const MutableData&) = default;
 
-MutableData& MutableData::operator=(MutableData&& other) {
+MutableData& MutableData::operator=(MutableData&& other) MAIDSAFE_NOEXCEPT {
   Data::operator=(std::move(other));
   value_ = std::move(other.value_);
   return *this;
@@ -61,5 +68,7 @@ const NonEmptyString& MutableData::Value() const {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   return value_;
 }
+
+std::uint32_t MutableData::ThisTypeId() const { return kTypeId; }
 
 }  // namespace maidsafe

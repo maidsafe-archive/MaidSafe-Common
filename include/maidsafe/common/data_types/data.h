@@ -49,9 +49,9 @@ class Data {
 
   Data();
   Data(const Data&);
-  Data(Data&& other);
+  Data(Data&& other) MAIDSAFE_NOEXCEPT;
   Data& operator=(const Data&);
-  Data& operator=(Data&& other);
+  Data& operator=(Data&& other) MAIDSAFE_NOEXCEPT;
   virtual ~Data();
 
   // Returns false for a default-constructed instance of this class, otherwise true.

@@ -22,6 +22,7 @@
 #include "cereal/types/base_class.hpp"
 #include "cereal/types/polymorphic.hpp"
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/identity.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
@@ -34,13 +35,15 @@ namespace maidsafe {
 
 class MutableData : public Data {
  public:
+  static NameAndTypeId MakeNameAndTypeId(Identity name);
+
   MutableData(Identity name, NonEmptyString value);
 
   MutableData();
   MutableData(const MutableData&);
-  MutableData(MutableData&& other);
+  MutableData(MutableData&& other) MAIDSAFE_NOEXCEPT;
   MutableData& operator=(const MutableData&);
-  MutableData& operator=(MutableData&& other);
+  MutableData& operator=(MutableData&& other) MAIDSAFE_NOEXCEPT;
   virtual ~MutableData() final;
 
   const NonEmptyString& Value() const;
@@ -64,7 +67,7 @@ class MutableData : public Data {
   }
 
  private:
-  virtual std::uint32_t ThisTypeId() const final { return 1; }
+  virtual std::uint32_t ThisTypeId() const final;
 
   NonEmptyString value_;
 };
