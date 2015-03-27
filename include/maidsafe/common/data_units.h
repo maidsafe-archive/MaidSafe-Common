@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_COMMON_DATA_SIZES_H_
-#define MAIDSAFE_COMMON_DATA_SIZES_H_
+#ifndef MAIDSAFE_COMMON_DATA_UNITS_H_
+#define MAIDSAFE_COMMON_DATA_UNITS_H_
 
 #include <chrono>
 
@@ -32,4 +32,4 @@ using PetaBytes = std::chrono::duration<uint64_t, std::peta>;
 using ExaBytes = std::chrono::duration<uint64_t, std::exa>;
 }
 
-#endif // MAIDSAFE_COMMON_DATA_SIZES_H_
+#endif  // MAIDSAFE_COMMON_DATA_UNITS_H_
