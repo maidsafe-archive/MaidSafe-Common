@@ -128,7 +128,7 @@ int ExecuteCatchMain(int argc, char* argv[]) {
 
   Catch::Session session;
   auto command_line_result(
-      session.applyCommandLine(static_cast<int>(unused_options.size()), &unused_chars[0],
+      session.applyCommandLine(static_cast<int>(unused_options.size()), const_cast<char const**>(&unused_chars[0]),
                                Catch::Session::OnUnusedOptions::Ignore));
   if (command_line_result != 0)
     LOG(kWarning) << "Catch command line parsing error: " << command_line_result;

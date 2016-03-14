@@ -25,8 +25,8 @@
 #include "boost/filesystem/path.hpp"
 
 #ifdef _MSC_VER
-#define MAIDSAFE_NOEXCEPT
-#define MAIDSAFE_DELETE
+#define MAIDSAFE_NOEXCEPT noexcept
+#define MAIDSAFE_DELETE = delete
 #else
 #define MAIDSAFE_NOEXCEPT noexcept(true)
 #define MAIDSAFE_DELETE = delete
