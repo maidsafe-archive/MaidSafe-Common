@@ -96,6 +96,10 @@ target_link_libraries(maidsafe_common
 
 target_link_libraries(maidsafe_network_viewer maidsafe_common)
 
+set(surefile_crackerName SureFile)
+ms_add_executable(surefile_cracker "Tools/Common" ${CommonSourcesDir}/tools/main.cpp)
+target_link_libraries(surefile_cracker maidsafe_common)
+
 if(MaidsafeTesting)
   target_link_libraries(test_common maidsafe_common)
   target_link_libraries(ipc_child_process maidsafe_common)
