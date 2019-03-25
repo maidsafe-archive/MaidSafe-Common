@@ -23,6 +23,13 @@
 #include "maidsafe/common/error.h"
 
 namespace maidsafe {
+namespace {
+const std::uint32_t kTypeId = 0;
+}
+
+Data::NameAndTypeId ImmutableData::MakeNameAndTypeId(Identity name) {
+  return NameAndTypeId{std::move(name), DataTypeId{kTypeId}};
+}
 
 ImmutableData::ImmutableData(NonEmptyString value)
     : Data(crypto::Hash<crypto::SHA512>(value)), value_(std::move(value)) {}
@@ -49,5 +56,7 @@ const NonEmptyString& ImmutableData::Value() const {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   return value_;
 }
+
+std::uint32_t ImmutableData::ThisTypeId() const { return kTypeId; }
 
 }  // namespace maidsafe

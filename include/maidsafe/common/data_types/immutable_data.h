@@ -35,6 +35,8 @@ namespace maidsafe {
 
 class ImmutableData : public Data {
  public:
+  static NameAndTypeId MakeNameAndTypeId(Identity name);
+
   explicit ImmutableData(NonEmptyString value);
 
   ImmutableData();
@@ -65,7 +67,7 @@ class ImmutableData : public Data {
   }
 
  private:
-  virtual std::uint32_t ThisTypeId() const final { return 0; }
+  virtual std::uint32_t ThisTypeId() const final;
 
   NonEmptyString value_;
 };
